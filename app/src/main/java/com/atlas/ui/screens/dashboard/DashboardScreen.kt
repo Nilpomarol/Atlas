@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Work
@@ -33,12 +34,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.atlas.presentation.dashboard.DashboardItemIcon
 import com.atlas.presentation.dashboard.DashboardRecentItemUiState
 import com.atlas.presentation.dashboard.DashboardTripUiState
 import com.atlas.presentation.dashboard.DashboardUiState
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasLived
 import com.atlas.ui.theme.AtlasLivedContainer
+import com.atlas.ui.theme.AtlasLiving
+import com.atlas.ui.theme.AtlasLivingContainer
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasPlanned
@@ -46,6 +50,8 @@ import com.atlas.ui.theme.AtlasPlannedContainer
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasTrip
 import com.atlas.ui.theme.AtlasTripContainer
+import com.atlas.ui.theme.AtlasVisit
+import com.atlas.ui.theme.AtlasVisitContainer
 import com.atlas.ui.theme.AtlasVisited
 import com.atlas.ui.theme.AtlasVisitedContainer
 import com.atlas.ui.theme.AtlasWished
@@ -65,6 +71,7 @@ fun DashboardScreen(
     ) {
         DashboardHero(uiState = uiState)
         StatsGrid(uiState = uiState)
+        CurrentlyLivingCard(countryName = uiState.currentlyLivingCountryName)
         UpcomingTripCard(trip = uiState.upcomingTrip)
         RecentActivityCard(items = uiState.recentItems)
     }
@@ -163,14 +170,24 @@ private fun StatsGrid(
                 containerColor = AtlasLivedContainer,
             )
         }
-        StatCard(
-            modifier = Modifier.fillMaxWidth(),
-            label = "Viatges",
-            value = uiState.tripCount.toString(),
-            icon = Icons.Filled.Work,
-            color = AtlasTrip,
-            containerColor = AtlasTripContainer,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            StatCard(
+                modifier = Modifier.weight(1f),
+                label = "Viatges",
+                value = uiState.tripCount.toString(),
+                icon = Icons.Filled.Work,
+                color = AtlasTrip,
+                containerColor = AtlasTripContainer,
+            )
+            StatCard(
+                modifier = Modifier.weight(1f),
+                label = "Parades",
+                value = uiState.stopCount.toString(),
+                icon = Icons.Filled.LocationOn,
+                color = AtlasTrip,
+                containerColor = AtlasTripContainer,
+            )
+        }
     }
 }
 
@@ -220,6 +237,54 @@ private fun StatCard(
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceMuted,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CurrentlyLivingCard(
+    countryName: String?,
+) {
+    if (countryName == null) return
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = AtlasSurface),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(
+                        color = AtlasLivingContainer,
+                        shape = RoundedCornerShape(10.dp),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Home,
+                    contentDescription = null,
+                    tint = AtlasLiving,
+                )
+            }
+            Column {
+                Text(
+                    text = "Vivint a",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Text(
+                    text = countryName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AtlasOnSurfaceStrong,
                 )
             }
         }
@@ -294,6 +359,11 @@ private fun RecentActivityCard(
 private fun RecentActivityRow(
     item: DashboardRecentItemUiState,
 ) {
+    val (iconVector, iconTint, iconBackground) = when (item.icon) {
+        DashboardItemIcon.VISIT -> Triple(Icons.Filled.Public, AtlasVisit, AtlasVisitContainer)
+        DashboardItemIcon.LIVED -> Triple(Icons.Filled.Home, AtlasLived, AtlasLivedContainer)
+        DashboardItemIcon.TRIP -> Triple(Icons.Filled.Map, AtlasTrip, AtlasTripContainer)
+    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -303,15 +373,15 @@ private fun RecentActivityRow(
             modifier = Modifier
                 .size(36.dp)
                 .background(
-                    color = AtlasPlannedContainer,
+                    color = iconBackground,
                     shape = RoundedCornerShape(9.dp),
                 ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Filled.Flag,
+                imageVector = iconVector,
                 contentDescription = null,
-                tint = AtlasPlanned,
+                tint = iconTint,
             )
         }
         Column(modifier = Modifier.weight(1f)) {

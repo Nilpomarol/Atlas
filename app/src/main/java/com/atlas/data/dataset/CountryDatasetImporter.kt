@@ -28,8 +28,12 @@ class CountryDatasetImporter(
         val dataset = loadDataset()
 
         database.withTransaction {
+            // Parents (parent_iso2 = null) must be inserted before dependent territories
+            // to satisfy the self-referencing FK constraint on countries.parent_iso2
             database.countryDao().upsertAll(
-                dataset.countries.map { it.toEntity() },
+                dataset.countries
+                    .sortedBy { if (it.parentIso2 == null) 0 else 1 }
+                    .map { it.toEntity() },
             )
             database.datasetMetadataDao().upsert(
                 DatasetMetadataEntity(

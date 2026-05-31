@@ -42,13 +42,17 @@ class DashboardViewModel(
             )
         }
 
+        val currentlyLivingIso2 = userStates.firstOrNull { it.currentlyLiving }?.countryIso2
+
         DashboardUiState(
             visitedCount = countryStates.count { it.visited },
             wishedCount = countryStates.count { it.wished },
             plannedCount = countryStates.count { it.planned },
             livedCount = countryStates.count { it.lived },
             tripCount = trips.size,
+            stopCount = tripStops.size,
             trackableCountryCount = countries.size,
+            currentlyLivingCountryName = currentlyLivingIso2?.let { countryNamesByIso2[it] },
             upcomingTrip = trips
                 .firstOrNull { it.status == TravelStatus.PLANNED }
                 ?.let { trip ->
@@ -59,7 +63,7 @@ class DashboardViewModel(
                 },
             recentItems = buildRecentItems(
                 countryNamesByIso2 = countryNamesByIso2,
-                logs = logs.take(3),
+                logs = logs.sortedByDescending { it.id }.take(3),
                 plannedTrips = trips.filter { it.status == TravelStatus.PLANNED }.take(1),
             ),
         )
@@ -78,6 +82,10 @@ class DashboardViewModel(
         val logItems = logs.map { log ->
             val countryName = countryNamesByIso2[log.countryIso2] ?: log.countryIso2
             DashboardRecentItemUiState(
+                icon = when (log.type) {
+                    CountryLogType.VISIT -> DashboardItemIcon.VISIT
+                    CountryLogType.LIVED -> DashboardItemIcon.LIVED
+                },
                 title = log.notes?.takeIf { it.isNotBlank() } ?: countryName,
                 subtitle = when (log.type) {
                     CountryLogType.VISIT -> "Visita · $countryName"
@@ -88,6 +96,7 @@ class DashboardViewModel(
         }
         val tripItems = plannedTrips.map { trip ->
             DashboardRecentItemUiState(
+                icon = DashboardItemIcon.TRIP,
                 title = trip.title,
                 subtitle = "Viatge planificat",
                 dateText = trip.dateRange?.let(flexibleDateFormatter::format),
@@ -119,7 +128,9 @@ data class DashboardUiState(
     val plannedCount: Int = 0,
     val livedCount: Int = 0,
     val tripCount: Int = 0,
+    val stopCount: Int = 0,
     val trackableCountryCount: Int = 0,
+    val currentlyLivingCountryName: String? = null,
     val upcomingTrip: DashboardTripUiState? = null,
     val recentItems: List<DashboardRecentItemUiState> = emptyList(),
 )
@@ -129,7 +140,10 @@ data class DashboardTripUiState(
     val dateText: String?,
 )
 
+enum class DashboardItemIcon { VISIT, LIVED, TRIP }
+
 data class DashboardRecentItemUiState(
+    val icon: DashboardItemIcon,
     val title: String,
     val subtitle: String,
     val dateText: String?,

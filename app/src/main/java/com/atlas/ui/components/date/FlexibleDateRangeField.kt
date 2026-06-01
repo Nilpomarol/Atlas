@@ -21,6 +21,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +46,13 @@ import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.DatePrecision
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.date.FlexibleDateRangeDraftUiState
+import com.atlas.ui.theme.AtlasAccent
+import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasSurface
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -52,13 +60,13 @@ import java.time.ZoneOffset
 // ─────────────────────────────────────────────
 // Palette (mirrors CountryDetailScreen accents)
 // ─────────────────────────────────────────────
-private val FdrInk      = Color(0xFF111827)
-private val FdrMuted    = Color(0xFF6B7280)
-private val FdrBg       = Color(0xFFF1F3F7)
-private val FdrCard     = Color(0xFFFFFFFF)
-private val FdrBorder   = Color(0xFFE4E8EF)
-private val FdrAccent   = Color(0xFF005C38)
-private val FdrAccentLt = Color(0xFFC6EAD8)
+private val FdrInk      = AtlasOnSurfaceStrong
+private val FdrMuted    = AtlasOnSurfaceMuted
+private val FdrBg       = AtlasBackground
+private val FdrCard     = AtlasSurface
+private val FdrBorder   = AtlasOutline
+private val FdrAccent   = AtlasAccent
+private val FdrAccentLt = AtlasAccentContainer
 
 // ─────────────────────────────────────────────
 // Public entry point
@@ -394,6 +402,23 @@ private fun DayPickerDialog(
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(20.dp),
+        colors = DatePickerDefaults.colors(
+            containerColor = FdrCard,
+            titleContentColor = FdrInk,
+            headlineContentColor = FdrInk,
+            weekdayContentColor = FdrMuted,
+            subheadContentColor = FdrMuted,
+            yearContentColor = FdrInk,
+            currentYearContentColor = FdrAccent,
+            selectedYearContentColor = Color.White,
+            selectedYearContainerColor = FdrAccent,
+            dayContentColor = FdrInk,
+            selectedDayContentColor = Color.White,
+            selectedDayContainerColor = FdrAccent,
+            todayContentColor = FdrAccent,
+            todayDateBorderColor = FdrAccent,
+        ),
         confirmButton = {
             CompactDialogActionButton(
                 onClick = {

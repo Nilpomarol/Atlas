@@ -1,36 +1,46 @@
 package com.atlas.ui.screens.country
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.ui.theme.AtlasLiving
+import com.atlas.ui.theme.AtlasLivingContainer
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasWished
+import com.atlas.ui.theme.AtlasWishedContainer
 
 @Composable
 fun CountryQuickActions(
@@ -39,91 +49,112 @@ fun CountryQuickActions(
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
 ) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .offset(y = (-40).dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .background(AtlasSurface, RoundedCornerShape(16.dp))
+            .border(1.dp, AtlasOutline, RoundedCornerShape(16.dp)),
     ) {
-        AddLogButton(
-            modifier = Modifier.weight(2f),
-            onClick = onAddVisitLog,
-        )
-        TintedActionButton(
-            modifier = Modifier.weight(1f),
-            label = if (trackingState.wished) "Desitjat" else "Desitjar",
-            icon = { Icon(Icons.Filled.Star, null, Modifier.size(14.dp)) },
+        ActionToggleRow(
+            title = "A la llista de desitjos",
+            subtitle = "Un lloc on vull anar",
+            icon = Icons.Filled.FavoriteBorder,
             color = AtlasWished,
-            selected = trackingState.wished,
-            onClick = { onWishedChanged(!trackingState.wished) },
+            container = AtlasWishedContainer,
+            checked = trackingState.wished,
+            onCheckedChange = onWishedChanged,
         )
-        TintedActionButton(
-            modifier = Modifier.weight(1f),
-            label = "Vivint",
-            icon = { Icon(Icons.Filled.Home, null, Modifier.size(14.dp)) },
+        HorizontalDivider(color = AtlasOutline, modifier = Modifier.padding(horizontal = 14.dp))
+        ActionToggleRow(
+            title = "Visc aquí",
+            subtitle = "Defineix-lo com a base",
+            icon = Icons.Filled.Home,
             color = AtlasLiving,
-            selected = trackingState.currentlyLiving,
-            onClick = {
-                if (!trackingState.currentlyLiving) {
+            container = AtlasLivingContainer,
+            checked = trackingState.currentlyLiving,
+            onCheckedChange = { checked ->
+                if (checked && !trackingState.currentlyLiving) {
                     onSetCurrentlyLiving()
                 }
             },
         )
-    }
-}
-
-@Composable
-private fun AddLogButton(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    Box(modifier = modifier) {
         Button(
-            onClick = onClick,
+            onClick = onAddVisitLog,
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = 44.dp),
-            shape = RoundedCornerShape(14.dp),
+                .padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
+            shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AtlasOnSurfaceStrong),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 11.dp),
+            elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp),
+            contentPadding = PaddingValues(vertical = 10.dp),
         ) {
-            Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
-            Spacer(Modifier.width(6.dp))
-            Text("Afegeix", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+            Text(
+                text = "Afegeix registre",
+                modifier = Modifier.padding(start = 6.dp),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+            )
         }
     }
 }
 
 @Composable
-private fun TintedActionButton(
-    modifier: Modifier = Modifier,
-    label: String,
-    icon: @Composable () -> Unit,
+private fun ActionToggleRow(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
     color: Color,
-    selected: Boolean,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
+    container: Color,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
 ) {
-    val containerColor = if (selected) color else AtlasSurface
-    val textColor = if (selected) Color.White else color
-
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = 44.dp),
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = textColor,
-            disabledContainerColor = containerColor.copy(alpha = 0.5f),
-            disabledContentColor = color.copy(alpha = 0.4f),
-        ),
-        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp),
-        border = BorderStroke(1.dp, color),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 11.dp),
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        icon()
-        Spacer(Modifier.width(5.dp))
-        Text(label, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(container, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = color,
+            )
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = AtlasOnSurfaceStrong,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = color,
+                uncheckedThumbColor = AtlasOnSurfaceMuted.copy(alpha = 0.38f),
+                uncheckedTrackColor = container,
+                uncheckedBorderColor = AtlasOutline,
+            ),
+        )
     }
 }

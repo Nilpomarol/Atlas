@@ -30,17 +30,16 @@ import com.atlas.domain.model.DatePrecision
 import com.atlas.presentation.country.CountryLogDraftUiState
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.ui.components.date.FlexibleDateRangeField
-
-// Mirrors the palette from CountryDetailScreen / FlexibleDateRangeField
-private val DialogInk      = Color(0xFF111827)
-private val DialogMuted    = Color(0xFF6B7280)
-private val DialogBg       = Color(0xFFF1F3F7)
-private val DialogCard     = Color(0xFFFFFFFF)
-private val DialogBorder   = Color(0xFFE4E8EF)
-private val DialogAccent   = Color(0xFF005C38)
-private val DialogVisitLt  = Color(0xFFC6EAD8)  // visit  — green tint
-private val DialogLivedLt  = Color(0xFFDDD1F7)  // lived  — violet tint
-private val DialogLivedClr = Color(0xFF4C1D95)
+import com.atlas.ui.theme.AtlasAccent
+import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasLived
+import com.atlas.ui.theme.AtlasLivedContainer
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasSurface
+import com.atlas.ui.theme.AtlasVisited
+import com.atlas.ui.theme.AtlasVisitedContainer
 
 @Composable
 fun CountryLogDialog(
@@ -54,18 +53,18 @@ fun CountryLogDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(22.dp),
-        containerColor = DialogCard,
+        shape = RoundedCornerShape(20.dp),
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = if (draft.logId == null) "Afegeix registre" else "Edita registre",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = DialogInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 // Type selector — uses per-type accent colours
                 LogTypeSelector(
@@ -113,7 +112,7 @@ fun CountryLogDialog(
                 Text(
                     text = "Desa",
                     fontWeight = FontWeight.ExtraBold,
-                    color = DialogAccent,
+                    color = AtlasAccent,
                 )
             }
         },
@@ -122,7 +121,7 @@ fun CountryLogDialog(
                 Text(
                     text = "Cancel·la",
                     fontWeight = FontWeight.Bold,
-                    color = DialogMuted,
+                    color = AtlasOnSurfaceMuted,
                 )
             }
         },
@@ -157,26 +156,26 @@ private fun LogTypeSelector(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(DialogBg)
-            .border(1.dp, DialogBorder, RoundedCornerShape(10.dp))
-            .padding(3.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(AtlasBackground)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))
+            .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         TypeSegment(
             modifier = Modifier.weight(1f),
             label = "Visita",
             selected = selectedType == CountryLogType.VISIT,
-            activeColor = DialogAccent,
-            activeLightColor = DialogVisitLt,
+            activeColor = AtlasVisited,
+            activeLightColor = AtlasVisitedContainer,
             onClick = { onTypeChanged(CountryLogType.VISIT) },
         )
         TypeSegment(
             modifier = Modifier.weight(1f),
             label = "Viscut",
             selected = selectedType == CountryLogType.LIVED,
-            activeColor = DialogLivedClr,
-            activeLightColor = DialogLivedLt,
+            activeColor = AtlasLived,
+            activeLightColor = AtlasLivedContainer,
             onClick = { onTypeChanged(CountryLogType.LIVED) },
         )
     }
@@ -194,12 +193,7 @@ private fun TypeSegment(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(
-                when {
-                    selected -> activeColor
-                    else     -> Color.Transparent
-                },
-            ),
+            .background(if (selected) activeLightColor else Color.Transparent),
         contentAlignment = Alignment.Center,
     ) {
         TextButton(
@@ -210,8 +204,8 @@ private fun TypeSegment(
             shape = RoundedCornerShape(8.dp),
             colors = ButtonDefaults.textButtonColors(
                 contentColor = when {
-                    selected -> Color.White
-                    else     -> DialogMuted
+                    selected -> activeColor
+                    else     -> AtlasOnSurfaceMuted
                 },
                 containerColor = Color.Transparent,
             ),

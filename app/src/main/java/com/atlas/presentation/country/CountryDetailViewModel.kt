@@ -61,6 +61,31 @@ class CountryDetailViewModel(
         )
     }
 
+    private val countryDetailPills = combine(
+        countryRepository.observeUserState(iso2),
+        countryRepository.observeCountryLogs(iso2),
+        tripRepository.observeTrips(),
+        tripRepository.observeTripStops(),
+    ) { userState, logs, trips, tripStops ->
+        val tripsById = trips.associateBy { it.id }
+        val stopsForCountry = tripStops.filter { it.countryIso2 == iso2 }
+        CountryDetailPillUiState(
+            wished = userState?.wished == true,
+            lived = logs.any { it.type == CountryLogType.LIVED },
+            currentlyLiving = userState?.currentlyLiving == true,
+            planned = stopsForCountry.any { stop ->
+                tripsById[stop.tripId]?.status == TravelStatus.PLANNED
+            },
+            visited = logs.any { it.type == CountryLogType.VISIT } ||
+                stopsForCountry.any { stop ->
+                    tripsById[stop.tripId]?.status in setOf(
+                        TravelStatus.IN_PROGRESS,
+                        TravelStatus.COMPLETED,
+                    )
+                },
+        )
+    }
+
     private val countryTripSummaries = combine(
         tripRepository.observeTrips(),
         tripRepository.observeTripStops(),
@@ -69,8 +94,14 @@ class CountryDetailViewModel(
         tripStops
             .filter { it.countryIso2 == iso2 }
             .groupBy { it.tripId }
-            .mapNotNull { (tripId, stops) ->
-                tripsById[tripId]?.toCountryTripSummary(stops)
+            .mapNotNull { (tripId, countryStops) ->
+                val allStops = tripStops
+                    .filter { it.tripId == tripId }
+                    .sortedBy { it.sortOrder }
+                tripsById[tripId]?.toCountryTripSummary(
+                    countryStops = countryStops,
+                    allStops = allStops,
+                )
             }
             .sortedWith(
                 compareBy<CountryTripSummaryUiState> { it.status == TravelStatus.UNKNOWN }
@@ -79,19 +110,24 @@ class CountryDetailViewModel(
     }
 
     val uiState: StateFlow<CountryDetailUiState> = combine(
-        countryRepository.observeCountry(iso2),
-        countryRepository.observeCountryLogs(iso2),
-        logDraft,
-        countryTrackingState,
-        countryTripSummaries,
-    ) { country, logs, draft, trackingState, tripSummaries ->
-        CountryDetailUiState(
-            country = country,
-            logs = logs,
-            logDraft = draft,
-            trackingState = trackingState,
-            tripSummaries = tripSummaries,
-        )
+        combine(
+            countryRepository.observeCountry(iso2),
+            countryRepository.observeCountryLogs(iso2),
+            logDraft,
+            countryTrackingState,
+            countryTripSummaries,
+        ) { country, logs, draft, trackingState, tripSummaries ->
+            CountryDetailUiState(
+                country = country,
+                logs = logs,
+                logDraft = draft,
+                trackingState = trackingState,
+                tripSummaries = tripSummaries,
+            )
+        },
+        countryDetailPills,
+    ) { uiState, detailPills ->
+        uiState.copy(detailPills = detailPills)
     }
         .stateIn(
             scope = viewModelScope,
@@ -257,6 +293,15 @@ data class CountryDetailUiState(
     val tripSummaries: List<CountryTripSummaryUiState> = emptyList(),
     val logDraft: CountryLogDraftUiState = CountryLogDraftUiState(),
     val trackingState: CountryTrackingState = CountryTrackingState.Empty,
+    val detailPills: CountryDetailPillUiState = CountryDetailPillUiState(),
+)
+
+data class CountryDetailPillUiState(
+    val wished: Boolean = false,
+    val lived: Boolean = false,
+    val currentlyLiving: Boolean = false,
+    val planned: Boolean = false,
+    val visited: Boolean = false,
 )
 
 data class CountryTripSummaryUiState(
@@ -264,6 +309,7 @@ data class CountryTripSummaryUiState(
     val title: String,
     val status: TravelStatus,
     val dateRangeText: String?,
+    val routeText: String?,
     val stopCount: Int,
 )
 
@@ -288,11 +334,22 @@ data class CountryLogDraftUiState(
     }
 }
 
-private fun Trip.toCountryTripSummary(stops: List<TripStop>): CountryTripSummaryUiState =
-    CountryTripSummaryUiState(
+private fun Trip.toCountryTripSummary(
+    countryStops: List<TripStop>,
+    allStops: List<TripStop>,
+): CountryTripSummaryUiState {
+    val first = allStops.firstOrNull()?.locationName
+    val last = allStops.lastOrNull()?.locationName
+    return CountryTripSummaryUiState(
         tripId = id,
         title = title,
         status = status,
         dateRangeText = dateRange?.let { FlexibleDateFormatter().format(it) },
-        stopCount = stops.size,
+        routeText = when {
+            first == null -> null
+            last == null || first == last -> first
+            else -> "$first → $last"
+        },
+        stopCount = countryStops.size,
     )
+}

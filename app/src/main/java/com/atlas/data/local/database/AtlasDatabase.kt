@@ -8,8 +8,10 @@ import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
 import com.atlas.data.local.dao.CountryUserStateDao
 import com.atlas.data.local.dao.DatasetMetadataDao
+import com.atlas.data.local.dao.AirportDao
 import com.atlas.data.local.dao.TripDao
 import com.atlas.data.local.dao.TripStopDao
+import com.atlas.data.local.entity.AirportEntity
 import com.atlas.data.local.entity.CountryEntity
 import com.atlas.data.local.entity.CountryLogEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
@@ -25,8 +27,9 @@ import com.atlas.data.local.entity.TripStopEntity
         CountryLogEntity::class,
         TripEntity::class,
         TripStopEntity::class,
+        AirportEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun datasetMetadataDao(): DatasetMetadataDao
     abstract fun tripDao(): TripDao
     abstract fun tripStopDao(): TripStopDao
+    abstract fun airportDao(): AirportDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -162,6 +166,33 @@ abstract class AtlasDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_name_en` TEXT")
                 db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_latitude` REAL")
                 db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_longitude` REAL")
+            }
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `airports` (
+                        `id` TEXT NOT NULL,
+                        `iata` TEXT,
+                        `icao` TEXT,
+                        `name` TEXT NOT NULL,
+                        `city` TEXT NOT NULL,
+                        `country_iso2` TEXT NOT NULL,
+                        `latitude` REAL NOT NULL,
+                        `longitude` REAL NOT NULL,
+                        `timezone` TEXT,
+                        PRIMARY KEY(`id`),
+                        FOREIGN KEY(`country_iso2`) REFERENCES `countries`(`iso2`) ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_airports_iata` ON `airports` (`iata`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airports_icao` ON `airports` (`icao`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airports_name` ON `airports` (`name`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airports_city` ON `airports` (`city`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airports_country_iso2` ON `airports` (`country_iso2`)")
             }
         }
     }

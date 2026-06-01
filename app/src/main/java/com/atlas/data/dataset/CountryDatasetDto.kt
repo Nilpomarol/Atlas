@@ -34,4 +34,12 @@ data class CountryDto(
     val flagAsset: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    @SerialName("capital_name_ca")
+    val capitalNameCa: String? = null,
+    @SerialName("capital_name_en")
+    val capitalNameEn: String? = null,
+    @SerialName("capital_latitude")
+    val capitalLatitude: Double? = null,
+    @SerialName("capital_longitude")
+    val capitalLongitude: Double? = null,
 )

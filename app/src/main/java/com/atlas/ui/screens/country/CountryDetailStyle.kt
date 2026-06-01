@@ -37,6 +37,34 @@ fun CountryTrackingState.toStyle(): CountryDetailStyle = when {
     else -> CountryDetailStyle(AtlasPending, AtlasPendingSecondary, AtlasPendingContainer)
 }
 
+fun String.toCatalanSubregion(): String = when (this) {
+    "Australia and New Zealand" -> "Austràlia i Nova Zelanda"
+    "Caribbean" -> "Carib"
+    "Central America" -> "Amèrica Central"
+    "Central Asia" -> "Àsia Central"
+    "Central Europe" -> "Europa Central"
+    "Eastern Africa" -> "Àfrica Oriental"
+    "Eastern Asia" -> "Àsia Oriental"
+    "Eastern Europe" -> "Europa Oriental"
+    "Melanesia" -> "Melanèsia"
+    "Micronesia" -> "Micronèsia"
+    "Middle Africa" -> "Àfrica Central"
+    "North America" -> "Amèrica del Nord"
+    "Northern Africa" -> "Àfrica del Nord"
+    "Northern Europe" -> "Europa del Nord"
+    "Polynesia" -> "Polinèsia"
+    "South America" -> "Amèrica del Sud"
+    "South-Eastern Asia" -> "Sud-est Asiàtic"
+    "Southeast Europe" -> "Sud-est d'Europa"
+    "Southern Africa" -> "Àfrica Austral"
+    "Southern Asia" -> "Àsia Meridional"
+    "Southern Europe" -> "Europa del Sud"
+    "Western Africa" -> "Àfrica Occidental"
+    "Western Asia" -> "Àsia Occidental"
+    "Western Europe" -> "Europa Occidental"
+    else -> this
+}
+
 fun CountryTrackingState.toStateLabel(): String = when {
     currentlyLiving -> "VIVINT"
     lived -> "VISCUT"

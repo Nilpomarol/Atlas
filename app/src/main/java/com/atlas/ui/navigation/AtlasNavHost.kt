@@ -2,13 +2,16 @@ package com.atlas.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -22,6 +25,12 @@ import com.atlas.presentation.country.CountryListRoute
 import com.atlas.presentation.settings.SettingsRoute
 import com.atlas.presentation.trip.TripDetailRoute
 import com.atlas.presentation.trip.TripListRoute
+import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSurface
 
 @Composable
 fun AtlasNavHost() {
@@ -29,8 +38,12 @@ fun AtlasNavHost() {
     val destinations = AtlasDestination.entries
 
     Scaffold(
+        containerColor = AtlasBackground,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = AtlasSurface,
+                tonalElevation = 0.dp,
+            ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
 
@@ -53,8 +66,18 @@ fun AtlasNavHost() {
                             )
                         },
                         label = {
-                            Text(text = destination.title)
+                            Text(
+                                text = destination.title,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
                         },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = AtlasPrimary,
+                            selectedTextColor = AtlasOnSurfaceStrong,
+                            indicatorColor = AtlasAccentContainer,
+                            unselectedIconColor = AtlasOnSurfaceMuted,
+                            unselectedTextColor = AtlasOnSurfaceMuted,
+                        ),
                     )
                 }
             }

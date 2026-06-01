@@ -26,7 +26,7 @@ import com.atlas.data.local.entity.TripStopEntity
         TripEntity::class,
         TripStopEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -153,6 +153,15 @@ abstract class AtlasDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_trip_stops_trip_id_sort_order` ON `trip_stops` (`trip_id`, `sort_order`)",
                 )
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_name_ca` TEXT")
+                db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_name_en` TEXT")
+                db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_latitude` REAL")
+                db.execSQL("ALTER TABLE `countries` ADD COLUMN `capital_longitude` REAL")
             }
         }
     }

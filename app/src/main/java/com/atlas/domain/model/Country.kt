@@ -16,4 +16,8 @@ data class Country(
     val flagAsset: String?,
     val latitude: Double?,
     val longitude: Double?,
+    val capitalNameCa: String?,
+    val capitalNameEn: String?,
+    val capitalLatitude: Double?,
+    val capitalLongitude: Double?,
 )

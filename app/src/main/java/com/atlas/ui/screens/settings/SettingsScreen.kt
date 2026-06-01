@@ -14,8 +14,7 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,6 +31,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.repository.BackupImportPreview
 import com.atlas.presentation.settings.SettingsUiState
+import com.atlas.ui.components.AtlasCard
+import com.atlas.ui.components.AtlasPage
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSurface
 
 @Composable
 fun SettingsScreen(
@@ -51,26 +56,26 @@ fun SettingsScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-    ) {
-        Text(
-            text = "Configuració",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.ExtraBold,
-        )
+    AtlasPage {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Text(
+                text = "Configuració",
+                style = MaterialTheme.typography.headlineMedium,
+                color = AtlasOnSurfaceStrong,
+            )
 
-        BackupCard(
-            isBusy = uiState.isBusy,
-            onExportClick = onExportClick,
-            onImportClick = onImportClick,
-        )
+            BackupCard(
+                isBusy = uiState.isBusy,
+                onExportClick = onExportClick,
+                onImportClick = onImportClick,
+            )
 
-        Spacer(modifier = Modifier.weight(1f))
-        SnackbarHost(hostState = snackbarHostState)
+            Spacer(modifier = Modifier.weight(1f))
+            SnackbarHost(hostState = snackbarHostState)
+        }
     }
 
     uiState.pendingImportPreview?.let { preview ->
@@ -88,26 +93,17 @@ private fun BackupCard(
     onExportClick: () -> Unit,
     onImportClick: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+    AtlasCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = "Còpia de seguretat",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.titleLarge,
+                color = AtlasOnSurfaceStrong,
             )
             Text(
                 text = "Exporta o restaura les dades personals d'Atlas en format JSON.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = AtlasOnSurfaceMuted,
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -117,6 +113,11 @@ private fun BackupCard(
                     onClick = onExportClick,
                     enabled = !isBusy,
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtlasPrimary,
+                        contentColor = AtlasSurface,
+                    ),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Download,
@@ -131,6 +132,10 @@ private fun BackupCard(
                     onClick = onImportClick,
                     enabled = !isBusy,
                     modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = AtlasPrimary,
+                    ),
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Upload,
@@ -146,7 +151,7 @@ private fun BackupCard(
                 Text(
                     text = "Treballant...",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = AtlasOnSurfaceMuted,
                 )
             }
         }
@@ -161,10 +166,12 @@ private fun ImportConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = "Substituir dades?",
                 fontWeight = FontWeight.ExtraBold,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {

@@ -44,6 +44,7 @@ Prefer working vertical slices over broad incomplete systems.
 Keep MVP small.
 Move flights and itineraries to v2.0.
 Move photos, story mode, advanced stats, and cloud features later.
+Keep the Warm Editorial Atlas visual direction consistent across versions.
 ```
 
 Atlas should evolve in product layers:
@@ -53,6 +54,77 @@ MVP: country/territory tracking + simple trips
 v2.0: flights + itineraries + generated stops
 Later: excursions + richer maps + stats + memories/photos
 Far future: story mode, cloud backup, advanced datasets
+```
+
+---
+
+## 1.1 Visual Direction
+
+The current product direction is defined by the screenshots and the local prototype:
+
+```text
+Documentation/Atlas (offline).html
+```
+
+Visual theme:
+
+```text
+Warm Editorial Atlas
+```
+
+Design principles:
+
+```text
+warm parchment background
+paper-like cards with subtle borders
+editorial display headings
+compact sans-serif metadata
+bottom navigation as the main app shell
+rounded filter chips and status chips
+country/state colors used as small accents, not full-screen color floods
+dotted/gridded atlas map canvases for placeholders and route previews
+trip cards with illustrated route lines and status badges
+timeline/route rails for ordered stops and future itineraries
+boarding-pass style flight cards in v2.0
+simple chart cards for later stats
+```
+
+Scope rule:
+
+```text
+Apply this style to MVP screens that already exist.
+Do not implement flights, itineraries, or advanced stats during MVP just because they appear in the visual references.
+Use those screens as v2.0/later visual guidance only.
+```
+
+MVP style targets:
+
+```text
+dashboard / home
+atlas country list
+country detail
+trips list
+trip detail
+stop editor and route sections
+settings / backup
+```
+
+v2.0 style targets:
+
+```text
+flights list/detail
+itinerary list/detail
+linked itinerary sections inside trip detail
+layover-safe country tracking explanations
+```
+
+Later style targets:
+
+```text
+statistics
+richer maps
+memories/photos
+story mode
 ```
 
 ---

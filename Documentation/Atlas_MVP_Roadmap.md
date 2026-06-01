@@ -858,6 +858,12 @@ QA order:
 12. Country dataset spot check
 ```
 
+Manual checklist:
+
+```text
+Documentation/Atlas_MVP_Manual_QA.md
+```
+
 Acceptance gate:
 
 ```text

@@ -27,7 +27,7 @@ This document defines the next coherent product step after MVP, not the final ve
 The goal of Atlas v2.0 is:
 
 ```text
-Turn Atlas from a country/trip tracker into a fuller travel atlas by adding flights, itineraries, itinerary groups, generated trip stops, flight route visualization, and richer country/trip derivation.
+Turn Atlas from a country/trip tracker into a fuller travel atlas by adding flights, itineraries, itinerary groups, generated trip stops, excursions, flight route visualization, and richer country/trip derivation.
 ```
 
 After v2.0, the user should be able to:
@@ -38,6 +38,8 @@ After v2.0, the user should be able to:
 - avoid counting layovers as visited countries
 - link an itinerary to a trip
 - generate trip stops from itinerary groups
+- add excursions attached to trips or main trip stops
+- add ordered stops inside excursions
 - derive country/territory states from flights and itineraries
 - see flight routes visually
 - see better country/trip timelines
@@ -129,11 +131,13 @@ Atlas v2.0 includes:
 11. Layover-safe country/territory derivation
 12. Linking one itinerary to one trip
 13. Generated trip stops from itinerary groups
-14. Flight route visualization
-15. Better trip map using manual and generated stops
-16. Better country/territory timeline
-17. Expanded JSON backup/import for new entities
-18. Basic travel statistics involving flights
+14. Excursions attached to trips or main trip stops
+15. Ordered excursion stops
+16. Flight route visualization
+17. Better trip map using manual, generated, and excursion stops
+18. Better country/territory timeline
+19. Expanded JSON backup/import for new entities
+20. Basic travel statistics involving flights
 ```
 
 ---
@@ -876,6 +880,38 @@ Trip stop ordering must handle both manual and generated stops.
 
 ---
 
+## 12.1 Excursions
+
+Excursions are included in v2.0 as secondary routes inside a trip.
+
+Primary use case:
+
+```text
+Trip: Japan 2026
+Main stop: Kyoto
+Excursion: Nara and Uji day loop
+Excursion stops: Kyoto -> Nara -> Uji -> Kyoto
+```
+
+Recommended model:
+
+```text
+Excursion belongs to a Trip.
+Excursion may optionally be anchored to a main TripStop.
+Excursion has ordered ExcursionStops.
+```
+
+Country tracking rule for v2.0:
+
+```text
+Excursion stops can contribute to country/territory state using the parent trip status.
+Layover-safe flight rules remain separate from excursion rules.
+```
+
+Trip detail should show excursions near their anchor stop when present, and in a dedicated excursions section otherwise.
+
+---
+
 ## 13. Maps and Visualizations
 
 ### 13.1 Flight Route Visualization
@@ -949,6 +985,7 @@ The combined timeline should include:
 manual visit/lived logs
 trip stops
 generated itinerary stops
+excursions
 solo flights
 itineraries without trip
 ```

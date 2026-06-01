@@ -14,6 +14,7 @@ itinerary groups
 flights inside groups
 layover-safe country/territory derivation
 generated trip stops
+excursions
 expanded backup/import
 basic flight statistics support
 ```
@@ -45,6 +46,7 @@ group flights into itineraries
 distinguish layovers from meaningful destinations
 link one itinerary to one trip
 generate trip stops from itinerary groups
+model excursions and ordered excursion stops
 derive country/territory states from flights and itinerary groups
 extend JSON backup/import
 ```
@@ -57,7 +59,6 @@ live flight status
 airline logos
 aircraft image/spec datasets
 photos
-excursions
 advanced country stat facts UI
 cloud sync
 ```
@@ -928,7 +929,68 @@ This prevents accidental loss of flight records.
 
 ---
 
-## 13. Recommended Indexes
+## 13. Excursion Entities
+
+### 13.1 ExcursionEntity
+
+Purpose:
+
+```text
+Stores a named secondary route inside a trip.
+```
+
+Recommended fields:
+
+```text
+ExcursionEntity
+- id: String PRIMARY KEY
+- trip_id: String NOT NULL REFERENCES TripEntity(id)
+- anchor_trip_stop_id: String NULL REFERENCES TripStopEntity(id)
+- title: String NOT NULL
+- date_year: Int NULL
+- date_month: Int NULL
+- date_day: Int NULL
+- date_precision: String NULL
+- notes: String NULL
+- sort_order: Int NOT NULL
+- created_at: String NOT NULL
+- updated_at: String NOT NULL
+```
+
+### 13.2 ExcursionStopEntity
+
+Purpose:
+
+```text
+Stores ordered stops inside an excursion route.
+```
+
+Recommended fields:
+
+```text
+ExcursionStopEntity
+- id: String PRIMARY KEY
+- excursion_id: String NOT NULL REFERENCES ExcursionEntity(id)
+- location_name: String NOT NULL
+- country_iso2: String NOT NULL REFERENCES CountryEntity(iso2)
+- latitude: Double NULL
+- longitude: Double NULL
+- notes: String NULL
+- sort_order: Int NOT NULL
+- created_at: String NOT NULL
+- updated_at: String NOT NULL
+```
+
+Country state derivation:
+
+```text
+Excursion stops inherit the parent Trip.status for planned/visited derivation.
+UNKNOWN parent trip status does not affect country state.
+```
+
+---
+
+## 14. Recommended Indexes
 
 New indexes:
 
@@ -954,11 +1016,18 @@ ItineraryGroupEntity(status)
 
 TripStopEntity(source)
 TripStopEntity(itinerary_group_id)
+
+ExcursionEntity(trip_id)
+ExcursionEntity(anchor_trip_stop_id)
+ExcursionEntity(sort_order)
+ExcursionStopEntity(excursion_id)
+ExcursionStopEntity(country_iso2)
+ExcursionStopEntity(sort_order)
 ```
 
 ---
 
-## 14. Relationship Summary
+## 15. Relationship Summary
 
 ```text
 Country 1 -> many Airports
@@ -971,13 +1040,16 @@ ItineraryGroup 1 -> 0/1 generated TripStop
 
 Trip 1 -> 0/1 Itinerary
 Trip 1 -> many TripStops
+Trip 1 -> many Excursions
 
 TripStop may be manual or generated from ItineraryGroup
+TripStop 1 -> many Excursions as optional anchor
+Excursion 1 -> many ExcursionStops
 ```
 
 ---
 
-## 15. v2.0 Domain Services
+## 16. v2.0 Domain Services
 
 v2.0 should introduce or expand these services:
 
@@ -986,6 +1058,7 @@ AirportSearchService
 FlightCountryTrackingService
 ItineraryGeneratedStopService
 ItineraryGroupDerivationService
+ExcursionCountryTrackingService
 CountryStateDerivationService
 JsonBackupV2Exporter
 JsonBackupV2Importer
@@ -1002,7 +1075,7 @@ These two services prevent layover-counting bugs.
 
 ---
 
-## 16. Test Cases
+## 17. Test Cases
 
 Important data-model/unit test cases:
 
@@ -1018,12 +1091,13 @@ Linked itinerary creates generated stops.
 Unlinked itinerary derives country state from groups.
 Deleting itinerary removes or updates generated stops according to chosen rule.
 Existing MVP trip stops migrate to source = MANUAL.
+Excursion stop country derivation follows the parent trip status.
 Backup v2 restores flights and itineraries.
 ```
 
 ---
 
-## 17. Implementation Order
+## 18. Implementation Order
 
 Recommended:
 
@@ -1041,14 +1115,17 @@ Recommended:
 11. TripStopEntity migration for generated stops
 12. generated stop service
 13. link itinerary to trip
-14. country detail timeline integration
-15. JSON backup v2
-16. JSON import v2
+14. ExcursionEntity
+15. ExcursionStopEntity
+16. excursion CRUD and ordered stops
+17. country detail timeline integration
+18. JSON backup v2
+19. JSON import v2
 ```
 
 ---
 
-## 18. Summary
+## 19. Summary
 
 Atlas v2.0 data model adds the air-travel layer to the MVP.
 
@@ -1060,6 +1137,8 @@ FlightEntity
 ItineraryEntity
 ItineraryGroupEntity
 generated TripStop support
+ExcursionEntity
+ExcursionStopEntity
 backupVersion 2
 airport dataset metadata
 flight/itinerary country derivation
@@ -1072,7 +1151,6 @@ flight API implementation
 airline dataset
 aircraft dataset
 photos
-excursions
 advanced stats facts
 ```
 

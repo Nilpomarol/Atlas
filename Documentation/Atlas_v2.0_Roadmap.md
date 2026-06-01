@@ -13,6 +13,7 @@ itineraries
 itinerary groups
 layover-safe country/territory derivation
 generated trip stops
+excursions and excursion stops
 flight/itinerary route visualization
 backup/import v2
 ```
@@ -44,6 +45,7 @@ create itineraries
 group flights into meaningful legs
 link itinerary to a trip
 generate trip stops from itinerary groups
+create excursions with ordered stops
 see country states derived from flights/itineraries
 view basic route maps
 export/import v2 data
@@ -60,9 +62,10 @@ Milestone 2 — Itineraries and Groups
 Milestone 3 — Layover-Safe Country Derivation
 Milestone 4 — Link Itineraries to Trips
 Milestone 5 — Generated Trip Stops
-Milestone 6 — Flight and Itinerary Maps
-Milestone 7 — Backup/Import v2
-Milestone 8 — v2.0 Polish
+Milestone 6 — Excursions
+Milestone 7 — Flight, Itinerary, and Excursion Maps
+Milestone 8 — Backup/Import v2
+Milestone 9 — v2.0 Polish
 ```
 
 ---
@@ -522,16 +525,16 @@ generated stop sync logic
 
 ---
 
-## 9. Milestone 6 — Flight and Itinerary Maps
+## 9. Milestone 6 — Excursions
 
 ### 9.1 Goal
 
-Add basic route visualization.
+Add secondary routes inside trips.
 
 At the end of this milestone:
 
 ```text
-user can visually understand flight and itinerary routes
+user can create excursions with ordered stops inside a trip
 ```
 
 ---
@@ -539,16 +542,73 @@ user can visually understand flight and itinerary routes
 ### 9.2 Deliverables
 
 ```text
+ExcursionEntity
+ExcursionStopEntity
+ExcursionDao
+ExcursionRepository
+Create/Edit/Delete excursion flow
+ordered excursion stops
+optional anchor to main trip stop
+country derivation from excursion stops
+trip detail excursion section
+```
+
+---
+
+### 9.3 Implementation Tasks
+
+```text
+1. Add ExcursionEntity.
+2. Add ExcursionStopEntity.
+3. Add Room migration.
+4. Add DAOs and repositories.
+5. Add domain models and mappers.
+6. Add create/edit/delete use cases.
+7. Add ordered excursion stop operations.
+8. Add optional anchor_trip_stop_id support.
+9. Show excursions in trip detail.
+10. Show excursion entries in country detail.
+11. Derive country state from excursion stops using parent trip status.
+12. Add unit tests for ordering and derivation.
+```
+
+---
+
+### 9.4 Acceptance Criteria
+
+```text
+[ ] User can create/edit/delete excursions.
+[ ] User can add/edit/delete/reorder excursion stops.
+[ ] Excursion can be anchored to a main trip stop.
+[ ] Trip detail shows excursions clearly.
+[ ] Country detail can show related excursions.
+[ ] Excursion stops derive planned/visited state from parent trip status.
+```
+
+---
+
+## 10. Milestone 7 — Flight, Itinerary, and Excursion Maps
+
+### 10.1 Goal
+
+Add basic route visualization.
+
+---
+
+### 10.2 Deliverables
+
+```text
 flight route preview
 itinerary route preview
-trip map with generated stops
+excursion route preview
+trip map with generated and excursion stops
 basic map route models
 map UI components
 ```
 
 ---
 
-### 9.3 Implementation Tasks
+### 10.3 Implementation Tasks
 
 ```text
 1. Choose or confirm map library.
@@ -558,33 +618,37 @@ map UI components
 5. Add flight route preview to flight detail.
 6. Add itinerary route preview to itinerary detail.
 7. Add generated stops to trip map.
-8. Handle missing coordinates gracefully.
-9. Test with multi-segment itinerary.
+8. Add excursion stops to trip map.
+9. Add excursion route preview.
+10. Handle missing coordinates gracefully.
+11. Test with multi-segment itinerary and excursion route.
 ```
 
 ---
 
-### 9.4 Acceptance Criteria
+### 10.4 Acceptance Criteria
 
 ```text
 [ ] Flight detail shows route preview.
 [ ] Itinerary detail shows route preview.
 [ ] Trip map can include generated stops.
+[ ] Trip map can include excursion stops.
+[ ] Excursion detail/section shows route preview.
 [ ] Missing coordinates do not crash map.
 [ ] Basic route visualization is understandable.
 ```
 
 ---
 
-## 10. Milestone 7 — Backup/Import v2
+## 11. Milestone 8 — Backup/Import v2
 
-### 10.1 Goal
+### 11.1 Goal
 
 Extend JSON backup/import to include v2.0 data.
 
 ---
 
-### 10.2 Deliverables
+### 11.2 Deliverables
 
 ```text
 backupVersion = 2
@@ -592,6 +656,8 @@ airportDatasetVersion metadata
 flight backup DTOs
 itinerary backup DTOs
 itinerary group backup DTOs
+excursion backup DTOs
+excursion stop backup DTOs
 backup v2 exporter
 backup v2 importer
 backup migration/validation
@@ -599,7 +665,7 @@ backup migration/validation
 
 ---
 
-### 10.3 Included Data
+### 11.3 Included Data
 
 Backup v2 includes MVP data plus:
 
@@ -608,6 +674,8 @@ flights
 itineraries
 itineraryGroups
 generated stops as tripStops
+excursions
+excursionStops
 ```
 
 Metadata:
@@ -619,7 +687,7 @@ airportDatasetVersion
 
 ---
 
-### 10.4 Implementation Tasks
+### 11.4 Implementation Tasks
 
 ```text
 1. Define backup v2 schema.
@@ -627,42 +695,49 @@ airportDatasetVersion
 3. Add flight export.
 4. Add itinerary export.
 5. Add itinerary group export.
-6. Add flight import.
-7. Add itinerary import.
-8. Add itinerary group import.
-9. Validate airport references.
-10. Validate itinerary/group/flight relationships.
-11. Validate generated stops.
-12. Test v1 backup import compatibility.
-13. Test v2 export/import round trip.
+6. Add excursion export.
+7. Add excursion stop export.
+8. Add flight import.
+9. Add itinerary import.
+10. Add itinerary group import.
+11. Add excursion import.
+12. Add excursion stop import.
+13. Validate airport references.
+14. Validate itinerary/group/flight relationships.
+15. Validate excursion relationships.
+16. Validate generated stops.
+17. Test v1 backup import compatibility.
+18. Test v2 export/import round trip.
 ```
 
 ---
 
-### 10.5 Acceptance Criteria
+### 11.5 Acceptance Criteria
 
 ```text
 [ ] v2 backup exports flights.
 [ ] v2 backup exports itineraries.
 [ ] v2 backup exports groups.
+[ ] v2 backup exports excursions.
 [ ] v2 backup includes airport dataset version.
 [ ] v2 import restores flights.
 [ ] v2 import restores itineraries/groups.
+[ ] v2 import restores excursions/stops.
 [ ] v1 backups still import or fail with clear compatible message.
 [ ] Invalid airport references fail safely.
 ```
 
 ---
 
-## 11. Milestone 8 — v2.0 Polish
+## 12. Milestone 9 — v2.0 Polish
 
-### 11.1 Goal
+### 12.1 Goal
 
-Make the flight/itinerary expansion stable and usable.
+Make the flight/itinerary/excursion expansion stable and usable.
 
 ---
 
-### 11.2 Deliverables
+### 12.2 Deliverables
 
 ```text
 empty states
@@ -670,6 +745,7 @@ validation messages
 delete confirmations
 clear labels for solo/grouped flights
 clear labels for generated stops
+clear labels for excursions
 basic flight stats
 timeline polish
 Catalan text cleanup
@@ -679,7 +755,7 @@ manual test pass
 
 ---
 
-### 11.3 Implementation Tasks
+### 12.3 Implementation Tasks
 
 ```text
 1. Add empty states for flights.
@@ -688,18 +764,19 @@ manual test pass
 4. Add delete confirmations.
 5. Add grouped/solo labels.
 6. Add generated stop labels.
-7. Add basic flight stats.
-8. Polish country detail timeline entries.
-9. Review Catalan UI text.
-10. Add/finish unit tests.
-11. Test with real itinerary examples.
-12. Verify migration from MVP database.
-13. Verify backup/import with real data.
+7. Add excursion labels.
+8. Add basic flight stats.
+9. Polish country detail timeline entries.
+10. Review Catalan UI text.
+11. Add/finish unit tests.
+12. Test with real itinerary and excursion examples.
+13. Verify migration from MVP database.
+14. Verify backup/import with real data.
 ```
 
 ---
 
-### 11.4 Acceptance Criteria
+### 12.4 Acceptance Criteria
 
 ```text
 [ ] v2.0 does not lose MVP data.
@@ -707,6 +784,7 @@ manual test pass
 [ ] Itinerary flows are stable.
 [ ] Layovers are not counted as visits.
 [ ] Generated stops are understandable.
+[ ] Excursions are understandable.
 [ ] Backup/import v2 works.
 [ ] UI labels are clear.
 [ ] Core derivation tests pass.
@@ -714,7 +792,7 @@ manual test pass
 
 ---
 
-## 12. v2.0 Completion Checklist
+## 13. v2.0 Completion Checklist
 
 v2.0 is complete when:
 
@@ -732,6 +810,8 @@ v2.0 is complete when:
 [ ] Itineraries can be linked to trips.
 [ ] Generated trip stops work.
 [ ] Trip detail shows generated stops.
+[ ] Excursions can be created/edited/deleted.
+[ ] Excursion stops can be created/edited/deleted/reordered.
 [ ] Country detail explains flight/itinerary sources.
 [ ] Basic route maps work.
 [ ] Backup/import v2 works.
@@ -740,12 +820,11 @@ v2.0 is complete when:
 
 ---
 
-## 13. After v2.0
+## 14. After v2.0
 
 Possible next directions:
 
 ```text
-excursions and excursion stops
 richer maps
 travel stats dashboard
 country stats summary

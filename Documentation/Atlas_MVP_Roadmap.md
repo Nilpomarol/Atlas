@@ -652,16 +652,16 @@ countryDatasetVersion
 ### 8.5 Acceptance Criteria
 
 ```text
-[ ] User can export JSON backup.
-[ ] Backup includes country states.
-[ ] Backup includes country logs.
-[ ] Backup includes trips.
-[ ] Backup includes trip stops.
-[ ] Backup includes dataset version.
-[ ] User can import valid backup.
-[ ] Import restores data correctly.
-[ ] Invalid backup fails safely.
-[ ] Import does not partially destroy data on failure.
+[x] User can export JSON backup.
+[x] Backup includes country states.
+[x] Backup includes country logs.
+[x] Backup includes trips.
+[x] Backup includes trip stops.
+[x] Backup includes dataset version.
+[x] User can import valid backup.
+[x] Import restores data correctly.
+[x] Invalid backup fails safely.
+[x] Import does not partially destroy data on failure.
 ```
 
 ---

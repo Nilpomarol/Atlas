@@ -57,4 +57,12 @@ data class CountryEntity(
     val latitude: Double?,
     @ColumnInfo(name = "longitude")
     val longitude: Double?,
+    @ColumnInfo(name = "capital_name_ca")
+    val capitalNameCa: String?,
+    @ColumnInfo(name = "capital_name_en")
+    val capitalNameEn: String?,
+    @ColumnInfo(name = "capital_latitude")
+    val capitalLatitude: Double?,
+    @ColumnInfo(name = "capital_longitude")
+    val capitalLongitude: Double?,
 )

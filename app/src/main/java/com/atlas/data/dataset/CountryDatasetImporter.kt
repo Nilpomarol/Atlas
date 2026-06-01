@@ -70,6 +70,10 @@ class CountryDatasetImporter(
         flagAsset = flagAsset,
         latitude = latitude,
         longitude = longitude,
+        capitalNameCa = capitalNameCa,
+        capitalNameEn = capitalNameEn,
+        capitalLatitude = capitalLatitude,
+        capitalLongitude = capitalLongitude,
     )
 
     private companion object {

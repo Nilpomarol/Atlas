@@ -20,6 +20,10 @@ fun CountryEntity.toDomain(): Country = Country(
     flagAsset = flagAsset,
     latitude = latitude,
     longitude = longitude,
+    capitalNameCa = capitalNameCa,
+    capitalNameEn = capitalNameEn,
+    capitalLatitude = capitalLatitude,
+    capitalLongitude = capitalLongitude,
 )
 
 fun Country.toEntity(): CountryEntity = CountryEntity(
@@ -38,4 +42,8 @@ fun Country.toEntity(): CountryEntity = CountryEntity(
     flagAsset = flagAsset,
     latitude = latitude,
     longitude = longitude,
+    capitalNameCa = capitalNameCa,
+    capitalNameEn = capitalNameEn,
+    capitalLatitude = capitalLatitude,
+    capitalLongitude = capitalLongitude,
 )

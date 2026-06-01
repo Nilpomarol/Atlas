@@ -99,6 +99,11 @@ fun CountryMapHero(
                 primary = style.primary,
                 floatOffsetY = floatY,
             )
+            drawCapitalMarker(
+                latitude = country.capitalLatitude,
+                longitude = country.capitalLongitude,
+                floatOffsetY = floatY,
+            )
         }
 
         Box(
@@ -176,6 +181,22 @@ private fun DrawScope.drawCountrySilhouette(
     val dotY = cy - h * 0.08f
     drawCircle(Color(0xFF6EE7B7).copy(alpha = 0.28f), radius = 11f, center = Offset(dotX, dotY))
     drawCircle(Color(0xFF6EE7B7), radius = 5f, center = Offset(dotX, dotY))
+}
+
+private fun DrawScope.drawCapitalMarker(
+    latitude: Double?,
+    longitude: Double?,
+    floatOffsetY: Float,
+) {
+    if (latitude == null || longitude == null) return
+
+    val nx = ((longitude + 180.0) / 360.0).coerceIn(0.12, 0.88).toFloat()
+    val ny = ((90.0 - latitude) / 180.0).coerceIn(0.16, 0.76).toFloat()
+    val center = Offset(size.width * nx, size.height * ny + floatOffsetY)
+
+    drawCircle(Color.White.copy(alpha = 0.24f), radius = 14f, center = center)
+    drawCircle(Color(0xFFC15B17), radius = 7f, center = center)
+    drawCircle(Color.White, radius = 3f, center = center)
 }
 
 @Composable

@@ -8,6 +8,18 @@ private val LightColorScheme = lightColorScheme(
     primary = AtlasPrimary,
     secondary = AtlasSecondary,
     tertiary = AtlasTertiary,
+    background = AtlasBackground,
+    surface = AtlasSurface,
+    surfaceVariant = AtlasSurfaceSubtle,
+    outline = AtlasOutline,
+    outlineVariant = AtlasOutlineStrong,
+    onPrimary = AtlasSurface,
+    onSecondary = AtlasSurface,
+    onTertiary = AtlasSurface,
+    onBackground = AtlasOnSurfaceStrong,
+    onSurface = AtlasOnSurfaceStrong,
+    onSurfaceVariant = AtlasOnSurfaceMuted,
+    error = AtlasError,
 )
 
 @Composable

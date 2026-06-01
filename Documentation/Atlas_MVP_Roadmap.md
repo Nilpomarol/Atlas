@@ -753,7 +753,241 @@ MVP is complete when:
 
 ---
 
-## 11. After MVP
+## 11. Current Forward Roadmap
+
+This section reflects the current handoff state as of 2026-06-01.
+
+Current baseline:
+
+```text
+MVP implementation is functionally complete.
+Dashboard pass is complete.
+Full 244-entry country/territory dataset is live.
+Critical domain and backup unit tests exist.
+Next work is final MVP QA and stabilization, not new feature scope.
+Visual direction has changed to Warm Editorial Atlas.
+```
+
+Roadmap rule:
+
+```text
+Do not begin v2.0 feature work until the MVP QA pass is complete and the MVP release gate is accepted.
+Do apply the new visual direction to MVP surfaces before release.
+```
+
+Visual reference:
+
+```text
+Documentation/Atlas (offline).html
+Screenshots supplied on 2026-06-01
+```
+
+MVP visual target:
+
+```text
+Warm Editorial Atlas
+warm parchment app background
+paper cards with subtle borders
+editorial headings and compact metadata
+bottom navigation shell
+rounded filter/status chips
+dotted atlas map placeholders
+route-line trip cards
+state colors as restrained accents
+timeline/route rails for stops
+```
+
+Scope note:
+
+```text
+The visual references include flights, itineraries, and stats screens.
+Those are style guidance for v2.0/later only.
+MVP must not add those feature areas before MVP acceptance.
+```
+
+### 11.1 Phase A - Baseline Verification
+
+Goal:
+
+```text
+Confirm the checked-in project builds and the documented baseline is still true.
+```
+
+Tasks:
+
+```text
+1. Confirm git status is clean or identify unrelated local changes.
+2. Run unit tests with the Gradle wrapper.
+3. Build the debug APK.
+4. Launch the app on device or emulator.
+5. Confirm country dataset import succeeds with version 2026.1.
+```
+
+Acceptance gate:
+
+```text
+[x] testDebugUnitTest passes.
+[x] assembleDebug passes.
+[x] App launches without startup crash.
+[x] Country list loads the bundled dataset.
+[x] Manual smoke check can be performed by the user after a debug build is installed.
+```
+
+### 11.2 Phase B - MVP QA Pass
+
+Goal:
+
+```text
+Walk the MVP end-to-end using realistic data and record/fix defects.
+```
+
+QA order:
+
+```text
+1. Country list and filters
+2. Country detail and related trip stops
+3. Country tracking actions
+4. Trip list and trip detail
+5. Trip stop add/edit/delete/reorder
+6. Location search and manual fallback
+7. Dashboard derived counts and recent activity
+8. Backup export/import round trip
+9. Persistence after app restart
+10. Warm Editorial Atlas visual consistency
+11. Catalan UI consistency and spacing
+12. Country dataset spot check
+```
+
+Acceptance gate:
+
+```text
+[ ] Search works across Catalan name, English name, ISO2, and ISO3.
+[ ] Filters work for visited, wished, planned, lived, currently living, and never visited.
+[ ] Currently living clears the previous current country.
+[ ] Visit/lived logs update derived state correctly.
+[ ] Planned trip stops mark countries planned.
+[ ] In-progress/completed trip stops mark countries visited.
+[ ] Unknown trip stops do not affect country state.
+[ ] Related trip stops are visible from country detail.
+[ ] Backup export/import restores user states, logs, trips, stops, order, and derived states.
+[ ] Data remains correct after app restart.
+[ ] Existing MVP screens follow the Warm Editorial Atlas direction.
+[ ] UI text visible in normal flows is Catalan.
+```
+
+### 11.3 Phase C - Stabilization
+
+Goal:
+
+```text
+Fix only the defects found during MVP QA and keep scope locked.
+```
+
+Rules:
+
+```text
+Prefer small targeted fixes.
+Add or update domain/repository tests when defects touch business rules.
+Do not add flights, airports, itineraries, photos, cloud sync, accounts, advanced stats, or v2.0 tables.
+Use the visual redesign pass only for existing MVP screens.
+```
+
+Visual stabilization tasks:
+
+```text
+1. Extract shared Warm Editorial Atlas colors, typography, dimensions, and card/chip styles.
+2. Update bottom navigation to match the reference shell.
+3. Restyle dashboard/home around the atlas map, summary metrics, next trip, recent memories, and wishlist sections.
+4. Restyle country list with grouped continent sections, compact rows, filters, and status chips.
+5. Restyle trips list with route-line trip cards and status filters.
+6. Restyle trip detail with hero route card, summary facts, route map placeholder, route rail, and linked-itinerary placeholder only if existing data supports it.
+7. Restyle country detail within MVP data only: identity, state chips, logs, related trips, and map placeholder.
+8. Restyle settings/backup enough to fit the same paper/card system.
+9. Verify small-screen text wrapping, chip overflow, and bottom-navigation spacing.
+```
+
+Acceptance gate:
+
+```text
+[ ] All QA-blocking defects fixed.
+[ ] Relevant tests added or updated for behavior fixes.
+[ ] testDebugUnitTest passes.
+[ ] assembleDebug passes.
+[ ] Handoff prompt updated with final MVP status.
+```
+
+### 11.3.1 Tasks Left to Finish MVP
+
+The remaining MVP work is:
+
+```text
+1. Implement the Warm Editorial Atlas visual pass for existing MVP screens.
+2. QA country list search, filters, grouping, and empty states with the 244-entry dataset.
+3. QA country detail, including state actions, logs, related trip stops, and optional country fields.
+4. QA trip list/detail, trip create/edit/delete, stop create/edit/delete/reorder, and route/map placeholders.
+5. QA location search plus manual fallback for stop creation/editing.
+6. QA dashboard counts, next trip, recent activity, wishlist, and derived state summaries.
+7. QA backup export/import round trip with realistic data.
+8. QA persistence after app restart.
+9. Complete Catalan copy and validation-message pass.
+10. Spot-check country dataset names, territories, flags, continents, and subregions.
+11. Fix QA defects only within MVP scope.
+12. Run final testDebugUnitTest and assembleDebug.
+13. User performs a manual smoke check: launch app, open Inici/Atlas/Viatges/Configuracio, and verify data renders.
+14. Update Handoff_Prompt.md with final MVP status and known limitations.
+15. Prepare the MVP release-candidate note/build.
+```
+
+### 11.4 Phase D - MVP Release Candidate
+
+Goal:
+
+```text
+Prepare a usable MVP build for personal use.
+```
+
+Tasks:
+
+```text
+1. Run the final QA smoke pass.
+2. Verify backup export before any destructive import test.
+3. Confirm versionName/versionCode strategy for the first internal build.
+4. Create a release-candidate note with known limitations.
+5. Tag or mark the accepted MVP state if desired.
+```
+
+Acceptance gate:
+
+```text
+[ ] MVP can be used for real country/trip tracking.
+[ ] Backup/import is trusted enough for local-first personal data.
+[ ] Known limitations are documented.
+[ ] v2.0 can start from a stable MVP baseline.
+```
+
+### 11.5 Phase E - v2.0 Readiness
+
+Goal:
+
+```text
+Prepare for v2.0 without leaking v2.0 work into MVP.
+```
+
+Start only after MVP acceptance.
+
+First v2.0 steps:
+
+```text
+1. Re-read Atlas_v2.0_Specification.md, Atlas_v2.0_Data_Model.md, and Atlas_v2.0_Roadmap.md.
+2. Choose the initial airport dataset source and import shape.
+3. Design the MVP-to-v2 Room migration.
+4. Add airport foundation as the first v2.0 vertical slice.
+5. Keep layover-safe derivation as the main v2.0 correctness constraint.
+```
+
+---
+
+## 12. After MVP
 
 After MVP completion, continue with:
 

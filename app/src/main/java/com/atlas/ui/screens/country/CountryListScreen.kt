@@ -1,31 +1,73 @@
 package com.atlas.ui.screens.country
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.atlas.domain.model.CountryTrackingState
+import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.CountryType
 import com.atlas.presentation.country.CountryListFilter
 import com.atlas.presentation.country.CountryListItemUiState
 import com.atlas.presentation.country.CountryListUiState
+import com.atlas.ui.components.AtlasPage
+import com.atlas.ui.components.AtlasPill
+import com.atlas.ui.components.AtlasSemanticColors
+import com.atlas.ui.components.primaryStateColors
+import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasLived
+import com.atlas.ui.theme.AtlasLivedContainer
+import com.atlas.ui.theme.AtlasLiving
+import com.atlas.ui.theme.AtlasLivingContainer
+import com.atlas.ui.theme.AtlasOnSurfaceFaint
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasPending
+import com.atlas.ui.theme.AtlasPendingContainer
+import com.atlas.ui.theme.AtlasPlanned
+import com.atlas.ui.theme.AtlasPlannedContainer
+import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSurface
+import com.atlas.ui.theme.AtlasSurfaceRaised
+import com.atlas.ui.theme.AtlasVisited
+import com.atlas.ui.theme.AtlasVisitedContainer
+import com.atlas.ui.theme.AtlasWished
+import com.atlas.ui.theme.AtlasWishedContainer
 
 @Composable
 fun CountryListScreen(
@@ -34,70 +76,148 @@ fun CountryListScreen(
     onSearchQueryChanged: (String) -> Unit,
     onFilterSelected: (CountryListFilter) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+    AtlasPage(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
+        var collapsedContinents by rememberSaveable { mutableStateOf(emptyList<String>()) }
+        Column(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            CountryListHeader(
+                uiState = uiState,
+                onSearchQueryChanged = onSearchQueryChanged,
+                onFilterSelected = onFilterSelected,
+            )
+
+            if (uiState.countries.isEmpty()) {
+                EmptyCountryList(
+                    hasActiveSearchOrFilter = uiState.searchQuery.isNotBlank() ||
+                        uiState.selectedFilter != CountryListFilter.All,
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        start = 20.dp,
+                        end = 20.dp,
+                        top = 2.dp,
+                        bottom = 20.dp,
+                    ),
+                ) {
+                    uiState.countries
+                        .groupBy { it.country.continent }
+                        .forEach { (continent, countries) ->
+                            val isExpanded = continent !in collapsedContinents
+                            item(key = "section-$continent") {
+                                ContinentHeader(
+                                    continent = continent.toCatalanContinent(),
+                                    count = countries.size,
+                                    expanded = isExpanded,
+                                    onClick = {
+                                        collapsedContinents = if (isExpanded) {
+                                            collapsedContinents + continent
+                                        } else {
+                                            collapsedContinents - continent
+                                        }
+                                    },
+                                )
+                            }
+                            if (isExpanded) {
+                                items(
+                                    items = countries,
+                                    key = { item -> item.country.iso2 },
+                                ) { item ->
+                                    CountryRow(
+                                        item = item,
+                                        onClick = { onCountryClick(item.country.iso2) },
+                                    )
+                                }
+                            }
+                        }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountryListHeader(
+    uiState: CountryListUiState,
+    onSearchQueryChanged: (String) -> Unit,
+    onFilterSelected: (CountryListFilter) -> Unit,
+) {
+        Column(
+        modifier = Modifier.padding(start = 20.dp, top = 18.dp, end = 20.dp, bottom = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(
-            text = "Països i territoris",
-            style = MaterialTheme.typography.headlineSmall,
-        )
-        Text(
-            text = "${uiState.countries.size} de ${uiState.totalCountryCount} llocs",
-            modifier = Modifier.padding(top = 4.dp, bottom = 16.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Atlas",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AtlasOnSurfaceStrong,
+                )
+                Text(
+                    text = "${uiState.countries.size} de ${uiState.totalCountryCount} llocs",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
+        }
 
         OutlinedTextField(
             value = uiState.searchQuery,
             onValueChange = onSearchQueryChanged,
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            label = {
-                Text(text = "Cerca")
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Search,
+                    contentDescription = null,
+                    tint = AtlasOnSurfaceMuted,
+                )
             },
+            placeholder = {
+                Text(text = "Cerca països i territoris")
+            },
+            shape = RoundedCornerShape(24.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = AtlasSurfaceRaised,
+                unfocusedContainerColor = AtlasSurfaceRaised,
+                focusedBorderColor = AtlasOutline,
+                unfocusedBorderColor = AtlasSurfaceRaised,
+                focusedTextColor = AtlasOnSurfaceStrong,
+                unfocusedTextColor = AtlasOnSurfaceStrong,
+            ),
         )
 
-        LazyRow(
-            modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(CountryListFilter.entries) { filter ->
+                val filterColors = filter.colors()
                 FilterChip(
                     selected = uiState.selectedFilter == filter,
-                    onClick = {
-                        onFilterSelected(filter)
-                    },
+                    onClick = { onFilterSelected(filter) },
                     label = {
-                        Text(text = filter.label)
+                        Text(
+                            text = filter.label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
                     },
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = uiState.selectedFilter == filter,
+                        borderColor = AtlasOutline,
+                        selectedBorderColor = filterColors.foreground.copy(alpha = 0.3f),
+                    ),
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = AtlasSurface,
+                        selectedContainerColor = filterColors.container,
+                        labelColor = AtlasOnSurfaceMuted,
+                        selectedLabelColor = filterColors.foreground,
+                    ),
                 )
-            }
-        }
-
-        if (uiState.countries.isEmpty()) {
-            EmptyCountryList(
-                hasActiveSearchOrFilter = uiState.searchQuery.isNotBlank() ||
-                    uiState.selectedFilter != CountryListFilter.All,
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                items(
-                    items = uiState.countries,
-                    key = { item -> item.country.iso2 },
-                ) { item ->
-                    CountryRow(
-                        item = item,
-                        onClick = {
-                            onCountryClick(item.country.iso2)
-                        },
-                    )
-                    HorizontalDivider()
-                }
             }
         }
     }
@@ -108,7 +228,9 @@ private fun EmptyCountryList(
     hasActiveSearchOrFilter: Boolean,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(28.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -118,87 +240,142 @@ private fun EmptyCountryList(
             } else {
                 "Carregant països..."
             },
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.titleMedium,
+            color = AtlasOnSurfaceStrong,
         )
-        if (hasActiveSearchOrFilter) {
-            Text(
-                text = "Prova una altra cerca o treu el filtre actual.",
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            Text(
-                text = "El dataset inicial es carregarà automàticament.",
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(
+            text = if (hasActiveSearchOrFilter) {
+                "Prova una altra cerca o treu el filtre actual."
+            } else {
+                "El dataset inicial es carregarà automàticament."
+            },
+            modifier = Modifier.padding(top = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = AtlasOnSurfaceMuted,
+        )
     }
 }
+
+@Composable
+private fun ContinentHeader(
+    continent: String,
+    count: Int,
+    expanded: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(top = 18.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "$continent  -  $count",
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelSmall,
+            color = AtlasOnSurfaceFaint,
+        )
+        Icon(
+            imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+            contentDescription = null,
+            tint = AtlasOnSurfaceFaint,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
 @Composable
 private fun CountryRow(
     item: CountryListItemUiState,
     onClick: () -> Unit,
 ) {
     val country = item.country
+    val stateColors = item.trackingState.primaryStateColors()
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .clickable(onClick = onClick),
     ) {
-        Text(
-            text = country.flagEmoji.orEmpty(),
-            style = MaterialTheme.typography.titleLarge,
-        )
-        Column(
-            modifier = Modifier.weight(1f),
+        Row(
+            modifier = Modifier.padding(vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Text(
-                text = country.nameCa,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = country.type.toCatalanLabel(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(AtlasSurfaceRaised),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = country.flagEmoji?.takeIf { it.isNotBlank() } ?: country.iso2,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceStrong,
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = country.nameCa,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Place,
+                        contentDescription = null,
+                        tint = AtlasOnSurfaceFaint,
+                        modifier = Modifier.size(12.dp),
+                    )
+                    Text(
+                        text = country.metaText(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            AtlasPill(
+                label = stateColors.label,
+                colors = stateColors,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 11.dp, vertical = 6.dp),
+                fontWeight = FontWeight.ExtraBold,
             )
         }
-        Text(
-            text = country.iso2,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        item.trackingState.primaryLabel()?.let { label ->
-            AssistChip(
-                onClick = onClick,
-                label = {
-                    Text(text = label)
-                },
-            )
-        }
+        HorizontalDivider(color = AtlasOutline)
     }
 }
+
+private fun CountryListFilter.colors(): AtlasSemanticColors = when (this) {
+    CountryListFilter.All -> AtlasSemanticColors(AtlasPrimary, AtlasAccentContainer, label)
+    CountryListFilter.Visited -> AtlasSemanticColors(AtlasVisited, AtlasVisitedContainer, label)
+    CountryListFilter.Wished -> AtlasSemanticColors(AtlasWished, AtlasWishedContainer, label)
+    CountryListFilter.Planned -> AtlasSemanticColors(AtlasPlanned, AtlasPlannedContainer, label)
+    CountryListFilter.Lived -> AtlasSemanticColors(AtlasLived, AtlasLivedContainer, label)
+    CountryListFilter.CurrentlyLiving -> AtlasSemanticColors(AtlasLiving, AtlasLivingContainer, label)
+    CountryListFilter.NeverVisited -> AtlasSemanticColors(AtlasPending, AtlasPendingContainer, label)
+}
+
+private fun com.atlas.domain.model.Country.metaText(): String =
+    listOfNotNull(
+        capitalNameCa,
+        subregion?.toCatalanSubregion(),
+        type.toCatalanLabel().takeIf { capitalNameCa == null && subregion == null },
+    ).joinToString(" · ")
 
 private fun CountryType.toCatalanLabel(): String = when (this) {
     CountryType.SOVEREIGN_STATE -> "Estat sobirà"
     CountryType.DEPENDENT_TERRITORY -> "Territori dependent"
     CountryType.SPECIAL_REGION -> "Regió especial"
     CountryType.DISPUTED_OR_OTHER -> "Disputat o altre"
-}
-
-private fun CountryTrackingState.primaryLabel(): String? = when {
-    currentlyLiving -> "Residència actual"
-    lived -> "Viscut"
-    visited -> "Visitat"
-    planned -> "Planificat"
-    wished -> "Desitjat"
-    else -> null
 }

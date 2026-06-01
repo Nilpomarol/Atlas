@@ -46,6 +46,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_2_3)
         .addMigrations(AtlasDatabase.MIGRATION_3_4)
         .addMigrations(AtlasDatabase.MIGRATION_4_5)
+        .addMigrations(AtlasDatabase.MIGRATION_5_6)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(

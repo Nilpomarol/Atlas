@@ -1,5 +1,5 @@
 {
-  "version": "2026.1",
+  "version": "2026.2",
   "countries": [
     {
       "iso2": "AF",
@@ -15,8 +15,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇦🇫",
       "flag_asset": null,
-      "latitude": 33.0,
-      "longitude": 65.0
+      "latitude": 33,
+      "longitude": 65,
+      "capital_name_ca": "Kabul",
+      "capital_name_en": "Kabul",
+      "capital_latitude": 34.52,
+      "capital_longitude": 69.18
     },
     {
       "iso2": "AL",
@@ -32,8 +36,12 @@
       "subregion": "Southeast Europe",
       "flag_emoji": "🇦🇱",
       "flag_asset": null,
-      "latitude": 41.0,
-      "longitude": 20.0
+      "latitude": 41,
+      "longitude": 20,
+      "capital_name_ca": "Tirana",
+      "capital_name_en": "Tirana",
+      "capital_latitude": 41.32,
+      "capital_longitude": 19.82
     },
     {
       "iso2": "DE",
@@ -49,8 +57,12 @@
       "subregion": "Western Europe",
       "flag_emoji": "🇩🇪",
       "flag_asset": null,
-      "latitude": 51.0,
-      "longitude": 9.0
+      "latitude": 51,
+      "longitude": 9,
+      "capital_name_ca": "Berlín",
+      "capital_name_en": "Berlin",
+      "capital_latitude": 52.52,
+      "capital_longitude": 13.4
     },
     {
       "iso2": "DZ",
@@ -66,8 +78,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇩🇿",
       "flag_asset": null,
-      "latitude": 28.0,
-      "longitude": 3.0
+      "latitude": 28,
+      "longitude": 3,
+      "capital_name_ca": "Alger",
+      "capital_name_en": "Algiers",
+      "capital_latitude": 36.75,
+      "capital_longitude": 3.05
     },
     {
       "iso2": "AD",
@@ -84,7 +100,11 @@
       "flag_emoji": "🇦🇩",
       "flag_asset": null,
       "latitude": 42.5,
-      "longitude": 1.5
+      "longitude": 1.5,
+      "capital_name_ca": "Andorra la Vella",
+      "capital_name_en": "Andorra la Vella",
+      "capital_latitude": 42.5,
+      "capital_longitude": 1.52
     },
     {
       "iso2": "AO",
@@ -101,7 +121,11 @@
       "flag_emoji": "🇦🇴",
       "flag_asset": null,
       "latitude": -12.5,
-      "longitude": 18.5
+      "longitude": 18.5,
+      "capital_name_ca": "Luanda",
+      "capital_name_en": "Luanda",
+      "capital_latitude": -8.83,
+      "capital_longitude": 13.22
     },
     {
       "iso2": "AI",
@@ -118,7 +142,11 @@
       "flag_emoji": "🇦🇮",
       "flag_asset": null,
       "latitude": 18.25,
-      "longitude": -63.1667
+      "longitude": -63.1667,
+      "capital_name_ca": "The Valley",
+      "capital_name_en": "The Valley",
+      "capital_latitude": 18.22,
+      "capital_longitude": -63.05
     },
     {
       "iso2": "AG",
@@ -135,7 +163,11 @@
       "flag_emoji": "🇦🇬",
       "flag_asset": null,
       "latitude": 17.05,
-      "longitude": -61.8
+      "longitude": -61.8,
+      "capital_name_ca": "Saint John's",
+      "capital_name_en": "St. John's",
+      "capital_latitude": 17.12,
+      "capital_longitude": -61.85
     },
     {
       "iso2": "AR",
@@ -151,8 +183,12 @@
       "subregion": "South America",
       "flag_emoji": "🇦🇷",
       "flag_asset": null,
-      "latitude": -34.0,
-      "longitude": -64.0
+      "latitude": -34,
+      "longitude": -64,
+      "capital_name_ca": "Buenos Aires",
+      "capital_name_en": "Buenos Aires",
+      "capital_latitude": -34.58,
+      "capital_longitude": -58.67
     },
     {
       "iso2": "AM",
@@ -168,8 +204,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇦🇲",
       "flag_asset": null,
-      "latitude": 40.0,
-      "longitude": 45.0
+      "latitude": 40,
+      "longitude": 45,
+      "capital_name_ca": "Erevan",
+      "capital_name_en": "Yerevan",
+      "capital_latitude": 40.17,
+      "capital_longitude": 44.5
     },
     {
       "iso2": "AW",
@@ -186,7 +226,11 @@
       "flag_emoji": "🇦🇼",
       "flag_asset": null,
       "latitude": 12.5,
-      "longitude": -69.9667
+      "longitude": -69.9667,
+      "capital_name_ca": "Oranjestad",
+      "capital_name_en": "Oranjestad",
+      "capital_latitude": 12.52,
+      "capital_longitude": -70.03
     },
     {
       "iso2": "SA",
@@ -202,8 +246,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇸🇦",
       "flag_asset": null,
-      "latitude": 25.0,
-      "longitude": 45.0
+      "latitude": 25,
+      "longitude": 45,
+      "capital_name_ca": "Riad",
+      "capital_name_en": "Riyadh",
+      "capital_latitude": 24.65,
+      "capital_longitude": 46.7
     },
     {
       "iso2": "AU",
@@ -219,8 +267,12 @@
       "subregion": "Australia and New Zealand",
       "flag_emoji": "🇦🇺",
       "flag_asset": null,
-      "latitude": -27.0,
-      "longitude": 133.0
+      "latitude": -27,
+      "longitude": 133,
+      "capital_name_ca": "Canberra",
+      "capital_name_en": "Canberra",
+      "capital_latitude": -35.27,
+      "capital_longitude": 149.13
     },
     {
       "iso2": "AZ",
@@ -237,7 +289,11 @@
       "flag_emoji": "🇦🇿",
       "flag_asset": null,
       "latitude": 40.5,
-      "longitude": 47.5
+      "longitude": 47.5,
+      "capital_name_ca": "Bakú",
+      "capital_name_en": "Baku",
+      "capital_latitude": 40.38,
+      "capital_longitude": 49.87
     },
     {
       "iso2": "BS",
@@ -254,7 +310,11 @@
       "flag_emoji": "🇧🇸",
       "flag_asset": null,
       "latitude": 25.0343,
-      "longitude": -77.3963
+      "longitude": -77.3963,
+      "capital_name_ca": "Nassau",
+      "capital_name_en": "Nassau",
+      "capital_latitude": 25.08,
+      "capital_longitude": -77.35
     },
     {
       "iso2": "BH",
@@ -270,8 +330,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇧🇭",
       "flag_asset": null,
-      "latitude": 26.0,
-      "longitude": 50.55
+      "latitude": 26,
+      "longitude": 50.55,
+      "capital_name_ca": "Al-Manama",
+      "capital_name_en": "Manama",
+      "capital_latitude": 26.23,
+      "capital_longitude": 50.57
     },
     {
       "iso2": "BD",
@@ -287,8 +351,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇧🇩",
       "flag_asset": null,
-      "latitude": 24.0,
-      "longitude": 90.0
+      "latitude": 24,
+      "longitude": 90,
+      "capital_name_ca": "Dacca",
+      "capital_name_en": "Dhaka",
+      "capital_latitude": 23.72,
+      "capital_longitude": 90.4
     },
     {
       "iso2": "BB",
@@ -305,7 +373,11 @@
       "flag_emoji": "🇧🇧",
       "flag_asset": null,
       "latitude": 13.1667,
-      "longitude": -59.5333
+      "longitude": -59.5333,
+      "capital_name_ca": "Bridgetown",
+      "capital_name_en": "Bridgetown",
+      "capital_latitude": 13.1,
+      "capital_longitude": -59.62
     },
     {
       "iso2": "BZ",
@@ -322,7 +394,11 @@
       "flag_emoji": "🇧🇿",
       "flag_asset": null,
       "latitude": 17.25,
-      "longitude": -88.75
+      "longitude": -88.75,
+      "capital_name_ca": "Belmopan",
+      "capital_name_en": "Belmopan",
+      "capital_latitude": 17.25,
+      "capital_longitude": -88.77
     },
     {
       "iso2": "BJ",
@@ -339,7 +415,11 @@
       "flag_emoji": "🇧🇯",
       "flag_asset": null,
       "latitude": 9.5,
-      "longitude": 2.25
+      "longitude": 2.25,
+      "capital_name_ca": "Porto-Novo",
+      "capital_name_en": "Porto-Novo",
+      "capital_latitude": 6.48,
+      "capital_longitude": 2.62
     },
     {
       "iso2": "BM",
@@ -356,7 +436,11 @@
       "flag_emoji": "🇧🇲",
       "flag_asset": null,
       "latitude": 32.3333,
-      "longitude": -64.75
+      "longitude": -64.75,
+      "capital_name_ca": "Hamilton",
+      "capital_name_en": "Hamilton",
+      "capital_latitude": 32.28,
+      "capital_longitude": -64.78
     },
     {
       "iso2": "BT",
@@ -373,7 +457,11 @@
       "flag_emoji": "🇧🇹",
       "flag_asset": null,
       "latitude": 27.5,
-      "longitude": 90.5
+      "longitude": 90.5,
+      "capital_name_ca": "Thimphu",
+      "capital_name_en": "Thimphu",
+      "capital_latitude": 27.47,
+      "capital_longitude": 89.63
     },
     {
       "iso2": "BY",
@@ -389,8 +477,12 @@
       "subregion": "Eastern Europe",
       "flag_emoji": "🇧🇾",
       "flag_asset": null,
-      "latitude": 53.0,
-      "longitude": 28.0
+      "latitude": 53,
+      "longitude": 28,
+      "capital_name_ca": "Minsk",
+      "capital_name_en": "Minsk",
+      "capital_latitude": 53.9,
+      "capital_longitude": 27.57
     },
     {
       "iso2": "BO",
@@ -406,8 +498,12 @@
       "subregion": "South America",
       "flag_emoji": "🇧🇴",
       "flag_asset": null,
-      "latitude": -17.0,
-      "longitude": -65.0
+      "latitude": -17,
+      "longitude": -65,
+      "capital_name_ca": "Sucre",
+      "capital_name_en": "Sucre",
+      "capital_latitude": -19.02,
+      "capital_longitude": -65.26
     },
     {
       "iso2": "BW",
@@ -423,8 +519,12 @@
       "subregion": "Southern Africa",
       "flag_emoji": "🇧🇼",
       "flag_asset": null,
-      "latitude": -22.0,
-      "longitude": 24.0
+      "latitude": -22,
+      "longitude": 24,
+      "capital_name_ca": "Gaborone",
+      "capital_name_en": "Gaborone",
+      "capital_latitude": -24.63,
+      "capital_longitude": 25.9
     },
     {
       "iso2": "BR",
@@ -440,8 +540,12 @@
       "subregion": "South America",
       "flag_emoji": "🇧🇷",
       "flag_asset": null,
-      "latitude": -10.0,
-      "longitude": -55.0
+      "latitude": -10,
+      "longitude": -55,
+      "capital_name_ca": "Brasília",
+      "capital_name_en": "Brasília",
+      "capital_latitude": -15.79,
+      "capital_longitude": -47.88
     },
     {
       "iso2": "BN",
@@ -458,7 +562,11 @@
       "flag_emoji": "🇧🇳",
       "flag_asset": null,
       "latitude": 4.5,
-      "longitude": 114.6667
+      "longitude": 114.6667,
+      "capital_name_ca": "Bandar Seri Begawan",
+      "capital_name_en": "Bandar Seri Begawan",
+      "capital_latitude": 4.88,
+      "capital_longitude": 114.93
     },
     {
       "iso2": "BG",
@@ -474,8 +582,12 @@
       "subregion": "Southeast Europe",
       "flag_emoji": "🇧🇬",
       "flag_asset": null,
-      "latitude": 43.0,
-      "longitude": 25.0
+      "latitude": 43,
+      "longitude": 25,
+      "capital_name_ca": "Sofia",
+      "capital_name_en": "Sofia",
+      "capital_latitude": 42.68,
+      "capital_longitude": 23.32
     },
     {
       "iso2": "BF",
@@ -491,8 +603,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇧🇫",
       "flag_asset": null,
-      "latitude": 13.0,
-      "longitude": -2.0
+      "latitude": 13,
+      "longitude": -2,
+      "capital_name_ca": "Ouagadougou",
+      "capital_name_en": "Ouagadougou",
+      "capital_latitude": 12.37,
+      "capital_longitude": -1.52
     },
     {
       "iso2": "BI",
@@ -509,7 +625,11 @@
       "flag_emoji": "🇧🇮",
       "flag_asset": null,
       "latitude": -3.5,
-      "longitude": 30.0
+      "longitude": 30,
+      "capital_name_ca": "Gitega",
+      "capital_name_en": "Gitega",
+      "capital_latitude": -3.43,
+      "capital_longitude": 29.93
     },
     {
       "iso2": "BE",
@@ -526,7 +646,11 @@
       "flag_emoji": "🇧🇪",
       "flag_asset": null,
       "latitude": 50.8333,
-      "longitude": 4.0
+      "longitude": 4,
+      "capital_name_ca": "Brussel·les",
+      "capital_name_en": "Brussels",
+      "capital_latitude": 50.83,
+      "capital_longitude": 4.33
     },
     {
       "iso2": "BA",
@@ -542,8 +666,12 @@
       "subregion": "Southeast Europe",
       "flag_emoji": "🇧🇦",
       "flag_asset": null,
-      "latitude": 44.0,
-      "longitude": 18.0
+      "latitude": 44,
+      "longitude": 18,
+      "capital_name_ca": "Sarajevo",
+      "capital_name_en": "Sarajevo",
+      "capital_latitude": 43.87,
+      "capital_longitude": 18.42
     },
     {
       "iso2": "KH",
@@ -559,8 +687,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇰🇭",
       "flag_asset": null,
-      "latitude": 13.0,
-      "longitude": 105.0
+      "latitude": 13,
+      "longitude": 105,
+      "capital_name_ca": "Phnom Penh",
+      "capital_name_en": "Phnom Penh",
+      "capital_latitude": 11.55,
+      "capital_longitude": 104.92
     },
     {
       "iso2": "CM",
@@ -576,8 +708,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇨🇲",
       "flag_asset": null,
-      "latitude": 6.0,
-      "longitude": 12.0
+      "latitude": 6,
+      "longitude": 12,
+      "capital_name_ca": "Yaoundé",
+      "capital_name_en": "Yaoundé",
+      "capital_latitude": 3.85,
+      "capital_longitude": 11.5
     },
     {
       "iso2": "CA",
@@ -593,8 +729,12 @@
       "subregion": "North America",
       "flag_emoji": "🇨🇦",
       "flag_asset": null,
-      "latitude": 60.0,
-      "longitude": -95.0
+      "latitude": 60,
+      "longitude": -95,
+      "capital_name_ca": "Ottawa",
+      "capital_name_en": "Ottawa",
+      "capital_latitude": 45.42,
+      "capital_longitude": -75.7
     },
     {
       "iso2": "CV",
@@ -611,7 +751,11 @@
       "flag_emoji": "🇨🇻",
       "flag_asset": null,
       "latitude": 16.5388,
-      "longitude": -23.0418
+      "longitude": -23.0418,
+      "capital_name_ca": "Praia",
+      "capital_name_en": "Praia",
+      "capital_latitude": 14.92,
+      "capital_longitude": -23.52
     },
     {
       "iso2": "CO",
@@ -627,8 +771,12 @@
       "subregion": "South America",
       "flag_emoji": "🇨🇴",
       "flag_asset": null,
-      "latitude": 4.0,
-      "longitude": -72.0
+      "latitude": 4,
+      "longitude": -72,
+      "capital_name_ca": "Bogotà",
+      "capital_name_en": "Bogotá",
+      "capital_latitude": 4.71,
+      "capital_longitude": -74.07
     },
     {
       "iso2": "KM",
@@ -645,7 +793,11 @@
       "flag_emoji": "🇰🇲",
       "flag_asset": null,
       "latitude": -12.1667,
-      "longitude": 44.25
+      "longitude": 44.25,
+      "capital_name_ca": "Moroni",
+      "capital_name_en": "Moroni",
+      "capital_latitude": -11.7,
+      "capital_longitude": 43.23
     },
     {
       "iso2": "CG",
@@ -661,8 +813,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇨🇬",
       "flag_asset": null,
-      "latitude": -1.0,
-      "longitude": 15.0
+      "latitude": -1,
+      "longitude": 15,
+      "capital_name_ca": "Brazzaville",
+      "capital_name_en": "Brazzaville",
+      "capital_latitude": -4.25,
+      "capital_longitude": 15.28
     },
     {
       "iso2": "KP",
@@ -678,8 +834,12 @@
       "subregion": "Eastern Asia",
       "flag_emoji": "🇰🇵",
       "flag_asset": null,
-      "latitude": 40.0,
-      "longitude": 127.0
+      "latitude": 40,
+      "longitude": 127,
+      "capital_name_ca": "Pyongyang",
+      "capital_name_en": "Pyongyang",
+      "capital_latitude": 39.02,
+      "capital_longitude": 125.75
     },
     {
       "iso2": "KR",
@@ -695,8 +855,12 @@
       "subregion": "Eastern Asia",
       "flag_emoji": "🇰🇷",
       "flag_asset": null,
-      "latitude": 37.0,
-      "longitude": 127.5
+      "latitude": 37,
+      "longitude": 127.5,
+      "capital_name_ca": "Seül",
+      "capital_name_en": "Seoul",
+      "capital_latitude": 37.55,
+      "capital_longitude": 126.98
     },
     {
       "iso2": "CI",
@@ -712,8 +876,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇨🇮",
       "flag_asset": null,
-      "latitude": 8.0,
-      "longitude": -5.0
+      "latitude": 8,
+      "longitude": -5,
+      "capital_name_ca": "Yamoussoukro",
+      "capital_name_en": "Yamoussoukro",
+      "capital_latitude": 6.82,
+      "capital_longitude": -5.27
     },
     {
       "iso2": "CR",
@@ -729,8 +897,12 @@
       "subregion": "Central America",
       "flag_emoji": "🇨🇷",
       "flag_asset": null,
-      "latitude": 10.0,
-      "longitude": -84.0
+      "latitude": 10,
+      "longitude": -84,
+      "capital_name_ca": "San José",
+      "capital_name_en": "San José",
+      "capital_latitude": 9.93,
+      "capital_longitude": -84.09
     },
     {
       "iso2": "HR",
@@ -747,7 +919,11 @@
       "flag_emoji": "🇭🇷",
       "flag_asset": null,
       "latitude": 45.1667,
-      "longitude": 15.5
+      "longitude": 15.5,
+      "capital_name_ca": "Zagreb",
+      "capital_name_en": "Zagreb",
+      "capital_latitude": 45.8,
+      "capital_longitude": 16
     },
     {
       "iso2": "CU",
@@ -764,7 +940,11 @@
       "flag_emoji": "🇨🇺",
       "flag_asset": null,
       "latitude": 21.5,
-      "longitude": -80.0
+      "longitude": -80,
+      "capital_name_ca": "L'Havana",
+      "capital_name_en": "Havana",
+      "capital_latitude": 23.12,
+      "capital_longitude": -82.35
     },
     {
       "iso2": "CW",
@@ -781,7 +961,11 @@
       "flag_emoji": "🇨🇼",
       "flag_asset": null,
       "latitude": 12.1167,
-      "longitude": -68.9333
+      "longitude": -68.9333,
+      "capital_name_ca": "Willemstad",
+      "capital_name_en": "Willemstad",
+      "capital_latitude": 12.1,
+      "capital_longitude": -68.92
     },
     {
       "iso2": "DK",
@@ -797,8 +981,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇩🇰",
       "flag_asset": null,
-      "latitude": 56.0,
-      "longitude": 10.0
+      "latitude": 56,
+      "longitude": 10,
+      "capital_name_ca": "Copenhaguen",
+      "capital_name_en": "Copenhagen",
+      "capital_latitude": 55.67,
+      "capital_longitude": 12.58
     },
     {
       "iso2": "DJ",
@@ -815,7 +1003,11 @@
       "flag_emoji": "🇩🇯",
       "flag_asset": null,
       "latitude": 11.5,
-      "longitude": 43.0
+      "longitude": 43,
+      "capital_name_ca": "Djibouti",
+      "capital_name_en": "Djibouti",
+      "capital_latitude": 11.58,
+      "capital_longitude": 43.15
     },
     {
       "iso2": "DM",
@@ -832,7 +1024,11 @@
       "flag_emoji": "🇩🇲",
       "flag_asset": null,
       "latitude": 15.4167,
-      "longitude": -61.3333
+      "longitude": -61.3333,
+      "capital_name_ca": "Roseau",
+      "capital_name_en": "Roseau",
+      "capital_latitude": 15.3,
+      "capital_longitude": -61.4
     },
     {
       "iso2": "EG",
@@ -848,8 +1044,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇪🇬",
       "flag_asset": null,
-      "latitude": 27.0,
-      "longitude": 30.0
+      "latitude": 27,
+      "longitude": 30,
+      "capital_name_ca": "El Caire",
+      "capital_name_en": "Cairo",
+      "capital_latitude": 30.05,
+      "capital_longitude": 31.25
     },
     {
       "iso2": "SV",
@@ -866,7 +1066,11 @@
       "flag_emoji": "🇸🇻",
       "flag_asset": null,
       "latitude": 13.8333,
-      "longitude": -88.9167
+      "longitude": -88.9167,
+      "capital_name_ca": "San Salvador",
+      "capital_name_en": "San Salvador",
+      "capital_latitude": 13.7,
+      "capital_longitude": -89.2
     },
     {
       "iso2": "AE",
@@ -882,8 +1086,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇦🇪",
       "flag_asset": null,
-      "latitude": 24.0,
-      "longitude": 54.0
+      "latitude": 24,
+      "longitude": 54,
+      "capital_name_ca": "Abu Dhabi",
+      "capital_name_en": "Abu Dhabi",
+      "capital_latitude": 24.47,
+      "capital_longitude": 54.37
     },
     {
       "iso2": "EC",
@@ -899,8 +1107,12 @@
       "subregion": "South America",
       "flag_emoji": "🇪🇨",
       "flag_asset": null,
-      "latitude": -2.0,
-      "longitude": -77.5
+      "latitude": -2,
+      "longitude": -77.5,
+      "capital_name_ca": "Quito",
+      "capital_name_en": "Quito",
+      "capital_latitude": -0.22,
+      "capital_longitude": -78.5
     },
     {
       "iso2": "ER",
@@ -916,8 +1128,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇪🇷",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": 39.0
+      "latitude": 15,
+      "longitude": 39,
+      "capital_name_ca": "Asmara",
+      "capital_name_en": "Asmara",
+      "capital_latitude": 15.33,
+      "capital_longitude": 38.93
     },
     {
       "iso2": "SK",
@@ -934,7 +1150,11 @@
       "flag_emoji": "🇸🇰",
       "flag_asset": null,
       "latitude": 48.6667,
-      "longitude": 19.5
+      "longitude": 19.5,
+      "capital_name_ca": "Bratislava",
+      "capital_name_en": "Bratislava",
+      "capital_latitude": 48.15,
+      "capital_longitude": 17.12
     },
     {
       "iso2": "SI",
@@ -951,7 +1171,11 @@
       "flag_emoji": "🇸🇮",
       "flag_asset": null,
       "latitude": 46.1167,
-      "longitude": 14.8167
+      "longitude": 14.8167,
+      "capital_name_ca": "Ljubljana",
+      "capital_name_en": "Ljubljana",
+      "capital_latitude": 46.05,
+      "capital_longitude": 14.52
     },
     {
       "iso2": "ES",
@@ -967,8 +1191,12 @@
       "subregion": "Southern Europe",
       "flag_emoji": "🇪🇸",
       "flag_asset": null,
-      "latitude": 40.0,
-      "longitude": -4.0
+      "latitude": 40,
+      "longitude": -4,
+      "capital_name_ca": "Madrid",
+      "capital_name_en": "Madrid",
+      "capital_latitude": 40.4,
+      "capital_longitude": -3.68
     },
     {
       "iso2": "US",
@@ -984,8 +1212,12 @@
       "subregion": "North America",
       "flag_emoji": "🇺🇸",
       "flag_asset": null,
-      "latitude": 38.0,
-      "longitude": -97.0
+      "latitude": 38,
+      "longitude": -97,
+      "capital_name_ca": "Washington DC",
+      "capital_name_en": "Washington, D.C.",
+      "capital_latitude": 38.89,
+      "capital_longitude": -77.05
     },
     {
       "iso2": "EE",
@@ -1001,8 +1233,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇪🇪",
       "flag_asset": null,
-      "latitude": 59.0,
-      "longitude": 26.0
+      "latitude": 59,
+      "longitude": 26,
+      "capital_name_ca": "Tallinn",
+      "capital_name_en": "Tallinn",
+      "capital_latitude": 59.43,
+      "capital_longitude": 24.72
     },
     {
       "iso2": "SZ",
@@ -1019,7 +1255,11 @@
       "flag_emoji": "🇸🇿",
       "flag_asset": null,
       "latitude": -26.5,
-      "longitude": 31.5
+      "longitude": 31.5,
+      "capital_name_ca": "Mbabane",
+      "capital_name_en": "Mbabane",
+      "capital_latitude": -26.32,
+      "capital_longitude": 31.13
     },
     {
       "iso2": "ET",
@@ -1035,8 +1275,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇪🇹",
       "flag_asset": null,
-      "latitude": 8.0,
-      "longitude": 38.0
+      "latitude": 8,
+      "longitude": 38,
+      "capital_name_ca": "Addis Abeba",
+      "capital_name_en": "Addis Ababa",
+      "capital_latitude": 9.03,
+      "capital_longitude": 38.7
     },
     {
       "iso2": "FJ",
@@ -1053,7 +1297,11 @@
       "flag_emoji": "🇫🇯",
       "flag_asset": null,
       "latitude": -17.7134,
-      "longitude": 178.065
+      "longitude": 178.065,
+      "capital_name_ca": "Suva",
+      "capital_name_en": "Suva",
+      "capital_latitude": -18.13,
+      "capital_longitude": 178.42
     },
     {
       "iso2": "PH",
@@ -1069,8 +1317,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇵🇭",
       "flag_asset": null,
-      "latitude": 13.0,
-      "longitude": 122.0
+      "latitude": 13,
+      "longitude": 122,
+      "capital_name_ca": "Manila",
+      "capital_name_en": "Manila",
+      "capital_latitude": 14.6,
+      "capital_longitude": 120.97
     },
     {
       "iso2": "FI",
@@ -1086,8 +1338,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇫🇮",
       "flag_asset": null,
-      "latitude": 64.0,
-      "longitude": 26.0
+      "latitude": 64,
+      "longitude": 26,
+      "capital_name_ca": "Hèlsinki",
+      "capital_name_en": "Helsinki",
+      "capital_latitude": 60.17,
+      "capital_longitude": 24.93
     },
     {
       "iso2": "FR",
@@ -1103,8 +1359,12 @@
       "subregion": "Western Europe",
       "flag_emoji": "🇫🇷",
       "flag_asset": null,
-      "latitude": 46.0,
-      "longitude": 2.0
+      "latitude": 46,
+      "longitude": 2,
+      "capital_name_ca": "París",
+      "capital_name_en": "Paris",
+      "capital_latitude": 48.87,
+      "capital_longitude": 2.33
     },
     {
       "iso2": "GA",
@@ -1120,8 +1380,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇬🇦",
       "flag_asset": null,
-      "latitude": -1.0,
-      "longitude": 11.75
+      "latitude": -1,
+      "longitude": 11.75,
+      "capital_name_ca": "Libreville",
+      "capital_name_en": "Libreville",
+      "capital_latitude": 0.38,
+      "capital_longitude": 9.45
     },
     {
       "iso2": "GE",
@@ -1137,8 +1401,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇬🇪",
       "flag_asset": null,
-      "latitude": 42.0,
-      "longitude": 43.5
+      "latitude": 42,
+      "longitude": 43.5,
+      "capital_name_ca": "Tbilissi",
+      "capital_name_en": "Tbilisi",
+      "capital_latitude": 41.68,
+      "capital_longitude": 44.83
     },
     {
       "iso2": "GH",
@@ -1154,8 +1422,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇬🇭",
       "flag_asset": null,
-      "latitude": 8.0,
-      "longitude": -2.0
+      "latitude": 8,
+      "longitude": -2,
+      "capital_name_ca": "Accra",
+      "capital_name_en": "Accra",
+      "capital_latitude": 5.55,
+      "capital_longitude": -0.22
     },
     {
       "iso2": "GI",
@@ -1172,7 +1444,11 @@
       "flag_emoji": "🇬🇮",
       "flag_asset": null,
       "latitude": 36.1333,
-      "longitude": -5.35
+      "longitude": -5.35,
+      "capital_name_ca": "Gibraltar",
+      "capital_name_en": "Gibraltar",
+      "capital_latitude": 36.13,
+      "capital_longitude": -5.35
     },
     {
       "iso2": "GD",
@@ -1189,7 +1465,11 @@
       "flag_emoji": "🇬🇩",
       "flag_asset": null,
       "latitude": 12.1167,
-      "longitude": -61.6667
+      "longitude": -61.6667,
+      "capital_name_ca": "Saint George's",
+      "capital_name_en": "St. George's",
+      "capital_latitude": 32.38,
+      "capital_longitude": -64.68
     },
     {
       "iso2": "GL",
@@ -1205,8 +1485,12 @@
       "subregion": "North America",
       "flag_emoji": "🇬🇱",
       "flag_asset": null,
-      "latitude": 72.0,
-      "longitude": -40.0
+      "latitude": 72,
+      "longitude": -40,
+      "capital_name_ca": "Nuuk",
+      "capital_name_en": "Nuuk",
+      "capital_latitude": 64.18,
+      "capital_longitude": -51.75
     },
     {
       "iso2": "GR",
@@ -1222,8 +1506,12 @@
       "subregion": "Southern Europe",
       "flag_emoji": "🇬🇷",
       "flag_asset": null,
-      "latitude": 39.0,
-      "longitude": 22.0
+      "latitude": 39,
+      "longitude": 22,
+      "capital_name_ca": "Atenes",
+      "capital_name_en": "Athens",
+      "capital_latitude": 37.98,
+      "capital_longitude": 23.73
     },
     {
       "iso2": "GP",
@@ -1240,7 +1528,11 @@
       "flag_emoji": "🇬🇵",
       "flag_asset": null,
       "latitude": 16.25,
-      "longitude": -61.5833
+      "longitude": -61.5833,
+      "capital_name_ca": "Basse-Terre",
+      "capital_name_en": "Basse-Terre",
+      "capital_latitude": 16.03,
+      "capital_longitude": -61.73
     },
     {
       "iso2": "GF",
@@ -1256,8 +1548,12 @@
       "subregion": "South America",
       "flag_emoji": "🇬🇫",
       "flag_asset": null,
-      "latitude": 4.0,
-      "longitude": -53.0
+      "latitude": 4,
+      "longitude": -53,
+      "capital_name_ca": "Caiena",
+      "capital_name_en": "Cayenne",
+      "capital_latitude": 4.94,
+      "capital_longitude": -52.33
     },
     {
       "iso2": "GU",
@@ -1274,7 +1570,11 @@
       "flag_emoji": "🇬🇺",
       "flag_asset": null,
       "latitude": 13.4667,
-      "longitude": 144.7833
+      "longitude": 144.7833,
+      "capital_name_ca": "Hagåtña",
+      "capital_name_en": "Hagåtña",
+      "capital_latitude": 13.48,
+      "capital_longitude": 144.75
     },
     {
       "iso2": "GT",
@@ -1291,7 +1591,11 @@
       "flag_emoji": "🇬🇹",
       "flag_asset": null,
       "latitude": 15.5,
-      "longitude": -90.25
+      "longitude": -90.25,
+      "capital_name_ca": "Guatemala",
+      "capital_name_en": "Guatemala City",
+      "capital_latitude": 14.62,
+      "capital_longitude": -90.52
     },
     {
       "iso2": "GG",
@@ -1308,7 +1612,11 @@
       "flag_emoji": "🇬🇬",
       "flag_asset": null,
       "latitude": 49.4667,
-      "longitude": -2.5833
+      "longitude": -2.5833,
+      "capital_name_ca": "Saint Peter Port",
+      "capital_name_en": "Saint Peter Port",
+      "capital_latitude": 49.45,
+      "capital_longitude": -2.54
     },
     {
       "iso2": "GN",
@@ -1324,8 +1632,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇬🇳",
       "flag_asset": null,
-      "latitude": 11.0,
-      "longitude": -10.0
+      "latitude": 11,
+      "longitude": -10,
+      "capital_name_ca": "Conakry",
+      "capital_name_en": "Conakry",
+      "capital_latitude": 9.5,
+      "capital_longitude": -13.7
     },
     {
       "iso2": "GW",
@@ -1341,8 +1653,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇬🇼",
       "flag_asset": null,
-      "latitude": 12.0,
-      "longitude": -15.0
+      "latitude": 12,
+      "longitude": -15,
+      "capital_name_ca": "Bissau",
+      "capital_name_en": "Bissau",
+      "capital_latitude": 11.85,
+      "capital_longitude": -15.58
     },
     {
       "iso2": "GQ",
@@ -1358,8 +1674,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇬🇶",
       "flag_asset": null,
-      "latitude": 2.0,
-      "longitude": 10.0
+      "latitude": 2,
+      "longitude": 10,
+      "capital_name_ca": "Ciudad de la Paz",
+      "capital_name_en": "Ciudad de la Paz",
+      "capital_latitude": 1.35,
+      "capital_longitude": 10.49
     },
     {
       "iso2": "GY",
@@ -1375,8 +1695,12 @@
       "subregion": "South America",
       "flag_emoji": "🇬🇾",
       "flag_asset": null,
-      "latitude": 5.0,
-      "longitude": -59.0
+      "latitude": 5,
+      "longitude": -59,
+      "capital_name_ca": "Georgetown",
+      "capital_name_en": "Georgetown",
+      "capital_latitude": 6.8,
+      "capital_longitude": -58.15
     },
     {
       "iso2": "GM",
@@ -1393,7 +1717,11 @@
       "flag_emoji": "🇬🇲",
       "flag_asset": null,
       "latitude": 13.4667,
-      "longitude": -16.5667
+      "longitude": -16.5667,
+      "capital_name_ca": "Banjul",
+      "capital_name_en": "Banjul",
+      "capital_latitude": 13.45,
+      "capital_longitude": -16.57
     },
     {
       "iso2": "HT",
@@ -1409,8 +1737,12 @@
       "subregion": "Caribbean",
       "flag_emoji": "🇭🇹",
       "flag_asset": null,
-      "latitude": 19.0,
-      "longitude": -72.4167
+      "latitude": 19,
+      "longitude": -72.4167,
+      "capital_name_ca": "Port-au-Prince",
+      "capital_name_en": "Port-au-Prince",
+      "capital_latitude": 18.53,
+      "capital_longitude": -72.33
     },
     {
       "iso2": "HN",
@@ -1426,8 +1758,12 @@
       "subregion": "Central America",
       "flag_emoji": "🇭🇳",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": -86.5
+      "latitude": 15,
+      "longitude": -86.5,
+      "capital_name_ca": "Tegucigalpa",
+      "capital_name_en": "Tegucigalpa",
+      "capital_latitude": 14.1,
+      "capital_longitude": -87.22
     },
     {
       "iso2": "HK",
@@ -1444,7 +1780,11 @@
       "flag_emoji": "🇭🇰",
       "flag_asset": null,
       "latitude": 22.267,
-      "longitude": 114.188
+      "longitude": 114.188,
+      "capital_name_ca": "Hong Kong",
+      "capital_name_en": "Hong Kong",
+      "capital_latitude": 22.267,
+      "capital_longitude": 114.188
     },
     {
       "iso2": "HU",
@@ -1460,8 +1800,12 @@
       "subregion": "Central Europe",
       "flag_emoji": "🇭🇺",
       "flag_asset": null,
-      "latitude": 47.0,
-      "longitude": 20.0
+      "latitude": 47,
+      "longitude": 20,
+      "capital_name_ca": "Budapest",
+      "capital_name_en": "Budapest",
+      "capital_latitude": 47.5,
+      "capital_longitude": 19.08
     },
     {
       "iso2": "YE",
@@ -1477,8 +1821,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇾🇪",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": 48.0
+      "latitude": 15,
+      "longitude": 48,
+      "capital_name_ca": "Sanaà",
+      "capital_name_en": "Sanaa",
+      "capital_latitude": 15.37,
+      "capital_longitude": 44.19
     },
     {
       "iso2": "IM",
@@ -1495,7 +1843,11 @@
       "flag_emoji": "🇮🇲",
       "flag_asset": null,
       "latitude": 54.25,
-      "longitude": -4.5
+      "longitude": -4.5,
+      "capital_name_ca": "Douglas",
+      "capital_name_en": "Douglas",
+      "capital_latitude": 54.15,
+      "capital_longitude": -4.48
     },
     {
       "iso2": "CX",
@@ -1512,7 +1864,11 @@
       "flag_emoji": "🇨🇽",
       "flag_asset": null,
       "latitude": -10.5,
-      "longitude": 105.6667
+      "longitude": 105.6667,
+      "capital_name_ca": "Flying Fish Cove",
+      "capital_name_en": "Flying Fish Cove",
+      "capital_latitude": -10.42,
+      "capital_longitude": 105.68
     },
     {
       "iso2": "NF",
@@ -1529,7 +1885,11 @@
       "flag_emoji": "🇳🇫",
       "flag_asset": null,
       "latitude": -29.0333,
-      "longitude": 167.95
+      "longitude": 167.95,
+      "capital_name_ca": "Kingston",
+      "capital_name_en": "Kingston",
+      "capital_latitude": -29.05,
+      "capital_longitude": 167.97
     },
     {
       "iso2": "KY",
@@ -1546,7 +1906,11 @@
       "flag_emoji": "🇰🇾",
       "flag_asset": null,
       "latitude": 19.3133,
-      "longitude": -81.2546
+      "longitude": -81.2546,
+      "capital_name_ca": "George Town",
+      "capital_name_en": "George Town",
+      "capital_latitude": 19.3,
+      "capital_longitude": -81.38
     },
     {
       "iso2": "CC",
@@ -1563,7 +1927,11 @@
       "flag_emoji": "🇨🇨",
       "flag_asset": null,
       "latitude": -12.1642,
-      "longitude": 96.871
+      "longitude": 96.871,
+      "capital_name_ca": "West Island",
+      "capital_name_en": "West Island",
+      "capital_latitude": -12.17,
+      "capital_longitude": 96.83
     },
     {
       "iso2": "CK",
@@ -1580,7 +1948,11 @@
       "flag_emoji": "🇨🇰",
       "flag_asset": null,
       "latitude": -21.2333,
-      "longitude": -159.7667
+      "longitude": -159.7667,
+      "capital_name_ca": "Avarua",
+      "capital_name_en": "Avarua",
+      "capital_latitude": -21.2,
+      "capital_longitude": -159.77
     },
     {
       "iso2": "FO",
@@ -1596,8 +1968,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇫🇴",
       "flag_asset": null,
-      "latitude": 62.0,
-      "longitude": -7.0
+      "latitude": 62,
+      "longitude": -7,
+      "capital_name_ca": "Tórshavn",
+      "capital_name_en": "Tórshavn",
+      "capital_latitude": 62.01,
+      "capital_longitude": -6.77
     },
     {
       "iso2": "FK",
@@ -1614,7 +1990,11 @@
       "flag_emoji": "🇫🇰",
       "flag_asset": null,
       "latitude": -51.75,
-      "longitude": -59.0
+      "longitude": -59,
+      "capital_name_ca": "Port Stanley",
+      "capital_name_en": "Stanley",
+      "capital_latitude": -51.7,
+      "capital_longitude": -57.85
     },
     {
       "iso2": "MP",
@@ -1631,7 +2011,11 @@
       "flag_emoji": "🇲🇵",
       "flag_asset": null,
       "latitude": 15.2,
-      "longitude": 145.75
+      "longitude": 145.75,
+      "capital_name_ca": "Saipan",
+      "capital_name_en": "Saipan",
+      "capital_latitude": 15.2,
+      "capital_longitude": 145.75
     },
     {
       "iso2": "MH",
@@ -1647,8 +2031,12 @@
       "subregion": "Micronesia",
       "flag_emoji": "🇲🇭",
       "flag_asset": null,
-      "latitude": 9.0,
-      "longitude": 168.0
+      "latitude": 9,
+      "longitude": 168,
+      "capital_name_ca": "Majuro",
+      "capital_name_en": "Majuro",
+      "capital_latitude": 7.1,
+      "capital_longitude": 171.38
     },
     {
       "iso2": "PN",
@@ -1665,7 +2053,11 @@
       "flag_emoji": "🇵🇳",
       "flag_asset": null,
       "latitude": -25.0667,
-      "longitude": -130.1
+      "longitude": -130.1,
+      "capital_name_ca": "Adamstown",
+      "capital_name_en": "Adamstown",
+      "capital_latitude": -25.07,
+      "capital_longitude": -130.08
     },
     {
       "iso2": "SB",
@@ -1681,8 +2073,12 @@
       "subregion": "Melanesia",
       "flag_emoji": "🇸🇧",
       "flag_asset": null,
-      "latitude": -8.0,
-      "longitude": 159.0
+      "latitude": -8,
+      "longitude": 159,
+      "capital_name_ca": "Honiara",
+      "capital_name_en": "Honiara",
+      "capital_latitude": -9.43,
+      "capital_longitude": 159.95
     },
     {
       "iso2": "TC",
@@ -1699,7 +2095,11 @@
       "flag_emoji": "🇹🇨",
       "flag_asset": null,
       "latitude": 21.75,
-      "longitude": -71.5833
+      "longitude": -71.5833,
+      "capital_name_ca": "Cockburn Town",
+      "capital_name_en": "Cockburn Town",
+      "capital_latitude": 21.46,
+      "capital_longitude": -71.14
     },
     {
       "iso2": "VG",
@@ -1716,7 +2116,11 @@
       "flag_emoji": "🇻🇬",
       "flag_asset": null,
       "latitude": 18.4314,
-      "longitude": -64.623
+      "longitude": -64.623,
+      "capital_name_ca": "Road Town",
+      "capital_name_en": "Road Town",
+      "capital_latitude": 18.42,
+      "capital_longitude": -64.62
     },
     {
       "iso2": "VI",
@@ -1733,7 +2137,11 @@
       "flag_emoji": "🇻🇮",
       "flag_asset": null,
       "latitude": 18.35,
-      "longitude": -64.9333
+      "longitude": -64.9333,
+      "capital_name_ca": "Charlotte Amalie",
+      "capital_name_en": "Charlotte Amalie",
+      "capital_latitude": 18.35,
+      "capital_longitude": -64.93
     },
     {
       "iso2": "AX",
@@ -1750,7 +2158,11 @@
       "flag_emoji": "🇦🇽",
       "flag_asset": null,
       "latitude": 60.1167,
-      "longitude": 19.9
+      "longitude": 19.9,
+      "capital_name_ca": "Mariehamn",
+      "capital_name_en": "Mariehamn",
+      "capital_latitude": 60.12,
+      "capital_longitude": 19.9
     },
     {
       "iso2": "ID",
@@ -1766,8 +2178,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇮🇩",
       "flag_asset": null,
-      "latitude": -5.0,
-      "longitude": 120.0
+      "latitude": -5,
+      "longitude": 120,
+      "capital_name_ca": "Jakarta",
+      "capital_name_en": "Jakarta",
+      "capital_latitude": -6.17,
+      "capital_longitude": 106.82
     },
     {
       "iso2": "IR",
@@ -1783,8 +2199,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇮🇷",
       "flag_asset": null,
-      "latitude": 32.0,
-      "longitude": 53.0
+      "latitude": 32,
+      "longitude": 53,
+      "capital_name_ca": "Teheran",
+      "capital_name_en": "Tehran",
+      "capital_latitude": 35.7,
+      "capital_longitude": 51.42
     },
     {
       "iso2": "IQ",
@@ -1800,8 +2220,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇮🇶",
       "flag_asset": null,
-      "latitude": 33.0,
-      "longitude": 44.0
+      "latitude": 33,
+      "longitude": 44,
+      "capital_name_ca": "Bagdad",
+      "capital_name_en": "Baghdad",
+      "capital_latitude": 33.33,
+      "capital_longitude": 44.4
     },
     {
       "iso2": "IE",
@@ -1817,8 +2241,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇮🇪",
       "flag_asset": null,
-      "latitude": 53.0,
-      "longitude": -8.0
+      "latitude": 53,
+      "longitude": -8,
+      "capital_name_ca": "Dublín",
+      "capital_name_en": "Dublin",
+      "capital_latitude": 53.32,
+      "capital_longitude": -6.23
     },
     {
       "iso2": "IS",
@@ -1834,8 +2262,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇮🇸",
       "flag_asset": null,
-      "latitude": 65.0,
-      "longitude": -18.0
+      "latitude": 65,
+      "longitude": -18,
+      "capital_name_ca": "Reykjavík",
+      "capital_name_en": "Reykjavík",
+      "capital_latitude": 64.15,
+      "capital_longitude": -21.95
     },
     {
       "iso2": "IL",
@@ -1852,7 +2284,11 @@
       "flag_emoji": "🇮🇱",
       "flag_asset": null,
       "latitude": 31.47,
-      "longitude": 35.13
+      "longitude": 35.13,
+      "capital_name_ca": "Jerusalem",
+      "capital_name_en": "Jerusalem",
+      "capital_latitude": 31.77,
+      "capital_longitude": 35.23
     },
     {
       "iso2": "IT",
@@ -1869,7 +2305,11 @@
       "flag_emoji": "🇮🇹",
       "flag_asset": null,
       "latitude": 42.8333,
-      "longitude": 12.8333
+      "longitude": 12.8333,
+      "capital_name_ca": "Roma",
+      "capital_name_en": "Rome",
+      "capital_latitude": 41.9,
+      "capital_longitude": 12.48
     },
     {
       "iso2": "JM",
@@ -1886,7 +2326,11 @@
       "flag_emoji": "🇯🇲",
       "flag_asset": null,
       "latitude": 18.25,
-      "longitude": -77.5
+      "longitude": -77.5,
+      "capital_name_ca": "Kingston",
+      "capital_name_en": "Kingston",
+      "capital_latitude": 17.99702,
+      "capital_longitude": -76.79358
     },
     {
       "iso2": "JP",
@@ -1902,8 +2346,12 @@
       "subregion": "Eastern Asia",
       "flag_emoji": "🇯🇵",
       "flag_asset": null,
-      "latitude": 36.0,
-      "longitude": 138.0
+      "latitude": 36,
+      "longitude": 138,
+      "capital_name_ca": "Tòquio",
+      "capital_name_en": "Tokyo",
+      "capital_latitude": 35.68,
+      "capital_longitude": 139.75
     },
     {
       "iso2": "JE",
@@ -1920,7 +2368,11 @@
       "flag_emoji": "🇯🇪",
       "flag_asset": null,
       "latitude": 49.25,
-      "longitude": -2.1667
+      "longitude": -2.1667,
+      "capital_name_ca": "Saint Helier",
+      "capital_name_en": "Saint Helier",
+      "capital_latitude": 49.18,
+      "capital_longitude": -2.1
     },
     {
       "iso2": "JO",
@@ -1936,8 +2388,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇯🇴",
       "flag_asset": null,
-      "latitude": 31.0,
-      "longitude": 36.0
+      "latitude": 31,
+      "longitude": 36,
+      "capital_name_ca": "Amman",
+      "capital_name_en": "Amman",
+      "capital_latitude": 31.95,
+      "capital_longitude": 35.93
     },
     {
       "iso2": "KZ",
@@ -1954,7 +2410,11 @@
       "flag_emoji": "🇰🇿",
       "flag_asset": null,
       "latitude": 48.0196,
-      "longitude": 66.9237
+      "longitude": 66.9237,
+      "capital_name_ca": "Astanà",
+      "capital_name_en": "Astana",
+      "capital_latitude": 51.16,
+      "capital_longitude": 71.45
     },
     {
       "iso2": "KE",
@@ -1970,8 +2430,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇰🇪",
       "flag_asset": null,
-      "latitude": 1.0,
-      "longitude": 38.0
+      "latitude": 1,
+      "longitude": 38,
+      "capital_name_ca": "Nairobi",
+      "capital_name_en": "Nairobi",
+      "capital_latitude": -1.28,
+      "capital_longitude": 36.82
     },
     {
       "iso2": "KG",
@@ -1987,8 +2451,12 @@
       "subregion": "Central Asia",
       "flag_emoji": "🇰🇬",
       "flag_asset": null,
-      "latitude": 41.0,
-      "longitude": 75.0
+      "latitude": 41,
+      "longitude": 75,
+      "capital_name_ca": "Bixkek",
+      "capital_name_en": "Bishkek",
+      "capital_latitude": 42.87,
+      "capital_longitude": 74.6
     },
     {
       "iso2": "KI",
@@ -2005,7 +2473,11 @@
       "flag_emoji": "🇰🇮",
       "flag_asset": null,
       "latitude": 1.4167,
-      "longitude": 173.0
+      "longitude": 173,
+      "capital_name_ca": "Tarawa Sud",
+      "capital_name_en": "South Tarawa",
+      "capital_latitude": 1.33,
+      "capital_longitude": 172.98
     },
     {
       "iso2": "XK",
@@ -2022,7 +2494,11 @@
       "flag_emoji": "🇽🇰",
       "flag_asset": null,
       "latitude": 42.6667,
-      "longitude": 21.1667
+      "longitude": 21.1667,
+      "capital_name_ca": "Pristina",
+      "capital_name_en": "Pristina",
+      "capital_latitude": 42.67,
+      "capital_longitude": 21.17
     },
     {
       "iso2": "KW",
@@ -2039,7 +2515,11 @@
       "flag_emoji": "🇰🇼",
       "flag_asset": null,
       "latitude": 29.5,
-      "longitude": 45.75
+      "longitude": 45.75,
+      "capital_name_ca": "Al-Kuwait",
+      "capital_name_en": "Kuwait City",
+      "capital_latitude": 29.37,
+      "capital_longitude": 47.97
     },
     {
       "iso2": "LA",
@@ -2055,8 +2535,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇱🇦",
       "flag_asset": null,
-      "latitude": 18.0,
-      "longitude": 105.0
+      "latitude": 18,
+      "longitude": 105,
+      "capital_name_ca": "Vientiane",
+      "capital_name_en": "Vientiane",
+      "capital_latitude": 17.97,
+      "capital_longitude": 102.6
     },
     {
       "iso2": "LS",
@@ -2073,7 +2557,11 @@
       "flag_emoji": "🇱🇸",
       "flag_asset": null,
       "latitude": -29.5,
-      "longitude": 28.5
+      "longitude": 28.5,
+      "capital_name_ca": "Maseru",
+      "capital_name_en": "Maseru",
+      "capital_latitude": -29.32,
+      "capital_longitude": 27.48
     },
     {
       "iso2": "LV",
@@ -2089,8 +2577,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇱🇻",
       "flag_asset": null,
-      "latitude": 57.0,
-      "longitude": 25.0
+      "latitude": 57,
+      "longitude": 25,
+      "capital_name_ca": "Riga",
+      "capital_name_en": "Riga",
+      "capital_latitude": 56.95,
+      "capital_longitude": 24.1
     },
     {
       "iso2": "LR",
@@ -2107,7 +2599,11 @@
       "flag_emoji": "🇱🇷",
       "flag_asset": null,
       "latitude": 6.5,
-      "longitude": -9.5
+      "longitude": -9.5,
+      "capital_name_ca": "Monròvia",
+      "capital_name_en": "Monrovia",
+      "capital_latitude": 6.3,
+      "capital_longitude": -10.8
     },
     {
       "iso2": "LI",
@@ -2124,7 +2620,11 @@
       "flag_emoji": "🇱🇮",
       "flag_asset": null,
       "latitude": 47.2667,
-      "longitude": 9.5333
+      "longitude": 9.5333,
+      "capital_name_ca": "Vaduz",
+      "capital_name_en": "Vaduz",
+      "capital_latitude": 47.13,
+      "capital_longitude": 9.52
     },
     {
       "iso2": "LT",
@@ -2140,8 +2640,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇱🇹",
       "flag_asset": null,
-      "latitude": 56.0,
-      "longitude": 24.0
+      "latitude": 56,
+      "longitude": 24,
+      "capital_name_ca": "Vílnius",
+      "capital_name_en": "Vilnius",
+      "capital_latitude": 54.68,
+      "capital_longitude": 25.32
     },
     {
       "iso2": "LU",
@@ -2158,7 +2662,11 @@
       "flag_emoji": "🇱🇺",
       "flag_asset": null,
       "latitude": 49.75,
-      "longitude": 6.1667
+      "longitude": 6.1667,
+      "capital_name_ca": "Luxemburg",
+      "capital_name_en": "Luxembourg",
+      "capital_latitude": 49.6,
+      "capital_longitude": 6.12
     },
     {
       "iso2": "LB",
@@ -2175,7 +2683,11 @@
       "flag_emoji": "🇱🇧",
       "flag_asset": null,
       "latitude": 33.8333,
-      "longitude": 35.8333
+      "longitude": 35.8333,
+      "capital_name_ca": "Beirut",
+      "capital_name_en": "Beirut",
+      "capital_latitude": 33.87,
+      "capital_longitude": 35.5
     },
     {
       "iso2": "LY",
@@ -2191,8 +2703,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇱🇾",
       "flag_asset": null,
-      "latitude": 25.0,
-      "longitude": 17.0
+      "latitude": 25,
+      "longitude": 17,
+      "capital_name_ca": "Trípoli",
+      "capital_name_en": "Tripoli",
+      "capital_latitude": 32.88,
+      "capital_longitude": 13.17
     },
     {
       "iso2": "MO",
@@ -2209,7 +2725,11 @@
       "flag_emoji": "🇲🇴",
       "flag_asset": null,
       "latitude": 22.1667,
-      "longitude": 113.55
+      "longitude": 113.55,
+      "capital_name_ca": "Macau",
+      "capital_name_en": "Macau",
+      "capital_latitude": 22.1987,
+      "capital_longitude": 113.5439
     },
     {
       "iso2": "MK",
@@ -2226,7 +2746,11 @@
       "flag_emoji": "🇲🇰",
       "flag_asset": null,
       "latitude": 41.8333,
-      "longitude": 22.0
+      "longitude": 22,
+      "capital_name_ca": "Skopje",
+      "capital_name_en": "Skopje",
+      "capital_latitude": 42,
+      "capital_longitude": 21.43
     },
     {
       "iso2": "MG",
@@ -2242,8 +2766,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇲🇬",
       "flag_asset": null,
-      "latitude": -20.0,
-      "longitude": 47.0
+      "latitude": -20,
+      "longitude": 47,
+      "capital_name_ca": "Antananarivo",
+      "capital_name_en": "Antananarivo",
+      "capital_latitude": -18.92,
+      "capital_longitude": 47.52
     },
     {
       "iso2": "MW",
@@ -2260,7 +2788,11 @@
       "flag_emoji": "🇲🇼",
       "flag_asset": null,
       "latitude": -13.5,
-      "longitude": 34.0
+      "longitude": 34,
+      "capital_name_ca": "Lilongwe",
+      "capital_name_en": "Lilongwe",
+      "capital_latitude": -13.97,
+      "capital_longitude": 33.78
     },
     {
       "iso2": "MV",
@@ -2277,7 +2809,11 @@
       "flag_emoji": "🇲🇻",
       "flag_asset": null,
       "latitude": 3.25,
-      "longitude": 73.0
+      "longitude": 73,
+      "capital_name_ca": "Malé",
+      "capital_name_en": "Malé",
+      "capital_latitude": 4.17,
+      "capital_longitude": 73.51
     },
     {
       "iso2": "ML",
@@ -2293,8 +2829,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇲🇱",
       "flag_asset": null,
-      "latitude": 17.0,
-      "longitude": -4.0
+      "latitude": 17,
+      "longitude": -4,
+      "capital_name_ca": "Bamako",
+      "capital_name_en": "Bamako",
+      "capital_latitude": 12.65,
+      "capital_longitude": -8
     },
     {
       "iso2": "MT",
@@ -2311,7 +2851,11 @@
       "flag_emoji": "🇲🇹",
       "flag_asset": null,
       "latitude": 35.9375,
-      "longitude": 14.3754
+      "longitude": 14.3754,
+      "capital_name_ca": "La Valletta",
+      "capital_name_en": "Valletta",
+      "capital_latitude": 35.88,
+      "capital_longitude": 14.5
     },
     {
       "iso2": "MY",
@@ -2328,7 +2872,11 @@
       "flag_emoji": "🇲🇾",
       "flag_asset": null,
       "latitude": 2.5,
-      "longitude": 112.5
+      "longitude": 112.5,
+      "capital_name_ca": "Kuala Lumpur",
+      "capital_name_en": "Kuala Lumpur",
+      "capital_latitude": 3.17,
+      "capital_longitude": 101.7
     },
     {
       "iso2": "MA",
@@ -2344,8 +2892,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇲🇦",
       "flag_asset": null,
-      "latitude": 32.0,
-      "longitude": -5.0
+      "latitude": 32,
+      "longitude": -5,
+      "capital_name_ca": "Rabat",
+      "capital_name_en": "Rabat",
+      "capital_latitude": 34.02,
+      "capital_longitude": -6.82
     },
     {
       "iso2": "MQ",
@@ -2362,7 +2914,11 @@
       "flag_emoji": "🇲🇶",
       "flag_asset": null,
       "latitude": 14.6667,
-      "longitude": -61.0
+      "longitude": -61,
+      "capital_name_ca": "Fort-de-France",
+      "capital_name_en": "Fort-de-France",
+      "capital_latitude": 14.6,
+      "capital_longitude": -61.08
     },
     {
       "iso2": "MU",
@@ -2379,7 +2935,11 @@
       "flag_emoji": "🇲🇺",
       "flag_asset": null,
       "latitude": -20.2833,
-      "longitude": 57.55
+      "longitude": 57.55,
+      "capital_name_ca": "Port Louis",
+      "capital_name_en": "Port Louis",
+      "capital_latitude": -20.15,
+      "capital_longitude": 57.48
     },
     {
       "iso2": "MR",
@@ -2395,8 +2955,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇲🇷",
       "flag_asset": null,
-      "latitude": 20.0,
-      "longitude": -12.0
+      "latitude": 20,
+      "longitude": -12,
+      "capital_name_ca": "Nouakchott",
+      "capital_name_en": "Nouakchott",
+      "capital_latitude": 18.07,
+      "capital_longitude": -15.97
     },
     {
       "iso2": "YT",
@@ -2413,7 +2977,11 @@
       "flag_emoji": "🇾🇹",
       "flag_asset": null,
       "latitude": -12.8333,
-      "longitude": 45.1667
+      "longitude": 45.1667,
+      "capital_name_ca": "Mamoudzou",
+      "capital_name_en": "Mamoudzou",
+      "capital_latitude": -12.78,
+      "capital_longitude": 45.22
     },
     {
       "iso2": "FM",
@@ -2430,7 +2998,11 @@
       "flag_emoji": "🇫🇲",
       "flag_asset": null,
       "latitude": 6.9167,
-      "longitude": 158.25
+      "longitude": 158.25,
+      "capital_name_ca": "Palikir",
+      "capital_name_en": "Palikir",
+      "capital_latitude": 6.92,
+      "capital_longitude": 158.15
     },
     {
       "iso2": "MD",
@@ -2446,8 +3018,12 @@
       "subregion": "Eastern Europe",
       "flag_emoji": "🇲🇩",
       "flag_asset": null,
-      "latitude": 47.0,
-      "longitude": 29.0
+      "latitude": 47,
+      "longitude": 29,
+      "capital_name_ca": "Chisinau",
+      "capital_name_en": "Chișinău",
+      "capital_latitude": 47.01,
+      "capital_longitude": 28.9
     },
     {
       "iso2": "MN",
@@ -2463,8 +3039,12 @@
       "subregion": "Eastern Asia",
       "flag_emoji": "🇲🇳",
       "flag_asset": null,
-      "latitude": 46.0,
-      "longitude": 105.0
+      "latitude": 46,
+      "longitude": 105,
+      "capital_name_ca": "Ulaanbaatar",
+      "capital_name_en": "Ulaanbaatar",
+      "capital_latitude": 47.92,
+      "capital_longitude": 106.91
     },
     {
       "iso2": "ME",
@@ -2481,7 +3061,11 @@
       "flag_emoji": "🇲🇪",
       "flag_asset": null,
       "latitude": 42.5,
-      "longitude": 19.3
+      "longitude": 19.3,
+      "capital_name_ca": "Podgorica",
+      "capital_name_en": "Podgorica",
+      "capital_latitude": 42.43,
+      "capital_longitude": 19.27
     },
     {
       "iso2": "MS",
@@ -2498,7 +3082,11 @@
       "flag_emoji": "🇲🇸",
       "flag_asset": null,
       "latitude": 16.75,
-      "longitude": -62.2
+      "longitude": -62.2,
+      "capital_name_ca": "Brades",
+      "capital_name_en": "Brades",
+      "capital_latitude": 16.7,
+      "capital_longitude": -62.22
     },
     {
       "iso2": "MZ",
@@ -2515,7 +3103,11 @@
       "flag_emoji": "🇲🇿",
       "flag_asset": null,
       "latitude": -18.25,
-      "longitude": 35.0
+      "longitude": 35,
+      "capital_name_ca": "Maputo",
+      "capital_name_en": "Maputo",
+      "capital_latitude": -25.95,
+      "capital_longitude": 32.58
     },
     {
       "iso2": "MM",
@@ -2531,8 +3123,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇲🇲",
       "flag_asset": null,
-      "latitude": 22.0,
-      "longitude": 98.0
+      "latitude": 22,
+      "longitude": 98,
+      "capital_name_ca": "Nepidò",
+      "capital_name_en": "Naypyidaw",
+      "capital_latitude": 19.76,
+      "capital_longitude": 96.07
     },
     {
       "iso2": "MX",
@@ -2548,8 +3144,12 @@
       "subregion": "North America",
       "flag_emoji": "🇲🇽",
       "flag_asset": null,
-      "latitude": 23.0,
-      "longitude": -102.0
+      "latitude": 23,
+      "longitude": -102,
+      "capital_name_ca": "Ciutat de Mèxic",
+      "capital_name_en": "Mexico City",
+      "capital_latitude": 19.43,
+      "capital_longitude": -99.13
     },
     {
       "iso2": "MC",
@@ -2566,7 +3166,11 @@
       "flag_emoji": "🇲🇨",
       "flag_asset": null,
       "latitude": 43.7333,
-      "longitude": 7.4
+      "longitude": 7.4,
+      "capital_name_ca": "Ciutat de Mònaco",
+      "capital_name_en": "Monaco City",
+      "capital_latitude": 43.73,
+      "capital_longitude": 7.42
     },
     {
       "iso2": "NA",
@@ -2582,8 +3186,12 @@
       "subregion": "Southern Africa",
       "flag_emoji": "🇳🇦",
       "flag_asset": null,
-      "latitude": -22.0,
-      "longitude": 17.0
+      "latitude": -22,
+      "longitude": 17,
+      "capital_name_ca": "Windhoek",
+      "capital_name_en": "Windhoek",
+      "capital_latitude": -22.57,
+      "capital_longitude": 17.08
     },
     {
       "iso2": "NR",
@@ -2600,7 +3208,11 @@
       "flag_emoji": "🇳🇷",
       "flag_asset": null,
       "latitude": -0.5333,
-      "longitude": 166.9167
+      "longitude": 166.9167,
+      "capital_name_ca": "Yaren",
+      "capital_name_en": "Yaren District",
+      "capital_latitude": -0.55,
+      "capital_longitude": 166.92
     },
     {
       "iso2": "NP",
@@ -2616,8 +3228,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇳🇵",
       "flag_asset": null,
-      "latitude": 28.0,
-      "longitude": 84.0
+      "latitude": 28,
+      "longitude": 84,
+      "capital_name_ca": "Katmandú",
+      "capital_name_en": "Kathmandu",
+      "capital_latitude": 27.72,
+      "capital_longitude": 85.32
     },
     {
       "iso2": "NI",
@@ -2633,8 +3249,12 @@
       "subregion": "Central America",
       "flag_emoji": "🇳🇮",
       "flag_asset": null,
-      "latitude": 13.0,
-      "longitude": -85.0
+      "latitude": 13,
+      "longitude": -85,
+      "capital_name_ca": "Managua",
+      "capital_name_en": "Managua",
+      "capital_latitude": 12.13,
+      "capital_longitude": -86.25
     },
     {
       "iso2": "NG",
@@ -2650,8 +3270,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇳🇬",
       "flag_asset": null,
-      "latitude": 10.0,
-      "longitude": 8.0
+      "latitude": 10,
+      "longitude": 8,
+      "capital_name_ca": "Abuja",
+      "capital_name_en": "Abuja",
+      "capital_latitude": 9.08,
+      "capital_longitude": 7.53
     },
     {
       "iso2": "NU",
@@ -2668,7 +3292,11 @@
       "flag_emoji": "🇳🇺",
       "flag_asset": null,
       "latitude": -19.0333,
-      "longitude": -169.8667
+      "longitude": -169.8667,
+      "capital_name_ca": "Alofi",
+      "capital_name_en": "Alofi",
+      "capital_latitude": -19.02,
+      "capital_longitude": -169.92
     },
     {
       "iso2": "NO",
@@ -2684,8 +3312,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇳🇴",
       "flag_asset": null,
-      "latitude": 62.0,
-      "longitude": 10.0
+      "latitude": 62,
+      "longitude": 10,
+      "capital_name_ca": "Oslo",
+      "capital_name_en": "Oslo",
+      "capital_latitude": 59.92,
+      "capital_longitude": 10.75
     },
     {
       "iso2": "NC",
@@ -2702,7 +3334,11 @@
       "flag_emoji": "🇳🇨",
       "flag_asset": null,
       "latitude": -21.5,
-      "longitude": 165.5
+      "longitude": 165.5,
+      "capital_name_ca": "Nouméa",
+      "capital_name_en": "Nouméa",
+      "capital_latitude": -22.27,
+      "capital_longitude": 166.45
     },
     {
       "iso2": "NZ",
@@ -2718,8 +3354,12 @@
       "subregion": "Australia and New Zealand",
       "flag_emoji": "🇳🇿",
       "flag_asset": null,
-      "latitude": -41.0,
-      "longitude": 174.0
+      "latitude": -41,
+      "longitude": 174,
+      "capital_name_ca": "Wellington",
+      "capital_name_en": "Wellington",
+      "capital_latitude": -41.3,
+      "capital_longitude": 174.78
     },
     {
       "iso2": "NE",
@@ -2735,8 +3375,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇳🇪",
       "flag_asset": null,
-      "latitude": 16.0,
-      "longitude": 8.0
+      "latitude": 16,
+      "longitude": 8,
+      "capital_name_ca": "Niamey",
+      "capital_name_en": "Niamey",
+      "capital_latitude": 13.52,
+      "capital_longitude": 2.12
     },
     {
       "iso2": "OM",
@@ -2752,8 +3396,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇴🇲",
       "flag_asset": null,
-      "latitude": 21.0,
-      "longitude": 57.0
+      "latitude": 21,
+      "longitude": 57,
+      "capital_name_ca": "Masqat",
+      "capital_name_en": "Muscat",
+      "capital_latitude": 23.62,
+      "capital_longitude": 58.58
     },
     {
       "iso2": "PK",
@@ -2769,8 +3417,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇵🇰",
       "flag_asset": null,
-      "latitude": 30.0,
-      "longitude": 70.0
+      "latitude": 30,
+      "longitude": 70,
+      "capital_name_ca": "Islamabad",
+      "capital_name_en": "Islamabad",
+      "capital_latitude": 33.68,
+      "capital_longitude": 73.05
     },
     {
       "iso2": "PW",
@@ -2787,7 +3439,11 @@
       "flag_emoji": "🇵🇼",
       "flag_asset": null,
       "latitude": 7.5,
-      "longitude": 134.5
+      "longitude": 134.5,
+      "capital_name_ca": "Ngerulmud",
+      "capital_name_en": "Ngerulmud",
+      "capital_latitude": 7.5,
+      "capital_longitude": 134.62
     },
     {
       "iso2": "PS",
@@ -2804,7 +3460,11 @@
       "flag_emoji": "🇵🇸",
       "flag_asset": null,
       "latitude": 31.9,
-      "longitude": 35.2
+      "longitude": 35.2,
+      "capital_name_ca": "Ramal·lah",
+      "capital_name_en": "Ramallah",
+      "capital_latitude": 31.9,
+      "capital_longitude": 35.2
     },
     {
       "iso2": "PA",
@@ -2820,8 +3480,12 @@
       "subregion": "Central America",
       "flag_emoji": "🇵🇦",
       "flag_asset": null,
-      "latitude": 9.0,
-      "longitude": -80.0
+      "latitude": 9,
+      "longitude": -80,
+      "capital_name_ca": "Ciutat de Panamà",
+      "capital_name_en": "Panama City",
+      "capital_latitude": 8.97,
+      "capital_longitude": -79.53
     },
     {
       "iso2": "PG",
@@ -2837,8 +3501,12 @@
       "subregion": "Melanesia",
       "flag_emoji": "🇵🇬",
       "flag_asset": null,
-      "latitude": -6.0,
-      "longitude": 147.0
+      "latitude": -6,
+      "longitude": 147,
+      "capital_name_ca": "Port Moresby",
+      "capital_name_en": "Port Moresby",
+      "capital_latitude": -9.45,
+      "capital_longitude": 147.18
     },
     {
       "iso2": "PY",
@@ -2854,8 +3522,12 @@
       "subregion": "South America",
       "flag_emoji": "🇵🇾",
       "flag_asset": null,
-      "latitude": -23.0,
-      "longitude": -58.0
+      "latitude": -23,
+      "longitude": -58,
+      "capital_name_ca": "Asunción",
+      "capital_name_en": "Asunción",
+      "capital_latitude": -25.28,
+      "capital_longitude": -57.57
     },
     {
       "iso2": "NL",
@@ -2872,7 +3544,11 @@
       "flag_emoji": "🇳🇱",
       "flag_asset": null,
       "latitude": 52.5,
-      "longitude": 5.75
+      "longitude": 5.75,
+      "capital_name_ca": "Amsterdam",
+      "capital_name_en": "Amsterdam",
+      "capital_latitude": 52.35,
+      "capital_longitude": 4.92
     },
     {
       "iso2": "BQ",
@@ -2889,7 +3565,11 @@
       "flag_emoji": "🇧🇶",
       "flag_asset": null,
       "latitude": 12.18,
-      "longitude": -68.25
+      "longitude": -68.25,
+      "capital_name_ca": "Kralendijk",
+      "capital_name_en": "Kralendijk",
+      "capital_latitude": 12.14,
+      "capital_longitude": -68.27
     },
     {
       "iso2": "PE",
@@ -2905,8 +3585,12 @@
       "subregion": "South America",
       "flag_emoji": "🇵🇪",
       "flag_asset": null,
-      "latitude": -10.0,
-      "longitude": -76.0
+      "latitude": -10,
+      "longitude": -76,
+      "capital_name_ca": "Lima",
+      "capital_name_en": "Lima",
+      "capital_latitude": -12.05,
+      "capital_longitude": -77.05
     },
     {
       "iso2": "PF",
@@ -2923,7 +3607,11 @@
       "flag_emoji": "🇵🇫",
       "flag_asset": null,
       "latitude": -17.6797,
-      "longitude": -149.4068
+      "longitude": -149.4068,
+      "capital_name_ca": "Papeete",
+      "capital_name_en": "Papeete",
+      "capital_latitude": -17.53,
+      "capital_longitude": -149.56
     },
     {
       "iso2": "PL",
@@ -2939,8 +3627,12 @@
       "subregion": "Central Europe",
       "flag_emoji": "🇵🇱",
       "flag_asset": null,
-      "latitude": 52.0,
-      "longitude": 20.0
+      "latitude": 52,
+      "longitude": 20,
+      "capital_name_ca": "Varsòvia",
+      "capital_name_en": "Warsaw",
+      "capital_latitude": 52.25,
+      "capital_longitude": 21
     },
     {
       "iso2": "PT",
@@ -2957,7 +3649,11 @@
       "flag_emoji": "🇵🇹",
       "flag_asset": null,
       "latitude": 39.5,
-      "longitude": -8.0
+      "longitude": -8,
+      "capital_name_ca": "Lisboa",
+      "capital_name_en": "Lisbon",
+      "capital_latitude": 38.72,
+      "capital_longitude": -9.13
     },
     {
       "iso2": "PR",
@@ -2974,7 +3670,11 @@
       "flag_emoji": "🇵🇷",
       "flag_asset": null,
       "latitude": 18.25,
-      "longitude": -66.5
+      "longitude": -66.5,
+      "capital_name_ca": "San Juan",
+      "capital_name_en": "San Juan",
+      "capital_latitude": 18.47,
+      "capital_longitude": -66.12
     },
     {
       "iso2": "QA",
@@ -2991,7 +3691,11 @@
       "flag_emoji": "🇶🇦",
       "flag_asset": null,
       "latitude": 25.5,
-      "longitude": 51.25
+      "longitude": 51.25,
+      "capital_name_ca": "Doha",
+      "capital_name_en": "Doha",
+      "capital_latitude": 25.28,
+      "capital_longitude": 51.53
     },
     {
       "iso2": "GB",
@@ -3007,8 +3711,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇬🇧",
       "flag_asset": null,
-      "latitude": 54.0,
-      "longitude": -2.0
+      "latitude": 54,
+      "longitude": -2,
+      "capital_name_ca": "Londres",
+      "capital_name_en": "London",
+      "capital_latitude": 51.5,
+      "capital_longitude": -0.08
     },
     {
       "iso2": "CF",
@@ -3024,8 +3732,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇨🇫",
       "flag_asset": null,
-      "latitude": 7.0,
-      "longitude": 21.0
+      "latitude": 7,
+      "longitude": 21,
+      "capital_name_ca": "Bangui",
+      "capital_name_en": "Bangui",
+      "capital_latitude": 4.37,
+      "capital_longitude": 18.58
     },
     {
       "iso2": "CD",
@@ -3041,8 +3753,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇨🇩",
       "flag_asset": null,
-      "latitude": 0.0,
-      "longitude": 25.0
+      "latitude": 0,
+      "longitude": 25,
+      "capital_name_ca": "Kinshasa",
+      "capital_name_en": "Kinshasa",
+      "capital_latitude": -4.32,
+      "capital_longitude": 15.3
     },
     {
       "iso2": "DO",
@@ -3058,8 +3774,12 @@
       "subregion": "Caribbean",
       "flag_emoji": "🇩🇴",
       "flag_asset": null,
-      "latitude": 19.0,
-      "longitude": -70.6667
+      "latitude": 19,
+      "longitude": -70.6667,
+      "capital_name_ca": "Santo Domingo",
+      "capital_name_en": "Santo Domingo",
+      "capital_latitude": 18.47,
+      "capital_longitude": -69.9
     },
     {
       "iso2": "RE",
@@ -3076,7 +3796,11 @@
       "flag_emoji": "🇷🇪",
       "flag_asset": null,
       "latitude": -21.15,
-      "longitude": 55.5
+      "longitude": 55.5,
+      "capital_name_ca": "Saint-Denis",
+      "capital_name_en": "Saint-Denis",
+      "capital_latitude": -20.88,
+      "capital_longitude": 55.45
     },
     {
       "iso2": "RO",
@@ -3092,8 +3816,12 @@
       "subregion": "Southeast Europe",
       "flag_emoji": "🇷🇴",
       "flag_asset": null,
-      "latitude": 46.0,
-      "longitude": 25.0
+      "latitude": 46,
+      "longitude": 25,
+      "capital_name_ca": "Bucarest",
+      "capital_name_en": "Bucharest",
+      "capital_latitude": 44.43,
+      "capital_longitude": 26.1
     },
     {
       "iso2": "RW",
@@ -3109,8 +3837,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇷🇼",
       "flag_asset": null,
-      "latitude": -2.0,
-      "longitude": 30.0
+      "latitude": -2,
+      "longitude": 30,
+      "capital_name_ca": "Kigali",
+      "capital_name_en": "Kigali",
+      "capital_latitude": -1.95,
+      "capital_longitude": 30.05
     },
     {
       "iso2": "RU",
@@ -3126,8 +3858,12 @@
       "subregion": "Eastern Europe",
       "flag_emoji": "🇷🇺",
       "flag_asset": null,
-      "latitude": 60.0,
-      "longitude": 100.0
+      "latitude": 60,
+      "longitude": 100,
+      "capital_name_ca": "Moscou",
+      "capital_name_en": "Moscow",
+      "capital_latitude": 55.75,
+      "capital_longitude": 37.6
     },
     {
       "iso2": "BL",
@@ -3144,7 +3880,11 @@
       "flag_emoji": "🇧🇱",
       "flag_asset": null,
       "latitude": 18.5,
-      "longitude": -63.4167
+      "longitude": -63.4167,
+      "capital_name_ca": "Gustavia",
+      "capital_name_en": "Gustavia",
+      "capital_latitude": 17.88,
+      "capital_longitude": -62.85
     },
     {
       "iso2": "KN",
@@ -3161,7 +3901,11 @@
       "flag_emoji": "🇰🇳",
       "flag_asset": null,
       "latitude": 17.3333,
-      "longitude": -62.75
+      "longitude": -62.75,
+      "capital_name_ca": "Basseterre",
+      "capital_name_en": "Basseterre",
+      "capital_latitude": 17.3,
+      "capital_longitude": -62.72
     },
     {
       "iso2": "MF",
@@ -3178,7 +3922,11 @@
       "flag_emoji": "🇲🇫",
       "flag_asset": null,
       "latitude": 18.0708,
-      "longitude": -63.0501
+      "longitude": -63.0501,
+      "capital_name_ca": "Marigot",
+      "capital_name_en": "Marigot",
+      "capital_latitude": 18.07,
+      "capital_longitude": -63.08
     },
     {
       "iso2": "PM",
@@ -3195,7 +3943,11 @@
       "flag_emoji": "🇵🇲",
       "flag_asset": null,
       "latitude": 46.8333,
-      "longitude": -56.3333
+      "longitude": -56.3333,
+      "capital_name_ca": "Saint-Pierre",
+      "capital_name_en": "Saint-Pierre",
+      "capital_latitude": 46.77,
+      "capital_longitude": -56.18
     },
     {
       "iso2": "WS",
@@ -3212,7 +3964,11 @@
       "flag_emoji": "🇼🇸",
       "flag_asset": null,
       "latitude": -13.5833,
-      "longitude": -172.3333
+      "longitude": -172.3333,
+      "capital_name_ca": "Apia",
+      "capital_name_en": "Apia",
+      "capital_latitude": -13.82,
+      "capital_longitude": -171.77
     },
     {
       "iso2": "AS",
@@ -3229,7 +3985,11 @@
       "flag_emoji": "🇦🇸",
       "flag_asset": null,
       "latitude": -14.3333,
-      "longitude": -170.0
+      "longitude": -170,
+      "capital_name_ca": "Pago Pago",
+      "capital_name_en": "Pago Pago",
+      "capital_latitude": -14.27,
+      "capital_longitude": -170.7
     },
     {
       "iso2": "SM",
@@ -3246,7 +4006,11 @@
       "flag_emoji": "🇸🇲",
       "flag_asset": null,
       "latitude": 43.7667,
-      "longitude": 12.4167
+      "longitude": 12.4167,
+      "capital_name_ca": "Ciutat de San Marino",
+      "capital_name_en": "San Marino",
+      "capital_latitude": 43.94,
+      "capital_longitude": 12.45
     },
     {
       "iso2": "VC",
@@ -3263,7 +4027,11 @@
       "flag_emoji": "🇻🇨",
       "flag_asset": null,
       "latitude": 13.25,
-      "longitude": -61.2
+      "longitude": -61.2,
+      "capital_name_ca": "Kingstown",
+      "capital_name_en": "Kingstown",
+      "capital_latitude": 13.13,
+      "capital_longitude": -61.22
     },
     {
       "iso2": "SH",
@@ -3280,7 +4048,11 @@
       "flag_emoji": "🇸🇭",
       "flag_asset": null,
       "latitude": -15.95,
-      "longitude": -5.72
+      "longitude": -5.72,
+      "capital_name_ca": "Jamestown",
+      "capital_name_en": "Jamestown",
+      "capital_latitude": -15.93,
+      "capital_longitude": -5.72
     },
     {
       "iso2": "LC",
@@ -3297,7 +4069,11 @@
       "flag_emoji": "🇱🇨",
       "flag_asset": null,
       "latitude": 13.8833,
-      "longitude": -60.9667
+      "longitude": -60.9667,
+      "capital_name_ca": "Castries",
+      "capital_name_en": "Castries",
+      "capital_latitude": 14,
+      "capital_longitude": -61
     },
     {
       "iso2": "SN",
@@ -3313,8 +4089,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇸🇳",
       "flag_asset": null,
-      "latitude": 14.0,
-      "longitude": -14.0
+      "latitude": 14,
+      "longitude": -14,
+      "capital_name_ca": "Dakar",
+      "capital_name_en": "Dakar",
+      "capital_latitude": 14.73,
+      "capital_longitude": -17.63
     },
     {
       "iso2": "SC",
@@ -3331,7 +4111,11 @@
       "flag_emoji": "🇸🇨",
       "flag_asset": null,
       "latitude": -4.5833,
-      "longitude": 55.6667
+      "longitude": 55.6667,
+      "capital_name_ca": "Victoria",
+      "capital_name_en": "Victoria",
+      "capital_latitude": -4.62,
+      "capital_longitude": 55.45
     },
     {
       "iso2": "SL",
@@ -3348,7 +4132,11 @@
       "flag_emoji": "🇸🇱",
       "flag_asset": null,
       "latitude": 8.5,
-      "longitude": -11.5
+      "longitude": -11.5,
+      "capital_name_ca": "Freetown",
+      "capital_name_en": "Freetown",
+      "capital_latitude": 8.48,
+      "capital_longitude": -13.23
     },
     {
       "iso2": "SG",
@@ -3365,7 +4153,11 @@
       "flag_emoji": "🇸🇬",
       "flag_asset": null,
       "latitude": 1.3667,
-      "longitude": 103.8
+      "longitude": 103.8,
+      "capital_name_ca": "Singapur",
+      "capital_name_en": "Singapore",
+      "capital_latitude": 1.28,
+      "capital_longitude": 103.85
     },
     {
       "iso2": "SX",
@@ -3382,7 +4174,11 @@
       "flag_emoji": "🇸🇽",
       "flag_asset": null,
       "latitude": 18.0333,
-      "longitude": -63.05
+      "longitude": -63.05,
+      "capital_name_ca": "Philipsburg",
+      "capital_name_en": "Philipsburg",
+      "capital_latitude": 18.02,
+      "capital_longitude": -63.03
     },
     {
       "iso2": "SO",
@@ -3398,8 +4194,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇸🇴",
       "flag_asset": null,
-      "latitude": 10.0,
-      "longitude": 49.0
+      "latitude": 10,
+      "longitude": 49,
+      "capital_name_ca": "Mogadiscio",
+      "capital_name_en": "Mogadishu",
+      "capital_latitude": 2.07,
+      "capital_longitude": 45.33
     },
     {
       "iso2": "LK",
@@ -3415,8 +4215,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇱🇰",
       "flag_asset": null,
-      "latitude": 7.0,
-      "longitude": 81.0
+      "latitude": 7,
+      "longitude": 81,
+      "capital_name_ca": "Colombo",
+      "capital_name_en": "Colombo",
+      "capital_latitude": 6.89,
+      "capital_longitude": 79.9
     },
     {
       "iso2": "ZA",
@@ -3432,8 +4236,12 @@
       "subregion": "Southern Africa",
       "flag_emoji": "🇿🇦",
       "flag_asset": null,
-      "latitude": -29.0,
-      "longitude": 24.0
+      "latitude": -29,
+      "longitude": 24,
+      "capital_name_ca": "Pretòria",
+      "capital_name_en": "Pretoria",
+      "capital_latitude": -25.7,
+      "capital_longitude": 28.22
     },
     {
       "iso2": "SD",
@@ -3449,8 +4257,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇸🇩",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": 30.0
+      "latitude": 15,
+      "longitude": 30,
+      "capital_name_ca": "Khartum",
+      "capital_name_en": "Khartoum",
+      "capital_latitude": 15.6,
+      "capital_longitude": 32.53
     },
     {
       "iso2": "SS",
@@ -3466,8 +4278,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇸🇸",
       "flag_asset": null,
-      "latitude": 7.0,
-      "longitude": 30.0
+      "latitude": 7,
+      "longitude": 30,
+      "capital_name_ca": "Juba",
+      "capital_name_en": "Juba",
+      "capital_latitude": 4.85,
+      "capital_longitude": 31.62
     },
     {
       "iso2": "SR",
@@ -3483,8 +4299,12 @@
       "subregion": "South America",
       "flag_emoji": "🇸🇷",
       "flag_asset": null,
-      "latitude": 4.0,
-      "longitude": -56.0
+      "latitude": 4,
+      "longitude": -56,
+      "capital_name_ca": "Paramaribo",
+      "capital_name_en": "Paramaribo",
+      "capital_latitude": 5.83,
+      "capital_longitude": -55.17
     },
     {
       "iso2": "SE",
@@ -3500,8 +4320,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇸🇪",
       "flag_asset": null,
-      "latitude": 62.0,
-      "longitude": 15.0
+      "latitude": 62,
+      "longitude": 15,
+      "capital_name_ca": "Estocolm",
+      "capital_name_en": "Stockholm",
+      "capital_latitude": 59.33,
+      "capital_longitude": 18.05
     },
     {
       "iso2": "CH",
@@ -3517,8 +4341,12 @@
       "subregion": "Western Europe",
       "flag_emoji": "🇨🇭",
       "flag_asset": null,
-      "latitude": 47.0,
-      "longitude": 8.0
+      "latitude": 47,
+      "longitude": 8,
+      "capital_name_ca": "Berna",
+      "capital_name_en": "Bern",
+      "capital_latitude": 46.92,
+      "capital_longitude": 7.47
     },
     {
       "iso2": "SJ",
@@ -3534,8 +4362,12 @@
       "subregion": "Northern Europe",
       "flag_emoji": "🇸🇯",
       "flag_asset": null,
-      "latitude": 78.0,
-      "longitude": 20.0
+      "latitude": 78,
+      "longitude": 20,
+      "capital_name_ca": "Longyearbyen",
+      "capital_name_en": "Longyearbyen",
+      "capital_latitude": 78.22,
+      "capital_longitude": 15.63
     },
     {
       "iso2": "EH",
@@ -3552,7 +4384,11 @@
       "flag_emoji": "🇪🇭",
       "flag_asset": null,
       "latitude": 24.5,
-      "longitude": -13.0
+      "longitude": -13,
+      "capital_name_ca": "El Aaiún",
+      "capital_name_en": "El Aaiún",
+      "capital_latitude": -13.28,
+      "capital_longitude": 27.14
     },
     {
       "iso2": "ST",
@@ -3568,8 +4404,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇸🇹",
       "flag_asset": null,
-      "latitude": 1.0,
-      "longitude": 7.0
+      "latitude": 1,
+      "longitude": 7,
+      "capital_name_ca": "São Tomé",
+      "capital_name_en": "São Tomé",
+      "capital_latitude": 0.34,
+      "capital_longitude": 6.73
     },
     {
       "iso2": "RS",
@@ -3585,8 +4425,12 @@
       "subregion": "Southeast Europe",
       "flag_emoji": "🇷🇸",
       "flag_asset": null,
-      "latitude": 44.0,
-      "longitude": 21.0
+      "latitude": 44,
+      "longitude": 21,
+      "capital_name_ca": "Belgrad",
+      "capital_name_en": "Belgrade",
+      "capital_latitude": 44.83,
+      "capital_longitude": 20.5
     },
     {
       "iso2": "SY",
@@ -3602,8 +4446,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇸🇾",
       "flag_asset": null,
-      "latitude": 35.0,
-      "longitude": 38.0
+      "latitude": 35,
+      "longitude": 38,
+      "capital_name_ca": "Damasc",
+      "capital_name_en": "Damascus",
+      "capital_latitude": 33.5,
+      "capital_longitude": 36.3
     },
     {
       "iso2": "TJ",
@@ -3619,8 +4467,12 @@
       "subregion": "Central Asia",
       "flag_emoji": "🇹🇯",
       "flag_asset": null,
-      "latitude": 39.0,
-      "longitude": 71.0
+      "latitude": 39,
+      "longitude": 71,
+      "capital_name_ca": "Duixanbe",
+      "capital_name_en": "Dushanbe",
+      "capital_latitude": 38.55,
+      "capital_longitude": 68.77
     },
     {
       "iso2": "TH",
@@ -3636,8 +4488,12 @@
       "subregion": "South-Eastern Asia",
       "flag_emoji": "🇹🇭",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": 100.0
+      "latitude": 15,
+      "longitude": 100,
+      "capital_name_ca": "Bangkok",
+      "capital_name_en": "Bangkok",
+      "capital_latitude": 13.75,
+      "capital_longitude": 100.52
     },
     {
       "iso2": "TW",
@@ -3654,7 +4510,11 @@
       "flag_emoji": "🇹🇼",
       "flag_asset": null,
       "latitude": 23.5,
-      "longitude": 121.0
+      "longitude": 121,
+      "capital_name_ca": "Taipei",
+      "capital_name_en": "Taipei",
+      "capital_latitude": 25.03,
+      "capital_longitude": 121.52
     },
     {
       "iso2": "TZ",
@@ -3670,8 +4530,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇹🇿",
       "flag_asset": null,
-      "latitude": -6.0,
-      "longitude": 35.0
+      "latitude": -6,
+      "longitude": 35,
+      "capital_name_ca": "Dodoma",
+      "capital_name_en": "Dodoma",
+      "capital_latitude": -6.16,
+      "capital_longitude": 35.75
     },
     {
       "iso2": "IO",
@@ -3687,8 +4551,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇮🇴",
       "flag_asset": null,
-      "latitude": -6.0,
-      "longitude": 71.5
+      "latitude": -6,
+      "longitude": 71.5,
+      "capital_name_ca": "Diego Garcia",
+      "capital_name_en": "Diego Garcia",
+      "capital_latitude": -7.3,
+      "capital_longitude": 72.4
     },
     {
       "iso2": "TL",
@@ -3705,7 +4573,11 @@
       "flag_emoji": "🇹🇱",
       "flag_asset": null,
       "latitude": -8.8333,
-      "longitude": 125.9167
+      "longitude": 125.9167,
+      "capital_name_ca": "Dili",
+      "capital_name_en": "Dili",
+      "capital_latitude": -8.58,
+      "capital_longitude": 125.6
     },
     {
       "iso2": "TG",
@@ -3721,8 +4593,12 @@
       "subregion": "Western Africa",
       "flag_emoji": "🇹🇬",
       "flag_asset": null,
-      "latitude": 8.0,
-      "longitude": 1.1667
+      "latitude": 8,
+      "longitude": 1.1667,
+      "capital_name_ca": "Lomé",
+      "capital_name_en": "Lomé",
+      "capital_latitude": 6.14,
+      "capital_longitude": 1.21
     },
     {
       "iso2": "TK",
@@ -3738,8 +4614,12 @@
       "subregion": "Polynesia",
       "flag_emoji": "🇹🇰",
       "flag_asset": null,
-      "latitude": -9.0,
-      "longitude": -172.0
+      "latitude": -9,
+      "longitude": -172,
+      "capital_name_ca": "Fakaofo",
+      "capital_name_en": "Fakaofo",
+      "capital_latitude": -9.38,
+      "capital_longitude": -171.22
     },
     {
       "iso2": "TO",
@@ -3755,8 +4635,12 @@
       "subregion": "Polynesia",
       "flag_emoji": "🇹🇴",
       "flag_asset": null,
-      "latitude": -20.0,
-      "longitude": -175.0
+      "latitude": -20,
+      "longitude": -175,
+      "capital_name_ca": "Nuku'alofa",
+      "capital_name_en": "Nukuʻalofa",
+      "capital_latitude": -21.13,
+      "capital_longitude": -175.2
     },
     {
       "iso2": "TT",
@@ -3773,7 +4657,11 @@
       "flag_emoji": "🇹🇹",
       "flag_asset": null,
       "latitude": 10.6918,
-      "longitude": -61.2225
+      "longitude": -61.2225,
+      "capital_name_ca": "Port-of-Spain",
+      "capital_name_en": "Port of Spain",
+      "capital_latitude": 10.65,
+      "capital_longitude": -61.52
     },
     {
       "iso2": "TN",
@@ -3789,8 +4677,12 @@
       "subregion": "Northern Africa",
       "flag_emoji": "🇹🇳",
       "flag_asset": null,
-      "latitude": 34.0,
-      "longitude": 9.0
+      "latitude": 34,
+      "longitude": 9,
+      "capital_name_ca": "Tunis",
+      "capital_name_en": "Tunis",
+      "capital_latitude": 36.8,
+      "capital_longitude": 10.18
     },
     {
       "iso2": "TM",
@@ -3806,8 +4698,12 @@
       "subregion": "Central Asia",
       "flag_emoji": "🇹🇲",
       "flag_asset": null,
-      "latitude": 40.0,
-      "longitude": 60.0
+      "latitude": 40,
+      "longitude": 60,
+      "capital_name_ca": "Aixgabat",
+      "capital_name_en": "Ashgabat",
+      "capital_latitude": 37.95,
+      "capital_longitude": 58.38
     },
     {
       "iso2": "TR",
@@ -3823,8 +4719,12 @@
       "subregion": "Western Asia",
       "flag_emoji": "🇹🇷",
       "flag_asset": null,
-      "latitude": 39.0,
-      "longitude": 35.0
+      "latitude": 39,
+      "longitude": 35,
+      "capital_name_ca": "Ankara",
+      "capital_name_en": "Ankara",
+      "capital_latitude": 39.93,
+      "capital_longitude": 32.87
     },
     {
       "iso2": "TV",
@@ -3840,8 +4740,12 @@
       "subregion": "Polynesia",
       "flag_emoji": "🇹🇻",
       "flag_asset": null,
-      "latitude": -8.0,
-      "longitude": 178.0
+      "latitude": -8,
+      "longitude": 178,
+      "capital_name_ca": "Funafuti",
+      "capital_name_en": "Funafuti",
+      "capital_latitude": -8.52,
+      "capital_longitude": 179.22
     },
     {
       "iso2": "TD",
@@ -3857,8 +4761,12 @@
       "subregion": "Middle Africa",
       "flag_emoji": "🇹🇨",
       "flag_asset": null,
-      "latitude": 15.0,
-      "longitude": 19.0
+      "latitude": 15,
+      "longitude": 19,
+      "capital_name_ca": "N'Djamena",
+      "capital_name_en": "N'Djamena",
+      "capital_latitude": 12.1,
+      "capital_longitude": 15.03
     },
     {
       "iso2": "CZ",
@@ -3875,7 +4783,11 @@
       "flag_emoji": "🇨🇿",
       "flag_asset": null,
       "latitude": 49.75,
-      "longitude": 15.5
+      "longitude": 15.5,
+      "capital_name_ca": "Praga",
+      "capital_name_en": "Prague",
+      "capital_latitude": 50.08,
+      "capital_longitude": 14.47
     },
     {
       "iso2": "UA",
@@ -3891,8 +4803,12 @@
       "subregion": "Eastern Europe",
       "flag_emoji": "🇺🇦",
       "flag_asset": null,
-      "latitude": 49.0,
-      "longitude": 32.0
+      "latitude": 49,
+      "longitude": 32,
+      "capital_name_ca": "Kíiv",
+      "capital_name_en": "Kyiv",
+      "capital_latitude": 50.43,
+      "capital_longitude": 30.52
     },
     {
       "iso2": "UG",
@@ -3908,8 +4824,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇺🇬",
       "flag_asset": null,
-      "latitude": 1.0,
-      "longitude": 32.0
+      "latitude": 1,
+      "longitude": 32,
+      "capital_name_ca": "Kampala",
+      "capital_name_en": "Kampala",
+      "capital_latitude": 0.32,
+      "capital_longitude": 32.55
     },
     {
       "iso2": "UY",
@@ -3925,8 +4845,12 @@
       "subregion": "South America",
       "flag_emoji": "🇺🇾",
       "flag_asset": null,
-      "latitude": -33.0,
-      "longitude": -56.0
+      "latitude": -33,
+      "longitude": -56,
+      "capital_name_ca": "Montevideo",
+      "capital_name_en": "Montevideo",
+      "capital_latitude": -34.85,
+      "capital_longitude": -56.17
     },
     {
       "iso2": "UZ",
@@ -3942,8 +4866,12 @@
       "subregion": "Central Asia",
       "flag_emoji": "🇺🇿",
       "flag_asset": null,
-      "latitude": 41.0,
-      "longitude": 64.0
+      "latitude": 41,
+      "longitude": 64,
+      "capital_name_ca": "Taixkent",
+      "capital_name_en": "Tashkent",
+      "capital_latitude": 41.32,
+      "capital_longitude": 69.25
     },
     {
       "iso2": "VU",
@@ -3959,8 +4887,12 @@
       "subregion": "Melanesia",
       "flag_emoji": "🇻🇺",
       "flag_asset": null,
-      "latitude": -16.0,
-      "longitude": 167.0
+      "latitude": -16,
+      "longitude": 167,
+      "capital_name_ca": "Port Vila",
+      "capital_name_en": "Port Vila",
+      "capital_latitude": -17.73,
+      "capital_longitude": 168.32
     },
     {
       "iso2": "VA",
@@ -3977,7 +4909,11 @@
       "flag_emoji": "🇻🇦",
       "flag_asset": null,
       "latitude": 41.9,
-      "longitude": 12.45
+      "longitude": 12.45,
+      "capital_name_ca": "Ciutat del Vaticà",
+      "capital_name_en": "Vatican City",
+      "capital_latitude": 41.9,
+      "capital_longitude": 12.45
     },
     {
       "iso2": "VE",
@@ -3993,8 +4929,12 @@
       "subregion": "South America",
       "flag_emoji": "🇻🇪",
       "flag_asset": null,
-      "latitude": 8.0,
-      "longitude": -66.0
+      "latitude": 8,
+      "longitude": -66,
+      "capital_name_ca": "Caracas",
+      "capital_name_en": "Caracas",
+      "capital_latitude": 10.48,
+      "capital_longitude": -66.87
     },
     {
       "iso2": "VN",
@@ -4011,7 +4951,11 @@
       "flag_emoji": "🇻🇳",
       "flag_asset": null,
       "latitude": 16.1667,
-      "longitude": 107.8333
+      "longitude": 107.8333,
+      "capital_name_ca": "Hanoi",
+      "capital_name_en": "Hanoi",
+      "capital_latitude": 21.03,
+      "capital_longitude": 105.85
     },
     {
       "iso2": "WF",
@@ -4028,7 +4972,11 @@
       "flag_emoji": "🇼🇫",
       "flag_asset": null,
       "latitude": -13.3,
-      "longitude": -176.2
+      "longitude": -176.2,
+      "capital_name_ca": "Mata-Utu",
+      "capital_name_en": "Mata-Utu",
+      "capital_latitude": -13.95,
+      "capital_longitude": -171.93
     },
     {
       "iso2": "CL",
@@ -4044,8 +4992,12 @@
       "subregion": "South America",
       "flag_emoji": "🇨🇱",
       "flag_asset": null,
-      "latitude": -30.0,
-      "longitude": -71.0
+      "latitude": -30,
+      "longitude": -71,
+      "capital_name_ca": "Santiago de Xile",
+      "capital_name_en": "Santiago",
+      "capital_latitude": -33.45,
+      "capital_longitude": -70.67
     },
     {
       "iso2": "CN",
@@ -4061,8 +5013,12 @@
       "subregion": "Eastern Asia",
       "flag_emoji": "🇨🇳",
       "flag_asset": null,
-      "latitude": 35.0,
-      "longitude": 105.0
+      "latitude": 35,
+      "longitude": 105,
+      "capital_name_ca": "Pequín",
+      "capital_name_en": "Beijing",
+      "capital_latitude": 39.92,
+      "capital_longitude": 116.38
     },
     {
       "iso2": "CY",
@@ -4078,8 +5034,12 @@
       "subregion": "Southern Europe",
       "flag_emoji": "🇨🇾",
       "flag_asset": null,
-      "latitude": 35.0,
-      "longitude": 33.0
+      "latitude": 35,
+      "longitude": 33,
+      "capital_name_ca": "Nicòsia",
+      "capital_name_en": "Nicosia",
+      "capital_latitude": 35.17,
+      "capital_longitude": 33.37
     },
     {
       "iso2": "ZW",
@@ -4095,8 +5055,12 @@
       "subregion": "Southern Africa",
       "flag_emoji": "🇿🇼",
       "flag_asset": null,
-      "latitude": -20.0,
-      "longitude": 30.0
+      "latitude": -20,
+      "longitude": 30,
+      "capital_name_ca": "Harare",
+      "capital_name_en": "Harare",
+      "capital_latitude": -17.82,
+      "capital_longitude": 31.03
     },
     {
       "iso2": "ZM",
@@ -4112,8 +5076,12 @@
       "subregion": "Eastern Africa",
       "flag_emoji": "🇿🇲",
       "flag_asset": null,
-      "latitude": -15.0,
-      "longitude": 30.0
+      "latitude": -15,
+      "longitude": 30,
+      "capital_name_ca": "Lusaka",
+      "capital_name_en": "Lusaka",
+      "capital_latitude": -15.42,
+      "capital_longitude": 28.28
     },
     {
       "iso2": "AT",
@@ -4130,7 +5098,11 @@
       "flag_emoji": "🇦🇹",
       "flag_asset": null,
       "latitude": 47.3333,
-      "longitude": 13.3333
+      "longitude": 13.3333,
+      "capital_name_ca": "Viena",
+      "capital_name_en": "Vienna",
+      "capital_latitude": 48.2,
+      "capital_longitude": 16.37
     },
     {
       "iso2": "IN",
@@ -4146,8 +5118,12 @@
       "subregion": "Southern Asia",
       "flag_emoji": "🇮🇳",
       "flag_asset": null,
-      "latitude": 20.0,
-      "longitude": 77.0
+      "latitude": 20,
+      "longitude": 77,
+      "capital_name_ca": "Nova Delhi",
+      "capital_name_en": "New Delhi",
+      "capital_latitude": 28.6,
+      "capital_longitude": 77.2
     }
   ]
 }

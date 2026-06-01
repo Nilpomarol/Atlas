@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +29,7 @@ import com.atlas.ui.theme.AtlasBackground
 fun CountryDetailScreen(
     uiState: CountryDetailUiState,
     onBackClick: () -> Unit,
+    onTripClick: (String) -> Unit,
     onWishedChanged: (Boolean) -> Unit,
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
@@ -49,6 +51,7 @@ fun CountryDetailScreen(
             country = country,
             uiState = uiState,
             onBackClick = onBackClick,
+            onTripClick = onTripClick,
             onWishedChanged = onWishedChanged,
             onSetCurrentlyLiving = onSetCurrentlyLiving,
             onAddVisitLog = onAddVisitLog,
@@ -90,6 +93,7 @@ private fun CountryDetailContent(
     country: Country,
     uiState: CountryDetailUiState,
     onBackClick: () -> Unit,
+    onTripClick: (String) -> Unit,
     onWishedChanged: (Boolean) -> Unit,
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
@@ -112,10 +116,17 @@ private fun CountryDetailContent(
         )
 
         Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .offset(y = (-42).dp)
+                .padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            CountryIdentityHeader(country = country, style = style)
+            CountryIdentityHeader(
+                country = country,
+                style = style,
+                trackingState = uiState.trackingState,
+                detailPills = uiState.detailPills,
+            )
             CountryInfoCard(
                 country = country,
                 trackingState = uiState.trackingState,
@@ -131,6 +142,7 @@ private fun CountryDetailContent(
                 logs = uiState.logs,
                 tripSummaries = uiState.tripSummaries,
                 style = style,
+                onTripClick = onTripClick,
                 onEditLog = onEditLog,
                 onDeleteLog = onDeleteLog,
             )

@@ -111,6 +111,9 @@ fun AtlasNavHost() {
                     CountryDetailRoute(
                         iso2 = iso2,
                         onBackClick = navController::popBackStack,
+                        onTripClick = { tripId ->
+                            navController.navigate("trips/$tripId")
+                        },
                     )
                 }
             }

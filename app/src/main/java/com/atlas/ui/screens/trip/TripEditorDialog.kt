@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -23,6 +24,11 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripEditorDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
+import com.atlas.ui.components.tripStatusColors
+import com.atlas.ui.theme.AtlasAccent
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasSurface
 
 @Composable
 fun TripEditorDialog(
@@ -37,7 +43,8 @@ fun TripEditorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(20.dp),
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = if (draft.tripId == null) {
@@ -45,7 +52,9 @@ fun TripEditorDialog(
                 } else {
                     "Edita viatge"
                 },
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
@@ -66,12 +75,30 @@ fun TripEditorDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(TravelStatus.entries) { status ->
+                        val statusColors = status.tripStatusColors()
+                        val selected = draft.status == status
                         FilterChip(
-                            selected = draft.status == status,
+                            selected = selected,
                             onClick = { onStatusChanged(status) },
                             label = {
-                                Text(text = status.toCatalanLabel())
+                                Text(
+                                    text = status.toCatalanLabel(),
+                                    fontWeight = FontWeight.Bold,
+                                )
                             },
+                            shape = RoundedCornerShape(999.dp),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = selected,
+                                borderColor = statusColors.foreground.copy(alpha = 0.22f),
+                                selectedBorderColor = statusColors.foreground.copy(alpha = 0.22f),
+                            ),
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = AtlasSurface,
+                                labelColor = AtlasOnSurfaceMuted,
+                                selectedContainerColor = statusColors.container,
+                                selectedLabelColor = statusColors.foreground,
+                            ),
                         )
                     }
                 }
@@ -105,7 +132,7 @@ fun TripEditorDialog(
         },
         confirmButton = {
             CompactTripDialogActionButton(onClick = onSave) {
-                Text(text = "Desa", fontWeight = FontWeight.ExtraBold)
+                Text(text = "Desa", fontWeight = FontWeight.ExtraBold, color = AtlasAccent)
             }
         },
         dismissButton = {

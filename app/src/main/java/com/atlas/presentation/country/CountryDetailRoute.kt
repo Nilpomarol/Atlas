@@ -12,6 +12,7 @@ import com.atlas.ui.screens.country.CountryDetailScreen
 fun CountryDetailRoute(
     iso2: String,
     onBackClick: () -> Unit,
+    onTripClick: (String) -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as AtlasApplication
     val viewModel: CountryDetailViewModel = viewModel(
@@ -34,6 +35,7 @@ fun CountryDetailRoute(
     CountryDetailScreen(
         uiState = uiState,
         onBackClick = onBackClick,
+        onTripClick = onTripClick,
         onWishedChanged = viewModel::onWishedChanged,
         onSetCurrentlyLiving = viewModel::onSetCurrentlyLiving,
         onAddVisitLog = viewModel::onAddVisitLog,

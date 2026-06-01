@@ -1,0 +1,258 @@
+{
+  "version": "2026.1",
+  "airports": [
+    {
+      "id": "ATH",
+      "iata": "ATH",
+      "icao": "LGAV",
+      "name": "Athens International Airport",
+      "city": "Athens",
+      "country_iso2": "GR",
+      "latitude": 37.9364,
+      "longitude": 23.9445,
+      "timezone": "Europe/Athens"
+    },
+    {
+      "id": "BCN",
+      "iata": "BCN",
+      "icao": "LEBL",
+      "name": "Barcelona-El Prat Airport",
+      "city": "Barcelona",
+      "country_iso2": "ES",
+      "latitude": 41.2974,
+      "longitude": 2.0833,
+      "timezone": "Europe/Madrid"
+    },
+    {
+      "id": "BER",
+      "iata": "BER",
+      "icao": "EDDB",
+      "name": "Berlin Brandenburg Airport",
+      "city": "Berlin",
+      "country_iso2": "DE",
+      "latitude": 52.3667,
+      "longitude": 13.5033,
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "id": "CDG",
+      "iata": "CDG",
+      "icao": "LFPG",
+      "name": "Paris Charles de Gaulle Airport",
+      "city": "Paris",
+      "country_iso2": "FR",
+      "latitude": 49.0097,
+      "longitude": 2.5479,
+      "timezone": "Europe/Paris"
+    },
+    {
+      "id": "CPH",
+      "iata": "CPH",
+      "icao": "EKCH",
+      "name": "Copenhagen Airport",
+      "city": "Copenhagen",
+      "country_iso2": "DK",
+      "latitude": 55.6181,
+      "longitude": 12.6561,
+      "timezone": "Europe/Copenhagen"
+    },
+    {
+      "id": "DOH",
+      "iata": "DOH",
+      "icao": "OTHH",
+      "name": "Hamad International Airport",
+      "city": "Doha",
+      "country_iso2": "QA",
+      "latitude": 25.2731,
+      "longitude": 51.6081,
+      "timezone": "Asia/Qatar"
+    },
+    {
+      "id": "FCO",
+      "iata": "FCO",
+      "icao": "LIRF",
+      "name": "Rome Fiumicino Airport",
+      "city": "Rome",
+      "country_iso2": "IT",
+      "latitude": 41.8003,
+      "longitude": 12.2389,
+      "timezone": "Europe/Rome"
+    },
+    {
+      "id": "HEL",
+      "iata": "HEL",
+      "icao": "EFHK",
+      "name": "Helsinki Airport",
+      "city": "Helsinki",
+      "country_iso2": "FI",
+      "latitude": 60.3172,
+      "longitude": 24.9633,
+      "timezone": "Europe/Helsinki"
+    },
+    {
+      "id": "HKG",
+      "iata": "HKG",
+      "icao": "VHHH",
+      "name": "Hong Kong International Airport",
+      "city": "Hong Kong",
+      "country_iso2": "HK",
+      "latitude": 22.308,
+      "longitude": 113.9185,
+      "timezone": "Asia/Hong_Kong"
+    },
+    {
+      "id": "HND",
+      "iata": "HND",
+      "icao": "RJTT",
+      "name": "Tokyo Haneda Airport",
+      "city": "Tokyo",
+      "country_iso2": "JP",
+      "latitude": 35.5494,
+      "longitude": 139.7798,
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "id": "JFK",
+      "iata": "JFK",
+      "icao": "KJFK",
+      "name": "John F. Kennedy International Airport",
+      "city": "New York",
+      "country_iso2": "US",
+      "latitude": 40.6413,
+      "longitude": -73.7781,
+      "timezone": "America/New_York"
+    },
+    {
+      "id": "KEF",
+      "iata": "KEF",
+      "icao": "BIKF",
+      "name": "Keflavik International Airport",
+      "city": "Reykjavik",
+      "country_iso2": "IS",
+      "latitude": 63.985,
+      "longitude": -22.6056,
+      "timezone": "Atlantic/Reykjavik"
+    },
+    {
+      "id": "KIX",
+      "iata": "KIX",
+      "icao": "RJBB",
+      "name": "Kansai International Airport",
+      "city": "Osaka",
+      "country_iso2": "JP",
+      "latitude": 34.4347,
+      "longitude": 135.2442,
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "id": "LAX",
+      "iata": "LAX",
+      "icao": "KLAX",
+      "name": "Los Angeles International Airport",
+      "city": "Los Angeles",
+      "country_iso2": "US",
+      "latitude": 33.9416,
+      "longitude": -118.4085,
+      "timezone": "America/Los_Angeles"
+    },
+    {
+      "id": "LHR",
+      "iata": "LHR",
+      "icao": "EGLL",
+      "name": "London Heathrow Airport",
+      "city": "London",
+      "country_iso2": "GB",
+      "latitude": 51.47,
+      "longitude": -0.4543,
+      "timezone": "Europe/London"
+    },
+    {
+      "id": "LIS",
+      "iata": "LIS",
+      "icao": "LPPT",
+      "name": "Humberto Delgado Airport",
+      "city": "Lisbon",
+      "country_iso2": "PT",
+      "latitude": 38.7742,
+      "longitude": -9.1342,
+      "timezone": "Europe/Lisbon"
+    },
+    {
+      "id": "MAD",
+      "iata": "MAD",
+      "icao": "LEMD",
+      "name": "Adolfo Suarez Madrid-Barajas Airport",
+      "city": "Madrid",
+      "country_iso2": "ES",
+      "latitude": 40.4983,
+      "longitude": -3.5676,
+      "timezone": "Europe/Madrid"
+    },
+    {
+      "id": "MUC",
+      "iata": "MUC",
+      "icao": "EDDM",
+      "name": "Munich Airport",
+      "city": "Munich",
+      "country_iso2": "DE",
+      "latitude": 48.3538,
+      "longitude": 11.7861,
+      "timezone": "Europe/Berlin"
+    },
+    {
+      "id": "NRT",
+      "iata": "NRT",
+      "icao": "RJAA",
+      "name": "Narita International Airport",
+      "city": "Tokyo",
+      "country_iso2": "JP",
+      "latitude": 35.7719,
+      "longitude": 140.3929,
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "id": "OSL",
+      "iata": "OSL",
+      "icao": "ENGM",
+      "name": "Oslo Airport",
+      "city": "Oslo",
+      "country_iso2": "NO",
+      "latitude": 60.1976,
+      "longitude": 11.1004,
+      "timezone": "Europe/Oslo"
+    },
+    {
+      "id": "RAK",
+      "iata": "RAK",
+      "icao": "GMMX",
+      "name": "Marrakesh Menara Airport",
+      "city": "Marrakesh",
+      "country_iso2": "MA",
+      "latitude": 31.6069,
+      "longitude": -8.0363,
+      "timezone": "Africa/Casablanca"
+    },
+    {
+      "id": "VIE",
+      "iata": "VIE",
+      "icao": "LOWW",
+      "name": "Vienna International Airport",
+      "city": "Vienna",
+      "country_iso2": "AT",
+      "latitude": 48.1103,
+      "longitude": 16.5697,
+      "timezone": "Europe/Vienna"
+    },
+    {
+      "id": "ZRH",
+      "iata": "ZRH",
+      "icao": "LSZH",
+      "name": "Zurich Airport",
+      "city": "Zurich",
+      "country_iso2": "CH",
+      "latitude": 47.4581,
+      "longitude": 8.5555,
+      "timezone": "Europe/Zurich"
+    }
+  ]
+}

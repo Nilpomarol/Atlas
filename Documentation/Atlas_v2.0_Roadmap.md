@@ -134,6 +134,15 @@ Room migration from MVP
 [ ] App launches with existing MVP database.
 ```
 
+Current implementation note:
+
+```text
+2026-06-01:
+- Added AirportEntity, AirportDao, Room v7 migration, airport domain model, AirportRepository, search use case, AirportDatasetImporter, dataset metadata key, and a curated seed airports.json.
+- Seed dataset is intentionally small and should be replaced or expanded before v2.0 release.
+- Airport search UI/component is still pending.
+```
+
 ---
 
 ## 4. Milestone 1 — Solo Flights

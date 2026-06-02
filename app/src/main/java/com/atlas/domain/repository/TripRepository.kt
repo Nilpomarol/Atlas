@@ -1,6 +1,7 @@
 package com.atlas.domain.repository
 
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.GeneratedTripStopDraft
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
@@ -35,4 +36,10 @@ interface TripRepository {
     suspend fun updateTripStop(stop: TripStop)
     suspend fun reorderTripStops(stops: List<TripStop>)
     suspend fun deleteTripStop(stop: TripStop)
+    suspend fun replaceGeneratedItineraryGroupStops(
+        tripId: String,
+        groupIds: List<String>,
+        stops: List<GeneratedTripStopDraft>,
+    )
+    suspend fun deleteGeneratedItineraryGroupStops(groupIds: List<String>)
 }

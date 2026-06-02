@@ -1,6 +1,5 @@
 package com.atlas.ui.screens.trip
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,124 +17,78 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.TripStop
-
-// Palette — mirrors TripDetailScreen / CountryDetailScreen
-private val MapCard        = Color(0xFFFFFFFF)
-private val MapBorder      = Color(0xFFE4E8EF)
-private val MapBg          = Color(0xFFF1F3F7)
-private val MapInk         = Color(0xFF111827)
-private val MapMuted       = Color(0xFF6B7280)
-private val MapAccent      = Color(0xFF024E82)   // trip blue
-private val MapAccentLight = Color(0xFFC2D9F0)
-
-// Hero background colours — same dark satellite feel as CountryDetailScreen hero
-private val HeroDark1 = Color(0xFF07101C)
-private val HeroDark2 = Color(0xFF08251B)
-private val HeroDark3 = Color(0xFF0B1727)
-
-// Route colours
-private val RouteStroke = Color(0xFF6EE7B7)     // mint
-private val RouteGlow   = MapAccent             // blue glow under stroke
+import com.atlas.domain.model.TripStopSource
+import com.atlas.ui.components.map.AtlasMapView
+import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSurface
+import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.LineLayer
+import org.maplibre.android.style.layers.PropertyFactory.circleColor
+import org.maplibre.android.style.layers.PropertyFactory.circleRadius
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
+import org.maplibre.android.style.layers.PropertyFactory.lineColor
+import org.maplibre.android.style.layers.PropertyFactory.lineCap
+import org.maplibre.android.style.layers.PropertyFactory.lineJoin
+import org.maplibre.android.style.layers.PropertyFactory.lineWidth
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.FeatureCollection
+import org.maplibre.geojson.LineString
+import org.maplibre.geojson.Point
 
 @Composable
 fun TripMapPreview(
     stops: List<TripStop>,
+    excursions: List<Excursion> = emptyList(),
     modifier: Modifier = Modifier,
 ) {
     val coordinateStops = stops.filter { it.latitude != null && it.longitude != null }
-    val manualStopCount = stops.size - coordinateStops.size
+    val mappableExcursionStops = excursions.sumOf { e -> e.stops.count { it.latitude != null && it.longitude != null } }
+    val mappableCount = coordinateStops.size + mappableExcursionStops
+    val missingCoordinateCount = stops.size + excursions.sumOf { it.stops.size } - mappableCount
+
+    // Holds the loaded map so content can be updated independently of style loading
+    val mapRef = remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .background(MapCard)
-            .border(1.dp, MapBorder, RoundedCornerShape(22.dp)),
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(22.dp)),
     ) {
-        // ── Map canvas ──
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(210.dp)
-                .background(
-                    Brush.linearGradient(
-                        colors = listOf(HeroDark1, HeroDark2, HeroDark3),
-                    ),
-                ),
+                .height(210.dp),
         ) {
-            Canvas(modifier = Modifier.matchParentSize()) {
-                drawTripGrid()
-                if (coordinateStops.isNotEmpty()) {
-                    val projected = coordinateStops.mapIndexed { i, stop ->
-                        ProjectedStop(
-                            index = i,
-                            title = stop.locationName,
-                            point = projectStop(stop),
-                        )
-                    }
-                    drawTripRoute(projected)
-                }
-            }
-
-            // Empty state
-            if (coordinateStops.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Place,
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                        tint = Color.White.copy(alpha = 0.75f),
-                    )
-                    Text(
-                        text = "Cap parada amb coordenades",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                    )
-                    Text(
-                        text = "Cerca llocs o afegeix latitud i longitud per veure-les aquí.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.65f),
-                    )
-                }
-            }
-
-            // Provisional badge — frosted glass pill
-            Text(
-                text = "MAPA PROVISIONAL",
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(12.dp)
-                    .clip(RoundedCornerShape(100.dp))
-                    .background(Color.White.copy(alpha = 0.14f))
-                    .padding(horizontal = 10.dp, vertical = 5.dp),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.ExtraBold,
-                color = Color.White,
+            AtlasMapView(
+                modifier = Modifier.matchParentSize(),
+                onMapReady = { map, style -> mapRef.value = Pair(map, style) },
             )
         }
 
-        // ── Footer row ──
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -145,92 +98,141 @@ fun TripMapPreview(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MapAccentLight),
+                    .background(AtlasAccentContainer),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Place,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = MapAccent,
-                )
+                Icon(Icons.Filled.Place, contentDescription = null,
+                    modifier = Modifier.size(20.dp), tint = AtlasPrimary)
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = "${coordinateStops.size} amb coordenades",
+                    text = "$mappableCount ${if (mappableCount == 1) "parada" else "parades"} al mapa",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = MapInk,
+                    color = AtlasOnSurfaceStrong,
                 )
                 Text(
-                    text = if (manualStopCount == 0) {
-                        "Totes les parades es poden dibuixar al mapa."
-                    } else {
-                        "$manualStopCount manuals sense coordenades."
-                    },
+                    text = if (missingCoordinateCount == 0) "Ruta completa."
+                           else "$missingCoordinateCount sense coordenades.",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = MapMuted,
+                    color = AtlasOnSurfaceMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
     }
+
+    // Re-runs when the map becomes ready OR when stop/excursion data changes
+    LaunchedEffect(mapRef.value, coordinateStops, excursions) {
+        val (map, style) = mapRef.value ?: return@LaunchedEffect
+        clearTripLayers(style)
+        addTripContent(map, style, coordinateStops, excursions)
+    }
 }
 
-// ─────────────────────────────────────────────
-// Canvas helpers — logic unchanged, colours explicit
-// ─────────────────────────────────────────────
-private data class ProjectedStop(
-    val index: Int,
-    val title: String,
-    val point: Offset,
+// ── Layer/source IDs ─────────────────────────────────────────────────────────
+
+private val TRIP_LAYER_IDS = listOf(
+    "main-route-line", "excursion-route-lines",
+    "main-stops-layer", "generated-stops-layer", "excursion-stops-layer",
+)
+private val TRIP_SOURCE_IDS = listOf(
+    "main-route", "excursion-routes",
+    "main-stops", "generated-stops", "excursion-stops",
 )
 
-private fun DrawScope.drawTripGrid() {
-    val lineColor = Color.White.copy(alpha = 0.055f)
-    repeat(5) { i ->
-        val x = size.width * (i + 1) / 6f
-        drawLine(lineColor, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1f)
-    }
-    repeat(4) { i ->
-        val y = size.height * (i + 1) / 5f
-        drawLine(lineColor, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f)
-    }
+private fun clearTripLayers(style: Style) {
+    TRIP_LAYER_IDS.forEach { if (style.getLayer(it) != null) style.removeLayer(it) }
+    TRIP_SOURCE_IDS.forEach { if (style.getSource(it) != null) style.removeSource(it) }
 }
 
-private fun DrawScope.drawTripRoute(stops: List<ProjectedStop>) {
-    if (stops.size > 1) {
-        val path = Path().apply {
-            stops.forEachIndexed { i, s ->
-                if (i == 0) moveTo(s.point.x, s.point.y)
-                else lineTo(s.point.x, s.point.y)
-            }
+private fun addTripContent(
+    map: MapLibreMap,
+    style: Style,
+    coordinateStops: List<TripStop>,
+    excursions: List<Excursion>,
+) {
+    // Main route line (through all coordinate stops in order)
+    val mainCoords = coordinateStops.map { Point.fromLngLat(it.longitude!!, it.latitude!!) }
+    if (mainCoords.size >= 2) {
+        style.addSource(GeoJsonSource("main-route",
+            Feature.fromGeometry(LineString.fromLngLats(mainCoords))))
+        style.addLayer(LineLayer("main-route-line", "main-route").apply {
+            setProperties(lineWidth(3f), lineColor("#2563EB"), lineCap("round"), lineJoin("round"))
+        })
+    }
+
+    // Excursion route lines (one LineString per excursion)
+    val excursionLines = excursions.mapNotNull { e ->
+        val coords = e.stops
+            .filter { it.latitude != null && it.longitude != null }
+            .sortedBy { it.sortOrder }
+            .map { Point.fromLngLat(it.longitude!!, it.latitude!!) }
+        if (coords.size >= 2) Feature.fromGeometry(LineString.fromLngLats(coords)) else null
+    }
+    if (excursionLines.isNotEmpty()) {
+        style.addSource(GeoJsonSource("excursion-routes",
+            FeatureCollection.fromFeatures(excursionLines)))
+        style.addLayer(LineLayer("excursion-route-lines", "excursion-routes").apply {
+            setProperties(lineWidth(2.5f), lineColor("#9333EA"), lineCap("round"), lineJoin("round"))
+        })
+    }
+
+    // Main stops (blue)
+    val mainFeatures = coordinateStops
+        .filter { it.source != TripStopSource.ITINERARY_GROUP }
+        .map { Feature.fromGeometry(Point.fromLngLat(it.longitude!!, it.latitude!!)) }
+    if (mainFeatures.isNotEmpty()) {
+        style.addSource(GeoJsonSource("main-stops", FeatureCollection.fromFeatures(mainFeatures)))
+        style.addLayer(CircleLayer("main-stops-layer", "main-stops").apply {
+            setProperties(circleRadius(8f), circleColor("#2563EB"),
+                circleStrokeWidth(2f), circleStrokeColor("#FFFFFF"))
+        })
+    }
+
+    // Generated itinerary stops (amber)
+    val generatedFeatures = coordinateStops
+        .filter { it.source == TripStopSource.ITINERARY_GROUP }
+        .map { Feature.fromGeometry(Point.fromLngLat(it.longitude!!, it.latitude!!)) }
+    if (generatedFeatures.isNotEmpty()) {
+        style.addSource(GeoJsonSource("generated-stops", FeatureCollection.fromFeatures(generatedFeatures)))
+        style.addLayer(CircleLayer("generated-stops-layer", "generated-stops").apply {
+            setProperties(circleRadius(8f), circleColor("#D97706"),
+                circleStrokeWidth(2f), circleStrokeColor("#FFFFFF"))
+        })
+    }
+
+    // Excursion stops (purple)
+    val excursionStopFeatures = excursions.flatMap { e ->
+        e.stops.filter { it.latitude != null && it.longitude != null }
+               .map { Feature.fromGeometry(Point.fromLngLat(it.longitude!!, it.latitude!!)) }
+    }
+    if (excursionStopFeatures.isNotEmpty()) {
+        style.addSource(GeoJsonSource("excursion-stops",
+            FeatureCollection.fromFeatures(excursionStopFeatures)))
+        style.addLayer(CircleLayer("excursion-stops-layer", "excursion-stops").apply {
+            setProperties(circleRadius(7f), circleColor("#9333EA"),
+                circleStrokeWidth(2f), circleStrokeColor("#FFFFFF"))
+        })
+    }
+
+    // Fit camera to all plotted points
+    val allCoords = mutableListOf<LatLng>()
+    coordinateStops.forEach { allCoords.add(LatLng(it.latitude!!, it.longitude!!)) }
+    excursions.forEach { e ->
+        e.stops.filter { it.latitude != null && it.longitude != null }
+               .forEach { allCoords.add(LatLng(it.latitude!!, it.longitude!!)) }
+    }
+    when {
+        allCoords.isEmpty() ->
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(20.0, 0.0), 1.5))
+        allCoords.size == 1 ->
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(allCoords[0], 10.0))
+        else -> {
+            val bounds = LatLngBounds.Builder().apply { allCoords.forEach { include(it) } }.build()
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 60))
         }
-        // Glow pass
-        drawPath(path, color = RouteGlow.copy(alpha = 0.45f), style = Stroke(width = 10f, cap = StrokeCap.Round))
-        // Main stroke
-        drawPath(path, color = RouteStroke.copy(alpha = 0.9f),  style = Stroke(width = 4f,  cap = StrokeCap.Round))
     }
-
-    stops.forEach { stop ->
-        // Halo
-        drawCircle(Color.White.copy(alpha = 0.18f), radius = 16f, center = stop.point)
-        // Fill
-        drawCircle(RouteGlow, radius = 9f, center = stop.point)
-        // Centre dot
-        drawCircle(Color.White, radius = 4f, center = stop.point)
-    }
-}
-
-private fun DrawScope.projectStop(stop: TripStop): Offset {
-    val lon = requireNotNull(stop.longitude)
-    val lat = requireNotNull(stop.latitude)
-    val x = (((lon + 180.0) / 360.0).coerceIn(0.04, 0.96) * size.width).toFloat()
-    val y = (((90.0 - lat)  / 180.0).coerceIn(0.08, 0.92) * size.height).toFloat()
-    return Offset(x, y)
 }

@@ -5,11 +5,15 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryTrackingState
+import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.ExcursionRepository
+import com.atlas.domain.repository.FlightRepository
+import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -18,21 +22,50 @@ import kotlinx.coroutines.flow.update
 class CountryListViewModel(
     countryRepository: CountryRepository,
     tripRepository: TripRepository,
+    flightRepository: FlightRepository,
+    itineraryRepository: ItineraryRepository,
+    excursionRepository: ExcursionRepository,
+    airportRepository: AirportRepository,
     countryStateDerivationService: CountryStateDerivationService,
 ) : ViewModel() {
     private val searchQuery = MutableStateFlow("")
     private val selectedFilter = MutableStateFlow(CountryListFilter.All)
 
-    private val countryRows = combine(
+    private val countryData = combine(
         countryRepository.observeTrackableCountries(),
         countryRepository.observeUserStates(),
         countryRepository.observeCountryLogs(),
+    ) { countries, userStates, logs ->
+        Triple(countries, userStates, logs)
+    }
+
+    private val tripData = combine(
         tripRepository.observeTrips(),
         tripRepository.observeTripStops(),
-    ) { countries, userStates, logs, trips, tripStops ->
+    ) { trips, tripStops ->
+        trips to tripStops
+    }
+
+    private val flightData = combine(
+        flightRepository.observeFlights(),
+        itineraryRepository.observeAllGroups(),
+        airportRepository.observeAirports(),
+    ) { flights, itineraryGroups, airports ->
+        Triple(flights, itineraryGroups, airports)
+    }
+
+    private val excursionData = excursionRepository.observeExcursions()
+
+    private val countryRows = combine(
+        countryData,
+        tripData,
+        flightData,
+        excursionData,
+    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), excursions ->
         val userStatesByIso2 = userStates.associateBy { it.countryIso2 }
         val logsByIso2 = logs.groupBy { it.countryIso2 }
         val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
+        val airportCountryIso2ById = airports.associate { it.id to it.countryIso2 }
 
         countries.map { country ->
             CountryListItemUiState(
@@ -43,6 +76,10 @@ class CountryListViewModel(
                     logs = logsByIso2[country.iso2].orEmpty(),
                     trips = trips,
                     tripStops = stopsByIso2[country.iso2].orEmpty(),
+                    flights = flights,
+                    itineraryGroups = itineraryGroups,
+                    excursions = excursions,
+                    airportCountryIso2ById = airportCountryIso2ById,
                 ),
             )
         }
@@ -82,6 +119,10 @@ class CountryListViewModel(
     class Factory(
         private val countryRepository: CountryRepository,
         private val tripRepository: TripRepository,
+        private val flightRepository: FlightRepository,
+        private val itineraryRepository: ItineraryRepository,
+        private val excursionRepository: ExcursionRepository,
+        private val airportRepository: AirportRepository,
         private val countryStateDerivationService: CountryStateDerivationService,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -89,6 +130,10 @@ class CountryListViewModel(
             return CountryListViewModel(
                 countryRepository = countryRepository,
                 tripRepository = tripRepository,
+                flightRepository = flightRepository,
+                itineraryRepository = itineraryRepository,
+                excursionRepository = excursionRepository,
+                airportRepository = airportRepository,
                 countryStateDerivationService = countryStateDerivationService,
             ) as T
         }
@@ -115,7 +160,7 @@ enum class CountryListFilter(
     Wished("Desitjats"),
     Planned("Planificats"),
     Lived("Viscuts"),
-    CurrentlyLiving("Residència actual"),
+    CurrentlyLiving("Residencia actual"),
     NeverVisited("No visitats"),
 }
 

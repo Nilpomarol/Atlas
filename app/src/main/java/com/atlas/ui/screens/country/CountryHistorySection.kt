@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Route
@@ -46,6 +47,7 @@ import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.presentation.country.CountryAirTravelSummaryUiState
 import com.atlas.presentation.country.CountryTripSummaryUiState
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSectionTitle
@@ -66,13 +68,14 @@ import com.atlas.ui.theme.AtlasVisitContainer
 fun CountryHistorySection(
     logs: List<CountryLog>,
     tripSummaries: List<CountryTripSummaryUiState>,
+    airTravelSummaries: List<CountryAirTravelSummaryUiState>,
     style: CountryDetailStyle,
     onTripClick: (String) -> Unit,
     onEditLog: (CountryLog) -> Unit,
     onDeleteLog: (CountryLog) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val totalCount = logs.size + tripSummaries.size
+    val totalCount = logs.size + tripSummaries.size + airTravelSummaries.size
     var pendingDeleteLog by remember { mutableStateOf<CountryLog?>(null) }
 
     Column(
@@ -90,7 +93,7 @@ fun CountryHistorySection(
                     .padding(16.dp),
             ) {
                 Text(
-                    "Encara no hi ha registres ni viatges.",
+                    "Encara no hi ha registres, viatges ni vols.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AtlasOnSurfaceMuted,
                 )
@@ -99,12 +102,12 @@ fun CountryHistorySection(
             Column {
                 tripSummaries.forEachIndexed { index, trip ->
                     TimelineItem(
-                        isLast = index == tripSummaries.lastIndex && logs.isEmpty(),
+                        isLast = index == tripSummaries.lastIndex && airTravelSummaries.isEmpty() && logs.isEmpty(),
                         color = AtlasTrip,
                         container = AtlasTripContainer,
                         icon = Icons.Filled.Route,
                         title = trip.title,
-                        label = "Viatge",
+                        label = trip.label,
                         dateText = trip.dateRangeText?.toHistoryDateText() ?: "Sense data",
                         meta = trip.routeText ?: "Sense ruta",
                         statusPill = {
@@ -116,6 +119,26 @@ fun CountryHistorySection(
                             )
                         },
                         onClick = { onTripClick(trip.tripId) },
+                    )
+                }
+                airTravelSummaries.forEachIndexed { index, airTravel ->
+                    TimelineItem(
+                        isLast = index == airTravelSummaries.lastIndex && logs.isEmpty(),
+                        color = AtlasTrip,
+                        container = AtlasTripContainer,
+                        icon = Icons.Filled.Flight,
+                        title = airTravel.title,
+                        label = airTravel.label,
+                        dateText = airTravel.dateText?.toHistoryDateText() ?: "Sense data",
+                        meta = airTravel.meta,
+                        statusPill = {
+                            AtlasPill(
+                                label = airTravel.status.tripStatusColors().label,
+                                colors = airTravel.status.tripStatusColors(),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                                fontWeight = FontWeight.ExtraBold,
+                            )
+                        },
                     )
                 }
                 logs.forEachIndexed { index, log ->

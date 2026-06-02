@@ -59,13 +59,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.Excursion
+import com.atlas.domain.model.ExcursionStop
+import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
+import com.atlas.presentation.trip.ExcursionDraftUiState
+import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
 import java.time.LocalDate
@@ -103,6 +109,11 @@ fun TripDetailScreen(
     onTripDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
     onTripNotesChanged: (String) -> Unit,
     onSaveTripDraft: () -> Unit,
+    onItineraryClick: (String) -> Unit,
+    onOpenItineraryPicker: () -> Unit,
+    onDismissItineraryPicker: () -> Unit,
+    onLinkItinerary: (Itinerary) -> Unit,
+    onUnlinkItinerary: () -> Unit,
     onAddStopClick: () -> Unit,
     onDismissStopDraft: () -> Unit,
     onStopLocationNameChanged: (String) -> Unit,
@@ -121,9 +132,39 @@ fun TripDetailScreen(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
+    onAddExcursionClick: (String?) -> Unit,
+    onEditExcursion: (Excursion) -> Unit,
+    onDeleteExcursion: (Excursion) -> Unit,
+    onMoveExcursionUp: (Excursion) -> Unit,
+    onMoveExcursionDown: (Excursion) -> Unit,
+    onDismissExcursionDraft: () -> Unit,
+    onExcursionTitleChanged: (String) -> Unit,
+    onExcursionAnchorChanged: (String?) -> Unit,
+    onExcursionNotesChanged: (String) -> Unit,
+    onSaveExcursionDraft: () -> Unit,
+    onAddExcursionStopClick: (String) -> Unit,
+    onEditExcursionStop: (ExcursionStop) -> Unit,
+    onDeleteExcursionStop: (ExcursionStop) -> Unit,
+    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
+    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+    onDismissExcursionStopDraft: () -> Unit,
+    onExcursionStopLocationSearchQueryChanged: (String) -> Unit,
+    onSearchExcursionStopLocationClick: () -> Unit,
+    onExcursionStopLocationSearchResultSelected: (LocationSearchResult) -> Unit,
+    onUseManualExcursionStopEntryClick: () -> Unit,
+    onExcursionStopLocationNameChanged: (String) -> Unit,
+    onExcursionStopCountryChanged: (String) -> Unit,
+    onExcursionStopLatitudeChanged: (String) -> Unit,
+    onExcursionStopLongitudeChanged: (String) -> Unit,
+    onExcursionStopDatePrecisionChanged: (DatePrecision) -> Unit,
+    onExcursionStopDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
+    onExcursionStopNotesChanged: (String) -> Unit,
+    onSaveExcursionStopDraft: () -> Unit,
 ) {
     var isDeleteTripDialogOpen by remember { mutableStateOf(false) }
     var pendingDeleteStop by remember { mutableStateOf<TripStop?>(null) }
+    var pendingDeleteExcursion by remember { mutableStateOf<Excursion?>(null) }
+    var pendingDeleteExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
 
     Column(
@@ -188,11 +229,24 @@ fun TripDetailScreen(
                 onReorderModeChanged = { isReorderMode = it },
                 onEditTripClick = onEditTripClick,
                 onDeleteTrip = { isDeleteTripDialogOpen = true },
+                onItineraryClick = onItineraryClick,
+                onOpenItineraryPicker = onOpenItineraryPicker,
+                onUnlinkItinerary = onUnlinkItinerary,
                 onAddStopClick = onAddStopClick,
                 onEditStop = onEditStop,
                 onMoveStopUp = onMoveStopUp,
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = { pendingDeleteStop = it },
+                onAddExcursionClick = onAddExcursionClick,
+                onEditExcursion = onEditExcursion,
+                onDeleteExcursion = { pendingDeleteExcursion = it },
+                onMoveExcursionUp = onMoveExcursionUp,
+                onMoveExcursionDown = onMoveExcursionDown,
+                onAddExcursionStopClick = onAddExcursionStopClick,
+                onEditExcursionStop = onEditExcursionStop,
+                onDeleteExcursionStop = { pendingDeleteExcursionStop = it },
+                onMoveExcursionStopUp = onMoveExcursionStopUp,
+                onMoveExcursionStopDown = onMoveExcursionStopDown,
             )
         }
     }
@@ -231,6 +285,46 @@ fun TripDetailScreen(
         )
     }
 
+    if (uiState.isItineraryPickerOpen) {
+        ItineraryPickerDialog(
+            itineraries = uiState.availableItineraries,
+            onDismiss = onDismissItineraryPicker,
+            onSelect = onLinkItinerary,
+        )
+    }
+
+    if (uiState.excursionDraft.isOpen) {
+        ExcursionDialog(
+            draft = uiState.excursionDraft,
+            stops = uiState.stops,
+            onDismiss = onDismissExcursionDraft,
+            onTitleChanged = onExcursionTitleChanged,
+            onAnchorChanged = onExcursionAnchorChanged,
+            onNotesChanged = onExcursionNotesChanged,
+            onSave = onSaveExcursionDraft,
+        )
+    }
+
+    if (uiState.excursionStopDraft.isOpen) {
+        ExcursionStopDialog(
+            draft = uiState.excursionStopDraft,
+            countries = uiState.countries,
+            onDismiss = onDismissExcursionStopDraft,
+            onLocationSearchQueryChanged = onExcursionStopLocationSearchQueryChanged,
+            onSearchLocationClick = onSearchExcursionStopLocationClick,
+            onLocationSearchResultSelected = onExcursionStopLocationSearchResultSelected,
+            onUseManualEntryClick = onUseManualExcursionStopEntryClick,
+            onLocationNameChanged = onExcursionStopLocationNameChanged,
+            onCountryChanged = onExcursionStopCountryChanged,
+            onLatitudeChanged = onExcursionStopLatitudeChanged,
+            onLongitudeChanged = onExcursionStopLongitudeChanged,
+            onDatePrecisionChanged = onExcursionStopDatePrecisionChanged,
+            onDateFieldChanged = onExcursionStopDateFieldChanged,
+            onNotesChanged = onExcursionStopNotesChanged,
+            onSave = onSaveExcursionStopDraft,
+        )
+    }
+
     if (isDeleteTripDialogOpen && uiState.trip != null) {
         ConfirmDeleteDialog(
             title = "Eliminar viatge?",
@@ -248,6 +342,24 @@ fun TripDetailScreen(
             onConfirm = { pendingDeleteStop = null; onDeleteStop(stop) },
         )
     }
+
+    pendingDeleteExcursion?.let { excursion ->
+        ConfirmDeleteDialog(
+            title = "Eliminar excursio?",
+            body = "S'eliminara \"${excursion.title}\" i totes les seves parades. Aquesta accio no es pot desfer.",
+            onDismiss = { pendingDeleteExcursion = null },
+            onConfirm = { pendingDeleteExcursion = null; onDeleteExcursion(excursion) },
+        )
+    }
+
+    pendingDeleteExcursionStop?.let { stop ->
+        ConfirmDeleteDialog(
+            title = "Eliminar parada d'excursio?",
+            body = "S'eliminara \"${stop.locationName}\" de l'excursio. Aquesta accio no es pot desfer.",
+            onDismiss = { pendingDeleteExcursionStop = null },
+            onConfirm = { pendingDeleteExcursionStop = null; onDeleteExcursionStop(stop) },
+        )
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -261,11 +373,24 @@ private fun TripDetailContent(
     onReorderModeChanged: (Boolean) -> Unit,
     onEditTripClick: () -> Unit,
     onDeleteTrip: () -> Unit,
+    onItineraryClick: (String) -> Unit,
+    onOpenItineraryPicker: () -> Unit,
+    onUnlinkItinerary: () -> Unit,
     onAddStopClick: () -> Unit,
     onEditStop: (TripStop) -> Unit,
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
+    onAddExcursionClick: (String?) -> Unit,
+    onEditExcursion: (Excursion) -> Unit,
+    onDeleteExcursion: (Excursion) -> Unit,
+    onMoveExcursionUp: (Excursion) -> Unit,
+    onMoveExcursionDown: (Excursion) -> Unit,
+    onAddExcursionStopClick: (String) -> Unit,
+    onEditExcursionStop: (ExcursionStop) -> Unit,
+    onDeleteExcursionStop: (ExcursionStop) -> Unit,
+    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
+    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -284,11 +409,22 @@ private fun TripDetailContent(
         )
 
         // ── Map preview ──
-        TripMapPreview(stops = uiState.stops)
+        TripMapPreview(
+            stops = uiState.stops,
+            excursions = uiState.excursions,
+        )
+        ItineraryLinkSection(
+            linkedItinerary = uiState.linkedItinerary,
+            availableCount = uiState.availableItineraries.size,
+            onItineraryClick = onItineraryClick,
+            onOpenItineraryPicker = onOpenItineraryPicker,
+            onUnlinkItinerary = onUnlinkItinerary,
+        )
 
         // ── Stops section ──
         TripStopsSection(
             stops = uiState.stops,
+            excursions = uiState.excursions,
             countries = uiState.countries,
             isReorderMode = isReorderMode,
             onReorderModeChanged = onReorderModeChanged,
@@ -297,6 +433,16 @@ private fun TripDetailContent(
             onMoveStopUp = onMoveStopUp,
             onMoveStopDown = onMoveStopDown,
             onDeleteStop = onDeleteStop,
+            onAddExcursionClick = onAddExcursionClick,
+            onEditExcursion = onEditExcursion,
+            onDeleteExcursion = onDeleteExcursion,
+            onMoveExcursionUp = onMoveExcursionUp,
+            onMoveExcursionDown = onMoveExcursionDown,
+            onAddExcursionStopClick = onAddExcursionStopClick,
+            onEditExcursionStop = onEditExcursionStop,
+            onDeleteExcursionStop = onDeleteExcursionStop,
+            onMoveExcursionStopUp = onMoveExcursionStopUp,
+            onMoveExcursionStopDown = onMoveExcursionStopDown,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -394,6 +540,152 @@ private fun TripHeaderCard(
 }
 
 @Composable
+private fun ItineraryLinkSection(
+    linkedItinerary: Itinerary?,
+    availableCount: Int,
+    onItineraryClick: (String) -> Unit,
+    onOpenItineraryPicker: () -> Unit,
+    onUnlinkItinerary: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(TripCard)
+            .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text(
+            text = "Itinerari",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = TripInk,
+        )
+        if (linkedItinerary == null) {
+            Text(
+                text = if (availableCount == 0) {
+                    "No hi ha itineraris disponibles per vincular."
+                } else {
+                    "Vincula un itinerari per connectar els vols amb aquest viatge."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = TripMuted,
+            )
+            Button(
+                onClick = onOpenItineraryPicker,
+                enabled = availableCount > 0,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = TripAccent,
+                    contentColor = Color.White,
+                ),
+            ) {
+                Text("Vincula itinerari", fontWeight = FontWeight.ExtraBold)
+            }
+        } else {
+            Surface(
+                onClick = { onItineraryClick(linkedItinerary.id) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = TripBg,
+                border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+            ) {
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = linkedItinerary.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TripInk,
+                    )
+                    linkedItinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                        Text(
+                            text = notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TripMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            TextButton(onClick = onUnlinkItinerary) {
+                Text("Desvincula", fontWeight = FontWeight.Bold, color = TripError)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ItineraryPickerDialog(
+    itineraries: List<Itinerary>,
+    onDismiss: () -> Unit,
+    onSelect: (Itinerary) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(22.dp),
+        containerColor = TripCard,
+        title = {
+            Text(
+                text = "Vincula itinerari",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = TripInk,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (itineraries.isEmpty()) {
+                    Text(
+                        text = "No hi ha itineraris sense viatge.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TripMuted,
+                    )
+                } else {
+                    itineraries.forEach { itinerary ->
+                        Surface(
+                            onClick = { onSelect(itinerary) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = TripBg,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = itinerary.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = TripInk,
+                                )
+                                itinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                                    Text(
+                                        text = notes,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TripMuted,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel·la", fontWeight = FontWeight.Bold, color = TripMuted)
+            }
+        },
+    )
+}
+
+@Composable
 private fun StatusBadge(status: TravelStatus) {
     val (bg, fg) = when (status) {
         TravelStatus.COMPLETED   -> TripAccentLight to TripAccent
@@ -472,6 +764,7 @@ private fun SummaryPill(
 @Composable
 private fun TripStopsSection(
     stops: List<TripStop>,
+    excursions: List<Excursion>,
     countries: List<Country>,
     isReorderMode: Boolean,
     onReorderModeChanged: (Boolean) -> Unit,
@@ -480,7 +773,20 @@ private fun TripStopsSection(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
+    onAddExcursionClick: (String?) -> Unit,
+    onEditExcursion: (Excursion) -> Unit,
+    onDeleteExcursion: (Excursion) -> Unit,
+    onMoveExcursionUp: (Excursion) -> Unit,
+    onMoveExcursionDown: (Excursion) -> Unit,
+    onAddExcursionStopClick: (String) -> Unit,
+    onEditExcursionStop: (ExcursionStop) -> Unit,
+    onDeleteExcursionStop: (ExcursionStop) -> Unit,
+    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
+    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
 ) {
+    val excursionsByAnchor = excursions.groupBy { it.anchorTripStopId }
+    val totalTimelineItems = stops.size + excursions.size
+
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
         // Header row
@@ -499,7 +805,7 @@ private fun TripStopsSection(
                     fontWeight = FontWeight.ExtraBold,
                     color = TripInk,
                 )
-                if (stops.isNotEmpty()) {
+                if (totalTimelineItems > 0) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(100.dp))
@@ -507,7 +813,7 @@ private fun TripStopsSection(
                             .padding(horizontal = 9.dp, vertical = 2.dp),
                     ) {
                         Text(
-                            text = stops.size.toString(),
+                            text = totalTimelineItems.toString(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.ExtraBold,
                             color = Color.White,
@@ -534,7 +840,7 @@ private fun TripStopsSection(
                     Text("Afegeix", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
                 }
 
-                if (stops.isNotEmpty()) {
+                if (totalTimelineItems > 0) {
                     IconButton(
                         onClick = { onReorderModeChanged(!isReorderMode) },
                         modifier = Modifier
@@ -558,7 +864,7 @@ private fun TripStopsSection(
             }
         }
 
-        if (stops.isEmpty()) {
+        if (stops.isEmpty() && excursions.isEmpty()) {
             EmptyStopsState(onAddStopClick = onAddStopClick)
         } else {
             stops.forEachIndexed { index, stop ->
@@ -575,6 +881,56 @@ private fun TripStopsSection(
                     onMoveStopDown = onMoveStopDown,
                     onDeleteStop = onDeleteStop,
                 )
+                excursionsByAnchor[stop.id].orEmpty().forEach { excursion ->
+                    val excursionIndex = excursions.indexOf(excursion)
+                    Box(modifier = Modifier.padding(start = 28.dp)) {
+                        ExcursionCard(
+                            excursion = excursion,
+                            anchorName = stop.locationName,
+                            countries = countries,
+                            canMoveUp = excursionIndex > 0,
+                            canMoveDown = excursionIndex in 0 until excursions.lastIndex,
+                            isReorderMode = isReorderMode,
+                            onEditExcursion = onEditExcursion,
+                            onDeleteExcursion = onDeleteExcursion,
+                            onMoveExcursionUp = onMoveExcursionUp,
+                            onMoveExcursionDown = onMoveExcursionDown,
+                            onAddExcursionStopClick = onAddExcursionStopClick,
+                            onEditExcursionStop = onEditExcursionStop,
+                            onDeleteExcursionStop = onDeleteExcursionStop,
+                            onMoveExcursionStopUp = onMoveExcursionStopUp,
+                            onMoveExcursionStopDown = onMoveExcursionStopDown,
+                        )
+                    }
+                }
+            }
+            excursionsByAnchor[null].orEmpty().forEach { excursion ->
+                val excursionIndex = excursions.indexOf(excursion)
+                ExcursionCard(
+                    excursion = excursion,
+                    anchorName = null,
+                    countries = countries,
+                    canMoveUp = excursionIndex > 0,
+                    canMoveDown = excursionIndex in 0 until excursions.lastIndex,
+                    isReorderMode = isReorderMode,
+                    onEditExcursion = onEditExcursion,
+                    onDeleteExcursion = onDeleteExcursion,
+                    onMoveExcursionUp = onMoveExcursionUp,
+                    onMoveExcursionDown = onMoveExcursionDown,
+                    onAddExcursionStopClick = onAddExcursionStopClick,
+                    onEditExcursionStop = onEditExcursionStop,
+                    onDeleteExcursionStop = onDeleteExcursionStop,
+                    onMoveExcursionStopUp = onMoveExcursionStopUp,
+                    onMoveExcursionStopDown = onMoveExcursionStopDown,
+                )
+            }
+            TextButton(
+                onClick = { onAddExcursionClick(null) },
+                colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+            ) {
+                Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("Afegeix excursio", fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -688,7 +1044,7 @@ private fun TripStopRow(
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
-                    text = stop.locationName,
+                    text = stop.displayTitle ?: stop.locationName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = TripInk,
@@ -700,9 +1056,19 @@ private fun TripStopRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     TypeBadge(
-                        label = if (hasCoords) "MAPA" else "MANUAL",
-                        color = if (hasCoords) TripAccent else TripPlanned,
-                        background = if (hasCoords) TripAccentLight else TripPlannedLight,
+                        label = if (stop.source == TripStopSource.ITINERARY_GROUP) {
+                            "ITINERARI"
+                        } else if (hasCoords) {
+                            "MAPA"
+                        } else {
+                            "MANUAL"
+                        },
+                        color = if (stop.source == TripStopSource.ITINERARY_GROUP || hasCoords) TripAccent else TripPlanned,
+                        background = if (stop.source == TripStopSource.ITINERARY_GROUP || hasCoords) {
+                            TripAccentLight
+                        } else {
+                            TripPlannedLight
+                        },
                     )
                     Text(
                         text = countryName,
@@ -749,12 +1115,14 @@ private fun TripStopRow(
                     }
                 }
             } else {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                    horizontalAlignment = Alignment.End,
-                ) {
-                    SmallActionButton("Edita") { onEditStop(stop) }
-                    SmallActionButton("Elimina") { onDeleteStop(stop) }
+                if (stop.source == TripStopSource.MANUAL) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                        horizontalAlignment = Alignment.End,
+                    ) {
+                        SmallActionButton("Edita") { onEditStop(stop) }
+                        SmallActionButton("Elimina") { onDeleteStop(stop) }
+                    }
                 }
             }
         }
@@ -779,6 +1147,224 @@ private fun TypeBadge(label: String, color: Color, background: Color) {
 }
 
 @Composable
+private fun ExcursionsSection(
+    excursions: List<Excursion>,
+    stops: List<TripStop>,
+    countries: List<Country>,
+    onAddExcursionClick: () -> Unit,
+    onEditExcursion: (Excursion) -> Unit,
+    onDeleteExcursion: (Excursion) -> Unit,
+    onMoveExcursionUp: (Excursion) -> Unit,
+    onMoveExcursionDown: (Excursion) -> Unit,
+    onAddExcursionStopClick: (String) -> Unit,
+    onEditExcursionStop: (ExcursionStop) -> Unit,
+    onDeleteExcursionStop: (ExcursionStop) -> Unit,
+    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
+    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Excursions",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = TripInk,
+            )
+            Button(
+                onClick = onAddExcursionClick,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TripInk, contentColor = Color.White),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
+            ) {
+                Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("Afegeix", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+            }
+        }
+
+        if (excursions.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(TripCard)
+                    .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    text = "Sense excursions.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = TripInk,
+                )
+                Text(
+                    text = "Afegeix rutes secundaries dins del viatge.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TripMuted,
+                )
+            }
+        } else {
+            excursions.forEachIndexed { index, excursion ->
+                ExcursionCard(
+                    excursion = excursion,
+                    anchorName = stops.firstOrNull { it.id == excursion.anchorTripStopId }?.locationName,
+                    countries = countries,
+                    canMoveUp = index > 0,
+                    canMoveDown = index < excursions.lastIndex,
+                    isReorderMode = false,
+                    onEditExcursion = onEditExcursion,
+                    onDeleteExcursion = onDeleteExcursion,
+                    onMoveExcursionUp = onMoveExcursionUp,
+                    onMoveExcursionDown = onMoveExcursionDown,
+                    onAddExcursionStopClick = onAddExcursionStopClick,
+                    onEditExcursionStop = onEditExcursionStop,
+                    onDeleteExcursionStop = onDeleteExcursionStop,
+                    onMoveExcursionStopUp = onMoveExcursionStopUp,
+                    onMoveExcursionStopDown = onMoveExcursionStopDown,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExcursionCard(
+    excursion: Excursion,
+    anchorName: String?,
+    countries: List<Country>,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    isReorderMode: Boolean,
+    onEditExcursion: (Excursion) -> Unit,
+    onDeleteExcursion: (Excursion) -> Unit,
+    onMoveExcursionUp: (Excursion) -> Unit,
+    onMoveExcursionDown: (Excursion) -> Unit,
+    onAddExcursionStopClick: (String) -> Unit,
+    onEditExcursionStop: (ExcursionStop) -> Unit,
+    onDeleteExcursionStop: (ExcursionStop) -> Unit,
+    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
+    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(TripCard)
+            .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = excursion.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = TripInk,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = anchorName?.let { "Ancorada a $it" } ?: "Sense parada d'ancoratge",
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TripMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                if (isReorderMode) {
+                    Row {
+                        IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(30.dp)) {
+                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) TripInk else TripBorder)
+                        }
+                        IconButton(onClick = { onMoveExcursionDown(excursion) }, enabled = canMoveDown, modifier = Modifier.size(30.dp)) {
+                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) TripInk else TripBorder)
+                        }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                        SmallActionButton("Edita") { onEditExcursion(excursion) }
+                        SmallActionButton("Elimina") { onDeleteExcursion(excursion) }
+                    }
+                }
+            }
+        }
+
+        if (excursion.stops.isEmpty()) {
+            Text(
+                text = "Encara no hi ha parades d'excursio.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TripMuted,
+            )
+        } else {
+            excursion.stops.sortedBy { it.sortOrder }.forEachIndexed { index, stop ->
+                val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "${index + 1}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = TripAccent,
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(stop.locationName, fontWeight = FontWeight.ExtraBold, color = TripInk, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            text = listOfNotNull(
+                                countryName,
+                                stop.dateRange?.let { dateRangeFormatter.format(it) },
+                            ).joinToString(" · "),
+                            color = TripMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isReorderMode) {
+                        IconButton(
+                            onClick = { onMoveExcursionStopUp(excursion.id, stop) },
+                            enabled = index > 0,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (index > 0) TripInk else TripBorder)
+                        }
+                        IconButton(
+                            onClick = { onMoveExcursionStopDown(excursion.id, stop) },
+                            enabled = index < excursion.stops.lastIndex,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (index < excursion.stops.lastIndex) TripInk else TripBorder)
+                        }
+                    } else {
+                        SmallActionButton("Edita") { onEditExcursionStop(stop) }
+                        SmallActionButton("Elimina") { onDeleteExcursionStop(stop) }
+                    }
+                }
+            }
+        }
+
+        if (!isReorderMode) {
+            TextButton(onClick = { onAddExcursionStopClick(excursion.id) }) {
+                Text("Afegeix parada d'excursio", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+            }
+        }
+    }
+}
+
+@Composable
 private fun SmallActionButton(label: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
@@ -797,6 +1383,313 @@ private fun SmallActionButton(label: String, onClick: () -> Unit) {
 // ─────────────────────────────────────────────
 // Stop dialog
 // ─────────────────────────────────────────────
+@Composable
+private fun ExcursionDialog(
+    draft: ExcursionDraftUiState,
+    stops: List<TripStop>,
+    onDismiss: () -> Unit,
+    onTitleChanged: (String) -> Unit,
+    onAnchorChanged: (String?) -> Unit,
+    onNotesChanged: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(22.dp),
+        containerColor = TripCard,
+        title = {
+            Text(
+                text = if (draft.excursionId == null) "Afegeix excursio" else "Edita excursio",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = TripInk,
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = draft.title,
+                    onValueChange = onTitleChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Titol", fontWeight = FontWeight.Bold) },
+                    shape = RoundedCornerShape(14.dp),
+                )
+                DialogSectionLabel("Parada d'ancoratge")
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(TripBg)
+                        .border(1.dp, TripBorder, RoundedCornerShape(12.dp))
+                        .padding(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    TextButton(onClick = { onAnchorChanged(null) }) {
+                        Text(
+                            text = if (draft.anchorTripStopId == null) "Sense ancoratge seleccionat" else "Sense ancoratge",
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (draft.anchorTripStopId == null) TripAccent else TripMuted,
+                        )
+                    }
+                    stops.forEach { stop ->
+                        TextButton(onClick = { onAnchorChanged(stop.id) }) {
+                            Text(
+                                text = stop.displayTitle ?: stop.locationName,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = if (draft.anchorTripStopId == stop.id) TripAccent else TripInk,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = draft.notes,
+                    onValueChange = onNotesChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Notes", fontWeight = FontWeight.Bold) },
+                    shape = RoundedCornerShape(14.dp),
+                    minLines = 1,
+                    maxLines = 3,
+                )
+                draft.validationError?.let { error ->
+                    Text(error, color = TripError, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        },
+        confirmButton = {
+            CompactTripDialogActionButton(onClick = onSave) {
+                Text("Desa", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+            }
+        },
+        dismissButton = {
+            CompactTripDialogActionButton(onClick = onDismiss) {
+                Text("Cancel.la", fontWeight = FontWeight.Bold, color = TripMuted)
+            }
+        },
+    )
+}
+
+@Composable
+private fun ExcursionStopDialog(
+    draft: ExcursionStopDraftUiState,
+    countries: List<Country>,
+    onDismiss: () -> Unit,
+    onLocationSearchQueryChanged: (String) -> Unit,
+    onSearchLocationClick: () -> Unit,
+    onLocationSearchResultSelected: (LocationSearchResult) -> Unit,
+    onUseManualEntryClick: () -> Unit,
+    onLocationNameChanged: (String) -> Unit,
+    onCountryChanged: (String) -> Unit,
+    onLatitudeChanged: (String) -> Unit,
+    onLongitudeChanged: (String) -> Unit,
+    onDatePrecisionChanged: (DatePrecision) -> Unit,
+    onDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
+    onNotesChanged: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    val hasCoordinates = draft.latitude.isNotBlank() && draft.longitude.isNotBlank()
+    val selectedCountry = countries.firstOrNull { it.iso2 == draft.countryIso2 }
+    val showManualFields = draft.isManualEntryVisible
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(22.dp),
+        containerColor = TripCard,
+        title = {
+            Text(
+                text = if (draft.stopId == null) "Afegeix parada d'excursio" else "Edita parada d'excursio",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.ExtraBold,
+                color = TripInk,
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = null,
+                        tint = TripAccent,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    DialogSectionLabel("Cerca lloc")
+                }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = draft.locationSearchQuery,
+                        onValueChange = onLocationSearchQueryChanged,
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        label = { Text("Nom o adreca", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    Button(
+                        onClick = onSearchLocationClick,
+                        enabled = !draft.isSearchingLocation,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = TripAccent,
+                            contentColor = Color.White,
+                        ),
+                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
+                    ) {
+                        Text("Cerca", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                    }
+                }
+
+                if (draft.isSearchingLocation) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = TripAccent,
+                        )
+                        Text(
+                            "Cercant llocs...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TripMuted,
+                        )
+                    }
+                }
+
+                draft.locationSearchError?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TripError,
+                    )
+                }
+
+                if (draft.locationSearchResults.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(TripBg)
+                            .border(1.dp, TripBorder, RoundedCornerShape(12.dp)),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        draft.locationSearchResults.forEach { result ->
+                            LocationSearchResultRow(
+                                result = result,
+                                onClick = { onLocationSearchResultSelected(result) },
+                            )
+                        }
+                    }
+                }
+
+                if (draft.locationName.isNotBlank()) {
+                    SelectedLocationSummary(
+                        locationName = draft.locationName,
+                        countryName = selectedCountry?.nameCa ?: draft.countryIso2,
+                        hasCoordinates = hasCoordinates,
+                        showEditDetails = !showManualFields,
+                        onEditDetailsClick = onUseManualEntryClick,
+                    )
+                }
+
+                if (!showManualFields && draft.locationName.isBlank()) {
+                    TextButton(
+                        onClick = onUseManualEntryClick,
+                        modifier = Modifier.height(32.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    ) {
+                        Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                    }
+                }
+
+                if (showManualFields) {
+                    DialogSectionLabel("Detalls manuals")
+                    OutlinedTextField(
+                        value = draft.locationName,
+                        onValueChange = onLocationNameChanged,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    CountryDropdown(
+                        countries = countries,
+                        selectedIso2 = draft.countryIso2,
+                        onCountryChanged = onCountryChanged,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = draft.latitude,
+                            onValueChange = onLatitudeChanged,
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                            placeholder = { Text("Opcional", color = TripMuted) },
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                        OutlinedTextField(
+                            value = draft.longitude,
+                            onValueChange = onLongitudeChanged,
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                            placeholder = { Text("Opcional", color = TripMuted) },
+                            shape = RoundedCornerShape(14.dp),
+                        )
+                    }
+                }
+                Text(
+                    text = "Dades de cerca OpenStreetMap contributors",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TripMuted,
+                )
+
+                DialogSectionLabel("Data")
+                FlexibleDateRangeField(
+                    draft = draft.dateRange,
+                    onPrecisionChanged = onDatePrecisionChanged,
+                    onFieldChanged = onDateFieldChanged,
+                    showHint = false,
+                )
+                OutlinedTextField(
+                    value = draft.notes,
+                    onValueChange = onNotesChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Notes", fontWeight = FontWeight.Bold) },
+                    shape = RoundedCornerShape(14.dp),
+                    minLines = 1,
+                    maxLines = 3,
+                )
+                draft.validationError?.let { error ->
+                    Text(error, color = TripError, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        },
+        confirmButton = {
+            CompactTripDialogActionButton(onClick = onSave) {
+                Text("Desa", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+            }
+        },
+        dismissButton = {
+            CompactTripDialogActionButton(onClick = onDismiss) {
+                Text("Cancel.la", fontWeight = FontWeight.Bold, color = TripMuted)
+            }
+        },
+    )
+}
+
 @Composable
 private fun TripStopDialog(
     draft: TripStopDraftUiState,

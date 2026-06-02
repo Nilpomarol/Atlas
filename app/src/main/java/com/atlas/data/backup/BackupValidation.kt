@@ -13,10 +13,10 @@ class BackupValidator(
     private val flexibleDateValidator: FlexibleDateValidator = FlexibleDateValidator(),
 ) {
     fun validate(
-        backup: AtlasBackupV1,
+        backup: AtlasBackupV2,
         validCountryIso2: Set<String>,
     ) {
-        requireBackup(backup.backupVersion == BACKUP_VERSION) {
+        requireBackup(backup.backupVersion in 1..BACKUP_VERSION) {
             "La còpia no és compatible amb aquesta versió d'Atlas."
         }
 
@@ -25,61 +25,75 @@ class BackupValidator(
         requireUnique(data.countryLogs.map { it.id }, "Hi ha registres duplicats.")
         requireUnique(data.trips.map { it.id }, "Hi ha viatges duplicats.")
         requireUnique(data.tripStops.map { it.id }, "Hi ha parades duplicades.")
+        requireUnique(data.flights.map { it.id }, "Hi ha vols duplicats.")
+        requireUnique(data.itineraries.map { it.id }, "Hi ha itineraris duplicats.")
+        requireUnique(data.itineraryGroups.map { it.id }, "Hi ha grups d'itinerari duplicats.")
+        requireUnique(data.excursions.map { it.id }, "Hi ha excursions duplicades.")
+        requireUnique(data.excursionStops.map { it.id }, "Hi ha parades d'excursió duplicades.")
 
         requireBackup(data.countryUserStates.count { it.currentlyLiving } <= 1) {
             "La còpia té més d'un país marcat com a vivint-hi."
         }
 
         val tripIds = data.trips.map { it.id }.toSet()
+        val tripStopIds = data.tripStops.map { it.id }.toSet()
+        val itineraryIds = data.itineraries.map { it.id }.toSet()
+        val groupIds = data.itineraryGroups.map { it.id }.toSet()
+        val excursionIds = data.excursions.map { it.id }.toSet()
 
-        data.countryUserStates.forEach {
-            requireCountryExists(it.countryIso2, validCountryIso2)
-        }
+        data.countryUserStates.forEach { requireCountryExists(it.countryIso2, validCountryIso2) }
+
         data.countryLogs.forEach {
             requireCountryExists(it.countryIso2, validCountryIso2)
             requireEnum<CountryLogType>(it.type, "El tipus d'un registre no és vàlid.")
-            validateDateRange(
-                precision = it.datePrecision,
-                startYear = it.startYear,
-                startMonth = it.startMonth,
-                startDay = it.startDay,
-                endYear = it.endYear,
-                endMonth = it.endMonth,
-                endDay = it.endDay,
-            )
+            validateDateRange(it.datePrecision, it.startYear, it.startMonth, it.startDay, it.endYear, it.endMonth, it.endDay)
         }
         data.trips.forEach {
             requireBackup(it.title.isNotBlank()) { "Hi ha un viatge sense títol." }
             requireEnum<TravelStatus>(it.status, "L'estat d'un viatge no és vàlid.")
-            validateDateRange(
-                precision = it.datePrecision,
-                startYear = it.startYear,
-                startMonth = it.startMonth,
-                startDay = it.startDay,
-                endYear = it.endYear,
-                endMonth = it.endMonth,
-                endDay = it.endDay,
-            )
+            validateDateRange(it.datePrecision, it.startYear, it.startMonth, it.startDay, it.endYear, it.endMonth, it.endDay)
         }
         data.tripStops.forEach {
-            requireBackup(it.tripId in tripIds) {
-                "Hi ha una parada que apunta a un viatge inexistent."
-            }
+            requireBackup(it.tripId in tripIds) { "Hi ha una parada que apunta a un viatge inexistent." }
             requireCountryExists(it.countryIso2, validCountryIso2)
             requireBackup(it.locationName.isNotBlank()) { "Hi ha una parada sense nom." }
-            validateCoordinates(
-                latitude = it.latitude,
-                longitude = it.longitude,
-            )
-            validateDateRange(
-                precision = it.datePrecision,
-                startYear = it.startYear,
-                startMonth = it.startMonth,
-                startDay = it.startDay,
-                endYear = it.endYear,
-                endMonth = it.endMonth,
-                endDay = it.endDay,
-            )
+            validateCoordinates(it.latitude, it.longitude)
+            validateDateRange(it.datePrecision, it.startYear, it.startMonth, it.startDay, it.endYear, it.endMonth, it.endDay)
+        }
+
+        // ── v2 entities ───────────────────────────────────────────────────────
+        data.flights.forEach {
+            requireBackup(it.originAirportId.isNotBlank()) { "Hi ha un vol sense aeroport d'origen." }
+            requireBackup(it.destinationAirportId.isNotBlank()) { "Hi ha un vol sense aeroport de destí." }
+            requireEnum<TravelStatus>(it.status, "L'estat d'un vol no és vàlid.")
+            it.itineraryGroupId?.let { groupId ->
+                requireBackup(groupId in groupIds) { "Hi ha un vol que apunta a un grup d'itinerari inexistent." }
+            }
+        }
+        data.itineraries.forEach {
+            requireBackup(it.title.isNotBlank()) { "Hi ha un itinerari sense títol." }
+            it.tripId?.let { tripId ->
+                requireBackup(tripId in tripIds) { "Hi ha un itinerari vinculat a un viatge inexistent." }
+            }
+        }
+        data.itineraryGroups.forEach {
+            requireBackup(it.itineraryId in itineraryIds) { "Hi ha un grup que apunta a un itinerari inexistent." }
+            it.status?.let { status ->
+                requireEnum<TravelStatus>(status, "L'estat d'un grup d'itinerari no és vàlid.")
+            }
+        }
+        data.excursions.forEach {
+            requireBackup(it.tripId in tripIds) { "Hi ha una excursió que apunta a un viatge inexistent." }
+            it.anchorTripStopId?.let { stopId ->
+                requireBackup(stopId in tripStopIds) { "Hi ha una excursió ancorada a una parada inexistent." }
+            }
+        }
+        data.excursionStops.forEach {
+            requireBackup(it.excursionId in excursionIds) { "Hi ha una parada d'excursió que apunta a una excursió inexistent." }
+            requireCountryExists(it.countryIso2, validCountryIso2)
+            requireBackup(it.locationName.isNotBlank()) { "Hi ha una parada d'excursió sense nom." }
+            validateCoordinates(it.latitude, it.longitude)
+            validateDateRange(it.datePrecision, it.startYear, it.startMonth, it.startDay, it.endYear, it.endMonth, it.endDay)
         }
     }
 
@@ -192,6 +206,6 @@ class BackupValidator(
         runCatching { enumValueOf<T>(value) }.getOrNull()
 
     companion object {
-        const val BACKUP_VERSION = 1
+        const val BACKUP_VERSION = 2
     }
 }

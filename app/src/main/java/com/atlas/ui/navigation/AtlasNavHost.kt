@@ -22,6 +22,9 @@ import androidx.navigation.navArgument
 import com.atlas.presentation.dashboard.DashboardRoute
 import com.atlas.presentation.country.CountryDetailRoute
 import com.atlas.presentation.country.CountryListRoute
+import com.atlas.presentation.flight.FlightDetailRoute
+import com.atlas.presentation.flight.FlightListRoute
+import com.atlas.presentation.itinerary.ItineraryDetailRoute
 import com.atlas.presentation.settings.SettingsRoute
 import com.atlas.presentation.trip.TripDetailRoute
 import com.atlas.presentation.trip.TripListRoute
@@ -137,6 +140,55 @@ fun AtlasNavHost() {
                     TripDetailRoute(
                         tripId = tripId,
                         onBackClick = navController::popBackStack,
+                        onItineraryClick = { itineraryId ->
+                            navController.navigate("itineraries/$itineraryId")
+                        },
+                    )
+                }
+            }
+            composable(AtlasDestination.Flights.route) {
+                FlightListRoute(
+                    onFlightClick = { flightId ->
+                        navController.navigate("flights/$flightId")
+                    },
+                    onItineraryClick = { itineraryId ->
+                        navController.navigate("itineraries/$itineraryId")
+                    },
+                )
+            }
+            composable(
+                route = "flights/{flightId}",
+                arguments = listOf(
+                    navArgument("flightId") { type = NavType.StringType },
+                ),
+            ) { backStackEntry ->
+                val flightId = backStackEntry.arguments?.getString("flightId")
+                if (flightId != null) {
+                    FlightDetailRoute(
+                        flightId = flightId,
+                        onBackClick = navController::popBackStack,
+                    )
+                }
+            }
+            composable(
+                route = "itineraries/{itineraryId}",
+                arguments = listOf(
+                    navArgument("itineraryId") {
+                        type = NavType.StringType
+                    },
+                ),
+            ) { backStackEntry ->
+                val itineraryId = backStackEntry.arguments?.getString("itineraryId")
+                if (itineraryId != null) {
+                    ItineraryDetailRoute(
+                        itineraryId = itineraryId,
+                        onBackClick = navController::popBackStack,
+                        onTripClick = { tripId ->
+                            navController.navigate("trips/$tripId")
+                        },
+                        onFlightClick = { flightId ->
+                            navController.navigate("flights/$flightId")
+                        },
                     )
                 }
             }

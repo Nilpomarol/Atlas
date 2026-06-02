@@ -4,10 +4,13 @@ import com.atlas.data.local.database.AtlasDatabase
 import com.atlas.data.local.entity.TripEntity
 import com.atlas.data.local.entity.TripStopEntity
 import com.atlas.data.local.mapper.toDomain
+import com.atlas.data.local.mapper.toEntity
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.GeneratedTripStopDraft
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.repository.TripRepository
 import androidx.room.withTransaction
 import java.time.Instant
@@ -133,6 +136,10 @@ class TripRepositoryImpl(
                 datePrecision = dateRange?.precision?.name,
                 notes = notes,
                 sortOrder = tripStopDao.getMaxSortOrder(tripId) + 1,
+                source = TripStopSource.MANUAL.name,
+                itineraryGroupId = null,
+                isVisible = true,
+                displayTitle = null,
                 createdAt = now,
                 updatedAt = now,
             ),
@@ -173,26 +180,43 @@ class TripRepositoryImpl(
     }
 
     override suspend fun deleteTripStop(stop: TripStop) {
-        tripStopDao.delete(
-            TripStopEntity(
-                id = stop.id,
-                tripId = stop.tripId,
-                locationName = stop.locationName,
-                countryIso2 = stop.countryIso2,
-                latitude = stop.latitude,
-                longitude = stop.longitude,
-                startYear = stop.dateRange?.start?.year,
-                startMonth = stop.dateRange?.start?.month,
-                startDay = stop.dateRange?.start?.day,
-                endYear = stop.dateRange?.end?.year,
-                endMonth = stop.dateRange?.end?.month,
-                endDay = stop.dateRange?.end?.day,
-                datePrecision = stop.dateRange?.precision?.name,
-                notes = stop.notes,
-                sortOrder = stop.sortOrder,
-                createdAt = "",
-                updatedAt = "",
-            ),
-        )
+        tripStopDao.delete(stop.toEntity(createdAt = "", updatedAt = ""))
+    }
+
+    override suspend fun replaceGeneratedItineraryGroupStops(
+        tripId: String,
+        groupIds: List<String>,
+        stops: List<GeneratedTripStopDraft>,
+    ) {
+        if (groupIds.isEmpty()) return
+
+        database.withTransaction {
+            val now = Instant.now().toString()
+            tripStopDao.deleteGeneratedForGroups(groupIds)
+            tripStopDao.upsertAll(
+                stops.map { stop ->
+                    TripStop(
+                        id = "itinerary-group-${stop.itineraryGroupId}",
+                        tripId = tripId,
+                        locationName = stop.locationName,
+                        countryIso2 = stop.countryIso2,
+                        latitude = stop.latitude,
+                        longitude = stop.longitude,
+                        dateRange = null,
+                        notes = null,
+                        sortOrder = stop.sortOrder,
+                        source = TripStopSource.ITINERARY_GROUP,
+                        itineraryGroupId = stop.itineraryGroupId,
+                        isVisible = true,
+                        displayTitle = stop.displayTitle,
+                    ).toEntity(createdAt = now, updatedAt = now)
+                },
+            )
+        }
+    }
+
+    override suspend fun deleteGeneratedItineraryGroupStops(groupIds: List<String>) {
+        if (groupIds.isEmpty()) return
+        tripStopDao.deleteGeneratedForGroups(groupIds)
     }
 }

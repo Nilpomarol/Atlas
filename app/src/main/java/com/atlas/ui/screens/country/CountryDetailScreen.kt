@@ -141,6 +141,7 @@ private fun CountryDetailContent(
             CountryHistorySection(
                 logs = uiState.logs,
                 tripSummaries = uiState.tripSummaries,
+                airTravelSummaries = uiState.airTravelSummaries,
                 style = style,
                 onTripClick = onTripClick,
                 onEditLog = onEditLog,

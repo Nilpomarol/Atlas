@@ -15,7 +15,7 @@ data class AirportDto(
     val iata: String? = null,
     val icao: String? = null,
     val name: String,
-    val city: String,
+    val city: String? = null,
     @SerialName("country_iso2")
     val countryIso2: String,
     val latitude: Double,

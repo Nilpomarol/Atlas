@@ -28,7 +28,7 @@ class AirportDatasetImporter(
         val dataset = loadDataset()
 
         database.withTransaction {
-            database.airportDao().upsertAll(dataset.airports.map { it.toEntity() })
+            database.airportDao().upsertAll(dataset.airports.mapNotNull { it.toEntityOrNull() })
             database.datasetMetadataDao().upsert(
                 DatasetMetadataEntity(
                     key = DatasetConstants.AIRPORTS_KEY,
@@ -48,17 +48,20 @@ class AirportDatasetImporter(
         return json.decodeFromString(AirportDatasetDto.serializer(), rawJson)
     }
 
-    private fun AirportDto.toEntity(): AirportEntity = AirportEntity(
-        id = id,
-        iata = iata,
-        icao = icao,
-        name = name,
-        city = city,
-        countryIso2 = countryIso2,
-        latitude = latitude,
-        longitude = longitude,
-        timezone = timezone,
-    )
+    private fun AirportDto.toEntityOrNull(): AirportEntity? {
+        if (city.isNullOrBlank()) return null
+        return AirportEntity(
+            id = id,
+            iata = iata,
+            icao = icao,
+            name = name,
+            city = city,
+            countryIso2 = countryIso2,
+            latitude = latitude,
+            longitude = longitude,
+            timezone = timezone,
+        )
+    }
 
     private companion object {
         const val AIRPORTS_ASSET_PATH = "data/airports.json"

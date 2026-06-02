@@ -9,20 +9,48 @@ import com.atlas.data.local.database.AtlasDatabase
 import com.atlas.data.repository.AirportRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
 import com.atlas.data.repository.BackupRepositoryImpl
+import com.atlas.data.repository.ExcursionRepositoryImpl
+import com.atlas.data.repository.FlightRepositoryImpl
+import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.ExcursionRepository
+import com.atlas.domain.repository.FlightRepository
+import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.LocationSearchRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.domain.service.ItineraryGeneratedStopService
 import com.atlas.domain.usecase.country.AddCountryLogUseCase
 import com.atlas.domain.usecase.country.DeleteCountryLogUseCase
 import com.atlas.domain.usecase.country.SetCurrentlyLivingCountryUseCase
 import com.atlas.domain.usecase.country.ToggleWishedCountryUseCase
 import com.atlas.domain.usecase.country.UpdateCountryLogUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
+import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
+import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
+import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
+import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
+import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
+import com.atlas.domain.usecase.excursion.ReorderExcursionsUseCase
+import com.atlas.domain.usecase.excursion.UpdateExcursionStopUseCase
+import com.atlas.domain.usecase.excursion.UpdateExcursionUseCase
+import com.atlas.domain.usecase.flight.CreateFlightUseCase
+import com.atlas.domain.usecase.flight.DeleteFlightUseCase
+import com.atlas.domain.usecase.flight.UpdateFlightUseCase
+import com.atlas.domain.usecase.itinerary.CreateItineraryGroupUseCase
+import com.atlas.domain.usecase.itinerary.CreateItineraryUseCase
+import com.atlas.domain.usecase.itinerary.DeleteItineraryGroupUseCase
+import com.atlas.domain.usecase.itinerary.DeleteItineraryUseCase
+import com.atlas.domain.usecase.itinerary.ReorderGroupFlightsUseCase
+import com.atlas.domain.usecase.itinerary.ReorderItineraryGroupsUseCase
+import com.atlas.domain.usecase.itinerary.UpdateItineraryGroupUseCase
+import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
+import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
+import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseCase
 import com.atlas.domain.usecase.location.SearchLocationsUseCase
 import com.atlas.domain.usecase.trip.CreateTripUseCase
 import com.atlas.domain.usecase.trip.CreateTripStopUseCase
@@ -52,6 +80,12 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_4_5)
         .addMigrations(AtlasDatabase.MIGRATION_5_6)
         .addMigrations(AtlasDatabase.MIGRATION_6_7)
+        .addMigrations(AtlasDatabase.MIGRATION_7_8)
+        .addMigrations(AtlasDatabase.MIGRATION_8_9)
+        .addMigrations(AtlasDatabase.MIGRATION_9_10)
+        .addMigrations(AtlasDatabase.MIGRATION_10_11)
+        .addMigrations(AtlasDatabase.MIGRATION_11_12)
+        .addMigrations(AtlasDatabase.MIGRATION_12_13)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -80,9 +114,22 @@ class AtlasAppContainer(context: Context) {
         database = database,
     )
 
+    val flightRepository: FlightRepository = FlightRepositoryImpl(
+        database = database,
+    )
+
+    val itineraryRepository: ItineraryRepository = ItineraryRepositoryImpl(
+        database = database,
+    )
+
+    val excursionRepository: ExcursionRepository = ExcursionRepositoryImpl(
+        database = database,
+    )
+
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
 
     val countryStateDerivationService = CountryStateDerivationService()
+    val itineraryGeneratedStopService = ItineraryGeneratedStopService()
     val flexibleDateValidator = FlexibleDateValidator()
     val flexibleDateFormatter = FlexibleDateFormatter()
 
@@ -140,6 +187,94 @@ class AtlasAppContainer(context: Context) {
 
     val searchAirportsUseCase = SearchAirportsUseCase(
         airportRepository = airportRepository,
+    )
+
+    val createFlightUseCase = CreateFlightUseCase(
+        flightRepository = flightRepository,
+    )
+
+    val updateFlightUseCase = UpdateFlightUseCase(
+        flightRepository = flightRepository,
+    )
+
+    val deleteFlightUseCase = DeleteFlightUseCase(
+        flightRepository = flightRepository,
+    )
+
+    val createItineraryUseCase = CreateItineraryUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val updateItineraryUseCase = UpdateItineraryUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val syncGeneratedTripStopsForItineraryUseCase = SyncGeneratedTripStopsForItineraryUseCase(
+        itineraryRepository = itineraryRepository,
+        tripRepository = tripRepository,
+        airportRepository = airportRepository,
+        itineraryGeneratedStopService = itineraryGeneratedStopService,
+    )
+
+    val removeGeneratedTripStopsForItineraryUseCase = RemoveGeneratedTripStopsForItineraryUseCase(
+        itineraryRepository = itineraryRepository,
+        tripRepository = tripRepository,
+    )
+
+    val deleteItineraryUseCase = DeleteItineraryUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val createItineraryGroupUseCase = CreateItineraryGroupUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val updateItineraryGroupUseCase = UpdateItineraryGroupUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val deleteItineraryGroupUseCase = DeleteItineraryGroupUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val reorderItineraryGroupsUseCase = ReorderItineraryGroupsUseCase(
+        itineraryRepository = itineraryRepository,
+    )
+
+    val reorderGroupFlightsUseCase = ReorderGroupFlightsUseCase(
+        flightRepository = flightRepository,
+    )
+
+    val createExcursionUseCase = CreateExcursionUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val updateExcursionUseCase = UpdateExcursionUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val deleteExcursionUseCase = DeleteExcursionUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val reorderExcursionsUseCase = ReorderExcursionsUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val createExcursionStopUseCase = CreateExcursionStopUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val updateExcursionStopUseCase = UpdateExcursionStopUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val deleteExcursionStopUseCase = DeleteExcursionStopUseCase(
+        excursionRepository = excursionRepository,
+    )
+
+    val reorderExcursionStopsUseCase = ReorderExcursionStopsUseCase(
+        excursionRepository = excursionRepository,
     )
 
     fun importInitialData() {

@@ -3,15 +3,24 @@ package com.atlas.presentation.country
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.Excursion
+import com.atlas.domain.model.Flight
+import com.atlas.domain.model.Itinerary
+import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.ExcursionRepository
+import com.atlas.domain.repository.FlightRepository
+import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
@@ -28,6 +37,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,55 +53,72 @@ class CountryDetailViewModel(
     countryStateDerivationService: CountryStateDerivationService,
     private val flexibleDateValidator: FlexibleDateValidator,
     iso2: String,
+    flightRepository: FlightRepository,
+    itineraryRepository: ItineraryRepository,
+    airportRepository: AirportRepository,
+    excursionRepository: ExcursionRepository,
 ) : ViewModel() {
     private val logDraft = MutableStateFlow(CountryLogDraftUiState())
 
-    private val countryTrackingState = combine(
+    private val baseTrackingData = combine(
         countryRepository.observeUserState(iso2),
         countryRepository.observeCountryLogs(iso2),
         tripRepository.observeTrips(),
         tripRepository.observeTripStops(),
-    ) { userState, logs, trips, tripStops ->
-        countryStateDerivationService.derive(
-            countryIso2 = iso2,
-            userState = userState,
-            logs = logs,
-            trips = trips,
-            tripStops = tripStops.filter { it.countryIso2 == iso2 },
+        excursionRepository.observeExcursions(),
+    ) { userState, logs, trips, tripStops, excursions ->
+        BaseTrackingData(userState, logs, trips, tripStops, excursions)
+    }
+
+    private val flightTrackingData = combine(
+        flightRepository.observeFlights(),
+        itineraryRepository.observeItineraries(),
+        itineraryRepository.observeAllGroups(),
+        airportRepository.observeAirports(),
+    ) { flights, itineraries, itineraryGroups, airports ->
+        FlightTrackingData(
+            flights = flights,
+            itineraries = itineraries,
+            itineraryGroups = itineraryGroups,
+            airports = airports,
+            airportCountryIso2ById = airports.associate { it.id to it.countryIso2 },
         )
     }
 
-    private val countryDetailPills = combine(
-        countryRepository.observeUserState(iso2),
-        countryRepository.observeCountryLogs(iso2),
-        tripRepository.observeTrips(),
-        tripRepository.observeTripStops(),
-    ) { userState, logs, trips, tripStops ->
-        val tripsById = trips.associateBy { it.id }
-        val stopsForCountry = tripStops.filter { it.countryIso2 == iso2 }
+    private val countryTrackingState = combine(
+        baseTrackingData,
+        flightTrackingData,
+    ) { base, flightData ->
+        countryStateDerivationService.derive(
+            countryIso2 = iso2,
+            userState = base.userState,
+            logs = base.logs,
+            trips = base.trips,
+            tripStops = base.tripStops.filter { it.countryIso2 == iso2 },
+            flights = flightData.flights,
+            itineraryGroups = flightData.itineraryGroups,
+            excursions = base.excursions,
+            airportCountryIso2ById = flightData.airportCountryIso2ById,
+        )
+    }
+
+    private val countryDetailPills = countryTrackingState.map { trackingState ->
         CountryDetailPillUiState(
-            wished = userState?.wished == true,
-            lived = logs.any { it.type == CountryLogType.LIVED },
-            currentlyLiving = userState?.currentlyLiving == true,
-            planned = stopsForCountry.any { stop ->
-                tripsById[stop.tripId]?.status == TravelStatus.PLANNED
-            },
-            visited = logs.any { it.type == CountryLogType.VISIT } ||
-                stopsForCountry.any { stop ->
-                    tripsById[stop.tripId]?.status in setOf(
-                        TravelStatus.IN_PROGRESS,
-                        TravelStatus.COMPLETED,
-                    )
-                },
+            wished = trackingState.wished,
+            lived = trackingState.lived,
+            currentlyLiving = trackingState.currentlyLiving,
+            planned = trackingState.planned,
+            visited = trackingState.visited,
         )
     }
 
     private val countryTripSummaries = combine(
         tripRepository.observeTrips(),
         tripRepository.observeTripStops(),
-    ) { trips, tripStops ->
+        excursionRepository.observeExcursions(),
+    ) { trips, tripStops, excursions ->
         val tripsById = trips.associateBy { it.id }
-        tripStops
+        val tripSummaries = tripStops
             .filter { it.countryIso2 == iso2 }
             .groupBy { it.tripId }
             .mapNotNull { (tripId, countryStops) ->
@@ -107,6 +134,92 @@ class CountryDetailViewModel(
                 compareBy<CountryTripSummaryUiState> { it.status == TravelStatus.UNKNOWN }
                     .thenBy { it.title },
             )
+        val excursionSummaries = excursions.flatMap { excursion ->
+            val trip = tripsById[excursion.tripId] ?: return@flatMap emptyList()
+            excursion.stops
+                .filter { it.countryIso2 == iso2 }
+                .map { stop ->
+                    CountryTripSummaryUiState(
+                        tripId = trip.id,
+                        title = excursion.title,
+                        status = trip.status,
+                        dateRangeText = stop.dateRange?.let { FlexibleDateFormatter().format(it) },
+                        routeText = excursion.stops.sortedBy { it.sortOrder }.joinToString(" -> ") { it.locationName },
+                        stopCount = 1,
+                        label = "Excursio",
+                    )
+                }
+        }
+        tripSummaries + excursionSummaries
+    }
+
+    private val countryAirTravelSummaries = flightTrackingData.map { flightData ->
+        val airportsById = flightData.airports.associateBy { it.id }
+        val itinerariesById = flightData.itineraries.associateBy { it.id }
+        val unlinkedItineraryIds = flightData.itineraries
+            .filter { it.tripId == null }
+            .map { it.id }
+            .toSet()
+        val soloFlightSummaries = flightData.flights
+            .filter { it.itineraryGroupId == null }
+            .filter { flight ->
+                flight.status in setOf(TravelStatus.PLANNED, TravelStatus.COMPLETED) &&
+                    flightData.airportCountryIso2ById[flight.destinationAirportId] == iso2
+            }
+            .map { flight ->
+                val origin = airportsById[flight.originAirportId]?.shortLabel() ?: flight.originAirportId.uppercase()
+                val destination = airportsById[flight.destinationAirportId]?.shortLabel() ?: flight.destinationAirportId.uppercase()
+                CountryAirTravelSummaryUiState(
+                    title = "$origin -> $destination",
+                    label = "Vol",
+                    status = flight.status,
+                    dateText = flight.scheduledDepartureAt?.toCompactDateText(),
+                    meta = listOfNotNull(flight.airline, flight.flightNumber).joinToString(" ").ifBlank { "Vol individual" },
+                )
+            }
+
+        val groupDerivations = countryStateDerivationService
+            .deriveItineraryGroupCountries(
+                groups = flightData.itineraryGroups,
+                airportCountryIso2ById = flightData.airportCountryIso2ById,
+            )
+            .filter { it.countryIso2 == iso2 && it.status in setOf(TravelStatus.PLANNED, TravelStatus.COMPLETED) }
+            .associateBy { it.groupId }
+
+        val itinerarySummaries = flightData.itineraryGroups
+            .filter { it.itineraryId in unlinkedItineraryIds }
+            .filter { groupDerivations.containsKey(it.id) }
+            .mapNotNull { group ->
+                val derivation = groupDerivations[group.id] ?: return@mapNotNull null
+                val sortedFlights = group.flights.sortedWith(
+                    compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
+                        .thenBy { it.scheduledDepartureAt ?: "" },
+                )
+                val firstFlight = sortedFlights.firstOrNull() ?: return@mapNotNull null
+                val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null
+                val origin = airportsById[firstFlight.originAirportId]?.shortLabel() ?: firstFlight.originAirportId.uppercase()
+                val destination = airportsById[lastFlight.destinationAirportId]?.shortLabel() ?: lastFlight.destinationAirportId.uppercase()
+                val itineraryTitle = itinerariesById[group.itineraryId]?.title ?: "Itinerari"
+                CountryAirTravelSummaryUiState(
+                    title = itineraryTitle,
+                    label = "Itinerari",
+                    status = derivation.status,
+                    dateText = firstFlight.scheduledDepartureAt?.toCompactDateText(),
+                    meta = "${group.title?.takeIf { it.isNotBlank() } ?: "Grup"} · $origin -> $destination",
+                )
+            }
+
+        (itinerarySummaries + soloFlightSummaries).sortedWith(
+            compareBy<CountryAirTravelSummaryUiState> { it.status == TravelStatus.PLANNED }
+                .thenBy { it.title },
+        )
+    }
+
+    private val historySummaries = combine(
+        countryTripSummaries,
+        countryAirTravelSummaries,
+    ) { tripSummaries, airTravelSummaries ->
+        tripSummaries to airTravelSummaries
     }
 
     val uiState: StateFlow<CountryDetailUiState> = combine(
@@ -115,14 +228,15 @@ class CountryDetailViewModel(
             countryRepository.observeCountryLogs(iso2),
             logDraft,
             countryTrackingState,
-            countryTripSummaries,
-        ) { country, logs, draft, trackingState, tripSummaries ->
+            historySummaries,
+        ) { country, logs, draft, trackingState, history ->
             CountryDetailUiState(
                 country = country,
                 logs = logs,
                 logDraft = draft,
                 trackingState = trackingState,
-                tripSummaries = tripSummaries,
+                tripSummaries = history.first,
+                airTravelSummaries = history.second,
             )
         },
         countryDetailPills,
@@ -268,6 +382,10 @@ class CountryDetailViewModel(
         private val countryStateDerivationService: CountryStateDerivationService,
         private val flexibleDateValidator: FlexibleDateValidator,
         private val iso2: String,
+        private val flightRepository: FlightRepository,
+        private val itineraryRepository: ItineraryRepository,
+        private val airportRepository: AirportRepository,
+        private val excursionRepository: ExcursionRepository,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -282,15 +400,36 @@ class CountryDetailViewModel(
                 countryStateDerivationService = countryStateDerivationService,
                 flexibleDateValidator = flexibleDateValidator,
                 iso2 = iso2,
+                flightRepository = flightRepository,
+                itineraryRepository = itineraryRepository,
+                airportRepository = airportRepository,
+                excursionRepository = excursionRepository,
             ) as T
         }
     }
 }
 
+private data class BaseTrackingData(
+    val userState: com.atlas.domain.model.CountryUserState?,
+    val logs: List<CountryLog>,
+    val trips: List<Trip>,
+    val tripStops: List<TripStop>,
+    val excursions: List<Excursion>,
+)
+
+private data class FlightTrackingData(
+    val flights: List<Flight>,
+    val itineraries: List<Itinerary>,
+    val itineraryGroups: List<ItineraryGroup>,
+    val airports: List<Airport>,
+    val airportCountryIso2ById: Map<String, String>,
+)
+
 data class CountryDetailUiState(
     val country: Country? = null,
     val logs: List<CountryLog> = emptyList(),
     val tripSummaries: List<CountryTripSummaryUiState> = emptyList(),
+    val airTravelSummaries: List<CountryAirTravelSummaryUiState> = emptyList(),
     val logDraft: CountryLogDraftUiState = CountryLogDraftUiState(),
     val trackingState: CountryTrackingState = CountryTrackingState.Empty,
     val detailPills: CountryDetailPillUiState = CountryDetailPillUiState(),
@@ -311,6 +450,15 @@ data class CountryTripSummaryUiState(
     val dateRangeText: String?,
     val routeText: String?,
     val stopCount: Int,
+    val label: String = "Viatge",
+)
+
+data class CountryAirTravelSummaryUiState(
+    val title: String,
+    val label: String,
+    val status: TravelStatus,
+    val dateText: String?,
+    val meta: String,
 )
 
 data class CountryLogDraftUiState(
@@ -352,4 +500,32 @@ private fun Trip.toCountryTripSummary(
         },
         stopCount = countryStops.size,
     )
+}
+
+private fun Airport.shortLabel(): String = iata ?: icao ?: city
+
+private fun String.toCompactDateText(): String? {
+    val date = take(10)
+    val parts = date.split("-")
+    if (parts.size != 3) return null
+    val year = parts[0].toIntOrNull() ?: return null
+    val month = parts[1].toIntOrNull() ?: return null
+    val day = parts[2].toIntOrNull() ?: return null
+    return "$day ${month.shortCatalanMonthLower()} ${(year % 100).toString().padStart(2, '0')}"
+}
+
+private fun Int.shortCatalanMonthLower(): String = when (this) {
+    1 -> "gen."
+    2 -> "febr."
+    3 -> "març"
+    4 -> "abr."
+    5 -> "maig"
+    6 -> "juny"
+    7 -> "jul."
+    8 -> "ag."
+    9 -> "set."
+    10 -> "oct."
+    11 -> "nov."
+    12 -> "des."
+    else -> ""
 }

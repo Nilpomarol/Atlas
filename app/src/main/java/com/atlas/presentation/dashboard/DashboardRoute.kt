@@ -15,6 +15,10 @@ fun DashboardRoute() {
         factory = DashboardViewModel.Factory(
             countryRepository = app.container.countryRepository,
             tripRepository = app.container.tripRepository,
+            flightRepository = app.container.flightRepository,
+            itineraryRepository = app.container.itineraryRepository,
+            excursionRepository = app.container.excursionRepository,
+            airportRepository = app.container.airportRepository,
             countryStateDerivationService = app.container.countryStateDerivationService,
             flexibleDateFormatter = app.container.flexibleDateFormatter,
         ),

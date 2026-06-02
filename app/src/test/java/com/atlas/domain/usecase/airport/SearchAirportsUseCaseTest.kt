@@ -37,11 +37,15 @@ class SearchAirportsUseCaseTest {
         var wasSearched = false
         var lastQuery: String? = null
 
+        override fun observeAirports(): Flow<List<Airport>> = flowOf(listOf(testAirport))
+
         override fun searchAirports(query: String): Flow<List<Airport>> {
             wasSearched = true
             lastQuery = query
             return flowOf(listOf(testAirport))
         }
+
+        override suspend fun getAirportById(id: String): Airport? = null
     }
 
     private companion object {

@@ -1,0 +1,428 @@
+package com.atlas.presentation.flight
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airport
+import com.atlas.domain.model.Flight
+import com.atlas.domain.model.Itinerary
+import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.model.TravelStatus
+import com.atlas.domain.repository.AirportRepository
+import com.atlas.domain.repository.FlightRepository
+import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.usecase.airport.SearchAirportsUseCase
+import com.atlas.domain.usecase.flight.CreateFlightUseCase
+import com.atlas.domain.usecase.flight.DeleteFlightUseCase
+import com.atlas.domain.usecase.flight.UpdateFlightUseCase
+import com.atlas.domain.usecase.itinerary.CreateItineraryUseCase
+import com.atlas.domain.usecase.itinerary.DeleteItineraryUseCase
+import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
+import com.atlas.presentation.itinerary.ItineraryEditorDraft
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
+class FlightListViewModel(
+    flightRepository: FlightRepository,
+    itineraryRepository: ItineraryRepository,
+    private val airportRepository: AirportRepository,
+    private val searchAirportsUseCase: SearchAirportsUseCase,
+    private val createFlightUseCase: CreateFlightUseCase,
+    private val updateFlightUseCase: UpdateFlightUseCase,
+    private val deleteFlightUseCase: DeleteFlightUseCase,
+    private val createItineraryUseCase: CreateItineraryUseCase,
+    private val updateItineraryUseCase: UpdateItineraryUseCase,
+    private val deleteItineraryUseCase: DeleteItineraryUseCase,
+) : ViewModel() {
+
+    private val draft = MutableStateFlow(FlightEditorDraftUiState())
+    private val itineraryDraft = MutableStateFlow(ItineraryEditorDraft())
+    private val originQuery = MutableStateFlow("")
+    private val destinationQuery = MutableStateFlow("")
+
+    private val originResults: StateFlow<List<Airport>> = originQuery
+        .debounce(300)
+        .flatMapLatest { q -> if (q.isBlank()) flowOf(emptyList()) else searchAirportsUseCase(q) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val destinationResults: StateFlow<List<Airport>> = destinationQuery
+        .debounce(300)
+        .flatMapLatest { q -> if (q.isBlank()) flowOf(emptyList()) else searchAirportsUseCase(q) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val flightItems = flightRepository.observeFlights().map { flights ->
+        flights.filter { it.itineraryGroupId == null }.map { flight ->
+            FlightListItemUiState(
+                flight = flight,
+                originLabel = airportRepository.getAirportById(flight.originAirportId)?.shortLabel()
+                    ?: flight.originAirportId.uppercase(),
+                destinationLabel = airportRepository.getAirportById(flight.destinationAirportId)?.shortLabel()
+                    ?: flight.destinationAirportId.uppercase(),
+            )
+        }
+    }
+
+    private val itineraryItems = combine(
+        itineraryRepository.observeItineraries(),
+        itineraryRepository.observeAllGroups(),
+    ) { itineraries, groups ->
+        val groupsByItinerary = groups.groupBy { it.itineraryId }
+        itineraries.map { itinerary ->
+            val itineraryGroups = groupsByItinerary[itinerary.id].orEmpty()
+            ItinerarySummaryUiState(
+                itinerary = itinerary,
+                groupCount = itineraryGroups.size,
+                flightCount = itineraryGroups.sumOf { it.flights.size },
+                routeSummary = buildRouteSummary(itineraryGroups),
+            )
+        }
+    }
+
+    private val listState = combine(
+        flightItems,
+        itineraryItems,
+        draft,
+        itineraryDraft,
+    ) { flightItems, itineraryItems, draft, itineraryDraft ->
+        FlightListUiState(
+            flightItems = flightItems,
+            itineraryItems = itineraryItems,
+            draft = draft,
+            itineraryDraft = itineraryDraft,
+        )
+    }
+
+    val uiState: StateFlow<FlightListUiState> = combine(
+        listState,
+        originResults,
+        destinationResults,
+    ) { state, originRes, destRes ->
+        state.copy(
+            originSearchResults = originRes,
+            destinationSearchResults = destRes,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = FlightListUiState(),
+    )
+
+    fun onCreateFlightClick() {
+        draft.update { FlightEditorDraftUiState(isOpen = true) }
+        originQuery.value = ""
+        destinationQuery.value = ""
+    }
+
+    fun onEditFlightClick(flight: Flight) {
+        viewModelScope.launch {
+            val origin = airportRepository.getAirportById(flight.originAirportId)
+            val destination = airportRepository.getAirportById(flight.destinationAirportId)
+            draft.update { FlightEditorDraftUiState.fromFlight(flight, origin, destination) }
+            originQuery.value = ""
+            destinationQuery.value = ""
+        }
+    }
+
+    fun onDismissDraft() {
+        draft.update { FlightEditorDraftUiState() }
+    }
+
+    fun onOriginQueryChanged(query: String) {
+        originQuery.value = query
+        draft.update { it.copy(originQuery = query, originAirport = null) }
+    }
+
+    fun onOriginSelected(airport: Airport) {
+        draft.update { it.copy(originAirport = airport, originQuery = airport.displayLabel()) }
+        originQuery.value = ""
+    }
+
+    fun onDestinationQueryChanged(query: String) {
+        destinationQuery.value = query
+        draft.update { it.copy(destinationQuery = query, destinationAirport = null) }
+    }
+
+    fun onDestinationSelected(airport: Airport) {
+        draft.update { it.copy(destinationAirport = airport, destinationQuery = airport.displayLabel()) }
+        destinationQuery.value = ""
+    }
+
+    fun onStatusChanged(status: TravelStatus) {
+        draft.update { it.copy(status = status) }
+    }
+
+    fun onScheduledDepartureAtChanged(value: String) {
+        draft.update { it.copy(scheduledDepartureAt = value) }
+    }
+
+    fun onScheduledArrivalAtChanged(value: String) {
+        draft.update { it.copy(scheduledArrivalAt = value) }
+    }
+
+    fun onActualDepartureAtChanged(value: String) {
+        draft.update { it.copy(actualDepartureAt = value) }
+    }
+
+    fun onActualArrivalAtChanged(value: String) {
+        draft.update { it.copy(actualArrivalAt = value) }
+    }
+
+    fun onAirlineChanged(value: String) { draft.update { it.copy(airline = value) } }
+    fun onFlightNumberChanged(value: String) { draft.update { it.copy(flightNumber = value) } }
+    fun onAircraftChanged(value: String) { draft.update { it.copy(aircraft = value) } }
+    fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
+
+    fun onSaveDraft() {
+        val d = draft.value
+        val origin = d.originAirport
+        val destination = d.destinationAirport
+
+        if (origin == null || destination == null) {
+            draft.update { it.copy(validationError = "Cal seleccionar l'aeroport d'origen i de destí.") }
+            return
+        }
+        if (origin.id == destination.id) {
+            draft.update { it.copy(validationError = "L'origen i el destí no poden ser el mateix aeroport.") }
+            return
+        }
+
+        viewModelScope.launch {
+            if (d.flightId == null) {
+                createFlightUseCase(
+                    originAirportId = origin.id,
+                    destinationAirportId = destination.id,
+                    status = d.status,
+                    scheduledDepartureAt = d.scheduledDepartureAt.ifBlank { null },
+                    scheduledArrivalAt = d.scheduledArrivalAt.ifBlank { null },
+                    actualDepartureAt = d.actualDepartureAt.ifBlank { null },
+                    actualArrivalAt = d.actualArrivalAt.ifBlank { null },
+                    airline = d.airline,
+                    flightNumber = d.flightNumber,
+                    aircraft = d.aircraft,
+                    notes = d.notes,
+                )
+            } else {
+                updateFlightUseCase(
+                    Flight(
+                        id = d.flightId,
+                        originAirportId = origin.id,
+                        destinationAirportId = destination.id,
+                        status = d.status,
+                        scheduledDepartureAt = d.scheduledDepartureAt.ifBlank { null },
+                        scheduledArrivalAt = d.scheduledArrivalAt.ifBlank { null },
+                        actualDepartureAt = d.actualDepartureAt.ifBlank { null },
+                        actualArrivalAt = d.actualArrivalAt.ifBlank { null },
+                        airline = d.airline.trim().ifBlank { null },
+                        flightNumber = d.flightNumber.trim().ifBlank { null },
+                        aircraft = d.aircraft.trim().ifBlank { null },
+                        notes = d.notes.trim().ifBlank { null },
+                        itineraryGroupId = d.itineraryGroupId,
+                        sortOrder = d.sortOrder,
+                    ),
+                )
+            }
+            onDismissDraft()
+        }
+    }
+
+    fun onDeleteFlight(flight: Flight) {
+        viewModelScope.launch { deleteFlightUseCase(flight) }
+    }
+
+    fun onCreateItineraryClick() {
+        itineraryDraft.update { ItineraryEditorDraft(isOpen = true) }
+    }
+
+    fun onEditItineraryClick(itinerary: Itinerary) {
+        itineraryDraft.update {
+            ItineraryEditorDraft(
+                isOpen = true,
+                itineraryId = itinerary.id,
+                title = itinerary.title,
+                notes = itinerary.notes ?: "",
+            )
+        }
+    }
+
+    fun onDismissItineraryDraft() {
+        itineraryDraft.update { ItineraryEditorDraft() }
+    }
+
+    fun onItineraryTitleChanged(title: String) {
+        itineraryDraft.update { it.copy(title = title, validationError = null) }
+    }
+
+    fun onItineraryNotesChanged(notes: String) {
+        itineraryDraft.update { it.copy(notes = notes) }
+    }
+
+    fun onSaveItineraryDraft() {
+        val d = itineraryDraft.value
+        val title = d.title.trim()
+        if (title.isBlank()) {
+            itineraryDraft.update { it.copy(validationError = "El títol és obligatori.") }
+            return
+        }
+        viewModelScope.launch {
+            if (d.itineraryId == null) {
+                createItineraryUseCase(title = title, notes = d.notes.trim().ifBlank { null })
+            } else {
+                val existingItinerary = uiState.value.itineraryItems
+                    .firstOrNull { it.itinerary.id == d.itineraryId }
+                    ?.itinerary
+                updateItineraryUseCase(
+                    Itinerary(
+                        id = d.itineraryId,
+                        title = title,
+                        tripId = existingItinerary?.tripId,
+                        notes = d.notes.trim().ifBlank { null },
+                    ),
+                )
+            }
+            onDismissItineraryDraft()
+        }
+    }
+
+    fun onDeleteItinerary(itinerary: Itinerary) {
+        viewModelScope.launch { deleteItineraryUseCase(itinerary) }
+    }
+
+    private suspend fun buildRouteSummary(groups: List<ItineraryGroup>): String {
+        return groups
+            .sortedBy { it.sortOrder }
+            .mapNotNull { group ->
+                val sortedFlights = group.flights.sortedWith(
+                    compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
+                        .thenBy { it.scheduledDepartureAt ?: "" },
+                )
+                val firstFlight = sortedFlights.firstOrNull()
+                val lastFlight = sortedFlights.lastOrNull()
+                if (firstFlight == null || lastFlight == null) {
+                    null
+                } else {
+                    val origin = airportRepository.getAirportById(firstFlight.originAirportId)?.shortLabel()
+                        ?: firstFlight.originAirportId.uppercase()
+                    val destination = airportRepository.getAirportById(lastFlight.destinationAirportId)?.shortLabel()
+                        ?: lastFlight.destinationAirportId.uppercase()
+                    "$origin -> $destination"
+                }
+            }
+            .joinToString(" · ")
+    }
+
+    class Factory(
+        private val flightRepository: FlightRepository,
+        private val itineraryRepository: ItineraryRepository,
+        private val airportRepository: AirportRepository,
+        private val searchAirportsUseCase: SearchAirportsUseCase,
+        private val createFlightUseCase: CreateFlightUseCase,
+        private val updateFlightUseCase: UpdateFlightUseCase,
+        private val deleteFlightUseCase: DeleteFlightUseCase,
+        private val createItineraryUseCase: CreateItineraryUseCase,
+        private val updateItineraryUseCase: UpdateItineraryUseCase,
+        private val deleteItineraryUseCase: DeleteItineraryUseCase,
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T = FlightListViewModel(
+            flightRepository = flightRepository,
+            itineraryRepository = itineraryRepository,
+            airportRepository = airportRepository,
+            searchAirportsUseCase = searchAirportsUseCase,
+            createFlightUseCase = createFlightUseCase,
+            updateFlightUseCase = updateFlightUseCase,
+            deleteFlightUseCase = deleteFlightUseCase,
+            createItineraryUseCase = createItineraryUseCase,
+            updateItineraryUseCase = updateItineraryUseCase,
+            deleteItineraryUseCase = deleteItineraryUseCase,
+        ) as T
+    }
+}
+
+data class FlightListUiState(
+    val flightItems: List<FlightListItemUiState> = emptyList(),
+    val itineraryItems: List<ItinerarySummaryUiState> = emptyList(),
+    val draft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
+    val itineraryDraft: ItineraryEditorDraft = ItineraryEditorDraft(),
+    val originSearchResults: List<Airport> = emptyList(),
+    val destinationSearchResults: List<Airport> = emptyList(),
+)
+
+data class FlightListItemUiState(
+    val flight: Flight,
+    val originLabel: String,
+    val destinationLabel: String,
+)
+
+data class ItinerarySummaryUiState(
+    val itinerary: Itinerary,
+    val groupCount: Int,
+    val flightCount: Int,
+    val routeSummary: String,
+)
+
+data class FlightEditorDraftUiState(
+    val isOpen: Boolean = false,
+    val flightId: String? = null,
+    val originAirport: Airport? = null,
+    val originQuery: String = "",
+    val destinationAirport: Airport? = null,
+    val destinationQuery: String = "",
+    val status: TravelStatus = TravelStatus.PLANNED,
+    val scheduledDepartureAt: String = "",
+    val scheduledArrivalAt: String = "",
+    val actualDepartureAt: String = "",
+    val actualArrivalAt: String = "",
+    val airline: String = "",
+    val flightNumber: String = "",
+    val aircraft: String = "",
+    val notes: String = "",
+    val validationError: String? = null,
+    // Preserved when editing grouped flights; not shown to the user
+    val itineraryGroupId: String? = null,
+    val sortOrder: Int? = null,
+) {
+    companion object {
+        fun fromFlight(
+            flight: Flight,
+            origin: Airport?,
+            destination: Airport?,
+        ): FlightEditorDraftUiState = FlightEditorDraftUiState(
+            isOpen = true,
+            flightId = flight.id,
+            originAirport = origin,
+            originQuery = origin?.displayLabel() ?: flight.originAirportId,
+            destinationAirport = destination,
+            destinationQuery = destination?.displayLabel() ?: flight.destinationAirportId,
+            status = flight.status,
+            scheduledDepartureAt = flight.scheduledDepartureAt ?: "",
+            scheduledArrivalAt = flight.scheduledArrivalAt ?: "",
+            actualDepartureAt = flight.actualDepartureAt ?: "",
+            actualArrivalAt = flight.actualArrivalAt ?: "",
+            airline = flight.airline ?: "",
+            flightNumber = flight.flightNumber ?: "",
+            aircraft = flight.aircraft ?: "",
+            notes = flight.notes ?: "",
+            itineraryGroupId = flight.itineraryGroupId,
+            sortOrder = flight.sortOrder,
+        )
+    }
+}
+
+fun Airport.displayLabel(): String {
+    val code = iata ?: icao ?: id
+    return "$code - $city ($name)"
+}
+
+private fun Airport.shortLabel(): String = iata ?: icao ?: city

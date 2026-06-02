@@ -28,6 +28,10 @@ fun CountryDetailRoute(
             countryStateDerivationService = app.container.countryStateDerivationService,
             flexibleDateValidator = app.container.flexibleDateValidator,
             iso2 = iso2,
+            flightRepository = app.container.flightRepository,
+            itineraryRepository = app.container.itineraryRepository,
+            airportRepository = app.container.airportRepository,
+            excursionRepository = app.container.excursionRepository,
         ),
     )
     val uiState by viewModel.uiState.collectAsState()

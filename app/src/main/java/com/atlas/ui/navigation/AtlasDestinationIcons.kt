@@ -1,6 +1,7 @@
 package com.atlas.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Settings
@@ -12,5 +13,6 @@ val AtlasDestination.icon: ImageVector
         AtlasDestination.Dashboard -> Icons.Filled.Home
         AtlasDestination.Countries -> Icons.Filled.Public
         AtlasDestination.Trips -> Icons.Filled.Work
+        AtlasDestination.Flights -> Icons.Filled.Flight
         AtlasDestination.Settings -> Icons.Filled.Settings
     }

@@ -1,7 +1,6 @@
 package com.atlas.ui.screens.country
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -18,20 +17,40 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryTrackingState
-import com.atlas.ui.theme.AtlasBackground
-import com.atlas.ui.theme.AtlasOnSurfaceFaint
+import com.atlas.ui.components.map.AtlasMapView
+import com.atlas.ui.components.map.toHexColor
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
+import org.maplibre.android.camera.CameraPosition
+import org.maplibre.android.camera.CameraUpdateFactory
+import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.maps.MapLibreMap
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.CircleLayer
+import org.maplibre.android.style.layers.PropertyFactory.circleColor
+import org.maplibre.android.style.layers.PropertyFactory.circleRadius
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor
+import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.maplibre.geojson.Feature
+import org.maplibre.geojson.Point
+
+// Blank parchment background — no tiles, no roads, no labels.
+// Country marker and (future) polygon are the only visual elements.
+private const val COUNTRY_MAP_STYLE =
+    """{"version":8,"sources":{},"layers":[{"id":"bg","type":"background","paint":{"background-color":"#F4EFE6"}}]}"""
 
 @Composable
 fun CountryMapHero(
@@ -40,99 +59,102 @@ fun CountryMapHero(
     trackingState: CountryTrackingState,
     onBackClick: () -> Unit,
 ) {
+    val mapRef = remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AtlasBackground)
             .height(232.dp),
     ) {
-        Box(
+        AtlasMapView(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(232.dp)
-                .background(AtlasBackground),
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                drawAtlasGrid()
-                drawCountryPoint(
-                    latitude = country.latitude,
-                    longitude = country.longitude,
-                    color = style.primary,
-                    radius = 9f,
-                )
-                drawCapitalMarker(
-                    latitude = country.capitalLatitude,
-                    longitude = country.capitalLongitude,
-                    color = style.primary,
-                )
-            }
+                .fillMaxSize()
+                .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
+            styleUrl = COUNTRY_MAP_STYLE,
+            onMapReady = { map, mapStyle -> mapRef.value = Pair(map, mapStyle) },
+        )
 
-            BackPill(
-                onBackClick = onBackClick,
+        BackPill(
+            onBackClick = onBackClick,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(start = 20.dp, top = 16.dp),
+        )
+
+        country.capitalNameCa?.let { capital ->
+            Text(
+                text = capital,
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = 20.dp, top = 16.dp),
+                    .align(Alignment.BottomStart)
+                    .padding(14.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = AtlasOnSurfaceMuted,
             )
-
-            country.capitalNameCa?.let { capital ->
-                Text(
-                    text = capital,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(14.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = AtlasOnSurfaceMuted,
-                )
-            }
         }
+    }
+
+    LaunchedEffect(mapRef.value, country) {
+        val (map, mapStyle) = mapRef.value ?: return@LaunchedEffect
+        setupCountryMap(map, mapStyle, country, style)
     }
 }
 
-private fun DrawScope.drawAtlasGrid() {
-    val spacing = 18.dp.toPx()
-    var y = spacing / 2
-    while (y < size.height) {
-        var x = spacing / 2
-        while (x < size.width) {
-            drawCircle(
-                color = AtlasOnSurfaceFaint.copy(alpha = 0.22f),
-                radius = 1.35.dp.toPx(),
-                center = Offset(x, y),
+private fun setupCountryMap(
+    map: MapLibreMap,
+    style: Style,
+    country: Country,
+    detailStyle: CountryDetailStyle,
+) {
+    val lat = country.latitude ?: return
+    val lng = country.longitude ?: return
+
+    // Country marker
+    val accentHex = detailStyle.primary.toHexColor()
+    val sourceId = "country-marker"
+    val layerId = "country-marker-layer"
+    if (style.getLayer(layerId) != null) style.removeLayer(layerId)
+    if (style.getSource(sourceId) != null) style.removeSource(sourceId)
+
+    style.addSource(GeoJsonSource(sourceId,
+        Feature.fromGeometry(Point.fromLngLat(lng, lat))))
+    style.addLayer(CircleLayer(layerId, sourceId).apply {
+        setProperties(
+            circleRadius(12f),
+            circleColor(accentHex),
+            circleStrokeWidth(3f),
+            circleStrokeColor("#FFFFFF"),
+        )
+    })
+
+    // Capital marker (smaller, if different from country coords)
+    val capLat = country.capitalLatitude
+    val capLng = country.capitalLongitude
+    if (capLat != null && capLng != null) {
+        val capSourceId = "capital-marker"
+        val capLayerId = "capital-marker-layer"
+        if (style.getLayer(capLayerId) != null) style.removeLayer(capLayerId)
+        if (style.getSource(capSourceId) != null) style.removeSource(capSourceId)
+
+        style.addSource(GeoJsonSource(capSourceId,
+            Feature.fromGeometry(Point.fromLngLat(capLng, capLat))))
+        style.addLayer(CircleLayer(capLayerId, capSourceId).apply {
+            setProperties(
+                circleRadius(6f),
+                circleColor("#FFFFFF"),
+                circleStrokeWidth(2.5f),
+                circleStrokeColor(accentHex),
             )
-            x += spacing
-        }
-        y += spacing
+        })
     }
-}
 
-private fun DrawScope.drawCountryPoint(
-    latitude: Double?,
-    longitude: Double?,
-    color: Color,
-    radius: Float,
-) {
-    val point = project(latitude = latitude, longitude = longitude)
-    drawCircle(color.copy(alpha = 0.14f), radius = radius * 2.2f, center = point)
-    drawCircle(color.copy(alpha = 0.88f), radius = radius, center = point)
-    drawCircle(Color.White, radius = radius * 0.45f, center = point)
-}
-
-private fun DrawScope.drawCapitalMarker(
-    latitude: Double?,
-    longitude: Double?,
-    color: Color,
-) {
-    if (latitude == null || longitude == null) return
-    val center = project(latitude = latitude, longitude = longitude)
-    drawCircle(Color.White, radius = 13f, center = center)
-    drawCircle(color, radius = 8f, center = center)
-    drawCircle(Color.White, radius = 3.2f, center = center)
-}
-
-private fun DrawScope.project(latitude: Double?, longitude: Double?): Offset {
-    val nx = (((longitude ?: 10.0) + 180.0) / 360.0).coerceIn(0.10, 0.90).toFloat()
-    val ny = ((90.0 - (latitude ?: 42.0)) / 180.0).coerceIn(0.15, 0.78).toFloat()
-    return Offset(size.width * nx, size.height * ny)
+    map.moveCamera(
+        CameraUpdateFactory.newCameraPosition(
+            CameraPosition.Builder()
+                .target(LatLng(lat, lng))
+                .zoom(4.5)
+                .build(),
+        ),
+    )
 }
 
 @Composable
@@ -145,7 +167,7 @@ fun BackPill(
         modifier = modifier,
         shape = RoundedCornerShape(100.dp),
         color = Color.White.copy(alpha = 0.82f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
+        border = BorderStroke(1.dp, AtlasOutline),
         shadowElevation = 0.dp,
     ) {
         Row(

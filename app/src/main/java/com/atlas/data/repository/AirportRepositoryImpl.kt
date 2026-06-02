@@ -12,6 +12,9 @@ class AirportRepositoryImpl(
 ) : AirportRepository {
     private val airportDao = database.airportDao()
 
+    override fun observeAirports(): Flow<List<Airport>> =
+        airportDao.observeAll().map { airports -> airports.map { it.toDomain() } }
+
     override fun searchAirports(query: String): Flow<List<Airport>> {
         val normalized = query.trim().uppercase()
         return airportDao.search(
@@ -23,6 +26,9 @@ class AirportRepositoryImpl(
             airports.map { it.toDomain() }
         }
     }
+
+    override suspend fun getAirportById(id: String): Airport? =
+        airportDao.getById(id)?.toDomain()
 
     private companion object {
         const val SEARCH_LIMIT = 30

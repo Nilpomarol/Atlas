@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AirportDao {
+    @Query("SELECT * FROM airports")
+    fun observeAll(): Flow<List<AirportEntity>>
+
     @Query(
         """
         SELECT * FROM airports
@@ -34,6 +37,9 @@ interface AirportDao {
         prefixQuery: String,
         limit: Int,
     ): Flow<List<AirportEntity>>
+
+    @Query("SELECT * FROM airports WHERE id = :id")
+    suspend fun getById(id: String): AirportEntity?
 
     @Upsert
     suspend fun upsertAll(airports: List<AirportEntity>)

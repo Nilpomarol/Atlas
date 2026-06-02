@@ -5,6 +5,7 @@ import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 
 fun TripStopEntity.toDomain(): TripStop = TripStop(
     id = id,
@@ -16,6 +17,37 @@ fun TripStopEntity.toDomain(): TripStop = TripStop(
     dateRange = toDateRange(),
     notes = notes,
     sortOrder = sortOrder,
+    source = runCatching { TripStopSource.valueOf(source) }.getOrDefault(TripStopSource.MANUAL),
+    itineraryGroupId = itineraryGroupId,
+    isVisible = isVisible,
+    displayTitle = displayTitle,
+)
+
+fun TripStop.toEntity(
+    createdAt: String,
+    updatedAt: String,
+): TripStopEntity = TripStopEntity(
+    id = id,
+    tripId = tripId,
+    locationName = locationName,
+    countryIso2 = countryIso2,
+    latitude = latitude,
+    longitude = longitude,
+    startYear = dateRange?.start?.year,
+    startMonth = dateRange?.start?.month,
+    startDay = dateRange?.start?.day,
+    endYear = dateRange?.end?.year,
+    endMonth = dateRange?.end?.month,
+    endDay = dateRange?.end?.day,
+    datePrecision = dateRange?.precision?.name,
+    notes = notes,
+    sortOrder = sortOrder,
+    source = source.name,
+    itineraryGroupId = itineraryGroupId,
+    isVisible = isVisible,
+    displayTitle = displayTitle,
+    createdAt = createdAt,
+    updatedAt = updatedAt,
 )
 
 private fun TripStopEntity.toDateRange(): FlexibleDateRange? {

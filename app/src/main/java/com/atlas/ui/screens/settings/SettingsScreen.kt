@@ -182,6 +182,9 @@ private fun ImportConfirmationDialog(
                 Text("Registres: ${preview.countryLogCount}")
                 Text("Viatges: ${preview.tripCount}")
                 Text("Parades: ${preview.tripStopCount}")
+                if (preview.flightCount > 0) Text("Vols: ${preview.flightCount}")
+                if (preview.itineraryCount > 0) Text("Itineraris: ${preview.itineraryCount}")
+                if (preview.excursionCount > 0) Text("Excursions: ${preview.excursionCount}")
             }
         },
         confirmButton = {

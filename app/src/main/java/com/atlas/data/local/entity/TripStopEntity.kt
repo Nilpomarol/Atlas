@@ -26,6 +26,7 @@ import androidx.room.PrimaryKey
         Index(value = ["trip_id"]),
         Index(value = ["country_iso2"]),
         Index(value = ["trip_id", "sort_order"]),
+        Index(value = ["itinerary_group_id"]),
     ],
 )
 data class TripStopEntity(
@@ -60,6 +61,14 @@ data class TripStopEntity(
     val notes: String?,
     @ColumnInfo(name = "sort_order")
     val sortOrder: Int,
+    @ColumnInfo(name = "source")
+    val source: String = "MANUAL",
+    @ColumnInfo(name = "itinerary_group_id")
+    val itineraryGroupId: String? = null,
+    @ColumnInfo(name = "is_visible")
+    val isVisible: Boolean = true,
+    @ColumnInfo(name = "display_title")
+    val displayTitle: String? = null,
     @ColumnInfo(name = "created_at")
     val createdAt: String,
     @ColumnInfo(name = "updated_at")

@@ -10,4 +10,13 @@ data class TripStop(
     val dateRange: FlexibleDateRange?,
     val notes: String?,
     val sortOrder: Int,
+    val source: TripStopSource = TripStopSource.MANUAL,
+    val itineraryGroupId: String? = null,
+    val isVisible: Boolean = true,
+    val displayTitle: String? = null,
 )
+
+enum class TripStopSource {
+    MANUAL,
+    ITINERARY_GROUP,
+}

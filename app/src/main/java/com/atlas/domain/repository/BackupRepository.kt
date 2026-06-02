@@ -5,6 +5,9 @@ data class BackupImportPreview(
     val countryLogCount: Int,
     val tripCount: Int,
     val tripStopCount: Int,
+    val flightCount: Int = 0,
+    val itineraryCount: Int = 0,
+    val excursionCount: Int = 0,
 )
 
 interface BackupRepository {

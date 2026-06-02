@@ -9,17 +9,20 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TripStopDao {
-    @Query("SELECT * FROM trip_stops ORDER BY trip_id, sort_order")
+    @Query("SELECT * FROM trip_stops WHERE is_visible = 1 ORDER BY trip_id, sort_order")
     fun observeAll(): Flow<List<TripStopEntity>>
 
-    @Query("SELECT * FROM trip_stops WHERE trip_id = :tripId ORDER BY sort_order")
+    @Query("SELECT * FROM trip_stops WHERE trip_id = :tripId AND is_visible = 1 ORDER BY sort_order")
     fun observeByTripId(tripId: String): Flow<List<TripStopEntity>>
 
-    @Query("SELECT * FROM trip_stops ORDER BY trip_id, sort_order")
+    @Query("SELECT * FROM trip_stops WHERE is_visible = 1 ORDER BY trip_id, sort_order")
     suspend fun getAll(): List<TripStopEntity>
 
     @Query("SELECT COALESCE(MAX(sort_order), -1) FROM trip_stops WHERE trip_id = :tripId")
     suspend fun getMaxSortOrder(tripId: String): Int
+
+    @Query("DELETE FROM trip_stops WHERE source = 'ITINERARY_GROUP' AND itinerary_group_id IN (:groupIds)")
+    suspend fun deleteGeneratedForGroups(groupIds: List<String>)
 
     @Upsert
     suspend fun upsert(stop: TripStopEntity)

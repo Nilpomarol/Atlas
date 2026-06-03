@@ -92,6 +92,7 @@ fun FlightListScreen(
     onAirlineSelected: (com.atlas.domain.model.Airline) -> Unit,
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
+    onAircraftRegistrationChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
     onApiFlightNumberChanged: (String) -> Unit,
     onApiSearchDateChanged: (String) -> Unit,
@@ -172,6 +173,7 @@ fun FlightListScreen(
             onAirlineSelected = onAirlineSelected,
             onFlightNumberChanged = onFlightNumberChanged,
             onAircraftChanged = onAircraftChanged,
+            onAircraftRegistrationChanged = onAircraftRegistrationChanged,
             onNotesChanged = onNotesChanged,
             apiSearchCallbacks = FlightApiSearchCallbacks(
                 onApiFlightNumberChanged = onApiFlightNumberChanged,
@@ -573,4 +575,3 @@ private fun EmptyFlightList(
         }
     }
 }
-

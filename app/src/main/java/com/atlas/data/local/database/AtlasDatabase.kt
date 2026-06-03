@@ -4,6 +4,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.atlas.data.local.dao.AircraftDao
+import com.atlas.data.local.dao.AircraftTypeDao
 import com.atlas.data.local.dao.AirlineDao
 import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
@@ -15,6 +17,8 @@ import com.atlas.data.local.dao.FlightDao
 import com.atlas.data.local.dao.ItineraryDao
 import com.atlas.data.local.dao.TripDao
 import com.atlas.data.local.dao.TripStopDao
+import com.atlas.data.local.entity.AircraftEntity
+import com.atlas.data.local.entity.AircraftTypeEntity
 import com.atlas.data.local.entity.AirlineEntity
 import com.atlas.data.local.entity.AirportEntity
 import com.atlas.data.local.entity.ExcursionEntity
@@ -39,13 +43,15 @@ import com.atlas.data.local.entity.TripStopEntity
         TripStopEntity::class,
         AirportEntity::class,
         AirlineEntity::class,
+        AircraftTypeEntity::class,
+        AircraftEntity::class,
         FlightEntity::class,
         ItineraryEntity::class,
         ItineraryGroupEntity::class,
         ExcursionEntity::class,
         ExcursionStopEntity::class,
     ],
-    version = 15,
+    version = 19,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -57,6 +63,8 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun tripStopDao(): TripStopDao
     abstract fun airportDao(): AirportDao
     abstract fun airlineDao(): AirlineDao
+    abstract fun aircraftTypeDao(): AircraftTypeDao
+    abstract fun aircraftDao(): AircraftDao
     abstract fun flightDao(): FlightDao
     abstract fun itineraryDao(): ItineraryDao
     abstract fun excursionDao(): ExcursionDao
@@ -652,6 +660,99 @@ abstract class AtlasDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_airlines_icao` ON `airlines` (`icao`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_airlines_name` ON `airlines` (`name`)")
+            }
+        }
+
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `aircraft_types` (
+                        `code` TEXT NOT NULL,
+                        `manufacturer` TEXT NOT NULL,
+                        `model` TEXT NOT NULL,
+                        `display_name` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `image_asset_ref` TEXT,
+                        `normalized_search_tokens` TEXT NOT NULL,
+                        PRIMARY KEY(`code`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_aircraft_types_manufacturer` ON `aircraft_types` (`manufacturer`)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_aircraft_types_model` ON `aircraft_types` (`model`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_aircraft_types_category` ON `aircraft_types` (`category`)")
+            }
+        }
+
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `aircraft_registration` TEXT")
+                db.execSQL("ALTER TABLE `aircraft_types` ADD COLUMN `num_engines` INTEGER")
+                db.execSQL("ALTER TABLE `aircraft_types` ADD COLUMN `engine_type` TEXT")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `aircraft` (
+                        `registration` TEXT NOT NULL,
+                        `aerodatabox_id` INTEGER,
+                        `active` INTEGER,
+                        `serial_number` TEXT,
+                        `hex_icao` TEXT,
+                        `airline_name` TEXT,
+                        `iata_type` TEXT,
+                        `iata_code_short` TEXT,
+                        `icao_code` TEXT,
+                        `model` TEXT,
+                        `model_code` TEXT,
+                        `num_seats` INTEGER,
+                        `rollout_date` TEXT,
+                        `first_flight_date` TEXT,
+                        `delivery_date` TEXT,
+                        `registration_date` TEXT,
+                        `type_name` TEXT,
+                        `num_engines` INTEGER,
+                        `engine_type` TEXT,
+                        `is_freighter` INTEGER,
+                        `production_line` TEXT,
+                        `age_years` REAL,
+                        `verified` INTEGER,
+                        `image_url` TEXT,
+                        `image_web_url` TEXT,
+                        `image_author` TEXT,
+                        `image_title` TEXT,
+                        `image_license` TEXT,
+                        `source` TEXT NOT NULL,
+                        `fetched_at` TEXT NOT NULL,
+                        `last_lookup_status` TEXT NOT NULL,
+                        PRIMARY KEY(`registration`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_aircraft_hex_icao` ON `aircraft` (`hex_icao`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_aircraft_icao_code` ON `aircraft` (`icao_code`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_aircraft_model_code` ON `aircraft` (`model_code`)")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_aircraft_last_lookup_status` ON `aircraft` (`last_lookup_status`)",
+                )
+            }
+        }
+
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `scheduled_departure_utc` TEXT")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `scheduled_arrival_utc` TEXT")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `actual_departure_utc` TEXT")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `actual_arrival_utc` TEXT")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `distance_km` REAL")
+            }
+        }
+
+        val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `destination_counts_for_country_tracking` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `origin_counts_for_country_tracking` INTEGER NOT NULL DEFAULT 0")
             }
         }
     }

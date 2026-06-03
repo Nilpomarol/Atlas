@@ -54,6 +54,16 @@ data class FlightEntity(
     val actualDepartureAt: String?,
     @ColumnInfo(name = "actual_arrival_at")
     val actualArrivalAt: String?,
+    @ColumnInfo(name = "scheduled_departure_utc")
+    val scheduledDepartureUtc: String? = null,
+    @ColumnInfo(name = "scheduled_arrival_utc")
+    val scheduledArrivalUtc: String? = null,
+    @ColumnInfo(name = "actual_departure_utc")
+    val actualDepartureUtc: String? = null,
+    @ColumnInfo(name = "actual_arrival_utc")
+    val actualArrivalUtc: String? = null,
+    @ColumnInfo(name = "distance_km")
+    val distanceKm: Double? = null,
     @ColumnInfo(name = "airline")
     val airline: String?,
     @ColumnInfo(name = "flight_number")
@@ -62,6 +72,8 @@ data class FlightEntity(
     val aircraft: String?,
     @ColumnInfo(name = "notes")
     val notes: String?,
+    @ColumnInfo(name = "aircraft_registration")
+    val aircraftRegistration: String? = null,
     @ColumnInfo(name = "itinerary_group_id")
     val itineraryGroupId: String?,
     @ColumnInfo(name = "sort_order")
@@ -72,6 +84,10 @@ data class FlightEntity(
     val externalProvider: String? = null,
     @ColumnInfo(name = "external_id")
     val externalId: String? = null,
+    @ColumnInfo(name = "destination_counts_for_country_tracking", defaultValue = "1")
+    val destinationCountsForCountryTracking: Boolean = true,
+    @ColumnInfo(name = "origin_counts_for_country_tracking", defaultValue = "0")
+    val originCountsForCountryTracking: Boolean = false,
     @ColumnInfo(name = "created_at")
     val createdAt: String,
     @ColumnInfo(name = "updated_at")

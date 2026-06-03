@@ -15,4 +15,6 @@ data class FlightApiPrefill(
     /** Local arrival time as "YYYY-MM-DDTHH:mm" */
     val scheduledArrivalAt: String?,
     val aircraftModel: String?,
+    val aircraftRegistration: String?,
+    val aircraftModeS: String?,
 )

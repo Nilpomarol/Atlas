@@ -22,8 +22,10 @@ fun FlightDetailRoute(
             itineraryRepository = app.container.itineraryRepository,
             airportRepository = app.container.airportRepository,
             airlineRepository = app.container.airlineRepository,
+            aircraftTypeRepository = app.container.aircraftTypeRepository,
             searchAirportsUseCase = app.container.searchAirportsUseCase,
             searchAirlinesUseCase = app.container.searchAirlinesUseCase,
+            lookupAircraftUseCase = app.container.lookupAircraftUseCase,
             updateFlightUseCase = app.container.updateFlightUseCase,
             deleteFlightUseCase = app.container.deleteFlightUseCase,
         ),
@@ -49,6 +51,7 @@ fun FlightDetailRoute(
         onAirlineSelected = vm::onAirlineSelected,
         onFlightNumberChanged = vm::onFlightNumberChanged,
         onAircraftChanged = vm::onAircraftChanged,
+        onAircraftRegistrationChanged = vm::onAircraftRegistrationChanged,
         onNotesChanged = vm::onNotesChanged,
         onSaveDraft = vm::onSaveDraft,
     )

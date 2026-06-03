@@ -51,12 +51,16 @@ class CountryStateDerivationService {
         }
         val soloFlights = flights.filter { it.itineraryGroupId == null }
         val hasPlannedSoloFlight = soloFlights.any { flight ->
-            flight.status == TravelStatus.PLANNED &&
-                airportCountryIso2ById[flight.destinationAirportId] == countryIso2
+            flight.status == TravelStatus.PLANNED && (
+                (flight.destinationCountsForCountryTracking && airportCountryIso2ById[flight.destinationAirportId] == countryIso2) ||
+                (flight.originCountsForCountryTracking && airportCountryIso2ById[flight.originAirportId] == countryIso2)
+            )
         }
         val hasVisitedSoloFlight = soloFlights.any { flight ->
-            flight.status == TravelStatus.COMPLETED &&
-                airportCountryIso2ById[flight.destinationAirportId] == countryIso2
+            flight.status == TravelStatus.COMPLETED && (
+                (flight.destinationCountsForCountryTracking && airportCountryIso2ById[flight.destinationAirportId] == countryIso2) ||
+                (flight.originCountsForCountryTracking && airportCountryIso2ById[flight.originAirportId] == countryIso2)
+            )
         }
         val itineraryDerivedStatuses = deriveItineraryGroupCountries(
             groups = itineraryGroups,
@@ -100,7 +104,10 @@ class CountryStateDerivationService {
                     isLastGroup = index == sortedGroups.lastIndex,
                     isOnlyGroup = sortedGroups.size == 1,
                 ) ?: return@mapIndexedNotNull null
-                val airportId = if (sortedGroups.size == 1 || index != sortedGroups.lastIndex) {
+                val usesDestination = sortedGroups.size == 1 || index != sortedGroups.lastIndex
+                if (usesDestination && !flight.destinationCountsForCountryTracking) return@mapIndexedNotNull null
+                if (!usesDestination && !flight.originCountsForCountryTracking) return@mapIndexedNotNull null
+                val airportId = if (usesDestination) {
                     flight.destinationAirportId
                 } else {
                     flight.originAirportId

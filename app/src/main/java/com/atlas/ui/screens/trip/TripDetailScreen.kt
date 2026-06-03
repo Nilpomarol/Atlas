@@ -115,7 +115,6 @@ fun TripDetailScreen(
     onDismissStopDraft: () -> Unit,
     onStopLocationNameChanged: (String) -> Unit,
     onLocationSearchQueryChanged: (String) -> Unit,
-    onSearchLocationClick: () -> Unit,
     onLocationSearchResultSelected: (LocationSearchResult) -> Unit,
     onUseManualStopEntryClick: () -> Unit,
     onStopCountryChanged: (String) -> Unit,
@@ -146,7 +145,6 @@ fun TripDetailScreen(
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
     onDismissExcursionStopDraft: () -> Unit,
     onExcursionStopLocationSearchQueryChanged: (String) -> Unit,
-    onSearchExcursionStopLocationClick: () -> Unit,
     onExcursionStopLocationSearchResultSelected: (LocationSearchResult) -> Unit,
     onUseManualExcursionStopEntryClick: () -> Unit,
     onExcursionStopLocationNameChanged: (String) -> Unit,
@@ -269,7 +267,6 @@ fun TripDetailScreen(
             onDismiss = onDismissStopDraft,
             onLocationNameChanged = onStopLocationNameChanged,
             onLocationSearchQueryChanged = onLocationSearchQueryChanged,
-            onSearchLocationClick = onSearchLocationClick,
             onLocationSearchResultSelected = onLocationSearchResultSelected,
             onUseManualEntryClick = onUseManualStopEntryClick,
             onCountryChanged = onStopCountryChanged,
@@ -308,7 +305,6 @@ fun TripDetailScreen(
             countries = uiState.countries,
             onDismiss = onDismissExcursionStopDraft,
             onLocationSearchQueryChanged = onExcursionStopLocationSearchQueryChanged,
-            onSearchLocationClick = onSearchExcursionStopLocationClick,
             onLocationSearchResultSelected = onExcursionStopLocationSearchResultSelected,
             onUseManualEntryClick = onUseManualExcursionStopEntryClick,
             onLocationNameChanged = onExcursionStopLocationNameChanged,
@@ -1469,7 +1465,6 @@ private fun ExcursionStopDialog(
     countries: List<Country>,
     onDismiss: () -> Unit,
     onLocationSearchQueryChanged: (String) -> Unit,
-    onSearchLocationClick: () -> Unit,
     onLocationSearchResultSelected: (LocationSearchResult) -> Unit,
     onUseManualEntryClick: () -> Unit,
     onLocationNameChanged: (String) -> Unit,
@@ -1502,61 +1497,23 @@ private fun ExcursionStopDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null,
-                        tint = AtlasPrimary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    DialogSectionLabel("Cerca lloc")
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = draft.locationSearchQuery,
-                        onValueChange = onLocationSearchQueryChanged,
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        label = { Text("Nom o adreca", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(14.dp),
-                    )
-                    Button(
-                        onClick = onSearchLocationClick,
-                        enabled = !draft.isSearchingLocation,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AtlasPrimary,
-                            contentColor = Color.White,
-                        ),
-                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
-                    ) {
-                        Text("Cerca", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-                    }
-                }
-
-                if (draft.isSearchingLocation) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = AtlasPrimary,
-                        )
-                        Text(
-                            "Cercant llocs...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                        )
-                    }
-                }
+                // ── Location search ──
+                OutlinedTextField(
+                    value = draft.locationSearchQuery,
+                    onValueChange = onLocationSearchQueryChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Cerca un lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    placeholder = { Text("Nom o adreça...", color = AtlasOnSurfaceMuted) },
+                    leadingIcon = {
+                        if (draft.isSearchingLocation) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
+                        } else {
+                            Icon(Icons.Filled.Search, contentDescription = null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                )
 
                 draft.locationSearchError?.let { error ->
                     Text(
@@ -1689,7 +1646,6 @@ private fun TripStopDialog(
     onDismiss: () -> Unit,
     onLocationNameChanged: (String) -> Unit,
     onLocationSearchQueryChanged: (String) -> Unit,
-    onSearchLocationClick: () -> Unit,
     onLocationSearchResultSelected: (LocationSearchResult) -> Unit,
     onUseManualEntryClick: () -> Unit,
     onCountryChanged: (String) -> Unit,
@@ -1722,61 +1678,22 @@ private fun TripStopDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 // ── Location search ──
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Search,
-                        contentDescription = null,
-                        tint = AtlasPrimary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                    DialogSectionLabel("Cerca lloc")
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = draft.locationSearchQuery,
-                        onValueChange = onLocationSearchQueryChanged,
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        label = { Text("Nom o adreça", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(14.dp),
-                    )
-                    Button(
-                        onClick = onSearchLocationClick,
-                        enabled = !draft.isSearchingLocation,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = AtlasPrimary,
-                            contentColor = Color.White,
-                        ),
-                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
-                    ) {
-                        Text("Cerca", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-                    }
-                }
-
-                if (draft.isSearchingLocation) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = AtlasPrimary,
-                        )
-                        Text(
-                            "Cercant llocs...",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                        )
-                    }
-                }
+                OutlinedTextField(
+                    value = draft.locationSearchQuery,
+                    onValueChange = onLocationSearchQueryChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("Cerca un lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
+                    placeholder = { Text("Nom o adreça...", color = AtlasOnSurfaceMuted) },
+                    leadingIcon = {
+                        if (draft.isSearchingLocation) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
+                        } else {
+                            Icon(Icons.Filled.Search, contentDescription = null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
+                        }
+                    },
+                    shape = RoundedCornerShape(14.dp),
+                )
 
                 draft.locationSearchError?.let { error ->
                     Text(

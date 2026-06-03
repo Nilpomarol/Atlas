@@ -1,0 +1,640 @@
+{
+    "version": "2026.2",
+    "aircraft_types":  [
+                           {
+                               "code":  "A19N",
+                               "manufacturer":  "Airbus",
+                               "model":  "A319neo",
+                               "display_name":  "Airbus A319neo",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "A319neo",
+                                               "Airbus A319 neo"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A20N",
+                               "manufacturer":  "Airbus",
+                               "model":  "A320neo",
+                               "display_name":  "Airbus A320neo",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "A320neo",
+                                               "Airbus A320 neo"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A21N",
+                               "manufacturer":  "Airbus",
+                               "model":  "A321neo",
+                               "display_name":  "Airbus A321neo",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "A321neo",
+                                               "Airbus A321 neo"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A318",
+                               "manufacturer":  "Airbus",
+                               "model":  "A318",
+                               "display_name":  "Airbus A318",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "Airbus A318-100"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A319",
+                               "manufacturer":  "Airbus",
+                               "model":  "A319",
+                               "display_name":  "Airbus A319",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "Airbus A319-100"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A320",
+                               "manufacturer":  "Airbus",
+                               "model":  "A320",
+                               "display_name":  "Airbus A320",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "Airbus A320-200"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A321",
+                               "manufacturer":  "Airbus",
+                               "model":  "A321",
+                               "display_name":  "Airbus A321",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "Airbus A321-200"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A332",
+                               "manufacturer":  "Airbus",
+                               "model":  "A330-200",
+                               "display_name":  "Airbus A330-200",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A330-200",
+                                               "Airbus A330 200"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A333",
+                               "manufacturer":  "Airbus",
+                               "model":  "A330-300",
+                               "display_name":  "Airbus A330-300",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A330-300",
+                                               "Airbus A330 300"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A339",
+                               "manufacturer":  "Airbus",
+                               "model":  "A330-900neo",
+                               "display_name":  "Airbus A330-900neo",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A330-900",
+                                               "Airbus A330neo"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A342",
+                               "manufacturer":  "Airbus",
+                               "model":  "A340-200",
+                               "display_name":  "Airbus A340-200",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A340-200"
+                                           ],
+                               "num_engines":  4,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A343",
+                               "manufacturer":  "Airbus",
+                               "model":  "A340-300",
+                               "display_name":  "Airbus A340-300",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A340-300"
+                                           ],
+                               "num_engines":  4,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A359",
+                               "manufacturer":  "Airbus",
+                               "model":  "A350-900",
+                               "display_name":  "Airbus A350-900",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A350-900",
+                                               "Airbus A350"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A35K",
+                               "manufacturer":  "Airbus",
+                               "model":  "A350-1000",
+                               "display_name":  "Airbus A350-1000",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A350-1000"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "A388",
+                               "manufacturer":  "Airbus",
+                               "model":  "A380-800",
+                               "display_name":  "Airbus A380-800",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "A380",
+                                               "Airbus A380"
+                                           ],
+                               "num_engines":  4,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B38M",
+                               "manufacturer":  "Boeing",
+                               "model":  "737 MAX 8",
+                               "display_name":  "Boeing 737 MAX 8",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737 MAX 8",
+                                               "Boeing 737-8 MAX",
+                                               "Boeing 737 8 MAX"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B39M",
+                               "manufacturer":  "Boeing",
+                               "model":  "737 MAX 9",
+                               "display_name":  "Boeing 737 MAX 9",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737 MAX 9",
+                                               "Boeing 737-9 MAX",
+                                               "Boeing 737 9 MAX"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B3XM",
+                               "manufacturer":  "Boeing",
+                               "model":  "737 MAX 10",
+                               "display_name":  "Boeing 737 MAX 10",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737 MAX 10",
+                                               "Boeing 737-10 MAX"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B733",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-300",
+                               "display_name":  "Boeing 737-300",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-300"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B734",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-400",
+                               "display_name":  "Boeing 737-400",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-400"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B735",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-500",
+                               "display_name":  "Boeing 737-500",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-500"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B737",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-700",
+                               "display_name":  "Boeing 737-700",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-700",
+                                               "Boeing 737 700"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B738",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-800",
+                               "display_name":  "Boeing 737-800",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-800",
+                                               "Boeing 737 800"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B739",
+                               "manufacturer":  "Boeing",
+                               "model":  "737-900",
+                               "display_name":  "Boeing 737-900",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "737-900",
+                                               "Boeing 737 900"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B752",
+                               "manufacturer":  "Boeing",
+                               "model":  "757-200",
+                               "display_name":  "Boeing 757-200",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "757-200"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B753",
+                               "manufacturer":  "Boeing",
+                               "model":  "757-300",
+                               "display_name":  "Boeing 757-300",
+                               "category":  "NARROWBODY",
+                               "aliases":  [
+                                               "757-300"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B763",
+                               "manufacturer":  "Boeing",
+                               "model":  "767-300",
+                               "display_name":  "Boeing 767-300",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "767-300"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B764",
+                               "manufacturer":  "Boeing",
+                               "model":  "767-400",
+                               "display_name":  "Boeing 767-400",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "767-400"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B772",
+                               "manufacturer":  "Boeing",
+                               "model":  "777-200",
+                               "display_name":  "Boeing 777-200",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "777-200"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B77L",
+                               "manufacturer":  "Boeing",
+                               "model":  "777-200LR",
+                               "display_name":  "Boeing 777-200LR",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "777-200LR"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B773",
+                               "manufacturer":  "Boeing",
+                               "model":  "777-300",
+                               "display_name":  "Boeing 777-300",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "777-300"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B77W",
+                               "manufacturer":  "Boeing",
+                               "model":  "777-300ER",
+                               "display_name":  "Boeing 777-300ER",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "777-300ER"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B788",
+                               "manufacturer":  "Boeing",
+                               "model":  "787-8",
+                               "display_name":  "Boeing 787-8",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "787-8",
+                                               "Dreamliner 787-8"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B789",
+                               "manufacturer":  "Boeing",
+                               "model":  "787-9",
+                               "display_name":  "Boeing 787-9",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "787-9",
+                                               "Dreamliner 787-9"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B78X",
+                               "manufacturer":  "Boeing",
+                               "model":  "787-10",
+                               "display_name":  "Boeing 787-10",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "787-10",
+                                               "Dreamliner 787-10"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B744",
+                               "manufacturer":  "Boeing",
+                               "model":  "747-400",
+                               "display_name":  "Boeing 747-400",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "747-400"
+                                           ],
+                               "num_engines":  4,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "B748",
+                               "manufacturer":  "Boeing",
+                               "model":  "747-8",
+                               "display_name":  "Boeing 747-8",
+                               "category":  "WIDEBODY",
+                               "aliases":  [
+                                               "747-8",
+                                               "747-8I"
+                                           ],
+                               "num_engines":  4,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E170",
+                               "manufacturer":  "Embraer",
+                               "model":  "E170",
+                               "display_name":  "Embraer E170",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Embraer 170",
+                                               "ERJ 170"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E175",
+                               "manufacturer":  "Embraer",
+                               "model":  "E175",
+                               "display_name":  "Embraer E175",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Embraer 175",
+                                               "ERJ 175"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E190",
+                               "manufacturer":  "Embraer",
+                               "model":  "E190",
+                               "display_name":  "Embraer E190",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Embraer 190",
+                                               "ERJ 190"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E195",
+                               "manufacturer":  "Embraer",
+                               "model":  "E195",
+                               "display_name":  "Embraer E195",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Embraer 195",
+                                               "ERJ 195"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E290",
+                               "manufacturer":  "Embraer",
+                               "model":  "E190-E2",
+                               "display_name":  "Embraer E190-E2",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "E190-E2",
+                                               "Embraer 190-E2"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "E295",
+                               "manufacturer":  "Embraer",
+                               "model":  "E195-E2",
+                               "display_name":  "Embraer E195-E2",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "E195-E2",
+                                               "Embraer 195-E2"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "CRJ7",
+                               "manufacturer":  "Bombardier",
+                               "model":  "CRJ700",
+                               "display_name":  "Bombardier CRJ700",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Canadair CRJ700",
+                                               "CRJ-700"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "CRJ9",
+                               "manufacturer":  "Bombardier",
+                               "model":  "CRJ900",
+                               "display_name":  "Bombardier CRJ900",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Canadair CRJ900",
+                                               "CRJ-900"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "CRJX",
+                               "manufacturer":  "Bombardier",
+                               "model":  "CRJ1000",
+                               "display_name":  "Bombardier CRJ1000",
+                               "category":  "REGIONAL",
+                               "aliases":  [
+                                               "Canadair CRJ1000",
+                                               "CRJ-1000"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "JET"
+                           },
+                           {
+                               "code":  "AT43",
+                               "manufacturer":  "ATR",
+                               "model":  "42",
+                               "display_name":  "ATR 42",
+                               "category":  "TURBOPROP",
+                               "aliases":  [
+                                               "ATR42",
+                                               "ATR 42-500",
+                                               "ATR 42-600"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "TURBOPROP"
+                           },
+                           {
+                               "code":  "AT72",
+                               "manufacturer":  "ATR",
+                               "model":  "72",
+                               "display_name":  "ATR 72",
+                               "category":  "TURBOPROP",
+                               "aliases":  [
+                                               "ATR72",
+                                               "ATR 72-500",
+                                               "ATR 72-600"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "TURBOPROP"
+                           },
+                           {
+                               "code":  "DH8D",
+                               "manufacturer":  "De Havilland Canada",
+                               "model":  "Dash 8 Q400",
+                               "display_name":  "De Havilland Canada Dash 8 Q400",
+                               "category":  "TURBOPROP",
+                               "aliases":  [
+                                               "Dash 8 Q400",
+                                               "DHC-8-400",
+                                               "Q400"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "TURBOPROP"
+                           },
+                           {
+                               "code":  "SF34",
+                               "manufacturer":  "Saab",
+                               "model":  "340",
+                               "display_name":  "Saab 340",
+                               "category":  "TURBOPROP",
+                               "aliases":  [
+                                               "Saab SF340"
+                                           ],
+                               "num_engines":  2,
+                               "engine_type":  "TURBOPROP"
+                           }
+                       ]
+}

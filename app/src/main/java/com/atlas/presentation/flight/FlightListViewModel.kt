@@ -15,6 +15,7 @@ import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
+import com.atlas.domain.usecase.aircraft.LookupAircraftUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.flight.CreateFlightUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
@@ -51,6 +52,7 @@ class FlightListViewModel(
     private val updateFlightUseCase: UpdateFlightUseCase,
     private val deleteFlightUseCase: DeleteFlightUseCase,
     private val lookupFlightUseCase: LookupFlightUseCase,
+    private val lookupAircraftUseCase: LookupAircraftUseCase,
     private val createItineraryUseCase: CreateItineraryUseCase,
     private val updateItineraryUseCase: UpdateItineraryUseCase,
     private val deleteItineraryUseCase: DeleteItineraryUseCase,
@@ -221,6 +223,7 @@ class FlightListViewModel(
     }
     fun onFlightNumberChanged(value: String) { draft.update { it.copy(flightNumber = value) } }
     fun onAircraftChanged(value: String) { draft.update { it.copy(aircraft = value) } }
+    fun onAircraftRegistrationChanged(value: String) { draft.update { it.copy(aircraftRegistration = value) } }
     fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
 
     // ── API search ───────────────────────────────────────────────────────────
@@ -259,6 +262,7 @@ class FlightListViewModel(
             val origin = prefill.originIata?.let { airportRepository.getAirportByIata(it) }
             val destination = prefill.destinationIata?.let { airportRepository.getAirportByIata(it) }
             val airline = prefill.airlineIata?.let { airlineRepository.getAirlineByIata(it.uppercase()) }
+            lookupAircraftUseCase(prefill.aircraftRegistration)
             val inferredStatus = inferFlightStatus(prefill.scheduledDepartureAt)
             draft.update { current ->
                 current.copy(
@@ -270,6 +274,7 @@ class FlightListViewModel(
                     airlineIata = prefill.airlineIata ?: current.airlineIata,
                     flightNumber = prefill.flightNumber ?: current.flightNumber,
                     aircraft = prefill.aircraftModel ?: current.aircraft,
+                    aircraftRegistration = prefill.aircraftRegistration ?: current.aircraftRegistration,
                     scheduledDepartureAt = prefill.scheduledDepartureAt ?: current.scheduledDepartureAt,
                     scheduledArrivalAt = prefill.scheduledArrivalAt ?: current.scheduledArrivalAt,
                     status = inferredStatus ?: current.status,
@@ -311,6 +316,7 @@ class FlightListViewModel(
                     airline = resolvedAirline,
                     flightNumber = d.flightNumber,
                     aircraft = d.aircraft,
+                    aircraftRegistration = d.aircraftRegistration,
                     notes = d.notes,
                     fetchedFrom = d.fetchedFrom,
                     externalProvider = d.externalProvider,
@@ -330,12 +336,15 @@ class FlightListViewModel(
                         airline = resolvedAirline,
                         flightNumber = d.flightNumber.trim().ifBlank { null },
                         aircraft = d.aircraft.trim().ifBlank { null },
+                        aircraftRegistration = d.aircraftRegistration.trim().ifBlank { null },
                         notes = d.notes.trim().ifBlank { null },
                         itineraryGroupId = d.itineraryGroupId,
                         sortOrder = d.sortOrder,
                         fetchedFrom = d.fetchedFrom,
                         externalProvider = d.externalProvider,
                         externalId = d.externalId,
+                        destinationCountsForCountryTracking = d.destinationCountsForCountryTracking,
+                        originCountsForCountryTracking = d.originCountsForCountryTracking,
                     ),
                 )
             }
@@ -439,6 +448,7 @@ class FlightListViewModel(
         private val updateFlightUseCase: UpdateFlightUseCase,
         private val deleteFlightUseCase: DeleteFlightUseCase,
         private val lookupFlightUseCase: LookupFlightUseCase,
+        private val lookupAircraftUseCase: LookupAircraftUseCase,
         private val createItineraryUseCase: CreateItineraryUseCase,
         private val updateItineraryUseCase: UpdateItineraryUseCase,
         private val deleteItineraryUseCase: DeleteItineraryUseCase,
@@ -455,6 +465,7 @@ class FlightListViewModel(
             updateFlightUseCase = updateFlightUseCase,
             deleteFlightUseCase = deleteFlightUseCase,
             lookupFlightUseCase = lookupFlightUseCase,
+            lookupAircraftUseCase = lookupAircraftUseCase,
             createItineraryUseCase = createItineraryUseCase,
             updateItineraryUseCase = updateItineraryUseCase,
             deleteItineraryUseCase = deleteItineraryUseCase,
@@ -504,6 +515,7 @@ data class FlightEditorDraftUiState(
     val airlineIata: String? = null,
     val flightNumber: String = "",
     val aircraft: String = "",
+    val aircraftRegistration: String = "",
     val notes: String = "",
     val validationError: String? = null,
     // Preserved when editing grouped flights; not shown to the user
@@ -513,6 +525,9 @@ data class FlightEditorDraftUiState(
     val fetchedFrom: String = "manual",
     val externalProvider: String? = null,
     val externalId: String? = null,
+    // Country tracking — preserved from existing flight on edit
+    val destinationCountsForCountryTracking: Boolean = true,
+    val originCountsForCountryTracking: Boolean = false,
     // API search state — only relevant for new flights
     val apiFlightNumber: String = "",
     val apiSearchDate: String = "",
@@ -540,12 +555,15 @@ data class FlightEditorDraftUiState(
             airlineIata = airline?.iata,
             flightNumber = flight.flightNumber ?: "",
             aircraft = flight.aircraft ?: "",
+            aircraftRegistration = flight.aircraftRegistration ?: "",
             notes = flight.notes ?: "",
             itineraryGroupId = flight.itineraryGroupId,
             sortOrder = flight.sortOrder,
             fetchedFrom = flight.fetchedFrom,
             externalProvider = flight.externalProvider,
             externalId = flight.externalId,
+            destinationCountsForCountryTracking = flight.destinationCountsForCountryTracking,
+            originCountsForCountryTracking = flight.originCountsForCountryTracking,
         )
     }
 }

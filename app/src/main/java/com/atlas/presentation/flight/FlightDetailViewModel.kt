@@ -3,14 +3,18 @@ package com.atlas.presentation.flight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Aircraft
+import com.atlas.domain.model.AircraftType
 import com.atlas.domain.model.Airline
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
+import com.atlas.domain.repository.AircraftTypeRepository
 import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
+import com.atlas.domain.usecase.aircraft.LookupAircraftUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
 import com.atlas.domain.usecase.flight.UpdateFlightUseCase
@@ -35,8 +39,10 @@ class FlightDetailViewModel(
     itineraryRepository: ItineraryRepository,
     private val airportRepository: AirportRepository,
     private val airlineRepository: AirlineRepository,
+    private val aircraftTypeRepository: AircraftTypeRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
     private val searchAirlinesUseCase: SearchAirlinesUseCase,
+    private val lookupAircraftUseCase: LookupAircraftUseCase,
     private val updateFlightUseCase: UpdateFlightUseCase,
     private val deleteFlightUseCase: DeleteFlightUseCase,
 ) : ViewModel() {
@@ -73,6 +79,10 @@ class FlightDetailViewModel(
         val resolvedAirlineName = flight.airline?.let { iata ->
             airlineRepository.getAirlineByIata(iata.uppercase())?.name ?: iata
         }
+        val resolvedAircraftType = flight.aircraft?.let { aircraft ->
+            aircraftTypeRepository.resolveAircraftType(aircraft)
+        }
+        val resolvedAircraft = lookupAircraftUseCase(flight.aircraftRegistration)
 
         val groupId = flight.itineraryGroupId
         if (groupId == null) {
@@ -81,6 +91,8 @@ class FlightDetailViewModel(
                 originAirport = origin,
                 destinationAirport = destination,
                 resolvedAirlineName = resolvedAirlineName,
+                resolvedAircraftType = resolvedAircraftType,
+                resolvedAircraft = resolvedAircraft,
             )
         }
 
@@ -110,6 +122,8 @@ class FlightDetailViewModel(
             nextContextAirport = nextContextAirport,
             groupPositionLabel = positionLabel,
             resolvedAirlineName = resolvedAirlineName,
+            resolvedAircraftType = resolvedAircraftType,
+            resolvedAircraft = resolvedAircraft,
         )
     }
 
@@ -128,6 +142,8 @@ class FlightDetailViewModel(
             nextContextAirport = data.nextContextAirport,
             groupPositionLabel = data.groupPositionLabel,
             resolvedAirlineName = data.resolvedAirlineName,
+            resolvedAircraftType = data.resolvedAircraftType,
+            resolvedAircraft = data.resolvedAircraft,
             draft = draft,
             originSearchResults = originRes,
             destinationSearchResults = destRes,
@@ -196,6 +212,7 @@ class FlightDetailViewModel(
     }
     fun onFlightNumberChanged(value: String) { draft.update { it.copy(flightNumber = value) } }
     fun onAircraftChanged(value: String) { draft.update { it.copy(aircraft = value) } }
+    fun onAircraftRegistrationChanged(value: String) { draft.update { it.copy(aircraftRegistration = value) } }
     fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
 
     fun onSaveDraft() {
@@ -227,8 +244,11 @@ class FlightDetailViewModel(
                     flightNumber = d.flightNumber.trim().ifBlank { null },
                     aircraft = d.aircraft.trim().ifBlank { null },
                     notes = d.notes.trim().ifBlank { null },
+                    aircraftRegistration = d.aircraftRegistration.trim().ifBlank { null },
                     itineraryGroupId = d.itineraryGroupId,
                     sortOrder = d.sortOrder,
+                    destinationCountsForCountryTracking = d.destinationCountsForCountryTracking,
+                    originCountsForCountryTracking = d.originCountsForCountryTracking,
                 ),
             )
             onDismissDraft()
@@ -249,8 +269,10 @@ class FlightDetailViewModel(
         private val itineraryRepository: ItineraryRepository,
         private val airportRepository: AirportRepository,
         private val airlineRepository: AirlineRepository,
+        private val aircraftTypeRepository: AircraftTypeRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
         private val searchAirlinesUseCase: SearchAirlinesUseCase,
+        private val lookupAircraftUseCase: LookupAircraftUseCase,
         private val updateFlightUseCase: UpdateFlightUseCase,
         private val deleteFlightUseCase: DeleteFlightUseCase,
     ) : ViewModelProvider.Factory {
@@ -261,8 +283,10 @@ class FlightDetailViewModel(
             itineraryRepository = itineraryRepository,
             airportRepository = airportRepository,
             airlineRepository = airlineRepository,
+            aircraftTypeRepository = aircraftTypeRepository,
             searchAirportsUseCase = searchAirportsUseCase,
             searchAirlinesUseCase = searchAirlinesUseCase,
+            lookupAircraftUseCase = lookupAircraftUseCase,
             updateFlightUseCase = updateFlightUseCase,
             deleteFlightUseCase = deleteFlightUseCase,
         ) as T
@@ -277,6 +301,8 @@ private data class FlightDetailCoreData(
     val nextContextAirport: Airport? = null,
     val groupPositionLabel: String? = null,
     val resolvedAirlineName: String? = null,
+    val resolvedAircraftType: AircraftType? = null,
+    val resolvedAircraft: Aircraft? = null,
 )
 
 data class FlightDetailUiState(
@@ -287,6 +313,8 @@ data class FlightDetailUiState(
     val nextContextAirport: Airport? = null,
     val groupPositionLabel: String? = null,
     val resolvedAirlineName: String? = null,
+    val resolvedAircraftType: AircraftType? = null,
+    val resolvedAircraft: Aircraft? = null,
     val draft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
     val originSearchResults: List<Airport> = emptyList(),
     val destinationSearchResults: List<Airport> = emptyList(),

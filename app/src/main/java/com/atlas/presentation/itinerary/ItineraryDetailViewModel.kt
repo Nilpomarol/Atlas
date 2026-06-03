@@ -387,6 +387,7 @@ class ItineraryDetailViewModel(
     }
     fun onFlightNumberChanged(v: String) { flightDraft.update { it.copy(flightNumber = v) } }
     fun onAircraftChanged(v: String) { flightDraft.update { it.copy(aircraft = v) } }
+    fun onAircraftRegistrationChanged(v: String) { flightDraft.update { it.copy(aircraftRegistration = v) } }
     fun onFlightNotesChanged(v: String) { flightDraft.update { it.copy(notes = v) } }
 
     fun onSaveFlightDraft() {
@@ -421,6 +422,7 @@ class ItineraryDetailViewModel(
                     airline = resolvedAirline,
                     flightNumber = d.flightNumber,
                     aircraft = d.aircraft,
+                    aircraftRegistration = d.aircraftRegistration,
                     notes = d.notes,
                     itineraryGroupId = groupId,
                     sortOrder = sortOrder,
@@ -440,8 +442,11 @@ class ItineraryDetailViewModel(
                         flightNumber = d.flightNumber.trim().ifBlank { null },
                         aircraft = d.aircraft.trim().ifBlank { null },
                         notes = d.notes.trim().ifBlank { null },
+                        aircraftRegistration = d.aircraftRegistration.trim().ifBlank { null },
                         itineraryGroupId = d.itineraryGroupId,
                         sortOrder = d.sortOrder,
+                        destinationCountsForCountryTracking = d.destinationCountsForCountryTracking,
+                        originCountsForCountryTracking = d.originCountsForCountryTracking,
                     ),
                 )
             }

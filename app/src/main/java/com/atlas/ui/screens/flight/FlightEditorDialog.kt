@@ -48,10 +48,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atlas.domain.model.Airline
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.flight.FlightApiSearchState
 import com.atlas.presentation.flight.FlightEditorDraftUiState
+import com.atlas.ui.components.AirlineSearchField
 import com.atlas.ui.components.AirportSearchField
 import com.atlas.ui.components.date.DateTimePickerField
 import com.atlas.ui.components.tripStatusColors
@@ -92,7 +94,9 @@ fun FlightEditorDialog(
     onScheduledArrivalAtChanged: (String) -> Unit,
     onActualDepartureAtChanged: (String) -> Unit,
     onActualArrivalAtChanged: (String) -> Unit,
-    onAirlineChanged: (String) -> Unit,
+    airlineResults: List<Airline>,
+    onAirlineQueryChanged: (String) -> Unit,
+    onAirlineSelected: (Airline) -> Unit,
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
@@ -194,12 +198,12 @@ fun FlightEditorDialog(
                     prefillValue = draft.scheduledArrivalAt.takeIf { it.isNotBlank() },
                 )
 
-                OutlinedTextField(
-                    value = draft.airline,
-                    onValueChange = onAirlineChanged,
-                    label = { Text("Companyia (opcional)") },
+                AirlineSearchField(
+                    query = draft.airlineQuery,
+                    results = airlineResults,
+                    onQueryChanged = onAirlineQueryChanged,
+                    onAirlineSelected = onAirlineSelected,
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
                 )
 
                 OutlinedTextField(

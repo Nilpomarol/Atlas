@@ -52,6 +52,7 @@ import com.atlas.presentation.flight.FlightListItemUiState
 import com.atlas.presentation.flight.FlightListUiState
 import com.atlas.presentation.flight.ItinerarySummaryUiState
 import com.atlas.ui.components.AirlineLogo
+import com.atlas.ui.components.AirlineSearchField
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
@@ -87,7 +88,8 @@ fun FlightListScreen(
     onScheduledArrivalAtChanged: (String) -> Unit,
     onActualDepartureAtChanged: (String) -> Unit,
     onActualArrivalAtChanged: (String) -> Unit,
-    onAirlineChanged: (String) -> Unit,
+    onAirlineQueryChanged: (String) -> Unit,
+    onAirlineSelected: (com.atlas.domain.model.Airline) -> Unit,
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
@@ -165,7 +167,9 @@ fun FlightListScreen(
             onScheduledArrivalAtChanged = onScheduledArrivalAtChanged,
             onActualDepartureAtChanged = onActualDepartureAtChanged,
             onActualArrivalAtChanged = onActualArrivalAtChanged,
-            onAirlineChanged = onAirlineChanged,
+            airlineResults = uiState.airlineSearchResults,
+            onAirlineQueryChanged = onAirlineQueryChanged,
+            onAirlineSelected = onAirlineSelected,
             onFlightNumberChanged = onFlightNumberChanged,
             onAircraftChanged = onAircraftChanged,
             onNotesChanged = onNotesChanged,

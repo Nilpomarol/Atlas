@@ -31,6 +31,7 @@ import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.domain.service.ItineraryGeneratedStopService
+import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
 import com.atlas.domain.usecase.country.AddCountryLogUseCase
 import com.atlas.domain.usecase.country.DeleteCountryLogUseCase
 import com.atlas.domain.usecase.country.SetCurrentlyLivingCountryUseCase
@@ -209,6 +210,10 @@ class AtlasAppContainer(context: Context) {
 
     val searchAirportsUseCase = SearchAirportsUseCase(
         airportRepository = airportRepository,
+    )
+
+    val searchAirlinesUseCase = SearchAirlinesUseCase(
+        airlineRepository = airlineRepository,
     )
 
     val createFlightUseCase = CreateFlightUseCase(

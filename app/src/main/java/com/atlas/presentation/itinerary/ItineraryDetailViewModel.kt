@@ -3,15 +3,18 @@ package com.atlas.presentation.itinerary
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airline
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
+import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
+import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.flight.CreateFlightUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
@@ -45,7 +48,9 @@ class ItineraryDetailViewModel(
     itineraryRepository: ItineraryRepository,
     tripRepository: TripRepository,
     private val airportRepository: AirportRepository,
+    private val airlineRepository: AirlineRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
+    private val searchAirlinesUseCase: SearchAirlinesUseCase,
     private val updateItineraryUseCase: UpdateItineraryUseCase,
     private val deleteItineraryUseCase: DeleteItineraryUseCase,
     private val syncGeneratedTripStopsForItineraryUseCase: SyncGeneratedTripStopsForItineraryUseCase,
@@ -67,6 +72,7 @@ class ItineraryDetailViewModel(
     private val targetGroupId = MutableStateFlow<String?>(null)
     private val originQuery = MutableStateFlow("")
     private val destinationQuery = MutableStateFlow("")
+    private val airlineQuery = MutableStateFlow("")
     private val isGroupReorderMode = MutableStateFlow(false)
     private val reorderingFlightsGroupId = MutableStateFlow<String?>(null)
 
@@ -101,10 +107,16 @@ class ItineraryDetailViewModel(
         flightDraft,
     ) { itinDraft, grpDraft, fltDraft -> Triple(itinDraft, grpDraft, fltDraft) }
 
+    private val airlineResults: StateFlow<List<Airline>> = airlineQuery
+        .debounce(300)
+        .flatMapLatest { q -> if (q.isBlank()) flowOf(emptyList()) else searchAirlinesUseCase(q) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val searchState = combine(
         originResults,
         destinationResults,
-    ) { origin, destination -> origin to destination }
+        airlineResults,
+    ) { origin, destination, airline -> Triple(origin, destination, airline) }
 
     private val reorderState = combine(
         isGroupReorderMode,
@@ -116,7 +128,10 @@ class ItineraryDetailViewModel(
         draftState,
         searchState,
         reorderState,
-    ) { content, (itinDraft, grpDraft, fltDraft), (originRes, destRes), (groupReorder, flightReorderGroupId) ->
+    ) { content, drafts, searches, reorders ->
+        val (itinDraft, grpDraft, fltDraft) = drafts
+        val (originRes, destRes, airlineRes) = searches
+        val (groupReorder, flightReorderGroupId) = reorders
         ItineraryDetailUiState(
             itinerary = content.itinerary,
             linkedTrip = content.linkedTrip,
@@ -127,6 +142,7 @@ class ItineraryDetailViewModel(
             flightDraft = fltDraft,
             originSearchResults = originRes,
             destinationSearchResults = destRes,
+            airlineSearchResults = airlineRes,
             isGroupReorderMode = groupReorder,
             reorderingFlightsGroupId = flightReorderGroupId,
         )
@@ -311,6 +327,7 @@ class ItineraryDetailViewModel(
         flightDraft.update { FlightEditorDraftUiState(isOpen = true) }
         originQuery.value = ""
         destinationQuery.value = ""
+        airlineQuery.value = ""
     }
 
     fun onEditFlightClick(flight: Flight) {
@@ -318,9 +335,11 @@ class ItineraryDetailViewModel(
         viewModelScope.launch {
             val origin = airportRepository.getAirportById(flight.originAirportId)
             val destination = airportRepository.getAirportById(flight.destinationAirportId)
-            flightDraft.update { FlightEditorDraftUiState.fromFlight(flight, origin, destination) }
+            val airline = flight.airline?.let { airlineRepository.getAirlineByIata(it.uppercase()) }
+            flightDraft.update { FlightEditorDraftUiState.fromFlight(flight, origin, destination, airline) }
             originQuery.value = ""
             destinationQuery.value = ""
+            airlineQuery.value = ""
         }
     }
 
@@ -329,6 +348,7 @@ class ItineraryDetailViewModel(
         targetGroupId.value = null
         originQuery.value = ""
         destinationQuery.value = ""
+        airlineQuery.value = ""
     }
 
     fun onFlightOriginQueryChanged(query: String) {
@@ -356,7 +376,15 @@ class ItineraryDetailViewModel(
     fun onScheduledArrivalAtChanged(v: String) { flightDraft.update { it.copy(scheduledArrivalAt = v) } }
     fun onActualDepartureAtChanged(v: String) { flightDraft.update { it.copy(actualDepartureAt = v) } }
     fun onActualArrivalAtChanged(v: String) { flightDraft.update { it.copy(actualArrivalAt = v) } }
-    fun onAirlineChanged(v: String) { flightDraft.update { it.copy(airline = v) } }
+    fun onAirlineQueryChanged(v: String) {
+        airlineQuery.value = v
+        flightDraft.update { it.copy(airlineQuery = v, airlineIata = null) }
+    }
+
+    fun onAirlineSelected(airline: Airline) {
+        airlineQuery.value = ""
+        flightDraft.update { it.copy(airlineQuery = airline.name, airlineIata = airline.iata) }
+    }
     fun onFlightNumberChanged(v: String) { flightDraft.update { it.copy(flightNumber = v) } }
     fun onAircraftChanged(v: String) { flightDraft.update { it.copy(aircraft = v) } }
     fun onFlightNotesChanged(v: String) { flightDraft.update { it.copy(notes = v) } }
@@ -381,6 +409,7 @@ class ItineraryDetailViewModel(
                 val sortOrder = groupId?.let { gid ->
                     uiState.value.groups.find { it.id == gid }?.flights?.size ?: 0
                 }
+                val resolvedAirline = d.airlineIata ?: d.airlineQuery.trim().ifBlank { null }
                 createFlightUseCase(
                     originAirportId = origin.id,
                     destinationAirportId = destination.id,
@@ -389,7 +418,7 @@ class ItineraryDetailViewModel(
                     scheduledArrivalAt = d.scheduledArrivalAt.ifBlank { null },
                     actualDepartureAt = d.actualDepartureAt.ifBlank { null },
                     actualArrivalAt = d.actualArrivalAt.ifBlank { null },
-                    airline = d.airline,
+                    airline = resolvedAirline,
                     flightNumber = d.flightNumber,
                     aircraft = d.aircraft,
                     notes = d.notes,
@@ -407,7 +436,7 @@ class ItineraryDetailViewModel(
                         scheduledArrivalAt = d.scheduledArrivalAt.ifBlank { null },
                         actualDepartureAt = d.actualDepartureAt.ifBlank { null },
                         actualArrivalAt = d.actualArrivalAt.ifBlank { null },
-                        airline = d.airline.trim().ifBlank { null },
+                        airline = d.airlineIata ?: d.airlineQuery.trim().ifBlank { null },
                         flightNumber = d.flightNumber.trim().ifBlank { null },
                         aircraft = d.aircraft.trim().ifBlank { null },
                         notes = d.notes.trim().ifBlank { null },
@@ -437,7 +466,9 @@ class ItineraryDetailViewModel(
         private val itineraryRepository: ItineraryRepository,
         private val tripRepository: TripRepository,
         private val airportRepository: AirportRepository,
+        private val airlineRepository: AirlineRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
+        private val searchAirlinesUseCase: SearchAirlinesUseCase,
         private val updateItineraryUseCase: UpdateItineraryUseCase,
         private val deleteItineraryUseCase: DeleteItineraryUseCase,
         private val syncGeneratedTripStopsForItineraryUseCase: SyncGeneratedTripStopsForItineraryUseCase,
@@ -457,7 +488,9 @@ class ItineraryDetailViewModel(
             itineraryRepository = itineraryRepository,
             tripRepository = tripRepository,
             airportRepository = airportRepository,
+            airlineRepository = airlineRepository,
             searchAirportsUseCase = searchAirportsUseCase,
+            searchAirlinesUseCase = searchAirlinesUseCase,
             updateItineraryUseCase = updateItineraryUseCase,
             deleteItineraryUseCase = deleteItineraryUseCase,
             syncGeneratedTripStopsForItineraryUseCase = syncGeneratedTripStopsForItineraryUseCase,
@@ -492,6 +525,7 @@ data class ItineraryDetailUiState(
     val flightDraft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
     val originSearchResults: List<Airport> = emptyList(),
     val destinationSearchResults: List<Airport> = emptyList(),
+    val airlineSearchResults: List<Airline> = emptyList(),
     val isGroupReorderMode: Boolean = false,
     val reorderingFlightsGroupId: String? = null,
 )

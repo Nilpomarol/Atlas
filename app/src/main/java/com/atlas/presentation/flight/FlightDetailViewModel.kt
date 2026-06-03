@@ -3,12 +3,14 @@ package com.atlas.presentation.flight
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airline
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
 import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
 import com.atlas.domain.usecase.flight.UpdateFlightUseCase
@@ -34,6 +36,7 @@ class FlightDetailViewModel(
     private val airportRepository: AirportRepository,
     private val airlineRepository: AirlineRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
+    private val searchAirlinesUseCase: SearchAirlinesUseCase,
     private val updateFlightUseCase: UpdateFlightUseCase,
     private val deleteFlightUseCase: DeleteFlightUseCase,
 ) : ViewModel() {
@@ -41,6 +44,7 @@ class FlightDetailViewModel(
     private val draft = MutableStateFlow(FlightEditorDraftUiState())
     private val originQuery = MutableStateFlow("")
     private val destinationQuery = MutableStateFlow("")
+    private val airlineQuery = MutableStateFlow("")
 
     private val originResults: StateFlow<List<Airport>> = originQuery
         .debounce(300)
@@ -50,6 +54,11 @@ class FlightDetailViewModel(
     private val destinationResults: StateFlow<List<Airport>> = destinationQuery
         .debounce(300)
         .flatMapLatest { q -> if (q.isBlank()) flowOf(emptyList()) else searchAirportsUseCase(q) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    private val airlineResults: StateFlow<List<Airline>> = airlineQuery
+        .debounce(300)
+        .flatMapLatest { q -> if (q.isBlank()) flowOf(emptyList()) else searchAirlinesUseCase(q) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // Resolves the flight + its airports + context airports from adjacent group flights
@@ -109,7 +118,8 @@ class FlightDetailViewModel(
         draft,
         originResults,
         destinationResults,
-    ) { data, draft, originRes, destRes ->
+        airlineResults,
+    ) { data, draft, originRes, destRes, airlineRes ->
         FlightDetailUiState(
             flight = data.flight,
             originAirport = data.originAirport,
@@ -121,6 +131,7 @@ class FlightDetailViewModel(
             draft = draft,
             originSearchResults = originRes,
             destinationSearchResults = destRes,
+            airlineSearchResults = airlineRes,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -133,14 +144,17 @@ class FlightDetailViewModel(
         viewModelScope.launch {
             val origin = airportRepository.getAirportById(flight.originAirportId)
             val destination = airportRepository.getAirportById(flight.destinationAirportId)
-            draft.update { FlightEditorDraftUiState.fromFlight(flight, origin, destination) }
+            val airline = flight.airline?.let { airlineRepository.getAirlineByIata(it.uppercase()) }
+            draft.update { FlightEditorDraftUiState.fromFlight(flight, origin, destination, airline) }
             originQuery.value = ""
             destinationQuery.value = ""
+            airlineQuery.value = ""
         }
     }
 
     fun onDismissDraft() {
         draft.update { FlightEditorDraftUiState() }
+        airlineQuery.value = ""
     }
 
     fun onOriginQueryChanged(query: String) {
@@ -171,7 +185,15 @@ class FlightDetailViewModel(
     fun onScheduledArrivalAtChanged(value: String) { draft.update { it.copy(scheduledArrivalAt = value) } }
     fun onActualDepartureAtChanged(value: String) { draft.update { it.copy(actualDepartureAt = value) } }
     fun onActualArrivalAtChanged(value: String) { draft.update { it.copy(actualArrivalAt = value) } }
-    fun onAirlineChanged(value: String) { draft.update { it.copy(airline = value) } }
+    fun onAirlineQueryChanged(value: String) {
+        airlineQuery.value = value
+        draft.update { it.copy(airlineQuery = value, airlineIata = null) }
+    }
+
+    fun onAirlineSelected(airline: Airline) {
+        airlineQuery.value = ""
+        draft.update { it.copy(airlineQuery = airline.name, airlineIata = airline.iata) }
+    }
     fun onFlightNumberChanged(value: String) { draft.update { it.copy(flightNumber = value) } }
     fun onAircraftChanged(value: String) { draft.update { it.copy(aircraft = value) } }
     fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
@@ -201,7 +223,7 @@ class FlightDetailViewModel(
                     scheduledArrivalAt = d.scheduledArrivalAt.ifBlank { null },
                     actualDepartureAt = d.actualDepartureAt.ifBlank { null },
                     actualArrivalAt = d.actualArrivalAt.ifBlank { null },
-                    airline = d.airline.trim().ifBlank { null },
+                    airline = d.airlineIata ?: d.airlineQuery.trim().ifBlank { null },
                     flightNumber = d.flightNumber.trim().ifBlank { null },
                     aircraft = d.aircraft.trim().ifBlank { null },
                     notes = d.notes.trim().ifBlank { null },
@@ -228,6 +250,7 @@ class FlightDetailViewModel(
         private val airportRepository: AirportRepository,
         private val airlineRepository: AirlineRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
+        private val searchAirlinesUseCase: SearchAirlinesUseCase,
         private val updateFlightUseCase: UpdateFlightUseCase,
         private val deleteFlightUseCase: DeleteFlightUseCase,
     ) : ViewModelProvider.Factory {
@@ -239,6 +262,7 @@ class FlightDetailViewModel(
             airportRepository = airportRepository,
             airlineRepository = airlineRepository,
             searchAirportsUseCase = searchAirportsUseCase,
+            searchAirlinesUseCase = searchAirlinesUseCase,
             updateFlightUseCase = updateFlightUseCase,
             deleteFlightUseCase = deleteFlightUseCase,
         ) as T
@@ -266,4 +290,5 @@ data class FlightDetailUiState(
     val draft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
     val originSearchResults: List<Airport> = emptyList(),
     val destinationSearchResults: List<Airport> = emptyList(),
+    val airlineSearchResults: List<Airline> = emptyList(),
 )

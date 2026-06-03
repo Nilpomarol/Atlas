@@ -343,7 +343,7 @@ private fun RouteLineCanvas() {
 private fun TripListItemUiState.routeText(): String? {
     val first = firstStopName?.takeIf { it.isNotBlank() } ?: return null
     val last = lastStopName?.takeIf { it.isNotBlank() } ?: return first
-    return if (first == last) first else "$first -> $last"
+    return if (first == last) first else "$first → $last"
 }
 
 fun TravelStatus.toCatalanLabel(): String = when (this) {

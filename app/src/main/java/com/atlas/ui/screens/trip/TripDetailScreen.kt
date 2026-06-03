@@ -74,22 +74,19 @@ import com.atlas.presentation.trip.ExcursionDraftUiState
 import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
+import com.atlas.ui.components.tripStatusColors
+import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasError
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasPlanned
+import com.atlas.ui.theme.AtlasPlannedContainer
+import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSurface
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
-
-// ─────────────────────────────────────────────
-// Palette — matches CountryDetailScreen
-// ─────────────────────────────────────────────
-private val TripBg          = Color(0xFFF1F3F7)
-private val TripCard        = Color(0xFFFFFFFF)
-private val TripBorder      = Color(0xFFE4E8EF)
-private val TripInk         = Color(0xFF111827)
-private val TripMuted       = Color(0xFF6B7280)
-private val TripAccent      = Color(0xFF024E82)   // trip blue
-private val TripAccentLight = Color(0xFFC2D9F0)
-private val TripPlanned     = Color(0xFF92400E)
-private val TripPlannedLight = Color(0xFFFDE3C8)
-private val TripError       = Color(0xFFB91C1C)
 
 private val dateRangeFormatter = FlexibleDateFormatter()
 
@@ -170,7 +167,7 @@ fun TripDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(TripBg),
+            .background(AtlasBackground),
     ) {
         // ── Top bar ──
         Row(
@@ -182,8 +179,8 @@ fun TripDetailScreen(
             Surface(
                 onClick = onBackClick,
                 shape = RoundedCornerShape(100.dp),
-                color = TripCard,
-                border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+                color = AtlasSurface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
                 shadowElevation = 0.dp,
             ) {
                 Row(
@@ -195,13 +192,13 @@ fun TripDetailScreen(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Torna",
                         modifier = Modifier.size(14.dp),
-                        tint = TripInk,
+                        tint = AtlasOnSurfaceStrong,
                     )
                     Text(
                         text = "Enrere",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
-                        color = TripInk,
+                        color = AtlasOnSurfaceStrong,
                     )
                 }
             }
@@ -218,7 +215,7 @@ fun TripDetailScreen(
                 Text(
                     text = "Carregant el viatge...",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                 )
             }
         } else {
@@ -345,8 +342,8 @@ fun TripDetailScreen(
 
     pendingDeleteExcursion?.let { excursion ->
         ConfirmDeleteDialog(
-            title = "Eliminar excursio?",
-            body = "S'eliminara \"${excursion.title}\" i totes les seves parades. Aquesta accio no es pot desfer.",
+            title = "Eliminar excursió?",
+            body = "S'eliminarà \"${excursion.title}\" i totes les seves parades. Aquesta acció no es pot desfer.",
             onDismiss = { pendingDeleteExcursion = null },
             onConfirm = { pendingDeleteExcursion = null; onDeleteExcursion(excursion) },
         )
@@ -354,8 +351,8 @@ fun TripDetailScreen(
 
     pendingDeleteExcursionStop?.let { stop ->
         ConfirmDeleteDialog(
-            title = "Eliminar parada d'excursio?",
-            body = "S'eliminara \"${stop.locationName}\" de l'excursio. Aquesta accio no es pot desfer.",
+            title = "Eliminar parada d'excursió?",
+            body = "S'eliminarà \"${stop.locationName}\" de l'excursio. Aquesta acció no es pot desfer.",
             onDismiss = { pendingDeleteExcursionStop = null },
             onConfirm = { pendingDeleteExcursionStop = null; onDeleteExcursionStop(stop) },
         )
@@ -464,8 +461,8 @@ private fun TripHeaderCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .background(TripCard)
-            .border(1.dp, TripBorder, RoundedCornerShape(22.dp))
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(22.dp))
             .padding(18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
@@ -479,7 +476,7 @@ private fun TripHeaderCard(
                 text = trip.title,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
                 modifier = Modifier.weight(1f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -522,7 +519,7 @@ private fun TripHeaderCard(
                 onClick = onEditTripClick,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TripAccent,
+                    containerColor = AtlasPrimary,
                     contentColor = Color.White,
                 ),
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
@@ -531,7 +528,7 @@ private fun TripHeaderCard(
             }
             TextButton(
                 onClick = onDeleteTrip,
-                colors = ButtonDefaults.textButtonColors(contentColor = TripError),
+                colors = ButtonDefaults.textButtonColors(contentColor = AtlasError),
             ) {
                 Text("Elimina", fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
@@ -551,8 +548,8 @@ private fun ItineraryLinkSection(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(TripCard)
-            .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -560,7 +557,7 @@ private fun ItineraryLinkSection(
             text = "Itinerari",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.ExtraBold,
-            color = TripInk,
+            color = AtlasOnSurfaceStrong,
         )
         if (linkedItinerary == null) {
             Text(
@@ -570,14 +567,14 @@ private fun ItineraryLinkSection(
                     "Vincula un itinerari per connectar els vols amb aquest viatge."
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                color = TripMuted,
+                color = AtlasOnSurfaceMuted,
             )
             Button(
                 onClick = onOpenItineraryPicker,
                 enabled = availableCount > 0,
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TripAccent,
+                    containerColor = AtlasPrimary,
                     contentColor = Color.White,
                 ),
             ) {
@@ -588,8 +585,8 @@ private fun ItineraryLinkSection(
                 onClick = { onItineraryClick(linkedItinerary.id) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                color = TripBg,
-                border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+                color = AtlasBackground,
+                border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
             ) {
                 Column(
                     modifier = Modifier.padding(12.dp),
@@ -599,13 +596,13 @@ private fun ItineraryLinkSection(
                         text = linkedItinerary.title,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = TripInk,
+                        color = AtlasOnSurfaceStrong,
                     )
                     linkedItinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                         Text(
                             text = notes,
                             style = MaterialTheme.typography.bodySmall,
-                            color = TripMuted,
+                            color = AtlasOnSurfaceMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -613,7 +610,7 @@ private fun ItineraryLinkSection(
                 }
             }
             TextButton(onClick = onUnlinkItinerary) {
-                Text("Desvincula", fontWeight = FontWeight.Bold, color = TripError)
+                Text("Desvincula", fontWeight = FontWeight.Bold, color = AtlasError)
             }
         }
     }
@@ -628,13 +625,13 @@ private fun ItineraryPickerDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
-        containerColor = TripCard,
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = "Vincula itinerari",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
@@ -643,7 +640,7 @@ private fun ItineraryPickerDialog(
                     Text(
                         text = "No hi ha itineraris sense viatge.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TripMuted,
+                        color = AtlasOnSurfaceMuted,
                     )
                 } else {
                     itineraries.forEach { itinerary ->
@@ -651,21 +648,21 @@ private fun ItineraryPickerDialog(
                             onClick = { onSelect(itinerary) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            color = TripBg,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+                            color = AtlasBackground,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
                                     text = itinerary.title,
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = TripInk,
+                                    color = AtlasOnSurfaceStrong,
                                 )
                                 itinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                                     Text(
                                         text = notes,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = TripMuted,
+                                        color = AtlasOnSurfaceMuted,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -679,7 +676,7 @@ private fun ItineraryPickerDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel·la", fontWeight = FontWeight.Bold, color = TripMuted)
+                Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
             }
         },
     )
@@ -687,23 +684,18 @@ private fun ItineraryPickerDialog(
 
 @Composable
 private fun StatusBadge(status: TravelStatus) {
-    val (bg, fg) = when (status) {
-        TravelStatus.COMPLETED   -> TripAccentLight to TripAccent
-        TravelStatus.IN_PROGRESS -> Color(0xFFC6EAD8) to Color(0xFF005C38)
-        TravelStatus.PLANNED     -> TripPlannedLight to TripPlanned
-        TravelStatus.UNKNOWN     -> Color(0xFFE5E7EB) to TripMuted
-    }
+    val colors = status.tripStatusColors()
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
-            .background(bg)
+            .background(colors.container)
             .padding(horizontal = 11.dp, vertical = 4.dp),
     ) {
         Text(
             text = status.toCatalanLabel().uppercase(),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
-            color = fg,
+            color = colors.foreground,
             letterSpacing = 0.12.sp,
         )
     }
@@ -716,14 +708,14 @@ private fun LabeledValue(label: String, value: String) {
             text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
-            color = TripMuted,
+            color = AtlasOnSurfaceMuted,
             letterSpacing = 0.14.sp,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.SemiBold,
-            color = TripInk,
+            color = AtlasOnSurfaceStrong,
         )
     }
 }
@@ -737,8 +729,8 @@ private fun SummaryPill(
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
-            .background(TripBg)
-            .border(1.dp, TripBorder, RoundedCornerShape(14.dp))
+            .background(AtlasBackground)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(14.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -746,14 +738,14 @@ private fun SummaryPill(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
-            color = TripMuted,
+            color = AtlasOnSurfaceMuted,
             letterSpacing = 0.12.sp,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.ExtraBold,
-            color = TripInk,
+            color = AtlasOnSurfaceStrong,
         )
     }
 }
@@ -803,13 +795,13 @@ private fun TripStopsSection(
                     text = "Parades",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TripInk,
+                    color = AtlasOnSurfaceStrong,
                 )
                 if (totalTimelineItems > 0) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(100.dp))
-                            .background(TripInk)
+                            .background(AtlasOnSurfaceStrong)
                             .padding(horizontal = 9.dp, vertical = 2.dp),
                     ) {
                         Text(
@@ -830,7 +822,7 @@ private fun TripStopsSection(
                     onClick = onAddStopClick,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TripInk,
+                        containerColor = AtlasOnSurfaceStrong,
                         contentColor = Color.White,
                     ),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
@@ -846,17 +838,17 @@ private fun TripStopsSection(
                         modifier = Modifier
                             .size(38.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(if (isReorderMode) Color(0xFF005C38) else TripCard)
+                            .background(if (isReorderMode) AtlasPrimary else AtlasSurface)
                             .border(
                                 width = 1.dp,
-                                color = if (isReorderMode) Color(0xFF005C38) else TripBorder,
+                                color = if (isReorderMode) AtlasPrimary else AtlasOutline,
                                 shape = RoundedCornerShape(12.dp),
                             ),
                     ) {
                         Icon(
                             imageVector = if (isReorderMode) Icons.Filled.Check else Icons.Filled.Menu,
                             contentDescription = if (isReorderMode) "Acaba de reordenar" else "Reordena parades",
-                            tint = if (isReorderMode) Color.White else TripMuted,
+                            tint = if (isReorderMode) Color.White else AtlasOnSurfaceMuted,
                             modifier = Modifier.size(18.dp),
                         )
                     }
@@ -926,11 +918,11 @@ private fun TripStopsSection(
             }
             TextButton(
                 onClick = { onAddExcursionClick(null) },
-                colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+                colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
             ) {
                 Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
                 Spacer(Modifier.width(5.dp))
-                Text("Afegeix excursio", fontWeight = FontWeight.ExtraBold)
+                Text("Afegeix excursió", fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -942,8 +934,8 @@ private fun EmptyStopsState(onAddStopClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(TripCard)
-            .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -951,19 +943,19 @@ private fun EmptyStopsState(onAddStopClick: () -> Unit) {
             text = "Sense parades encara.",
             style = MaterialTheme.typography.bodyLarge,
             fontWeight = FontWeight.ExtraBold,
-            color = TripInk,
+            color = AtlasOnSurfaceStrong,
         )
         Text(
             text = "Afegeix els llocs del viatge en ordre. Després els podràs reordenar.",
             style = MaterialTheme.typography.bodyMedium,
-            color = TripMuted,
+            color = AtlasOnSurfaceMuted,
         )
         Spacer(Modifier.height(2.dp))
         Button(
             onClick = onAddStopClick,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = TripAccent,
+                containerColor = AtlasPrimary,
                 contentColor = Color.White,
             ),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
@@ -994,8 +986,8 @@ private fun TripStopRow(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        color = TripCard,
-        border = androidx.compose.foundation.BorderStroke(1.dp, TripBorder),
+        color = AtlasSurface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -1009,14 +1001,14 @@ private fun TripStopRow(
                     modifier = Modifier
                         .size(44.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(if (hasCoords) TripAccentLight else TripBg),
+                        .background(if (hasCoords) AtlasAccentContainer else AtlasBackground),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Place,
                         contentDescription = null,
                         modifier = Modifier.size(20.dp),
-                        tint = if (hasCoords) TripAccent else TripMuted,
+                        tint = if (hasCoords) AtlasPrimary else AtlasOnSurfaceMuted,
                     )
                 }
                 // Position bubble
@@ -1025,7 +1017,7 @@ private fun TripStopRow(
                         .offset(x = 4.dp, y = 4.dp)
                         .size(18.dp)
                         .clip(CircleShape)
-                        .background(TripInk),
+                        .background(AtlasOnSurfaceStrong),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -1047,7 +1039,7 @@ private fun TripStopRow(
                     text = stop.displayTitle ?: stop.locationName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TripInk,
+                    color = AtlasOnSurfaceStrong,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1063,18 +1055,18 @@ private fun TripStopRow(
                         } else {
                             "MANUAL"
                         },
-                        color = if (stop.source == TripStopSource.ITINERARY_GROUP || hasCoords) TripAccent else TripPlanned,
+                        color = if (stop.source == TripStopSource.ITINERARY_GROUP || hasCoords) AtlasPrimary else AtlasPlanned,
                         background = if (stop.source == TripStopSource.ITINERARY_GROUP || hasCoords) {
-                            TripAccentLight
+                            AtlasAccentContainer
                         } else {
-                            TripPlannedLight
+                            AtlasPlannedContainer
                         },
                     )
                     Text(
                         text = countryName,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = TripMuted,
+                        color = AtlasOnSurfaceMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -1082,7 +1074,7 @@ private fun TripStopRow(
                 Text(
                     text = buildStopMeta(stop),
                     style = MaterialTheme.typography.bodySmall,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1099,7 +1091,7 @@ private fun TripStopRow(
                         Icon(
                             Icons.Filled.KeyboardArrowUp,
                             "Mou amunt",
-                            tint = if (canMoveUp) TripInk else TripBorder,
+                            tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline,
                         )
                     }
                     IconButton(
@@ -1110,7 +1102,7 @@ private fun TripStopRow(
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
                             "Mou avall",
-                            tint = if (canMoveDown) TripInk else TripBorder,
+                            tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline,
                         )
                     }
                 }
@@ -1172,12 +1164,12 @@ private fun ExcursionsSection(
                 text = "Excursions",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
             Button(
                 onClick = onAddExcursionClick,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TripInk, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = AtlasOnSurfaceStrong, contentColor = Color.White),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
             ) {
                 Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
@@ -1191,8 +1183,8 @@ private fun ExcursionsSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .background(TripCard)
-                    .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+                    .background(AtlasSurface)
+                    .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -1200,12 +1192,12 @@ private fun ExcursionsSection(
                     text = "Sense excursions.",
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TripInk,
+                    color = AtlasOnSurfaceStrong,
                 )
                 Text(
                     text = "Afegeix rutes secundaries dins del viatge.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                 )
             }
         } else {
@@ -1254,8 +1246,8 @@ private fun ExcursionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(TripCard)
-            .border(1.dp, TripBorder, RoundedCornerShape(18.dp))
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
             .padding(14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -1269,7 +1261,7 @@ private fun ExcursionCard(
                     text = excursion.title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TripInk,
+                    color = AtlasOnSurfaceStrong,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1277,7 +1269,7 @@ private fun ExcursionCard(
                     text = anchorName?.let { "Ancorada a $it" } ?: "Sense parada d'ancoratge",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1286,10 +1278,10 @@ private fun ExcursionCard(
                 if (isReorderMode) {
                     Row {
                         IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) TripInk else TripBorder)
+                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline)
                         }
                         IconButton(onClick = { onMoveExcursionDown(excursion) }, enabled = canMoveDown, modifier = Modifier.size(30.dp)) {
-                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) TripInk else TripBorder)
+                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline)
                         }
                     }
                 } else {
@@ -1305,7 +1297,7 @@ private fun ExcursionCard(
             Text(
                 text = "Encara no hi ha parades d'excursio.",
                 style = MaterialTheme.typography.bodySmall,
-                color = TripMuted,
+                color = AtlasOnSurfaceMuted,
             )
         } else {
             excursion.stops.sortedBy { it.sortOrder }.forEachIndexed { index, stop ->
@@ -1319,16 +1311,16 @@ private fun ExcursionCard(
                         text = "${index + 1}",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.ExtraBold,
-                        color = TripAccent,
+                        color = AtlasPrimary,
                     )
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(stop.locationName, fontWeight = FontWeight.ExtraBold, color = TripInk, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stop.locationName, fontWeight = FontWeight.ExtraBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
                             text = listOfNotNull(
                                 countryName,
                                 stop.dateRange?.let { dateRangeFormatter.format(it) },
                             ).joinToString(" · "),
-                            color = TripMuted,
+                            color = AtlasOnSurfaceMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -1339,14 +1331,14 @@ private fun ExcursionCard(
                             enabled = index > 0,
                             modifier = Modifier.size(28.dp),
                         ) {
-                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (index > 0) TripInk else TripBorder)
+                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (index > 0) AtlasOnSurfaceStrong else AtlasOutline)
                         }
                         IconButton(
                             onClick = { onMoveExcursionStopDown(excursion.id, stop) },
                             enabled = index < excursion.stops.lastIndex,
                             modifier = Modifier.size(28.dp),
                         ) {
-                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (index < excursion.stops.lastIndex) TripInk else TripBorder)
+                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (index < excursion.stops.lastIndex) AtlasOnSurfaceStrong else AtlasOutline)
                         }
                     } else {
                         SmallActionButton("Edita") { onEditExcursionStop(stop) }
@@ -1358,7 +1350,7 @@ private fun ExcursionCard(
 
         if (!isReorderMode) {
             TextButton(onClick = { onAddExcursionStopClick(excursion.id) }) {
-                Text("Afegeix parada d'excursio", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+                Text("Afegeix parada d'excursio", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
             }
         }
     }
@@ -1370,8 +1362,8 @@ private fun SmallActionButton(label: String, onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = TripMuted,
-            containerColor = TripBg,
+            contentColor = AtlasOnSurfaceMuted,
+            containerColor = AtlasBackground,
         ),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
         modifier = Modifier.height(28.dp),
@@ -1396,13 +1388,13 @@ private fun ExcursionDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
-        containerColor = TripCard,
+        containerColor = AtlasSurface,
         title = {
             Text(
-                text = if (draft.excursionId == null) "Afegeix excursio" else "Edita excursio",
+                text = if (draft.excursionId == null) "Afegeix excursió" else "Edita excursio",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
@@ -1420,8 +1412,8 @@ private fun ExcursionDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(TripBg)
-                        .border(1.dp, TripBorder, RoundedCornerShape(12.dp))
+                        .background(AtlasBackground)
+                        .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))
                         .padding(6.dp),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
@@ -1429,7 +1421,7 @@ private fun ExcursionDialog(
                         Text(
                             text = if (draft.anchorTripStopId == null) "Sense ancoratge seleccionat" else "Sense ancoratge",
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (draft.anchorTripStopId == null) TripAccent else TripMuted,
+                            color = if (draft.anchorTripStopId == null) AtlasPrimary else AtlasOnSurfaceMuted,
                         )
                     }
                     stops.forEach { stop ->
@@ -1437,7 +1429,7 @@ private fun ExcursionDialog(
                             Text(
                                 text = stop.displayTitle ?: stop.locationName,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = if (draft.anchorTripStopId == stop.id) TripAccent else TripInk,
+                                color = if (draft.anchorTripStopId == stop.id) AtlasPrimary else AtlasOnSurfaceStrong,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -1454,18 +1446,18 @@ private fun ExcursionDialog(
                     maxLines = 3,
                 )
                 draft.validationError?.let { error ->
-                    Text(error, color = TripError, fontWeight = FontWeight.SemiBold)
+                    Text(error, color = AtlasError, fontWeight = FontWeight.SemiBold)
                 }
             }
         },
         confirmButton = {
             CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
             }
         },
         dismissButton = {
             CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel.la", fontWeight = FontWeight.Bold, color = TripMuted)
+                Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
             }
         },
     )
@@ -1496,13 +1488,13 @@ private fun ExcursionStopDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
-        containerColor = TripCard,
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = if (draft.stopId == null) "Afegeix parada d'excursio" else "Edita parada d'excursio",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
@@ -1517,7 +1509,7 @@ private fun ExcursionStopDialog(
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = null,
-                        tint = TripAccent,
+                        tint = AtlasPrimary,
                         modifier = Modifier.size(16.dp),
                     )
                     DialogSectionLabel("Cerca lloc")
@@ -1539,7 +1531,7 @@ private fun ExcursionStopDialog(
                         enabled = !draft.isSearchingLocation,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TripAccent,
+                            containerColor = AtlasPrimary,
                             contentColor = Color.White,
                         ),
                         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
@@ -1556,12 +1548,12 @@ private fun ExcursionStopDialog(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = TripAccent,
+                            color = AtlasPrimary,
                         )
                         Text(
                             "Cercant llocs...",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TripMuted,
+                            color = AtlasOnSurfaceMuted,
                         )
                     }
                 }
@@ -1571,7 +1563,7 @@ private fun ExcursionStopDialog(
                         text = error,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = TripError,
+                        color = AtlasError,
                     )
                 }
 
@@ -1580,8 +1572,8 @@ private fun ExcursionStopDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(TripBg)
-                            .border(1.dp, TripBorder, RoundedCornerShape(12.dp)),
+                            .background(AtlasBackground)
+                            .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp)),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
                         draft.locationSearchResults.forEach { result ->
@@ -1607,7 +1599,7 @@ private fun ExcursionStopDialog(
                     TextButton(
                         onClick = onUseManualEntryClick,
                         modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+                        colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
                         Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
@@ -1636,7 +1628,7 @@ private fun ExcursionStopDialog(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = TripMuted) },
+                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
                             shape = RoundedCornerShape(14.dp),
                         )
                         OutlinedTextField(
@@ -1645,7 +1637,7 @@ private fun ExcursionStopDialog(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = TripMuted) },
+                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
                             shape = RoundedCornerShape(14.dp),
                         )
                     }
@@ -1653,7 +1645,7 @@ private fun ExcursionStopDialog(
                 Text(
                     text = "Dades de cerca OpenStreetMap contributors",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                 )
 
                 DialogSectionLabel("Data")
@@ -1673,18 +1665,18 @@ private fun ExcursionStopDialog(
                     maxLines = 3,
                 )
                 draft.validationError?.let { error ->
-                    Text(error, color = TripError, fontWeight = FontWeight.SemiBold)
+                    Text(error, color = AtlasError, fontWeight = FontWeight.SemiBold)
                 }
             }
         },
         confirmButton = {
             CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
             }
         },
         dismissButton = {
             CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel.la", fontWeight = FontWeight.Bold, color = TripMuted)
+                Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
             }
         },
     )
@@ -1715,13 +1707,13 @@ private fun TripStopDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
-        containerColor = TripCard,
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = if (draft.isEditing) "Edita parada" else "Afegeix parada",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
@@ -1737,7 +1729,7 @@ private fun TripStopDialog(
                     Icon(
                         imageVector = Icons.Filled.Search,
                         contentDescription = null,
-                        tint = TripAccent,
+                        tint = AtlasPrimary,
                         modifier = Modifier.size(16.dp),
                     )
                     DialogSectionLabel("Cerca lloc")
@@ -1759,7 +1751,7 @@ private fun TripStopDialog(
                         enabled = !draft.isSearchingLocation,
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TripAccent,
+                            containerColor = AtlasPrimary,
                             contentColor = Color.White,
                         ),
                         contentPadding = PaddingValues(horizontal = 13.dp, vertical = 8.dp),
@@ -1776,12 +1768,12 @@ private fun TripStopDialog(
                         CircularProgressIndicator(
                             modifier = Modifier.size(16.dp),
                             strokeWidth = 2.dp,
-                            color = TripAccent,
+                            color = AtlasPrimary,
                         )
                         Text(
                             "Cercant llocs...",
                             style = MaterialTheme.typography.bodySmall,
-                            color = TripMuted,
+                            color = AtlasOnSurfaceMuted,
                         )
                     }
                 }
@@ -1791,7 +1783,7 @@ private fun TripStopDialog(
                         text = error,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = TripError,
+                        color = AtlasError,
                     )
                 }
 
@@ -1800,8 +1792,8 @@ private fun TripStopDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(12.dp))
-                            .background(TripBg)
-                            .border(1.dp, TripBorder, RoundedCornerShape(12.dp)),
+                            .background(AtlasBackground)
+                            .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp)),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
                         draft.locationSearchResults.forEach { result ->
@@ -1827,7 +1819,7 @@ private fun TripStopDialog(
                     TextButton(
                         onClick = onUseManualEntryClick,
                         modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+                        colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
                         Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
@@ -1857,7 +1849,7 @@ private fun TripStopDialog(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = TripMuted) },
+                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
                             shape = RoundedCornerShape(14.dp),
                         )
                         OutlinedTextField(
@@ -1866,7 +1858,7 @@ private fun TripStopDialog(
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = TripMuted) },
+                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
                             shape = RoundedCornerShape(14.dp),
                         )
                     }
@@ -1874,7 +1866,7 @@ private fun TripStopDialog(
                 Text(
                     text = "Dades de cerca © OpenStreetMap contributors",
                     style = MaterialTheme.typography.labelSmall,
-                    color = TripMuted,
+                    color = AtlasOnSurfaceMuted,
                 )
 
                 DialogSectionLabel("Data")
@@ -1898,19 +1890,19 @@ private fun TripStopDialog(
                         text = error,
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = TripError,
+                        color = AtlasError,
                     )
                 }
             }
         },
         confirmButton = {
             CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = TripAccent)
+                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
             }
         },
         dismissButton = {
             CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel·la", fontWeight = FontWeight.Bold, color = TripMuted)
+                Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
             }
         },
     )
@@ -1922,7 +1914,7 @@ private fun DialogSectionLabel(text: String) {
         text = text,
         style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.ExtraBold,
-        color = TripMuted,
+        color = AtlasOnSurfaceMuted,
         letterSpacing = 0.12.sp,
     )
 }
@@ -1949,7 +1941,7 @@ private fun SelectedLocationSummary(
             modifier = Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(TripAccent),
+                .background(AtlasPrimary),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -1967,7 +1959,7 @@ private fun SelectedLocationSummary(
                 text = locationName,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1979,7 +1971,7 @@ private fun SelectedLocationSummary(
                 },
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = TripMuted,
+                color = AtlasOnSurfaceMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1989,7 +1981,7 @@ private fun SelectedLocationSummary(
                 onClick = onEditDetailsClick,
                 modifier = Modifier.height(30.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                colors = ButtonDefaults.textButtonColors(contentColor = TripAccent),
+                colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
             ) {
                 Text("Edita", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
             }
@@ -2009,7 +2001,7 @@ private fun LocationSearchResultRow(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(0.dp),
-        colors = ButtonDefaults.textButtonColors(contentColor = TripInk),
+        colors = ButtonDefaults.textButtonColors(contentColor = AtlasOnSurfaceStrong),
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
     ) {
         Column(
@@ -2026,7 +2018,7 @@ private fun LocationSearchResultRow(
             Text(
                 text = result.displayName,
                 style = MaterialTheme.typography.bodySmall,
-                color = TripMuted,
+                color = AtlasOnSurfaceMuted,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -2089,30 +2081,30 @@ private fun ConfirmDeleteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
-        containerColor = TripCard,
+        containerColor = AtlasSurface,
         title = {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.ExtraBold,
-                color = TripInk,
+                color = AtlasOnSurfaceStrong,
             )
         },
         text = {
             Text(
                 text = body,
                 style = MaterialTheme.typography.bodyMedium,
-                color = TripMuted,
+                color = AtlasOnSurfaceMuted,
             )
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Elimina", fontWeight = FontWeight.ExtraBold, color = TripError)
+                Text("Elimina", fontWeight = FontWeight.ExtraBold, color = AtlasError)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel·la", fontWeight = FontWeight.Bold, color = TripMuted)
+                Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
             }
         },
     )

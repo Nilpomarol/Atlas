@@ -13,6 +13,7 @@ serialization = "1.7.3"
 junit = "4.13.2"
 maplibre = "11.11.0"
 datastore = "1.1.1"
+coil = "2.7.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -35,6 +36,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 junit = { module = "junit:junit", version.ref = "junit" }
 maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

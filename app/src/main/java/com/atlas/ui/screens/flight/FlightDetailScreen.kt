@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -43,6 +44,7 @@ import com.atlas.domain.model.Flight
 import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.flight.FlightDetailUiState
 import com.atlas.presentation.flight.FlightEditorDraftUiState
+import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
@@ -515,7 +517,38 @@ private fun DatetimeRow(label: String, isoValue: String) {
 private fun FlightMetaCard(flight: Flight, resolvedAirlineName: String?) {
     AtlasCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            (resolvedAirlineName ?: flight.airline)?.let { MetaRow("Companyia", it) }
+            flight.airline?.let { iata ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Companyia",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        AirlineLogo(
+                            iata = iata,
+                            modifier = Modifier
+                                .height(24.dp)
+                                .widthIn(max = 80.dp),
+                        )
+                        Text(
+                            text = resolvedAirlineName ?: iata,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AtlasOnSurfaceStrong,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
             flight.flightNumber?.let { MetaRow("Número de vol", it) }
             flight.aircraft?.let { MetaRow("Aeronau", it) }
         }

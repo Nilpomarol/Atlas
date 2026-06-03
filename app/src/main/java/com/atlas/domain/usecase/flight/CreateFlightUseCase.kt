@@ -18,11 +18,14 @@ class CreateFlightUseCase(
         flightNumber: String?,
         aircraft: String?,
         notes: String?,
+        aircraftRegistration: String? = null,
         itineraryGroupId: String? = null,
         sortOrder: Int? = null,
         fetchedFrom: String = "manual",
         externalProvider: String? = null,
         externalId: String? = null,
+        destinationCountsForCountryTracking: Boolean = true,
+        originCountsForCountryTracking: Boolean = false,
     ) {
         flightRepository.createFlight(
             originAirportId = originAirportId,
@@ -35,12 +38,15 @@ class CreateFlightUseCase(
             airline = airline?.trim()?.ifBlank { null },
             flightNumber = flightNumber?.trim()?.ifBlank { null },
             aircraft = aircraft?.trim()?.ifBlank { null },
+            aircraftRegistration = aircraftRegistration?.trim()?.ifBlank { null },
             notes = notes?.trim()?.ifBlank { null },
             itineraryGroupId = itineraryGroupId,
             sortOrder = sortOrder,
             fetchedFrom = fetchedFrom,
             externalProvider = externalProvider,
             externalId = externalId,
+            destinationCountsForCountryTracking = destinationCountsForCountryTracking,
+            originCountsForCountryTracking = originCountsForCountryTracking,
         )
     }
 }

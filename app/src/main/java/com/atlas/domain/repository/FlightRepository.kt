@@ -20,11 +20,14 @@ interface FlightRepository {
         flightNumber: String?,
         aircraft: String?,
         notes: String?,
+        aircraftRegistration: String? = null,
         itineraryGroupId: String?,
         sortOrder: Int?,
         fetchedFrom: String = "manual",
         externalProvider: String? = null,
         externalId: String? = null,
+        destinationCountsForCountryTracking: Boolean = true,
+        originCountsForCountryTracking: Boolean = false,
     )
 
     suspend fun updateFlight(flight: Flight)

@@ -43,6 +43,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -74,6 +76,8 @@ class TripDetailViewModel(
 ) : ViewModel() {
     private val stopDraft = MutableStateFlow(TripStopDraftUiState())
     private val tripDraft = MutableStateFlow(TripEditorDraftUiState())
+    private var stopLocationSearchJob: Job? = null
+    private var excursionStopLocationSearchJob: Job? = null
     private val excursionDraft = MutableStateFlow(ExcursionDraftUiState())
     private val excursionStopDraft = MutableStateFlow(ExcursionStopDraftUiState())
     private val isItineraryPickerOpen = MutableStateFlow(false)
@@ -145,6 +149,7 @@ class TripDetailViewModel(
     }
 
     fun onDismissStopDraft() {
+        stopLocationSearchJob?.cancel()
         stopDraft.update { TripStopDraftUiState() }
     }
 
@@ -264,7 +269,39 @@ class TripDetailViewModel(
                 locationSearchQuery = query,
                 locationSearchError = null,
                 locationSearchResults = emptyList(),
+                isSearchingLocation = false,
             )
+        }
+        stopLocationSearchJob?.cancel()
+        if (query.trim().length < 3) return
+        stopLocationSearchJob = viewModelScope.launch {
+            delay(400)
+            val trimmed = query.trim()
+            stopDraft.update { it.copy(isSearchingLocation = true) }
+            runCatching { searchLocationsUseCase(trimmed) }
+                .onSuccess { results ->
+                    stopDraft.update {
+                        it.copy(
+                            isSearchingLocation = false,
+                            locationSearchResults = results,
+                            lastLocationSearchQuery = trimmed,
+                            isManualEntryVisible = results.isEmpty(),
+                            locationSearchError = if (results.isEmpty()) {
+                                "No s'ha trobat cap lloc. Pots afegir-lo manualment."
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                }
+                .onFailure { error ->
+                    stopDraft.update {
+                        it.copy(
+                            isSearchingLocation = false,
+                            locationSearchError = error.message ?: "La cerca no està disponible ara mateix.",
+                        )
+                    }
+                }
         }
     }
 
@@ -276,56 +313,6 @@ class TripDetailViewModel(
                 locationSearchError = null,
                 validationError = null,
             )
-        }
-    }
-
-    fun onSearchLocationClick() {
-        val query = stopDraft.value.locationSearchQuery.trim()
-        if (query.length < 3) {
-            stopDraft.update { it.copy(locationSearchError = "Escriu almenys 3 caràcters per cercar.") }
-            return
-        }
-        val currentDraft = stopDraft.value
-        if (currentDraft.isSearchingLocation) return
-        if (currentDraft.lastLocationSearchQuery == query && currentDraft.locationSearchResults.isNotEmpty()) {
-            stopDraft.update { it.copy(locationSearchError = null) }
-            return
-        }
-
-        stopDraft.update {
-            it.copy(
-                        isSearchingLocation = true,
-                        locationSearchError = null,
-                        locationSearchResults = emptyList(),
-                        isManualEntryVisible = false,
-                    )
-                }
-
-        viewModelScope.launch {
-            runCatching {
-                searchLocationsUseCase(query)
-            }.onSuccess { results ->
-                stopDraft.update {
-                    it.copy(
-                        isSearchingLocation = false,
-                        locationSearchResults = results,
-                        lastLocationSearchQuery = query,
-                        isManualEntryVisible = results.isEmpty(),
-                        locationSearchError = if (results.isEmpty()) {
-                            "No s'ha trobat cap lloc. Pots afegir-lo manualment."
-                        } else {
-                            null
-                        },
-                    )
-                }
-            }.onFailure { error ->
-                stopDraft.update {
-                    it.copy(
-                        isSearchingLocation = false,
-                        locationSearchError = error.message ?: "La cerca no està disponible ara mateix.",
-                    )
-                }
-            }
         }
     }
 
@@ -561,6 +548,7 @@ class TripDetailViewModel(
     }
 
     fun onDismissExcursionStopDraft() {
+        excursionStopLocationSearchJob?.cancel()
         excursionStopDraft.update { ExcursionStopDraftUiState() }
     }
 
@@ -570,57 +558,39 @@ class TripDetailViewModel(
                 locationSearchQuery = query,
                 locationSearchError = null,
                 locationSearchResults = emptyList(),
+                isSearchingLocation = false,
             )
         }
-    }
-
-    fun onSearchExcursionStopLocationClick() {
-        val query = excursionStopDraft.value.locationSearchQuery.trim()
-        if (query.length < 3) {
-            excursionStopDraft.update { it.copy(locationSearchError = "Escriu almenys 3 caracters per cercar.") }
-            return
-        }
-        val currentDraft = excursionStopDraft.value
-        if (currentDraft.isSearchingLocation) return
-        if (currentDraft.lastLocationSearchQuery == query && currentDraft.locationSearchResults.isNotEmpty()) {
-            excursionStopDraft.update { it.copy(locationSearchError = null) }
-            return
-        }
-
-        excursionStopDraft.update {
-            it.copy(
-                isSearchingLocation = true,
-                locationSearchError = null,
-                locationSearchResults = emptyList(),
-                isManualEntryVisible = false,
-            )
-        }
-
-        viewModelScope.launch {
-            runCatching {
-                searchLocationsUseCase(query)
-            }.onSuccess { results ->
-                excursionStopDraft.update {
-                    it.copy(
-                        isSearchingLocation = false,
-                        locationSearchResults = results,
-                        lastLocationSearchQuery = query,
-                        isManualEntryVisible = results.isEmpty(),
-                        locationSearchError = if (results.isEmpty()) {
-                            "No s'ha trobat cap lloc. Pots afegir-lo manualment."
-                        } else {
-                            null
-                        },
-                    )
+        excursionStopLocationSearchJob?.cancel()
+        if (query.trim().length < 3) return
+        excursionStopLocationSearchJob = viewModelScope.launch {
+            delay(400)
+            val trimmed = query.trim()
+            excursionStopDraft.update { it.copy(isSearchingLocation = true) }
+            runCatching { searchLocationsUseCase(trimmed) }
+                .onSuccess { results ->
+                    excursionStopDraft.update {
+                        it.copy(
+                            isSearchingLocation = false,
+                            locationSearchResults = results,
+                            lastLocationSearchQuery = trimmed,
+                            isManualEntryVisible = results.isEmpty(),
+                            locationSearchError = if (results.isEmpty()) {
+                                "No s'ha trobat cap lloc. Pots afegir-lo manualment."
+                            } else {
+                                null
+                            },
+                        )
+                    }
                 }
-            }.onFailure { error ->
-                excursionStopDraft.update {
-                    it.copy(
-                        isSearchingLocation = false,
-                        locationSearchError = error.message ?: "La cerca no esta disponible ara mateix.",
-                    )
+                .onFailure { error ->
+                    excursionStopDraft.update {
+                        it.copy(
+                            isSearchingLocation = false,
+                            locationSearchError = error.message ?: "La cerca no està disponible ara mateix.",
+                        )
+                    }
                 }
-            }
         }
     }
 

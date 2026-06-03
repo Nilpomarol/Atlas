@@ -111,6 +111,7 @@ fun ItineraryDetailScreen(
     onAirlineSelected: (com.atlas.domain.model.Airline) -> Unit,
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
+    onAircraftRegistrationChanged: (String) -> Unit,
     onFlightNotesChanged: (String) -> Unit,
     onSaveFlightDraft: () -> Unit,
 ) {
@@ -270,6 +271,7 @@ fun ItineraryDetailScreen(
             onAirlineSelected = onAirlineSelected,
             onFlightNumberChanged = onFlightNumberChanged,
             onAircraftChanged = onAircraftChanged,
+            onAircraftRegistrationChanged = onAircraftRegistrationChanged,
             onNotesChanged = onFlightNotesChanged,
             onSave = onSaveFlightDraft,
         )

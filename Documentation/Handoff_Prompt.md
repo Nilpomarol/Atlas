@@ -4,12 +4,11 @@
 
 * **Last updated:** 2026-06-03
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
-* **v3.0 M1 (Flight API) is complete and committed** (`5e07f15` 2026-06-03). Room DB is version `14`.
-* **v3.0 M2 (Airlines) is complete and committed** across three commits:
-  * `d1cdff7` — airlines dataset + name resolution in flight screens. Room DB v15.
-  * `0cfd5a8` — airline logos via avs.io (Coil 2.7.0).
-  * `16554a8` — airline autocomplete in flight editor (type to suggest, stores IATA).
-* **Current phase:** v3.0 — Flight Foundations. Next practical work: Aircraft type dataset (see §Direction below).
+* **v3.0 is complete and committed.** All 7 milestones are done:
+  * M1 (`5e07f15`) — Flight API integration. Room DB v14.
+  * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
+  * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
+* **Current phase:** v3.1 — Visual redesign (trips + flights). See §Direction below.
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -38,11 +37,13 @@
 ## KEY DECISIONS & GROUND TRUTHS
 
 ### Data model
-* **Room DB version: 15.** Migration chain: 1→2→…→14→15. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries).
+* **Room DB version: 19.** Migration chain: 1→2→…→18→19. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries). Migration 15→16 creates the `aircraft_types` table. Migration 16→17 adds aircraft engine metadata, `aircraft_registration`, and the tail-number `aircraft` cache table. Migration 17→18 adds nullable UTC datetime columns and `distance_km` to `flights`. Migration 18→19 adds `destination_counts_for_country_tracking` (default 1) and `origin_counts_for_country_tracking` (default 0) to `flights`.
 * **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults. The three new flight provenance columns (`fetched_from`, `external_provider`, `external_id`) are not yet included in the backup — they are operational metadata.
 * **Country dataset:** 244 entries, version `2026.1`. Importer inserts `parent_iso2 = null` entries first to satisfy the self-referencing FK.
 * **Airport dataset:** 5,931 airports, version `2026.2`. 141 entries skipped (null id / unknown country / null city).
 * **Airline dataset:** 101 major airlines, version `2026.1`. `iata` is the primary key. No FK to countries (country is display metadata only).
+* **Aircraft type dataset:** 50 common commercial aircraft, version `2026.2`. `code` is the primary key. Lookup supports ICAO/common code plus normalized aliases/model names. Type rows include `num_engines` and `engine_type`.
+* **Aircraft cache:** exact aircraft rows are keyed by normalized tail number in `aircraft`. AeroDataBox aircraft lookup is cache-first and called at most once per stored registration unless a future refresh feature is added.
 
 ### Flights
 * Four datetime fields stored as nullable ISO strings `"YYYY-MM-DDTHH:mm"` (scheduled/actual × departure/arrival). No separate year/month/day columns.
@@ -51,7 +52,10 @@
 * Deleting a group sets its flights back to solo (FK `SET NULL`). Deleting an itinerary manually clears group refs before deleting.
 * **Flight country derivation is implemented.** Solo flights: COMPLETED → destination visited; PLANNED → destination planned; IN_PROGRESS/UNKNOWN → no effect. Itinerary groups use the layover-safe endpoint rule (see §Critical Reference Logic).
 * `FlightDetailScreen` is navigable from the flight list **and** from itinerary detail flight rows. Route: `flights/{flightId}`.
-* **FlightDetailScreen hero currently uses MapLibre** (status-colored origin/destination markers, route line, group context airports as ghost nodes). This will be replaced with a Canvas polygon map in v3.0 M4.
+* **FlightDetailScreen hero uses the offline Canvas geo renderer** (Natural Earth polygons, route arc, and group context airports as ghost nodes).
+* **Flight time display rule:** airport-local time is primary. UTC is derived for storage/stats and shown only as muted secondary detail when available. Departures use origin airport timezone; arrivals use destination airport timezone.
+* **Flight distance:** `distance_km` is a nullable derived value calculated from origin/destination airport coordinates using great-circle distance. Existing rows migrated to v18 start null until edited/recreated/imported with the new field.
+* **Country tracking flags** (added migration 18→19): `destinationCountsForCountryTracking: Boolean = true` and `originCountsForCountryTracking: Boolean = false` on `FlightEntity` and `Flight`. `CountryStateDerivationService` checks these for both solo flights and the derived flight of each itinerary group. No UI yet — all flights use defaults.
 * **Flight provenance fields** (added migration 13→14): `fetched_from TEXT NOT NULL DEFAULT 'manual'`, `external_provider TEXT`, `external_id TEXT`. These are on `FlightEntity` and `Flight` domain model; carried through `FlightEditorDraftUiState` as hidden fields; preserved on edit.
 * **Status inference:** `inferFlightStatus(scheduledDepartureAt)` in `domain/util/FlightStatusInference.kt` — future→PLANNED, today→IN_PROGRESS, past→COMPLETED, null→null. Called on departure date change (new flights only) and when applying an API result.
 
@@ -79,10 +83,12 @@
 * `AtlasMapView` composable (`ui/components/map/AtlasMapView.kt`) — lifecycle-aware MapLibre wrapper, reused across all map surfaces.
 * `TripMapPreview` — MapLibre map; blue main-stop markers, amber generated itinerary-stop markers, purple excursion markers; separate LineLayer for main and excursion routes; camera fits all points.
 * `CountryMapHero` — blank MapLibre parchment style (inline JSON, no tiles/roads/labels), state-colored marker and hollow capital marker. Ready for polygon layer in v4.0.
-* **Planned v3.0 change:** FlightDetailScreen hero switches from MapLibre to a Canvas-drawn world polygon map (simplified continent outlines + great-circle arc). TripMapPreview keeps MapLibre.
+* `ui/components/geo/*` — reusable offline vector geo foundation for flight, country, and dashboard maps. It loads bundled Natural Earth 1:110m admin-0 country polygons (`assets/geo/ne_110m_admin_0_countries.geojson`), parses country ISO/continent metadata, fits a Mercator-like projection to route or world viewports, and draws graticules, country polygons, great-circle arcs, and markers with Compose Canvas.
+* `FlightDetailScreen` hero now uses `FlightRouteGeoMap` instead of MapLibre. The route viewport fits the current origin/destination, while previous/next itinerary context segments draw as dashed clipped arcs.
+* Natural Earth source: `https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson` (public domain dataset).
 
 ### Trips & stops
-* Location search is currently **explicit** (user taps a search button). Auto-suggest (debounced live suggestions) is planned for v3.0.
+* Location search uses **debounced auto-suggest** (min 3 chars, 400 ms delay) — no explicit search button. Results appear inline as the user types in both the trip stop and excursion stop dialogs.
 * Stop modal behavior: search-first; API-filled fields hidden after result selection; manual fields appear only on no result, manual entry, or edit-details. Date/notes always visible.
 * `FlexibleDateRangeField` for year/month/day ranges. `DateTimePickerField` for date+time (chained DatePicker → TimePicker → `"YYYY-MM-DDTHH:mm"`).
 * Trip stops have `source` (MANUAL / ITINERARY_GROUP), `isVisible`, `displayTitle`. Generated ITINERARY_GROUP stops are read-only from the manual stop editor.
@@ -98,8 +104,8 @@
 
 ## WHAT EXISTS IN THE CODEBASE
 
-### Domain entities (Room DB v15)
-`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity`, `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`
+### Domain entities (Room DB v19)
+`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity`, `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `AircraftTypeEntity`, `AircraftEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`
 
 ### Screens and routes
 * **Countries:** list, detail (state-colored hero, timeline, map hero), log editor
@@ -196,27 +202,20 @@ dataset.countries
 
 ## DIRECTION FOR NEXT AI AGENT
 
-v2.0 is fully done. v3.0 M1 and M2 (including logos and autocomplete) are done. Continue with **v3.0 M3 — Aircraft type dataset**.
+v3.0 is fully done. Continue with **v3.1 — Visual redesign (trips + flights)**.
 
 ### Completed in v3.0
 1. ✅ **Flight API integration** — AeroDataBox lookup, DataStore API key, `FlightEditorDialog` search section, status inference. Room DB v14.
 2. ✅ **Airlines** — dataset (101 airlines), name resolution, logos via avs.io (Coil), autocomplete in all three flight editors (FlightList, FlightDetail, ItineraryDetail). `airlineQuery`/`airlineIata` draft pattern. Room DB v15.
+3. ✅ **Aircraft type dataset + tail cache** — aircraft type dataset (50 aircraft), Room import, engine metadata, flight `aircraft_registration`, AeroDataBox tail-number cache, and flight detail exact-aircraft stats. Room DB v17.
+4. ✅ **Offline geo foundation + Canvas flight map** — `FlightDetailScreen` hero uses Compose Canvas with Natural Earth country polygons, fitted projection, softened route arcs, and context markers. `TripMapPreview` keeps MapLibre.
+5. ✅ **UTC flight fields + distance flown** — DB v18 adds `scheduled_departure_utc`, `scheduled_arrival_utc`, `actual_departure_utc`, `actual_arrival_utc`, and `distance_km`; repository derives them on create/update; detail shows local time first with UTC secondary and distance metadata.
+6. ✅ **Auto-suggest location search** — replaced explicit search-button flow in trip stop and excursion stop dialogs with debounced live suggestions (min 3 chars, 400 ms). Leading icon shows spinner while searching.
+7. ✅ **Country tracking flags** — `destination_counts_for_country_tracking` (default true) + `origin_counts_for_country_tracking` (default false) on `FlightEntity` (DB v19). `CountryStateDerivationService` respects both flags for solo flights and itinerary group derived flights.
 
-### Remaining v3.0 work (in order)
+### Next: v3.1 and beyond
 
-3. **Aircraft type dataset** ← start here
-   — `assets/data/aircraft_types.json` → `AircraftTypeEntity` → resolve display name + category in `FlightDetailScreen`. Follow the same dataset importer pattern as airports/airlines.
-
-4. **Polygon/Canvas flight map** — replace MapLibre in `FlightDetailScreen` hero with Compose Canvas: simplified continent outline polygons + great-circle arc between airports. `TripMapPreview` keeps MapLibre.
-
-5. **UTC/local flight times** — extend `FlightEntity` with four UTC counterpart columns; calculate from local time using `AirportEntity.timezone`; display toggle in `FlightDetailScreen`.
-
-6. **Auto-suggest location search** — replace explicit search-button flow in trip stop and excursion stop dialogs with debounced live suggestions as user types.
-
-7. **Country tracking flags** — `destination_counts_for_country_tracking` (default true) + `origin_counts_for_country_tracking` (default false) on `FlightEntity`; update `CountryStateDerivationService`.
-
-After v3.0, the plan is:
-- **v3.1** Visual redesign (trips + flights) — after all v3.0 content is in place
+- **v3.1** Visual redesign (trips + flights) ← next
 - **v3.2** Per-stop photos (trip stops + excursion stops)
 - **v4.0** Country depth (stats dataset, stats page, real country map)
 

@@ -41,7 +41,45 @@ data class AeroDataBoxAirlineDto(
 @Serializable
 data class AeroDataBoxAircraftDto(
     val model: String? = null,
+    val modeS: String? = null,
     @SerialName("reg") val registration: String? = null,
+)
+
+@Serializable
+data class AeroDataBoxAircraftDetailsDto(
+    val id: Long? = null,
+    @SerialName("reg") val registration: String? = null,
+    val active: Boolean? = null,
+    val serial: String? = null,
+    val hexIcao: String? = null,
+    val airlineName: String? = null,
+    val iataType: String? = null,
+    val iataCodeShort: String? = null,
+    val icaoCode: String? = null,
+    val model: String? = null,
+    val modelCode: String? = null,
+    val numSeats: Int? = null,
+    val rolloutDate: String? = null,
+    val firstFlightDate: String? = null,
+    val deliveryDate: String? = null,
+    val registrationDate: String? = null,
+    val typeName: String? = null,
+    val numEngines: Int? = null,
+    val engineType: String? = null,
+    val isFreighter: Boolean? = null,
+    val productionLine: String? = null,
+    val ageYears: Double? = null,
+    val verified: Boolean? = null,
+    val image: AeroDataBoxResourceDto? = null,
+)
+
+@Serializable
+data class AeroDataBoxResourceDto(
+    val url: String? = null,
+    val webUrl: String? = null,
+    val author: String? = null,
+    val title: String? = null,
+    val license: String? = null,
 )
 
 /**

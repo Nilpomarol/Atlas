@@ -7,4 +7,6 @@ object DatasetConstants {
     const val AIRPORTS_VERSION = "2026.2"
     const val AIRLINES_KEY = "airlines"
     const val AIRLINES_VERSION = "2026.1"
+    const val AIRCRAFT_TYPES_KEY = "aircraft_types"
+    const val AIRCRAFT_TYPES_VERSION = "2026.2"
 }

@@ -3,12 +3,15 @@ package com.atlas.app
 import android.content.Context
 import androidx.room.Room
 import com.atlas.data.api.AeroDataBoxClient
+import com.atlas.data.dataset.AircraftTypeDatasetImporter
 import com.atlas.data.dataset.AirlineDatasetImporter
 import com.atlas.data.dataset.AirportDatasetImporter
 import com.atlas.data.dataset.CountryDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.local.database.AtlasDatabase
+import com.atlas.data.repository.AircraftTypeRepositoryImpl
+import com.atlas.data.repository.AircraftRepositoryImpl
 import com.atlas.data.repository.AirlineRepositoryImpl
 import com.atlas.data.repository.AirportRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
@@ -17,6 +20,9 @@ import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
 import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
+import com.atlas.domain.repository.AircraftTypeRepository
+import com.atlas.domain.repository.AircraftApiClient
+import com.atlas.domain.repository.AircraftRepository
 import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
@@ -32,6 +38,7 @@ import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.domain.service.ItineraryGeneratedStopService
 import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
+import com.atlas.domain.usecase.aircraft.LookupAircraftUseCase
 import com.atlas.domain.usecase.country.AddCountryLogUseCase
 import com.atlas.domain.usecase.country.DeleteCountryLogUseCase
 import com.atlas.domain.usecase.country.SetCurrentlyLivingCountryUseCase
@@ -97,6 +104,10 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_12_13)
         .addMigrations(AtlasDatabase.MIGRATION_13_14)
         .addMigrations(AtlasDatabase.MIGRATION_14_15)
+        .addMigrations(AtlasDatabase.MIGRATION_15_16)
+        .addMigrations(AtlasDatabase.MIGRATION_16_17)
+        .addMigrations(AtlasDatabase.MIGRATION_17_18)
+        .addMigrations(AtlasDatabase.MIGRATION_18_19)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -110,6 +121,11 @@ class AtlasAppContainer(context: Context) {
     )
 
     private val airlineDatasetImporter = AirlineDatasetImporter(
+        context = applicationContext,
+        database = database,
+    )
+
+    private val aircraftTypeDatasetImporter = AircraftTypeDatasetImporter(
         context = applicationContext,
         database = database,
     )
@@ -134,6 +150,14 @@ class AtlasAppContainer(context: Context) {
         database = database,
     )
 
+    val aircraftTypeRepository: AircraftTypeRepository = AircraftTypeRepositoryImpl(
+        database = database,
+    )
+
+    val aircraftRepository: AircraftRepository = AircraftRepositoryImpl(
+        database = database,
+    )
+
     val flightRepository: FlightRepository = FlightRepositoryImpl(
         database = database,
     )
@@ -149,7 +173,9 @@ class AtlasAppContainer(context: Context) {
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
 
     val apiKeyRepository: ApiKeyRepository = ApiKeyPreferencesDataSource(applicationContext)
-    val flightApiClient: FlightApiClient = AeroDataBoxClient()
+    private val aeroDataBoxClient = AeroDataBoxClient()
+    val flightApiClient: FlightApiClient = aeroDataBoxClient
+    val aircraftApiClient: AircraftApiClient = aeroDataBoxClient
 
     val countryStateDerivationService = CountryStateDerivationService()
     val itineraryGeneratedStopService = ItineraryGeneratedStopService()
@@ -230,6 +256,12 @@ class AtlasAppContainer(context: Context) {
 
     val lookupFlightUseCase = LookupFlightUseCase(
         flightApiClient = flightApiClient,
+        apiKeyRepository = apiKeyRepository,
+    )
+
+    val lookupAircraftUseCase = LookupAircraftUseCase(
+        aircraftRepository = aircraftRepository,
+        aircraftApiClient = aircraftApiClient,
         apiKeyRepository = apiKeyRepository,
     )
 
@@ -314,6 +346,7 @@ class AtlasAppContainer(context: Context) {
             countryDatasetImporter.importIfNeeded()
             airportDatasetImporter.importIfNeeded()
             airlineDatasetImporter.importIfNeeded()
+            aircraftTypeDatasetImporter.importIfNeeded()
         }
     }
 

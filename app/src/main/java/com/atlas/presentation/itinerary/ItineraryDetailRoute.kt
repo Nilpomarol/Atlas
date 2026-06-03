@@ -84,6 +84,7 @@ fun ItineraryDetailRoute(
         onAirlineSelected = vm::onAirlineSelected,
         onFlightNumberChanged = vm::onFlightNumberChanged,
         onAircraftChanged = vm::onAircraftChanged,
+        onAircraftRegistrationChanged = vm::onAircraftRegistrationChanged,
         onFlightNotesChanged = vm::onFlightNotesChanged,
         onSaveFlightDraft = vm::onSaveFlightDraft,
     )

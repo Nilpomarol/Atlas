@@ -99,6 +99,7 @@ fun FlightEditorDialog(
     onAirlineSelected: (Airline) -> Unit,
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
+    onAircraftRegistrationChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
     /** Null = hide the API search section (e.g. when opened from itinerary detail) */
     apiSearchCallbacks: FlightApiSearchCallbacks? = null,
@@ -218,6 +219,14 @@ fun FlightEditorDialog(
                     value = draft.aircraft,
                     onValueChange = onAircraftChanged,
                     label = { Text("Aeronau (opcional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                )
+
+                OutlinedTextField(
+                    value = draft.aircraftRegistration,
+                    onValueChange = onAircraftRegistrationChanged,
+                    label = { Text("Matrícula (opcional)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                 )
@@ -457,4 +466,5 @@ private fun com.atlas.domain.model.FlightApiPrefill.toDisplayString(): String = 
     append("$origin → $dest")
     if (scheduledDepartureAt != null) append("  ·  ${scheduledDepartureAt.take(16)}")
     if (aircraftModel != null) append("\n$aircraftModel")
+    if (aircraftRegistration != null) append("\nMatrícula: $aircraftRegistration")
 }

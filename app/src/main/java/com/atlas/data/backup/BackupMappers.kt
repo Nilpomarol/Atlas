@@ -168,7 +168,11 @@ fun FlightEntity.toBackupV2(): BackupFlightV2 =
         status = status, scheduledDepartureAt = scheduledDepartureAt,
         scheduledArrivalAt = scheduledArrivalAt, actualDepartureAt = actualDepartureAt,
         actualArrivalAt = actualArrivalAt, airline = airline, flightNumber = flightNumber,
-        aircraft = aircraft, notes = notes, itineraryGroupId = itineraryGroupId,
+        scheduledDepartureUtc = scheduledDepartureUtc, scheduledArrivalUtc = scheduledArrivalUtc,
+        actualDepartureUtc = actualDepartureUtc, actualArrivalUtc = actualArrivalUtc,
+        distanceKm = distanceKm,
+        aircraft = aircraft, aircraftRegistration = aircraftRegistration,
+        notes = notes, itineraryGroupId = itineraryGroupId,
         sortOrder = sortOrder, createdAt = createdAt, updatedAt = updatedAt,
     )
 
@@ -178,7 +182,11 @@ fun BackupFlightV2.toEntity(): FlightEntity =
         status = status, scheduledDepartureAt = scheduledDepartureAt,
         scheduledArrivalAt = scheduledArrivalAt, actualDepartureAt = actualDepartureAt,
         actualArrivalAt = actualArrivalAt, airline = airline, flightNumber = flightNumber,
-        aircraft = aircraft, notes = notes, itineraryGroupId = itineraryGroupId,
+        scheduledDepartureUtc = scheduledDepartureUtc, scheduledArrivalUtc = scheduledArrivalUtc,
+        actualDepartureUtc = actualDepartureUtc, actualArrivalUtc = actualArrivalUtc,
+        distanceKm = distanceKm,
+        aircraft = aircraft, aircraftRegistration = aircraftRegistration,
+        notes = notes, itineraryGroupId = itineraryGroupId,
         sortOrder = sortOrder, createdAt = createdAt, updatedAt = updatedAt,
     )
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
+import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -31,6 +32,7 @@ class FlightDetailViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     private val airportRepository: AirportRepository,
+    private val airlineRepository: AirlineRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
     private val updateFlightUseCase: UpdateFlightUseCase,
     private val deleteFlightUseCase: DeleteFlightUseCase,
@@ -59,6 +61,9 @@ class FlightDetailViewModel(
 
         val origin = airportRepository.getAirportById(flight.originAirportId)
         val destination = airportRepository.getAirportById(flight.destinationAirportId)
+        val resolvedAirlineName = flight.airline?.let { iata ->
+            airlineRepository.getAirlineByIata(iata.uppercase())?.name ?: iata
+        }
 
         val groupId = flight.itineraryGroupId
         if (groupId == null) {
@@ -66,6 +71,7 @@ class FlightDetailViewModel(
                 flight = flight,
                 originAirport = origin,
                 destinationAirport = destination,
+                resolvedAirlineName = resolvedAirlineName,
             )
         }
 
@@ -94,6 +100,7 @@ class FlightDetailViewModel(
             prevContextAirport = prevContextAirport,
             nextContextAirport = nextContextAirport,
             groupPositionLabel = positionLabel,
+            resolvedAirlineName = resolvedAirlineName,
         )
     }
 
@@ -110,6 +117,7 @@ class FlightDetailViewModel(
             prevContextAirport = data.prevContextAirport,
             nextContextAirport = data.nextContextAirport,
             groupPositionLabel = data.groupPositionLabel,
+            resolvedAirlineName = data.resolvedAirlineName,
             draft = draft,
             originSearchResults = originRes,
             destinationSearchResults = destRes,
@@ -218,6 +226,7 @@ class FlightDetailViewModel(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
         private val airportRepository: AirportRepository,
+        private val airlineRepository: AirlineRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
         private val updateFlightUseCase: UpdateFlightUseCase,
         private val deleteFlightUseCase: DeleteFlightUseCase,
@@ -228,6 +237,7 @@ class FlightDetailViewModel(
             flightRepository = flightRepository,
             itineraryRepository = itineraryRepository,
             airportRepository = airportRepository,
+            airlineRepository = airlineRepository,
             searchAirportsUseCase = searchAirportsUseCase,
             updateFlightUseCase = updateFlightUseCase,
             deleteFlightUseCase = deleteFlightUseCase,
@@ -242,6 +252,7 @@ private data class FlightDetailCoreData(
     val prevContextAirport: Airport? = null,
     val nextContextAirport: Airport? = null,
     val groupPositionLabel: String? = null,
+    val resolvedAirlineName: String? = null,
 )
 
 data class FlightDetailUiState(
@@ -251,6 +262,7 @@ data class FlightDetailUiState(
     val prevContextAirport: Airport? = null,
     val nextContextAirport: Airport? = null,
     val groupPositionLabel: String? = null,
+    val resolvedAirlineName: String? = null,
     val draft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
     val originSearchResults: List<Airport> = emptyList(),
     val destinationSearchResults: List<Airport> = emptyList(),

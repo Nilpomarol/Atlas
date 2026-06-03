@@ -3,11 +3,13 @@ package com.atlas.app
 import android.content.Context
 import androidx.room.Room
 import com.atlas.data.api.AeroDataBoxClient
+import com.atlas.data.dataset.AirlineDatasetImporter
 import com.atlas.data.dataset.AirportDatasetImporter
 import com.atlas.data.dataset.CountryDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.local.database.AtlasDatabase
+import com.atlas.data.repository.AirlineRepositoryImpl
 import com.atlas.data.repository.AirportRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
 import com.atlas.data.repository.BackupRepositoryImpl
@@ -15,6 +17,7 @@ import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
 import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
+import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
@@ -92,6 +95,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_11_12)
         .addMigrations(AtlasDatabase.MIGRATION_12_13)
         .addMigrations(AtlasDatabase.MIGRATION_13_14)
+        .addMigrations(AtlasDatabase.MIGRATION_14_15)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -100,6 +104,11 @@ class AtlasAppContainer(context: Context) {
     )
 
     private val airportDatasetImporter = AirportDatasetImporter(
+        context = applicationContext,
+        database = database,
+    )
+
+    private val airlineDatasetImporter = AirlineDatasetImporter(
         context = applicationContext,
         database = database,
     )
@@ -117,6 +126,10 @@ class AtlasAppContainer(context: Context) {
     )
 
     val airportRepository: AirportRepository = AirportRepositoryImpl(
+        database = database,
+    )
+
+    val airlineRepository: AirlineRepository = AirlineRepositoryImpl(
         database = database,
     )
 
@@ -295,6 +308,7 @@ class AtlasAppContainer(context: Context) {
         applicationScope.launch {
             countryDatasetImporter.importIfNeeded()
             airportDatasetImporter.importIfNeeded()
+            airlineDatasetImporter.importIfNeeded()
         }
     }
 

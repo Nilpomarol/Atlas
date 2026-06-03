@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.atlas.data.local.dao.AirlineDao
 import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
 import com.atlas.data.local.dao.CountryUserStateDao
@@ -14,6 +15,7 @@ import com.atlas.data.local.dao.FlightDao
 import com.atlas.data.local.dao.ItineraryDao
 import com.atlas.data.local.dao.TripDao
 import com.atlas.data.local.dao.TripStopDao
+import com.atlas.data.local.entity.AirlineEntity
 import com.atlas.data.local.entity.AirportEntity
 import com.atlas.data.local.entity.ExcursionEntity
 import com.atlas.data.local.entity.ExcursionStopEntity
@@ -36,13 +38,14 @@ import com.atlas.data.local.entity.TripStopEntity
         TripEntity::class,
         TripStopEntity::class,
         AirportEntity::class,
+        AirlineEntity::class,
         FlightEntity::class,
         ItineraryEntity::class,
         ItineraryGroupEntity::class,
         ExcursionEntity::class,
         ExcursionStopEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -53,6 +56,7 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun tripDao(): TripDao
     abstract fun tripStopDao(): TripStopDao
     abstract fun airportDao(): AirportDao
+    abstract fun airlineDao(): AirlineDao
     abstract fun flightDao(): FlightDao
     abstract fun itineraryDao(): ItineraryDao
     abstract fun excursionDao(): ExcursionDao
@@ -630,6 +634,24 @@ abstract class AtlasDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `flights` ADD COLUMN `fetched_from` TEXT NOT NULL DEFAULT 'manual'")
                 db.execSQL("ALTER TABLE `flights` ADD COLUMN `external_provider` TEXT")
                 db.execSQL("ALTER TABLE `flights` ADD COLUMN `external_id` TEXT")
+            }
+        }
+
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `airlines` (
+                        `iata` TEXT NOT NULL,
+                        `icao` TEXT,
+                        `name` TEXT NOT NULL,
+                        `country_iso2` TEXT,
+                        PRIMARY KEY(`iata`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airlines_icao` ON `airlines` (`icao`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_airlines_name` ON `airlines` (`name`)")
             }
         }
     }

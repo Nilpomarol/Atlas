@@ -471,7 +471,7 @@ private fun FlightCard(
 
             val meta = buildList {
                 flight.scheduledDepartureAt?.let { add(it.take(10)) }
-                flight.airline?.let { add(it) }
+                (item.resolvedAirlineName ?: flight.airline)?.let { add(it) }
                 flight.flightNumber?.let { add(it) }
             }.joinToString(" · ")
 

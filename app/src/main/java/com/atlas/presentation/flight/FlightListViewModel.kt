@@ -9,6 +9,7 @@ import com.atlas.domain.model.FlightApiResult
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
+import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -41,6 +42,7 @@ class FlightListViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     private val airportRepository: AirportRepository,
+    private val airlineRepository: AirlineRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
     private val createFlightUseCase: CreateFlightUseCase,
     private val updateFlightUseCase: UpdateFlightUseCase,
@@ -68,12 +70,16 @@ class FlightListViewModel(
 
     private val flightItems = flightRepository.observeFlights().map { flights ->
         flights.filter { it.itineraryGroupId == null }.map { flight ->
+            val resolvedAirlineName = flight.airline?.let { iata ->
+                airlineRepository.getAirlineByIata(iata.uppercase())?.name ?: iata
+            }
             FlightListItemUiState(
                 flight = flight,
                 originLabel = airportRepository.getAirportById(flight.originAirportId)?.shortLabel()
                     ?: flight.originAirportId.uppercase(),
                 destinationLabel = airportRepository.getAirportById(flight.destinationAirportId)?.shortLabel()
                     ?: flight.destinationAirportId.uppercase(),
+                resolvedAirlineName = resolvedAirlineName,
             )
         }
     }
@@ -399,6 +405,7 @@ class FlightListViewModel(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
         private val airportRepository: AirportRepository,
+        private val airlineRepository: AirlineRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
         private val createFlightUseCase: CreateFlightUseCase,
         private val updateFlightUseCase: UpdateFlightUseCase,
@@ -413,6 +420,7 @@ class FlightListViewModel(
             flightRepository = flightRepository,
             itineraryRepository = itineraryRepository,
             airportRepository = airportRepository,
+            airlineRepository = airlineRepository,
             searchAirportsUseCase = searchAirportsUseCase,
             createFlightUseCase = createFlightUseCase,
             updateFlightUseCase = updateFlightUseCase,
@@ -438,6 +446,7 @@ data class FlightListItemUiState(
     val flight: Flight,
     val originLabel: String,
     val destinationLabel: String,
+    val resolvedAirlineName: String? = null,
 )
 
 data class ItinerarySummaryUiState(

@@ -21,6 +21,7 @@ fun FlightDetailRoute(
             flightRepository = app.container.flightRepository,
             itineraryRepository = app.container.itineraryRepository,
             airportRepository = app.container.airportRepository,
+            airlineRepository = app.container.airlineRepository,
             searchAirportsUseCase = app.container.searchAirportsUseCase,
             updateFlightUseCase = app.container.updateFlightUseCase,
             deleteFlightUseCase = app.container.deleteFlightUseCase,

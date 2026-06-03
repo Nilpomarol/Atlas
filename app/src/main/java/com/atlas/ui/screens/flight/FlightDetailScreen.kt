@@ -154,7 +154,7 @@ fun FlightDetailScreen(
 
             val hasAnyMeta = flight.airline != null || flight.flightNumber != null || flight.aircraft != null
             if (hasAnyMeta) {
-                FlightMetaCard(flight)
+                FlightMetaCard(flight, uiState.resolvedAirlineName)
             }
 
             if (!flight.notes.isNullOrBlank()) {
@@ -512,10 +512,10 @@ private fun DatetimeRow(label: String, isoValue: String) {
 }
 
 @Composable
-private fun FlightMetaCard(flight: Flight) {
+private fun FlightMetaCard(flight: Flight, resolvedAirlineName: String?) {
     AtlasCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            flight.airline?.let { MetaRow("Companyia", it) }
+            (resolvedAirlineName ?: flight.airline)?.let { MetaRow("Companyia", it) }
             flight.flightNumber?.let { MetaRow("Número de vol", it) }
             flight.aircraft?.let { MetaRow("Aeronau", it) }
         }

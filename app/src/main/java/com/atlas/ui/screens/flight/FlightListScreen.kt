@@ -88,6 +88,10 @@ fun FlightListScreen(
     onFlightNumberChanged: (String) -> Unit,
     onAircraftChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
+    onApiFlightNumberChanged: (String) -> Unit,
+    onApiSearchDateChanged: (String) -> Unit,
+    onSearchByFlightNumber: () -> Unit,
+    onApplyApiResult: () -> Unit,
     onSaveDraft: () -> Unit,
     onItineraryTitleChanged: (String) -> Unit,
     onItineraryNotesChanged: (String) -> Unit,
@@ -162,6 +166,12 @@ fun FlightListScreen(
             onFlightNumberChanged = onFlightNumberChanged,
             onAircraftChanged = onAircraftChanged,
             onNotesChanged = onNotesChanged,
+            apiSearchCallbacks = FlightApiSearchCallbacks(
+                onApiFlightNumberChanged = onApiFlightNumberChanged,
+                onApiSearchDateChanged = onApiSearchDateChanged,
+                onSearchByFlightNumber = onSearchByFlightNumber,
+                onApplyApiResult = onApplyApiResult,
+            ),
             onSave = onSaveDraft,
         )
     }

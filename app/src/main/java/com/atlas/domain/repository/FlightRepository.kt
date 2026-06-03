@@ -22,6 +22,9 @@ interface FlightRepository {
         notes: String?,
         itineraryGroupId: String?,
         sortOrder: Int?,
+        fetchedFrom: String = "manual",
+        externalProvider: String? = null,
+        externalId: String? = null,
     )
 
     suspend fun updateFlight(flight: Flight)

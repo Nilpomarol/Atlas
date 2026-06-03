@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
+import com.atlas.domain.model.FlightApiResult
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
@@ -14,10 +15,12 @@ import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.flight.CreateFlightUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
+import com.atlas.domain.usecase.flight.LookupFlightUseCase
 import com.atlas.domain.usecase.flight.UpdateFlightUseCase
 import com.atlas.domain.usecase.itinerary.CreateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.DeleteItineraryUseCase
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
+import com.atlas.domain.util.inferFlightStatus
 import com.atlas.presentation.itinerary.ItineraryEditorDraft
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -42,6 +45,7 @@ class FlightListViewModel(
     private val createFlightUseCase: CreateFlightUseCase,
     private val updateFlightUseCase: UpdateFlightUseCase,
     private val deleteFlightUseCase: DeleteFlightUseCase,
+    private val lookupFlightUseCase: LookupFlightUseCase,
     private val createItineraryUseCase: CreateItineraryUseCase,
     private val updateItineraryUseCase: UpdateItineraryUseCase,
     private val deleteItineraryUseCase: DeleteItineraryUseCase,
@@ -164,7 +168,13 @@ class FlightListViewModel(
     }
 
     fun onScheduledDepartureAtChanged(value: String) {
-        draft.update { it.copy(scheduledDepartureAt = value) }
+        draft.update { current ->
+            val inferred = if (current.flightId == null) inferFlightStatus(value) else null
+            current.copy(
+                scheduledDepartureAt = value,
+                status = inferred ?: current.status,
+            )
+        }
     }
 
     fun onScheduledArrivalAtChanged(value: String) {
@@ -183,6 +193,63 @@ class FlightListViewModel(
     fun onFlightNumberChanged(value: String) { draft.update { it.copy(flightNumber = value) } }
     fun onAircraftChanged(value: String) { draft.update { it.copy(aircraft = value) } }
     fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
+
+    // ── API search ───────────────────────────────────────────────────────────
+
+    fun onApiFlightNumberChanged(value: String) {
+        draft.update { it.copy(apiFlightNumber = value, apiSearchState = FlightApiSearchState.Idle) }
+    }
+
+    fun onApiSearchDateChanged(value: String) {
+        draft.update { it.copy(apiSearchDate = value, apiSearchState = FlightApiSearchState.Idle) }
+    }
+
+    fun onSearchByFlightNumber() {
+        val d = draft.value
+        val number = d.apiFlightNumber.trim()
+        val date = d.apiSearchDate.trim()
+        if (number.isBlank() || date.isBlank()) return
+
+        draft.update { it.copy(apiSearchState = FlightApiSearchState.Searching) }
+        viewModelScope.launch {
+            val state = when (val result = lookupFlightUseCase(number, date)) {
+                is FlightApiResult.Success -> FlightApiSearchState.Found(result.prefill)
+                is FlightApiResult.NotFound -> FlightApiSearchState.NotFound
+                is FlightApiResult.NoApiKey -> FlightApiSearchState.NoApiKey
+                is FlightApiResult.RateLimited -> FlightApiSearchState.RateLimited
+                is FlightApiResult.NetworkError -> FlightApiSearchState.Error(result.message)
+            }
+            draft.update { it.copy(apiSearchState = state) }
+        }
+    }
+
+    fun onApplyApiResult() {
+        val found = draft.value.apiSearchState as? FlightApiSearchState.Found ?: return
+        val prefill = found.prefill
+        viewModelScope.launch {
+            val origin = prefill.originIata?.let { airportRepository.getAirportByIata(it) }
+            val destination = prefill.destinationIata?.let { airportRepository.getAirportByIata(it) }
+            val inferredStatus = inferFlightStatus(prefill.scheduledDepartureAt)
+            draft.update { current ->
+                current.copy(
+                    originAirport = origin ?: current.originAirport,
+                    originQuery = origin?.displayLabel() ?: current.originQuery,
+                    destinationAirport = destination ?: current.destinationAirport,
+                    destinationQuery = destination?.displayLabel() ?: current.destinationQuery,
+                    airline = prefill.airlineIata ?: current.airline,
+                    flightNumber = prefill.flightNumber ?: current.flightNumber,
+                    aircraft = prefill.aircraftModel ?: current.aircraft,
+                    scheduledDepartureAt = prefill.scheduledDepartureAt ?: current.scheduledDepartureAt,
+                    scheduledArrivalAt = prefill.scheduledArrivalAt ?: current.scheduledArrivalAt,
+                    status = inferredStatus ?: current.status,
+                    fetchedFrom = "api",
+                    externalProvider = "aerodatabox",
+                    externalId = "${prefill.flightNumber}/${current.apiSearchDate}",
+                    apiSearchState = FlightApiSearchState.Idle,
+                )
+            }
+        }
+    }
 
     fun onSaveDraft() {
         val d = draft.value
@@ -212,6 +279,9 @@ class FlightListViewModel(
                     flightNumber = d.flightNumber,
                     aircraft = d.aircraft,
                     notes = d.notes,
+                    fetchedFrom = d.fetchedFrom,
+                    externalProvider = d.externalProvider,
+                    externalId = d.externalId,
                 )
             } else {
                 updateFlightUseCase(
@@ -230,6 +300,9 @@ class FlightListViewModel(
                         notes = d.notes.trim().ifBlank { null },
                         itineraryGroupId = d.itineraryGroupId,
                         sortOrder = d.sortOrder,
+                        fetchedFrom = d.fetchedFrom,
+                        externalProvider = d.externalProvider,
+                        externalId = d.externalId,
                     ),
                 )
             }
@@ -330,6 +403,7 @@ class FlightListViewModel(
         private val createFlightUseCase: CreateFlightUseCase,
         private val updateFlightUseCase: UpdateFlightUseCase,
         private val deleteFlightUseCase: DeleteFlightUseCase,
+        private val lookupFlightUseCase: LookupFlightUseCase,
         private val createItineraryUseCase: CreateItineraryUseCase,
         private val updateItineraryUseCase: UpdateItineraryUseCase,
         private val deleteItineraryUseCase: DeleteItineraryUseCase,
@@ -343,6 +417,7 @@ class FlightListViewModel(
             createFlightUseCase = createFlightUseCase,
             updateFlightUseCase = updateFlightUseCase,
             deleteFlightUseCase = deleteFlightUseCase,
+            lookupFlightUseCase = lookupFlightUseCase,
             createItineraryUseCase = createItineraryUseCase,
             updateItineraryUseCase = updateItineraryUseCase,
             deleteItineraryUseCase = deleteItineraryUseCase,
@@ -392,6 +467,14 @@ data class FlightEditorDraftUiState(
     // Preserved when editing grouped flights; not shown to the user
     val itineraryGroupId: String? = null,
     val sortOrder: Int? = null,
+    // Provenance — set automatically, not editable by user
+    val fetchedFrom: String = "manual",
+    val externalProvider: String? = null,
+    val externalId: String? = null,
+    // API search state — only relevant for new flights
+    val apiFlightNumber: String = "",
+    val apiSearchDate: String = "",
+    val apiSearchState: FlightApiSearchState = FlightApiSearchState.Idle,
 ) {
     companion object {
         fun fromFlight(
@@ -416,6 +499,9 @@ data class FlightEditorDraftUiState(
             notes = flight.notes ?: "",
             itineraryGroupId = flight.itineraryGroupId,
             sortOrder = flight.sortOrder,
+            fetchedFrom = flight.fetchedFrom,
+            externalProvider = flight.externalProvider,
+            externalId = flight.externalId,
         )
     }
 }

@@ -46,6 +46,7 @@ class SearchAirportsUseCaseTest {
         }
 
         override suspend fun getAirportById(id: String): Airport? = null
+        override suspend fun getAirportByIata(iata: String): Airport? = null
     }
 
     private companion object {

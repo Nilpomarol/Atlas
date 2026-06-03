@@ -2,91 +2,124 @@
 
 ## 0. Document Purpose
 
-This document defines the Atlas product roadmap from v3.0 onwards, after v2.0 is complete.
+This document defines the Atlas product roadmap from v3.0 onwards. v2.0 is complete (committed 2026-06-02, polish 2026-06-03).
 
 It should be read alongside:
 
 ```text
 Atlas_Product_Specification.md   — long-term product vision and domain model
 Atlas_Roadmap.md                 — general roadmap philosophy and v1/v2 direction
-Atlas_v2.0_Roadmap.md            — v2.0 milestone detail
+Atlas_v2.0_Roadmap.md            — v2.0 milestone detail (historical)
 ```
 
 ---
 
-## 1. v2.0 Completion Checklist
+## 1. v3.0 — Flight Foundations
 
-Before v3.0 begins, the following v2.0 work must be finished:
+**Theme:** Give flights real data, a real map, and fast input. Complete all data-layer and map work that the v3.1 redesign depends on.
 
-| Milestone | Task | Status |
-|-----------|------|--------|
-| M7c | Map UX pass — canvas consistency across TripMapPreview and FlightDetailScreen, remove PROVISIONAL badge | ⬜ |
-| M8 | **Real map SDK** — MapLibre replaces all Canvas route previews (trip map, flight detail hero, country detail hero) | ⬜ |
-| M9 | **Backup v2** — extend JSON backup/import to include flights, itineraries, itinerary groups, excursions, excursion stops | ⬜ |
-| M10 | **Visual polish pass** — apply Warm Editorial Atlas style to trip list/detail, flights list/detail, itinerary list/detail | ⬜ |
+Items are ordered by dependency: the API comes first because it gives realistic test data immediately and informs what the datasets must cover.
 
-**Blocking decision before M8:** choose map SDK. Recommended: MapLibre GL Android (open source, OSM-based, no API key, offline-capable). This decision is required before any v3.0+ map work.
+### 3.1 Flight API integration
 
----
+Look up a flight by number + date and pre-fill all fields: airline, origin/destination airports, scheduled times, aircraft type. Imports a clean `FlightEntity` ready for manual review and editing.
 
-## 2. v3.0 — Data Enrichment
+- Search flow: enter IATA flight number + date → preview card → confirm import
+- Adds three fields to `FlightEntity`: `fetched_from: manual | api` (default: manual), `external_provider` (nullable), `external_id` (nullable)
+- Provider: TBD (AeroDataBox via RapidAPI is the recommended candidate)
+- Graceful fallback to manual entry when flight is not found
 
-**Theme:** Make flights richer with real airline, aircraft, and enrichment data.
+### 3.2 Airlines dataset
 
-This version adds the datasets and UI enrichment that turn raw flight records into meaningful travel entries. No external API required for the core dataset work.
-
-### 3.1 Airlines dataset
-
-- Bundle `assets/data/airlines.json` with IATA code, name, country, and logo asset reference
+- Bundle `assets/data/airlines.json`: IATA code, name, country, logo asset reference
 - Import into Room (`AirlineEntity`)
-- Resolve airline name from IATA code in flight list cards and flight detail
-
-### 3.2 Airline logos
-
-- Add logo assets (SVG or PNG) for major airlines
-- Display airline logo on flight detail screen and flight list cards
-- Graceful fallback when no logo available
+- Resolve airline name and logo from IATA code in flight list cards and flight detail
+- Logo assets: SVG or PNG for major airlines; graceful text fallback for unknowns
 
 ### 3.3 Aircraft type dataset
 
-- Bundle `assets/data/aircraft_types.json` with ICAO/common code, full name, category
+- Bundle `assets/data/aircraft_types.json`: ICAO/common code, full name, category, image asset reference
 - Import into Room (`AircraftTypeEntity`)
-- Resolve aircraft display name from stored aircraft string in flight detail
-- Show aircraft category (narrowbody / widebody / regional / turboprop)
+- Resolve aircraft display name and category (narrowbody / widebody / regional / turboprop)
+- Representative image per type; fallback for unknown types
 
-### 3.4 Aircraft images
+### 3.4 Polygon/Canvas flight map
 
-- Add representative aircraft images for major types
-- Display on flight detail screen
-- Graceful fallback for unknown types
+Replace the MapLibre view in FlightDetailScreen with a Canvas-drawn world map:
 
-### 3.5 Flight API preparation fields
+- Simplified continent outline polygons drawn with Compose Canvas
+- Great-circle arc between origin and destination airports
+- Airport dot markers (status-coloured) at each endpoint
+- Fully offline — no tile server, no SDK dependency
 
-Per spec §8.5, add to `FlightEntity` without requiring live API yet:
+TripMapPreview keeps MapLibre (real geographic context for trip stops is worth the SDK).
+
+### 3.5 UTC / local flight times
+
+Per spec §8.3, extend `FlightEntity` with UTC counterparts:
 
 ```text
-fetched_from: manual | api | other   (default: manual)
-external_provider nullable
-external_id nullable
+scheduled_departure_utc_at nullable
+scheduled_arrival_utc_at nullable
+actual_departure_utc_at nullable
+actual_arrival_utc_at nullable
 ```
 
-These fields allow future API import without a schema migration.
+Calculate UTC from local time using the airport timezone already stored in `AirportEntity`. Display toggle in flight detail: local / UTC / both.
 
-### 3.6 Country tracking flags on flights
+### 3.6 Auto-suggest location search
 
-Per spec §8.4, add toggles to flight detail:
+Replace the manual search-button flow in trip stop and excursion stop dialogs with debounced live suggestions as the user types. Results appear below the field after a short delay — no button press required.
+
+### 3.7 Country tracking flags on flights
+
+Per spec §8.4, add two toggles to flight detail:
 
 ```text
 destination_counts_for_country_tracking  (default: true)
 origin_counts_for_country_tracking       (default: false)
 ```
 
-Useful for return flights or historical records where the user wants both countries to count.
-Update `CountryStateDerivationService` to respect these flags.
+Useful for return flights or historical records where the user wants both countries to count. Update `CountryStateDerivationService` to respect these flags.
 
 ---
 
-## 3. v4.0 — Country Depth
+## 2. v3.1 — Visual Redesign
+
+**Theme:** Redesign the trip and flight screens now that all v3.0 content is in place.
+
+Doing the redesign after v3.0 means it is built around known content: polygon map dimensions, airline logo placement, aircraft image proportions, UTC/local time display. Stop rows in the trip redesign are designed with an explicit photo-slot placeholder (v3.2 will fill it).
+
+- **Flights list + detail** — full redesign using polygon map, airline logo, aircraft image, UTC/local toggle
+- **Trips list + detail** — full redesign; stop rows include photo-slot placeholder for v3.2
+- **All dialogs** — polish pass; auto-suggest already wired from v3.0
+
+---
+
+## 3. v3.2 — Per-Stop Photos
+
+**Theme:** Attach personal photos to the places you visited.
+
+### 3.2.1 Photo data model
+
+- `StopPhoto` entity: `id`, `stop_id`, `stop_type` (TRIP_STOP | EXCURSION_STOP), `local_uri`, `caption`, `sort_order`, `taken_at`, `created_at`
+- `READ_MEDIA_IMAGES` permission
+- Store URI references only — local-first, no file copies
+- Room migration
+
+### 3.2.2 Photo attachment
+
+- Add / remove / reorder photos on trip stops and excursion stops
+- Optional caption per photo
+- Uses the Android photo picker API — no custom gallery screen needed
+
+### 3.2.3 Gallery UI in stop rows
+
+The specific display pattern (inline thumbnail strip vs. count chip opening a full-screen viewer) is a design decision to be made during the v3.1 redesign. Implementation in v3.2 follows that decision.
+
+---
+
+## 4. v4.0 — Country Depth
 
 **Theme:** Make country/territory detail pages the emotional core of the app.
 
@@ -95,20 +128,20 @@ Update `CountryStateDerivationService` to respect these flags.
 - Bundle `assets/data/country_stats_summary.json` and `assets/data/country_stats_facts.json`
 - Import into Room (`CountryStatsSummaryEntity`, `CountryStatFactEntity`)
 - Dataset covers: capital, population, area, GDP, HDI, life expectancy, currency, languages, timezone
-- Flexible fact table supports future stat additions without Room migrations (category/key/value model per spec §12.4)
+- Flexible fact table: category/key/value model supports future stats without a Room migration
 
 ### 4.2 Country stats/info page
 
 - New screen accessible from country detail
 - Sections: geography, demographics, economy, government, health, education, culture, rights, environment, tourism, transport
-- Facts rendered per category with label, value, unit, year, and source attribution
 - Empty sections hidden automatically
+- Facts rendered with label, value, unit, year, and source attribution
 
 ### 4.3 Country detail — real map
 
-- Replace dot grid hero with live MapLibre map centered on the country
+- Replace dot-grid hero with MapLibre map centered on the country
 - Show capital marker
-- Show country boundary polygon if `country_polygons.json` dataset available (can be deferred)
+- Country boundary polygon if `country_polygons.json` dataset is available (can be deferred to v7.0)
 
 ### 4.4 Country detail enrichment
 
@@ -124,19 +157,13 @@ Update `CountryStateDerivationService` to respect these flags.
 
 ---
 
-## 4. v5.0 — Stats and World Map
+## 5. v5.0 — Stats and World Map
 
 **Theme:** Let the user see their travel history at a glance.
 
 ### 5.1 Interactive world map
 
-- Full-screen MapLibre map showing all countries/territories colored by state:
-  - visited → green
-  - lived → purple
-  - planned → blue
-  - wished → pink
-  - currently living → orange
-  - never visited → neutral
+- Full-screen MapLibre map showing all countries/territories coloured by state: visited → green, lived → purple, planned → blue, wished → pink, currently living → orange, never → neutral
 - Tap country to open country detail
 - Accessible from dashboard and as a dedicated tab or screen
 
@@ -147,15 +174,13 @@ Update `CountryStateDerivationService` to respect these flags.
 
 ### 5.3 Global stats dashboard
 
-New dedicated stats screen including:
+New dedicated stats screen:
 
 ```text
 Countries visited / total
 Territories visited / total
 Continents visited
-Countries wished
-Countries planned
-Countries lived
+Countries wished / planned / lived
 Trips completed / planned
 Flights completed / planned
 Distance flown (km)
@@ -170,80 +195,51 @@ Top destination airports
 
 Per spec §3.6, add `status_source: manual | inferred` to trips and flights.
 
-Rules:
-- If `status_source = inferred`, the app may update status when dates clearly indicate completion (past completed date range → suggest COMPLETED)
-- If `status_source = manual`, never override
-- Inference should be conservative with partial dates
-- User can always override inferred status manually
-
-### 5.5 UTC/local flight times
-
-Per spec §8.3, extend `FlightEntity` with UTC counterparts:
-
-```text
-scheduled_departure_utc_at nullable
-scheduled_arrival_utc_at nullable
-actual_departure_utc_at nullable
-actual_arrival_utc_at nullable
-```
-
-Display both local and UTC times in flight detail. Calculate UTC from local time using airport timezone data already stored in `AirportEntity`.
+- `inferred`: the app may suggest COMPLETED when the date range is clearly in the past
+- `manual`: never override
+- Inference is conservative with partial dates
+- User can always override inferred status
 
 ---
 
-## 5. v6.0 — Photos and Memories
+## 6. v6.0 — Photos and Memories
 
 **Theme:** Transform travel records into personal memories.
 
-### 6.1 Photo model and storage
+Per-stop photos (trip stops and excursion stops) are already handled in v3.2. This version adds the remaining photo associations and the story mode that depends on a rich photo library.
 
-- `PhotoEntity`: id, local_uri, caption, taken_at, created_at
-- Join tables: `TripPhoto`, `TripStopPhoto`, `ExcursionPhoto`, `ExcursionStopPhoto`, `CountryPhoto`
-- `READ_MEDIA_IMAGES` permission
-- Local-first: store URI references, not file copies
-- Room migrations for new tables
+### 6.1 Country photos
 
-### 6.2 Photo attachment — trips and stops
-
-- Add/remove photos from trip detail
-- Add/remove photos from trip stop detail
-- Add/remove photos from excursion detail and excursion stop detail
-- Optional caption per photo
-- Ordered photo grid
-
-### 6.3 Country photos
-
-- Optional `CountryPhoto` association
+- `CountryPhoto` association
 - Shown in country detail as a personal photo section
 
-### 6.4 Story / slideshow mode
+### 6.2 Story / slideshow mode
 
-Per spec §13.3, a trip story mode that presents a trip as a visual narrative:
+Per spec §13.3, a trip story mode presenting a trip as a visual narrative:
 
 ```text
-Title slide — trip name, dates, countries
-Map overview — full route
-Itinerary/flights section — if linked
-Stop-by-stop sections — location, photos, notes
-Excursion sections — route, photos
-Final summary — countries visited, distance, stats
+Title slide     — trip name, dates, countries
+Map overview    — full route
+Flights section — if an itinerary is linked
+Stop-by-stop    — location, photos, notes
+Excursions      — route, photos, notes
+Final summary   — countries visited, distance, stats
 ```
 
-Entry point from trip detail. Read-only presentation mode.
+Entry point from trip detail. Read-only presentation mode. Requires v3.2 photos to be complete and populated for the experience to be meaningful.
 
 ---
 
-## 6. v7.0 — Advanced Portability and Maps
+## 7. v7.0 — Advanced Portability and Maps
 
 **Theme:** Own your data fully and explore it anywhere.
 
 ### 7.1 Advanced backup and import
 
 - Schema version migration in import (handle older backup versions gracefully)
-- Partial import recovery (report and skip bad records rather than failing entire import)
+- Partial import recovery: report and skip bad records rather than failing the entire import
 - Photo URI availability check on import
 - Import validation report shown to user before confirming
-- Backup includes new v3/v4/v5/v6 data: airlines, aircraft, photos, stat dataset versions
 
 ### 7.2 Offline map caching
 
@@ -272,31 +268,29 @@ Entry point from trip detail. Read-only presentation mode.
 
 ---
 
-## 7. Future / Unscheduled
-
-Features from the product spec with no assigned version yet:
+## 8. Future / Unscheduled
 
 ```text
-Flight API lookup — lookup by flight number + date, import times/airline/aircraft, live status, delays
-Country comparison — side-by-side country stat comparison
-Advanced country grouping — continent/subregion stats summaries
-Multi-language support — Spanish and English UI translations
-Interactive route animation — animated flight paths and trip routes on maps
-Trip timeline view — vertical timeline of all stops/excursions/flights in chronological order
-Local map caching improvements — smart region pre-download
+Country comparison       — side-by-side country stat comparison
+Advanced country groups  — continent/subregion stat summaries
+Multi-language support   — Spanish and English UI translations
+Route animation          — animated flight paths and trip routes on maps
+Trip timeline view       — vertical timeline of all stops/excursions/flights in chronological order
+Smart map pre-download   — automatic tile caching for upcoming trips
 ```
 
 ---
 
-## 8. Summary
+## 9. Summary
 
 ```
-v2.0  (finishing)   Map SDK, backup v2, visual polish
-v3.0                Data enrichment: airlines, logos, aircraft, API prep fields, country tracking flags
-v4.0                Country depth: stats dataset, stats page, country map, country detail improvements
-v5.0                Stats and world map: interactive map, global stats dashboard, date inference, UTC times
-v6.0                Photos and memories: photo attachment, country photos, story/slideshow mode
-v7.0                Advanced portability: offline maps, country polygons, advanced export, cloud backup
+v3.0  Flight foundations : API, airlines+logos, aircraft+images, polygon flight map, UTC times, auto-suggest, country flags
+v3.1  Visual redesign    : flights list/detail, trips list/detail, all dialogs
+v3.2  Per-stop photos    : stop photo model, photo picker, gallery UI in stop rows
+v4.0  Country depth      : stats dataset, stats page, country map, detail improvements, list filters
+v5.0  Stats + world map  : interactive world map, global stats dashboard, date inference
+v6.0  Photos + memories  : country photos, story/slideshow mode
+v7.0  Portability        : offline maps, country polygons, advanced export, optional cloud backup
 ```
 
 Each version adds one coherent layer. The app remains fully usable at every stage.

@@ -23,9 +23,11 @@ fun SettingsRoute() {
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModel.Factory(
             backupRepository = app.container.backupRepository,
+            apiKeyRepository = app.container.apiKeyRepository,
         ),
     )
     val uiState by viewModel.uiState.collectAsState()
+    val rapidApiKey by viewModel.rapidApiKey.collectAsState()
     val scope = rememberCoroutineScope()
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -67,6 +69,7 @@ fun SettingsRoute() {
 
     SettingsScreen(
         uiState = uiState,
+        rapidApiKey = rapidApiKey,
         onExportClick = {
             exportLauncher.launch("atlas-backup-${LocalDate.now()}.json")
         },
@@ -76,6 +79,7 @@ fun SettingsRoute() {
         onConfirmImport = viewModel::confirmImport,
         onDismissImport = viewModel::dismissImportPreview,
         onDismissMessage = viewModel::clearMessage,
+        onSaveRapidApiKey = viewModel::saveRapidApiKey,
     )
 }
 

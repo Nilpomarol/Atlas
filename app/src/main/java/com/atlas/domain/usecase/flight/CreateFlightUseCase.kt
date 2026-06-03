@@ -20,6 +20,9 @@ class CreateFlightUseCase(
         notes: String?,
         itineraryGroupId: String? = null,
         sortOrder: Int? = null,
+        fetchedFrom: String = "manual",
+        externalProvider: String? = null,
+        externalId: String? = null,
     ) {
         flightRepository.createFlight(
             originAirportId = originAirportId,
@@ -35,6 +38,9 @@ class CreateFlightUseCase(
             notes = notes?.trim()?.ifBlank { null },
             itineraryGroupId = itineraryGroupId,
             sortOrder = sortOrder,
+            fetchedFrom = fetchedFrom,
+            externalProvider = externalProvider,
+            externalId = externalId,
         )
     }
 }

@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -49,6 +51,7 @@ import com.atlas.presentation.flight.FlightEditorDraftUiState
 import com.atlas.presentation.flight.FlightListItemUiState
 import com.atlas.presentation.flight.FlightListUiState
 import com.atlas.presentation.flight.ItinerarySummaryUiState
+import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
@@ -469,18 +472,41 @@ private fun FlightCard(
                 AtlasPill(label = colors.label, colors = colors)
             }
 
-            val meta = buildList {
+            // Airline logo + name row
+            flight.airline?.let { iata ->
+                Row(
+                    modifier = Modifier.padding(top = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    AirlineLogo(
+                        iata = iata,
+                        modifier = Modifier
+                            .height(18.dp)
+                            .widthIn(max = 54.dp),
+                    )
+                    Text(
+                        text = item.resolvedAirlineName ?: iata,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+
+            // Date · flight number
+            val textMeta = buildList {
                 flight.scheduledDepartureAt?.let { add(it.take(10)) }
-                (item.resolvedAirlineName ?: flight.airline)?.let { add(it) }
                 flight.flightNumber?.let { add(it) }
             }.joinToString(" · ")
 
-            if (meta.isNotBlank()) {
+            if (textMeta.isNotBlank()) {
                 Text(
-                    text = meta,
+                    text = textMeta,
                     style = MaterialTheme.typography.bodySmall,
                     color = AtlasOnSurfaceMuted,
-                    modifier = Modifier.padding(top = 4.dp),
+                    modifier = Modifier.padding(top = if (flight.airline != null) 2.dp else 6.dp),
                 )
             }
 

@@ -3,11 +3,14 @@ package com.atlas.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.BackupImportPreview
 import com.atlas.domain.repository.BackupRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -19,7 +22,15 @@ data class SettingsUiState(
 
 class SettingsViewModel(
     private val backupRepository: BackupRepository,
+    private val apiKeyRepository: ApiKeyRepository,
 ) : ViewModel() {
+
+    val rapidApiKey: StateFlow<String> = apiKeyRepository.observeRapidApiKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    fun saveRapidApiKey(key: String) {
+        viewModelScope.launch { apiKeyRepository.saveRapidApiKey(key) }
+    }
     private val mutableUiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = mutableUiState.asStateFlow()
 
@@ -100,10 +111,12 @@ class SettingsViewModel(
     @Suppress("UNCHECKED_CAST")
     class Factory(
         private val backupRepository: BackupRepository,
+        private val apiKeyRepository: ApiKeyRepository,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
             SettingsViewModel(
                 backupRepository = backupRepository,
+                apiKeyRepository = apiKeyRepository,
             ) as T
     }
 }

@@ -66,6 +66,12 @@ data class FlightEntity(
     val itineraryGroupId: String?,
     @ColumnInfo(name = "sort_order")
     val sortOrder: Int?,
+    @ColumnInfo(name = "fetched_from")
+    val fetchedFrom: String = "manual",
+    @ColumnInfo(name = "external_provider")
+    val externalProvider: String? = null,
+    @ColumnInfo(name = "external_id")
+    val externalId: String? = null,
     @ColumnInfo(name = "created_at")
     val createdAt: String,
     @ColumnInfo(name = "updated_at")

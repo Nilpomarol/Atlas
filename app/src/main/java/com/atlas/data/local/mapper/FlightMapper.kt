@@ -19,4 +19,7 @@ fun FlightEntity.toDomain(): Flight = Flight(
     notes = notes,
     itineraryGroupId = itineraryGroupId,
     sortOrder = sortOrder,
+    fetchedFrom = fetchedFrom,
+    externalProvider = externalProvider,
+    externalId = externalId,
 )

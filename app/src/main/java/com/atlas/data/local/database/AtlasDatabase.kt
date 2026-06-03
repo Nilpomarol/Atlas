@@ -42,7 +42,7 @@ import com.atlas.data.local.entity.TripStopEntity
         ExcursionEntity::class,
         ExcursionStopEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -621,6 +621,15 @@ abstract class AtlasDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_excursion_stops_excursion_id` ON `excursion_stops` (`excursion_id`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_excursion_stops_country_iso2` ON `excursion_stops` (`country_iso2`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_excursion_stops_excursion_id_sort_order` ON `excursion_stops` (`excursion_id`, `sort_order`)")
+            }
+        }
+
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add flight provenance columns — no FK constraints, so plain ALTER TABLE is safe
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `fetched_from` TEXT NOT NULL DEFAULT 'manual'")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `external_provider` TEXT")
+                db.execSQL("ALTER TABLE `flights` ADD COLUMN `external_id` TEXT")
             }
         }
     }

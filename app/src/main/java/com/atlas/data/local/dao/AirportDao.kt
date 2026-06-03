@@ -41,6 +41,9 @@ interface AirportDao {
     @Query("SELECT * FROM airports WHERE id = :id")
     suspend fun getById(id: String): AirportEntity?
 
+    @Query("SELECT * FROM airports WHERE iata = :iata LIMIT 1")
+    suspend fun getByIata(iata: String): AirportEntity?
+
     @Upsert
     suspend fun upsertAll(airports: List<AirportEntity>)
 }

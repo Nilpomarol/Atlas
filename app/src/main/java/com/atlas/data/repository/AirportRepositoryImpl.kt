@@ -30,6 +30,9 @@ class AirportRepositoryImpl(
     override suspend fun getAirportById(id: String): Airport? =
         airportDao.getById(id)?.toDomain()
 
+    override suspend fun getAirportByIata(iata: String): Airport? =
+        airportDao.getByIata(iata)?.toDomain()
+
     private companion object {
         const val SEARCH_LIMIT = 30
     }

@@ -7,4 +7,5 @@ interface AirportRepository {
     fun observeAirports(): Flow<List<Airport>>
     fun searchAirports(query: String): Flow<List<Airport>>
     suspend fun getAirportById(id: String): Airport?
+    suspend fun getAirportByIata(iata: String): Airport?
 }

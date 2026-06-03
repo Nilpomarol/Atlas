@@ -2,9 +2,11 @@ package com.atlas.app
 
 import android.content.Context
 import androidx.room.Room
+import com.atlas.data.api.AeroDataBoxClient
 import com.atlas.data.dataset.AirportDatasetImporter
 import com.atlas.data.dataset.CountryDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
+import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.local.database.AtlasDatabase
 import com.atlas.data.repository.AirportRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
@@ -13,9 +15,11 @@ import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
 import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
+import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.FlightApiClient
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -40,6 +44,7 @@ import com.atlas.domain.usecase.excursion.UpdateExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.UpdateExcursionUseCase
 import com.atlas.domain.usecase.flight.CreateFlightUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
+import com.atlas.domain.usecase.flight.LookupFlightUseCase
 import com.atlas.domain.usecase.flight.UpdateFlightUseCase
 import com.atlas.domain.usecase.itinerary.CreateItineraryGroupUseCase
 import com.atlas.domain.usecase.itinerary.CreateItineraryUseCase
@@ -86,6 +91,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_10_11)
         .addMigrations(AtlasDatabase.MIGRATION_11_12)
         .addMigrations(AtlasDatabase.MIGRATION_12_13)
+        .addMigrations(AtlasDatabase.MIGRATION_13_14)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -127,6 +133,9 @@ class AtlasAppContainer(context: Context) {
     )
 
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
+
+    val apiKeyRepository: ApiKeyRepository = ApiKeyPreferencesDataSource(applicationContext)
+    val flightApiClient: FlightApiClient = AeroDataBoxClient()
 
     val countryStateDerivationService = CountryStateDerivationService()
     val itineraryGeneratedStopService = ItineraryGeneratedStopService()
@@ -199,6 +208,11 @@ class AtlasAppContainer(context: Context) {
 
     val deleteFlightUseCase = DeleteFlightUseCase(
         flightRepository = flightRepository,
+    )
+
+    val lookupFlightUseCase = LookupFlightUseCase(
+        flightApiClient = flightApiClient,
+        apiKeyRepository = apiKeyRepository,
     )
 
     val createItineraryUseCase = CreateItineraryUseCase(

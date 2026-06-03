@@ -3,8 +3,9 @@
 ## PROJECT OVERVIEW & STATUS
 
 * **Last updated:** 2026-06-03
-* **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live. Room DB is version `13`.
-* **Current phase:** v3.0 — Flight Foundations. Next practical work: Flight API integration (see §Direction below).
+* **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
+* **v3.0 M1 (Flight API) is complete and committed** (`5e07f15` 2026-06-03). Room DB is version `14`.
+* **Current phase:** v3.0 — Flight Foundations. Next practical work: Airlines dataset (see §Direction below).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -32,8 +33,8 @@
 ## KEY DECISIONS & GROUND TRUTHS
 
 ### Data model
-* **Room DB version: 13.** Migration chain: 1→2→3→4→5→6→7→8→9→10→11→12→13. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10).
-* **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults.
+* **Room DB version: 14.** Migration chain: 1→2→…→13→14. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN` (no FK, no recreate).
+* **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults. The three new flight provenance columns (`fetched_from`, `external_provider`, `external_id`) are not yet included in the backup — they are operational metadata.
 * **Country dataset:** 244 entries, version `2026.1`. Importer inserts `parent_iso2 = null` entries first to satisfy the self-referencing FK.
 * **Airport dataset:** 5,931 airports, version `2026.2`. 141 entries skipped (null id / unknown country / null city).
 
@@ -45,6 +46,16 @@
 * **Flight country derivation is implemented.** Solo flights: COMPLETED → destination visited; PLANNED → destination planned; IN_PROGRESS/UNKNOWN → no effect. Itinerary groups use the layover-safe endpoint rule (see §Critical Reference Logic).
 * `FlightDetailScreen` is navigable from the flight list **and** from itinerary detail flight rows. Route: `flights/{flightId}`.
 * **FlightDetailScreen hero currently uses MapLibre** (status-colored origin/destination markers, route line, group context airports as ghost nodes). This will be replaced with a Canvas polygon map in v3.0 M4.
+* **Flight provenance fields** (added migration 13→14): `fetched_from TEXT NOT NULL DEFAULT 'manual'`, `external_provider TEXT`, `external_id TEXT`. These are on `FlightEntity` and `Flight` domain model; carried through `FlightEditorDraftUiState` as hidden fields; preserved on edit.
+* **Status inference:** `inferFlightStatus(scheduledDepartureAt)` in `domain/util/FlightStatusInference.kt` — future→PLANNED, today→IN_PROGRESS, past→COMPLETED, null→null. Called on departure date change (new flights only) and when applying an API result.
+
+### Flight API
+* **Provider:** AeroDataBox via RapidAPI (`aerodatabox.p.rapidapi.com`). Endpoint: `GET /flights/number/{number}/{date}`.
+* **Key storage:** DataStore Preferences (`atlas_prefs`). Managed via `ApiKeyRepository` / `ApiKeyPreferencesDataSource`. Exposed as `StateFlow<String>` in `SettingsViewModel`. User enters key in Settings → "Integracions" card.
+* **Client:** `AeroDataBoxClient` (`data/api/`) implements `FlightApiClient` domain interface. Uses `HttpURLConnection`, same pattern as `NominatimLocationSearchRepository`. Returns `FlightApiResult` sealed class: `Success(FlightApiPrefill)`, `NotFound`, `NoApiKey`, `RateLimited`, `NetworkError(message)`.
+* **Editor integration:** `FlightEditorDialog` shows an API search section (flight number + date picker + "Cerca vol" button) for **new flights only** (`flightId == null`). The section is controlled by an optional `FlightApiSearchCallbacks` parameter — passing `null` hides it entirely (used in `ItineraryDetailScreen`).
+* **Airport resolution:** `AirportRepository.getAirportByIata(iata)` added (queries unique `iata` index) to resolve API-returned IATA codes to local `Airport` objects.
+* **Apply flow:** tapping "Utilitza aquests resultats" resolves airports by IATA, infers status from departure date, and pre-fills all available draft fields. Provenance set to `fetchedFrom = "api"`, `externalProvider = "aerodatabox"`, `externalId = "{number}/{date}"`.
 
 ### Maps
 * `AtlasMapView` composable (`ui/components/map/AtlasMapView.kt`) — lifecycle-aware MapLibre wrapper, reused across all map surfaces.
@@ -83,8 +94,19 @@
 ### Key services & use cases
 * `CountryStateDerivationService` — centralizes all country state derivation
 * `SearchAirportsUseCase` — min 2 chars, debounced
+* `LookupFlightUseCase` — flight API lookup; checks for API key first
+* `inferFlightStatus()` — pure utility in `domain/util/FlightStatusInference.kt`
 * `FlexibleDateFormatter` / `FlexibleDateRangeDraftField`
 * Backup: `AtlasBackupV2`, `BackupMappers`, `BackupValidation`
+
+### New in v3.0 M1
+* `data/api/AeroDataBoxClient.kt` + `AeroDataBoxFlightDto.kt`
+* `data/preferences/ApiKeyPreferencesDataSource.kt`
+* `domain/repository/ApiKeyRepository.kt`, `FlightApiClient.kt`
+* `domain/model/FlightApiPrefill.kt`, `FlightApiResult.kt`
+* `domain/usecase/flight/LookupFlightUseCase.kt`
+* `domain/util/FlightStatusInference.kt`
+* `presentation/flight/FlightApiSearchState.kt`
 
 ### Tests
 Flexible date validator/formatter, country state derivation (including layover cases), backup validator/mappers, Nominatim mapper, airport search use case.
@@ -142,29 +164,33 @@ dataset.countries
 
 ## DIRECTION FOR NEXT AI AGENT
 
-v2.0 is fully done. You are starting **v3.0 — Flight Foundations**. Work through the items in this order (each is a prerequisite for the next visible result):
+v2.0 is fully done. v3.0 M1 (Flight API) is done. Continue with **v3.0 M2 — Airlines dataset**.
 
-1. **Flight API integration** ← start here
-   - Flight number + date → pre-fill airline, airports, times, aircraft
-   - Add to `FlightEntity`: `fetched_from TEXT NOT NULL DEFAULT 'manual'`, `external_provider TEXT`, `external_id TEXT`
-   - Room migration 13→14
-   - Provider: **TBD** — ask the user which API to use before starting (AeroDataBox via RapidAPI is the likely choice)
-   - Graceful fallback to manual entry when not found
+### Completed in v3.0
+1. ✅ **Flight API integration** — AeroDataBox lookup, DataStore API key, `FlightEditorDialog` search section, status inference. Room DB v14.
 
-2. **Airlines dataset** — `assets/data/airlines.json` → `AirlineEntity` → resolve in flight list + detail + logo display
+### Remaining v3.0 work (in order)
 
-3. **Aircraft type dataset** — `assets/data/aircraft_types.json` → `AircraftTypeEntity` → resolve name, category, image in flight detail
+2. **Airlines dataset** ← start here
+   - Bundle `assets/data/airlines.json`: IATA code, name, country, logo asset reference
+   - Import into Room (`AirlineEntity`) — follow same pattern as `AirportDatasetImporter`
+   - `AirlineRepository` + `GetAirlineByIataUseCase`
+   - Resolve airline name from the `airline` IATA field already stored on `FlightEntity`
+   - Show airline name (and later logo) in `FlightDetailScreen` and flight list cards
+   - Logo assets: SVG or PNG for major airlines in `res/drawable`; graceful text fallback
+
+3. **Aircraft type dataset** — `assets/data/aircraft_types.json` → `AircraftTypeEntity` → resolve display name + category in `FlightDetailScreen`. Image assets per type.
 
 4. **Polygon/Canvas flight map** — replace MapLibre in `FlightDetailScreen` hero with Compose Canvas: simplified continent outline polygons + great-circle arc between airports. `TripMapPreview` keeps MapLibre.
 
-5. **UTC/local flight times** — add UTC counterpart fields to `FlightEntity`, calculate from airport timezone, display toggle in flight detail
+5. **UTC/local flight times** — extend `FlightEntity` with four UTC counterpart columns; calculate from local time using `AirportEntity.timezone`; display toggle in `FlightDetailScreen`.
 
-6. **Auto-suggest location search** — replace explicit search-button flow in trip stop and excursion stop dialogs with debounced live suggestions
+6. **Auto-suggest location search** — replace explicit search-button flow in trip stop and excursion stop dialogs with debounced live suggestions as user types.
 
-7. **Country tracking flags** — `destination_counts_for_country_tracking` (default true) + `origin_counts_for_country_tracking` (default false) on flights; update `CountryStateDerivationService`
+7. **Country tracking flags** — `destination_counts_for_country_tracking` (default true) + `origin_counts_for_country_tracking` (default false) on `FlightEntity`; update `CountryStateDerivationService`.
 
 After v3.0, the plan is:
-- **v3.1** Visual redesign (trips + flights) — do this after all v3.0 content is in place
+- **v3.1** Visual redesign (trips + flights) — after all v3.0 content is in place
 - **v3.2** Per-stop photos (trip stops + excursion stops)
 - **v4.0** Country depth (stats dataset, stats page, real country map)
 

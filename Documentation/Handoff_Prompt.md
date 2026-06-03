@@ -5,7 +5,10 @@
 * **Last updated:** 2026-06-03
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 M1 (Flight API) is complete and committed** (`5e07f15` 2026-06-03). Room DB is version `14`.
-* **v3.0 M2 (Airlines dataset) is complete and committed** (`d1cdff7` 2026-06-03). Room DB is version `15`.
+* **v3.0 M2 (Airlines) is complete and committed** across three commits:
+  * `d1cdff7` — airlines dataset + name resolution in flight screens. Room DB v15.
+  * `0cfd5a8` — airline logos via avs.io (Coil 2.7.0).
+  * `16554a8` — airline autocomplete in flight editor (type to suggest, stores IATA).
 * **Current phase:** v3.0 — Flight Foundations. Next practical work: Aircraft type dataset (see §Direction below).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
@@ -18,6 +21,7 @@
 * **Catalan-first** visible UI. English for code, class, function names, and comments.
 * Local-first. No backend.
 * **MapLibre GL Android 11.11.0 is used** (added in M7 — this overrides the old "no MapLibre" constraint). Tile provider: OpenFreeMap liberty style (`https://tiles.openfreemap.org/styles/liberty`). `MapLibre.getInstance()` called in `AtlasApplication`.
+* **Coil 2.7.0** (`coil-compose`) added in M2 for async image loading + disk caching (airline logos). This is the only image-loading library; do not add another.
 * No Hilt / Koin / Retrofit / osmdroid. Manual DI only. Do not add major libraries without explicit agreement.
 * Flexible dates support `YEAR`, `MONTH`, `DAY` precision (`MONTH` = year + month, no day).
 * Country state derivation must stay centralized in `CountryStateDerivationService`.
@@ -38,6 +42,7 @@
 * **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults. The three new flight provenance columns (`fetched_from`, `external_provider`, `external_id`) are not yet included in the backup — they are operational metadata.
 * **Country dataset:** 244 entries, version `2026.1`. Importer inserts `parent_iso2 = null` entries first to satisfy the self-referencing FK.
 * **Airport dataset:** 5,931 airports, version `2026.2`. 141 entries skipped (null id / unknown country / null city).
+* **Airline dataset:** 101 major airlines, version `2026.1`. `iata` is the primary key. No FK to countries (country is display metadata only).
 
 ### Flights
 * Four datetime fields stored as nullable ISO strings `"YYYY-MM-DDTHH:mm"` (scheduled/actual × departure/arrival). No separate year/month/day columns.
@@ -50,13 +55,25 @@
 * **Flight provenance fields** (added migration 13→14): `fetched_from TEXT NOT NULL DEFAULT 'manual'`, `external_provider TEXT`, `external_id TEXT`. These are on `FlightEntity` and `Flight` domain model; carried through `FlightEditorDraftUiState` as hidden fields; preserved on edit.
 * **Status inference:** `inferFlightStatus(scheduledDepartureAt)` in `domain/util/FlightStatusInference.kt` — future→PLANNED, today→IN_PROGRESS, past→COMPLETED, null→null. Called on departure date change (new flights only) and when applying an API result.
 
+### Airlines
+* **`flight.airline` stores the IATA code** when a structured airline is used (selected from autocomplete or filled by API). It stores raw free text when the user types without selecting. Logo lookup and name resolution both rely on this being a valid IATA code; graceful fallback to raw text when not found.
+* **Logo URL pattern:** `https://pics.avs.io/200/100/{IATA}.png` (uppercase IATA). Loaded via Coil `SubcomposeAsyncImage`. Falls back to a styled IATA monogram (`IataMonogram` composable) on error or offline. Logos shown in `FlightCard` (list) and `FlightMetaCard` (detail).
+* **Name resolution:** `AirlineRepository.getAirlineByIata(iata)` returns the full name. ViewModels resolve the stored IATA to a name for display; raw text shown as-is if no match.
+* **Autocomplete in `FlightEditorDialog`:** `AirlineSearchField` composable — debounced LIKE search on `iata` and `name` columns, shows logo + name in dropdown. `SearchAirlinesUseCase` wired in all three flight-editing ViewModels (FlightList, FlightDetail, ItineraryDetail).
+* **`FlightEditorDraftUiState` airline fields:**
+  * `airlineQuery: String` — text shown in the editor field (the resolved name, or whatever the user typed)
+  * `airlineIata: String?` — structured IATA code; `null` when user typed free text without selecting a suggestion
+  * Saved to DB as: `airlineIata ?: airlineQuery.trim().ifBlank { null }`
+  * When opening the editor for an existing flight: stored IATA is resolved to a name via `getAirlineByIata`; if not found, raw text shown as-is
+  * When API fills the form: IATA resolved to name → `airlineQuery = name, airlineIata = iata`
+
 ### Flight API
 * **Provider:** AeroDataBox via RapidAPI (`aerodatabox.p.rapidapi.com`). Endpoint: `GET /flights/number/{number}/{date}`.
 * **Key storage:** DataStore Preferences (`atlas_prefs`). Managed via `ApiKeyRepository` / `ApiKeyPreferencesDataSource`. Exposed as `StateFlow<String>` in `SettingsViewModel`. User enters key in Settings → "Integracions" card.
 * **Client:** `AeroDataBoxClient` (`data/api/`) implements `FlightApiClient` domain interface. Uses `HttpURLConnection`, same pattern as `NominatimLocationSearchRepository`. Returns `FlightApiResult` sealed class: `Success(FlightApiPrefill)`, `NotFound`, `NoApiKey`, `RateLimited`, `NetworkError(message)`.
 * **Editor integration:** `FlightEditorDialog` shows an API search section (flight number + date picker + "Cerca vol" button) for **new flights only** (`flightId == null`). The section is controlled by an optional `FlightApiSearchCallbacks` parameter — passing `null` hides it entirely (used in `ItineraryDetailScreen`).
 * **Airport resolution:** `AirportRepository.getAirportByIata(iata)` added (queries unique `iata` index) to resolve API-returned IATA codes to local `Airport` objects.
-* **Apply flow:** tapping "Utilitza aquests resultats" resolves airports by IATA, infers status from departure date, and pre-fills all available draft fields. Provenance set to `fetchedFrom = "api"`, `externalProvider = "aerodatabox"`, `externalId = "{number}/{date}"`.
+* **Apply flow:** tapping "Utilitza aquests resultats" resolves airports by IATA, resolves airline IATA to full name, infers status from departure date, and pre-fills all available draft fields. Provenance set to `fetchedFrom = "api"`, `externalProvider = "aerodatabox"`, `externalId = "{number}/{date}"`.
 
 ### Maps
 * `AtlasMapView` composable (`ui/components/map/AtlasMapView.kt`) — lifecycle-aware MapLibre wrapper, reused across all map surfaces.
@@ -87,14 +104,15 @@
 ### Screens and routes
 * **Countries:** list, detail (state-colored hero, timeline, map hero), log editor
 * **Trips:** list (status filter chips, route cards), detail (map preview, linked itinerary, stops timeline, excursions inline), stop dialog (search + manual), excursion dialog, excursion stop dialog
-* **Flights:** list (status filter chips, flight cards), detail (hero map, identity/times/airline cards, edit/delete), flight editor dialog
-* **Itineraries:** list, detail (groups, per-group flight rows, group/flight reorder), group editor dialog
+* **Flights:** list (status filter chips, flight cards with airline logo+name), detail (hero map, identity/times/airline cards with logo, edit/delete), flight editor dialog (with airline autocomplete)
+* **Itineraries:** list, detail (groups, per-group flight rows, group/flight reorder), group editor dialog (with airline autocomplete)
 * **Dashboard:** hero card, stat cards, currently living card, upcoming trip card, recent activity
-* **Settings:** backup export/import
+* **Settings:** backup export/import, API key ("Integracions")
 
 ### Key services & use cases
 * `CountryStateDerivationService` — centralizes all country state derivation
 * `SearchAirportsUseCase` — min 2 chars, debounced
+* `SearchAirlinesUseCase` — debounced LIKE search on iata + name, limit 8
 * `LookupFlightUseCase` — flight API lookup; checks for API key first
 * `inferFlightStatus()` — pure utility in `domain/util/FlightStatusInference.kt`
 * `FlexibleDateFormatter` / `FlexibleDateRangeDraftField`
@@ -111,11 +129,16 @@
 ### New in v3.0 M2
 * `assets/data/airlines.json` — 101 airlines, version 2026.1
 * `data/dataset/AirlineDatasetDto.kt` + `AirlineDatasetImporter.kt`
-* `data/local/entity/AirlineEntity.kt`, `data/local/dao/AirlineDao.kt`, `data/local/mapper/AirlineMapper.kt`
-* `domain/model/Airline.kt`, `domain/repository/AirlineRepository.kt`
+* `data/local/entity/AirlineEntity.kt`, `data/local/dao/AirlineDao.kt` (getByIata + search), `data/local/mapper/AirlineMapper.kt`
+* `domain/model/Airline.kt`, `domain/repository/AirlineRepository.kt` (getAirlineByIata + searchAirlines)
+* `domain/usecase/airline/SearchAirlinesUseCase.kt`
 * `data/repository/AirlineRepositoryImpl.kt`
-* `FlightListViewModel` + `FlightDetailViewModel`: `resolvedAirlineName` resolved from IATA; shown in `FlightCard` and `FlightMetaCard`
-* `presentation/flight/FlightApiSearchState.kt`
+* `ui/components/AirlineLogo.kt` — `SubcomposeAsyncImage` from avs.io, `IataMonogram` fallback
+* `ui/components/AirlineSearchField.kt` — text field + logo+name suggestion dropdown
+* `FlightEditorDraftUiState`: `airlineQuery + airlineIata` replacing `airline: String`
+* `FlightListViewModel`, `FlightDetailViewModel`, `ItineraryDetailViewModel`: airline search flow, `onAirlineQueryChanged` / `onAirlineSelected`, edit-mode resolution, API-fill resolution
+* `FlightCard`: airline logo + resolved name row (separate from date/number)
+* `FlightMetaCard`: Companyia row shows logo + name inline
 
 ### Tests
 Flexible date validator/formatter, country state derivation (including layover cases), backup validator/mappers, Nominatim mapper, airport search use case.
@@ -173,16 +196,16 @@ dataset.countries
 
 ## DIRECTION FOR NEXT AI AGENT
 
-v2.0 is fully done. v3.0 M1 and M2 are done. Continue with **v3.0 M3 — Aircraft type dataset**.
+v2.0 is fully done. v3.0 M1 and M2 (including logos and autocomplete) are done. Continue with **v3.0 M3 — Aircraft type dataset**.
 
 ### Completed in v3.0
 1. ✅ **Flight API integration** — AeroDataBox lookup, DataStore API key, `FlightEditorDialog` search section, status inference. Room DB v14.
-2. ✅ **Airlines dataset** — 101 airlines in `assets/data/airlines.json`; `AirlineEntity`/DAO/Repo/Importer; airline name resolved from `flight.airline` IATA in both ViewModels; shown in `FlightCard` and `FlightMetaCard`. Room DB v15.
+2. ✅ **Airlines** — dataset (101 airlines), name resolution, logos via avs.io (Coil), autocomplete in all three flight editors (FlightList, FlightDetail, ItineraryDetail). `airlineQuery`/`airlineIata` draft pattern. Room DB v15.
 
 ### Remaining v3.0 work (in order)
 
 3. **Aircraft type dataset** ← start here
-   — `assets/data/aircraft_types.json` → `AircraftTypeEntity` → resolve display name + category in `FlightDetailScreen`. Image assets per type.
+   — `assets/data/aircraft_types.json` → `AircraftTypeEntity` → resolve display name + category in `FlightDetailScreen`. Follow the same dataset importer pattern as airports/airlines.
 
 4. **Polygon/Canvas flight map** — replace MapLibre in `FlightDetailScreen` hero with Compose Canvas: simplified continent outline polygons + great-circle arc between airports. `TripMapPreview` keeps MapLibre.
 

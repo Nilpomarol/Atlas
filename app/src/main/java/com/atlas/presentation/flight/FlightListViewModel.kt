@@ -14,6 +14,7 @@ import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.usecase.airline.SearchAirlinesUseCase
 import com.atlas.domain.usecase.aircraft.LookupAircraftUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
@@ -39,11 +40,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class FlightListViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
+    tripRepository: TripRepository,
     private val airportRepository: AirportRepository,
     private val airlineRepository: AirlineRepository,
     private val searchAirportsUseCase: SearchAirportsUseCase,
@@ -84,13 +88,16 @@ class FlightListViewModel(
             val resolvedAirlineName = flight.airline?.let { iata ->
                 airlineRepository.getAirlineByIata(iata.uppercase())?.name ?: iata
             }
+            val originAirport = airportRepository.getAirportById(flight.originAirportId)
+            val destinationAirport = airportRepository.getAirportById(flight.destinationAirportId)
             FlightListItemUiState(
                 flight = flight,
-                originLabel = airportRepository.getAirportById(flight.originAirportId)?.shortLabel()
-                    ?: flight.originAirportId.uppercase(),
-                destinationLabel = airportRepository.getAirportById(flight.destinationAirportId)?.shortLabel()
-                    ?: flight.destinationAirportId.uppercase(),
+                originLabel = originAirport?.shortLabel() ?: flight.originAirportId.uppercase(),
+                destinationLabel = destinationAirport?.shortLabel() ?: flight.destinationAirportId.uppercase(),
+                originCity = originAirport?.city,
+                destinationCity = destinationAirport?.city,
                 resolvedAirlineName = resolvedAirlineName,
+                sortKey = flight.sortKey(),
             )
         }
     }
@@ -98,15 +105,24 @@ class FlightListViewModel(
     private val itineraryItems = combine(
         itineraryRepository.observeItineraries(),
         itineraryRepository.observeAllGroups(),
-    ) { itineraries, groups ->
+        tripRepository.observeTrips(),
+    ) { itineraries, groups, trips ->
         val groupsByItinerary = groups.groupBy { it.itineraryId }
+        val tripsById = trips.associateBy { it.id }
         itineraries.map { itinerary ->
             val itineraryGroups = groupsByItinerary[itinerary.id].orEmpty()
             ItinerarySummaryUiState(
                 itinerary = itinerary,
                 groupCount = itineraryGroups.size,
                 flightCount = itineraryGroups.sumOf { it.flights.size },
-                routeSummary = buildRouteSummary(itineraryGroups),
+                routeLabel = buildItineraryRouteLabel(itineraryGroups),
+                groupRoutes = buildItineraryGroupRoutes(itineraryGroups),
+                linkedTripTitle = itinerary.tripId?.let { tripsById[it]?.title },
+                status = itineraryGroups.displayStatus(),
+                sortKey = itineraryGroups
+                    .flatMap { it.flights }
+                    .mapNotNull { it.sortKey() }
+                    .maxOrNull(),
             )
         }
     }
@@ -414,6 +430,56 @@ class FlightListViewModel(
         viewModelScope.launch { deleteItineraryUseCase(itinerary) }
     }
 
+    private suspend fun buildItineraryGroupRoutes(groups: List<ItineraryGroup>): List<ItineraryGroupRouteUiState> =
+        groups
+            .sortedBy { it.sortOrder }
+            .mapNotNull { group ->
+                val sortedFlights = group.sortedFlights()
+                val firstFlight = sortedFlights.firstOrNull() ?: return@mapNotNull null
+                val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null
+                val originAirport = airportRepository.getAirportById(firstFlight.originAirportId)
+                val destinationAirport = airportRepository.getAirportById(lastFlight.destinationAirportId)
+                val layoverAirports = sortedFlights
+                    .dropLast(1)
+                    .mapNotNull { airportRepository.getAirportById(it.destinationAirportId) }
+                    .distinctBy { it.id }
+                ItineraryGroupRouteUiState(
+                    originCode = originAirport?.shortLabel() ?: firstFlight.originAirportId.uppercase(),
+                    originCity = originAirport?.city,
+                    destinationCode = destinationAirport?.shortLabel() ?: lastFlight.destinationAirportId.uppercase(),
+                    destinationCity = destinationAirport?.city,
+                    departureAt = firstFlight.actualDepartureAt ?: firstFlight.scheduledDepartureAt,
+                    arrivalAt = lastFlight.actualArrivalAt ?: lastFlight.scheduledArrivalAt,
+                    layoverCities = layoverAirports.map { it.city }.distinct(),
+                    layoverDurationMinutes = sortedFlights.layoverDurationMinutes(),
+                )
+            }
+
+    private suspend fun buildItineraryRouteLabel(groups: List<ItineraryGroup>): String {
+        val orderedGroups = groups.sortedBy { it.sortOrder }
+        val seenAirportIds = mutableSetOf<String>()
+        val route = mutableListOf<String>()
+        suspend fun addAirportIfNew(airportId: String) {
+            val normalizedId = airportId.uppercase()
+            if (!seenAirportIds.add(normalizedId)) return
+            val label = airportRepository.getAirportById(airportId)?.shortLabel()
+                ?: normalizedId
+            route += label
+        }
+        for (group in orderedGroups) {
+            val flights = group.sortedFlights()
+            val firstFlight = flights.firstOrNull() ?: continue
+            val lastFlight = flights.lastOrNull() ?: continue
+            addAirportIfNew(firstFlight.originAirportId)
+            addAirportIfNew(lastFlight.destinationAirportId)
+        }
+        return if (route.isEmpty()) {
+            "Sense ruta"
+        } else {
+            route.joinToString(" → ")
+        }
+    }
+
     private suspend fun buildRouteSummary(groups: List<ItineraryGroup>): String {
         return groups
             .sortedBy { it.sortOrder }
@@ -440,6 +506,7 @@ class FlightListViewModel(
     class Factory(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
+        private val tripRepository: TripRepository,
         private val airportRepository: AirportRepository,
         private val airlineRepository: AirlineRepository,
         private val searchAirportsUseCase: SearchAirportsUseCase,
@@ -457,6 +524,7 @@ class FlightListViewModel(
         override fun <T : ViewModel> create(modelClass: Class<T>): T = FlightListViewModel(
             flightRepository = flightRepository,
             itineraryRepository = itineraryRepository,
+            tripRepository = tripRepository,
             airportRepository = airportRepository,
             airlineRepository = airlineRepository,
             searchAirportsUseCase = searchAirportsUseCase,
@@ -487,14 +555,32 @@ data class FlightListItemUiState(
     val flight: Flight,
     val originLabel: String,
     val destinationLabel: String,
+    val originCity: String? = null,
+    val destinationCity: String? = null,
     val resolvedAirlineName: String? = null,
+    val sortKey: String? = null,
 )
 
 data class ItinerarySummaryUiState(
     val itinerary: Itinerary,
     val groupCount: Int,
     val flightCount: Int,
-    val routeSummary: String,
+    val routeLabel: String = "Sense ruta",
+    val groupRoutes: List<ItineraryGroupRouteUiState> = emptyList(),
+    val linkedTripTitle: String? = null,
+    val status: TravelStatus = TravelStatus.UNKNOWN,
+    val sortKey: String? = null,
+)
+
+data class ItineraryGroupRouteUiState(
+    val originCode: String,
+    val originCity: String? = null,
+    val destinationCode: String,
+    val destinationCity: String? = null,
+    val departureAt: String? = null,
+    val arrivalAt: String? = null,
+    val layoverCities: List<String> = emptyList(),
+    val layoverDurationMinutes: Long? = null,
 )
 
 data class FlightEditorDraftUiState(
@@ -574,3 +660,39 @@ fun Airport.displayLabel(): String {
 }
 
 private fun Airport.shortLabel(): String = iata ?: icao ?: city
+
+private fun Flight.sortKey(): String? =
+    actualDepartureAt ?: scheduledDepartureAt ?: actualArrivalAt ?: scheduledArrivalAt
+
+private fun ItineraryGroup.sortedFlights(): List<Flight> =
+    flights.sortedWith(
+        compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
+            .thenBy { it.scheduledDepartureAt ?: "" },
+    )
+
+private fun List<Flight>.layoverDurationMinutes(): Long? {
+    val durations = zipWithNext().mapNotNull { (previous, next) ->
+        val arrival = previous.actualArrivalAt ?: previous.scheduledArrivalAt ?: return@mapNotNull null
+        val departure = next.actualDepartureAt ?: next.scheduledDepartureAt ?: return@mapNotNull null
+        val arrivalTime = runCatching { LocalDateTime.parse(arrival) }.getOrNull() ?: return@mapNotNull null
+        val departureTime = runCatching { LocalDateTime.parse(departure) }.getOrNull() ?: return@mapNotNull null
+        Duration.between(arrivalTime, departureTime).toMinutes().takeIf { it >= 0 }
+    }
+    return durations.takeIf { it.isNotEmpty() }?.sum()
+}
+
+private fun List<ItineraryGroup>.displayStatus(): TravelStatus {
+    val statuses = flatMap { group ->
+        buildList {
+            group.status?.let(::add)
+            addAll(group.flights.map { it.status })
+        }
+    }
+    return when {
+        statuses.isEmpty() -> TravelStatus.UNKNOWN
+        statuses.all { it == TravelStatus.COMPLETED } -> TravelStatus.COMPLETED
+        statuses.any { it == TravelStatus.IN_PROGRESS } -> TravelStatus.IN_PROGRESS
+        statuses.any { it == TravelStatus.PLANNED } -> TravelStatus.PLANNED
+        else -> TravelStatus.UNKNOWN
+    }
+}

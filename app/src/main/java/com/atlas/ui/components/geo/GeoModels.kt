@@ -50,4 +50,6 @@ data class GeoMarker(
     val color: Color,
     val radiusMultiplier: Float = 1f,
     val alpha: Float = 1f,
+    val isHollow: Boolean = false,
+    val label: String? = null,
 )

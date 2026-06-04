@@ -12,13 +12,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.remember
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.Favorite
@@ -46,8 +46,8 @@ import com.atlas.R
 import com.atlas.presentation.dashboard.DashboardTripUiState
 import com.atlas.presentation.dashboard.DashboardUiState
 import com.atlas.ui.components.AtlasCard
-import com.atlas.ui.components.AtlasDottedCanvas
 import com.atlas.ui.components.AtlasPage
+import com.atlas.ui.components.geo.AtlasGeoCanvas
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.components.AtlasSemanticColors
@@ -56,6 +56,7 @@ import com.atlas.ui.theme.AtlasLiving
 import com.atlas.ui.theme.AtlasLivingContainer
 import com.atlas.ui.theme.AtlasLived
 import com.atlas.ui.theme.AtlasLivedContainer
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -121,12 +122,24 @@ private fun DashboardAtlasHero(uiState: DashboardUiState) {
                 )
             }
         }
-        AtlasDottedCanvas(
-            modifier = Modifier.fillMaxWidth(),
-            height = 150.dp,
+        val highlightColorByIso2 = remember(
+            uiState.livingIso2s, uiState.livedIso2s, uiState.visitedIso2s,
+            uiState.plannedIso2s, uiState.wishedIso2s,
         ) {
-            SampleWorldMarkers()
+            buildMap {
+                uiState.wishedIso2s.forEach { put(it, AtlasWished) }
+                uiState.plannedIso2s.forEach { put(it, AtlasPlanned) }
+                uiState.visitedIso2s.forEach { put(it, AtlasVisited) }
+                uiState.livedIso2s.forEach { put(it, AtlasLived) }
+                uiState.livingIso2s.forEach { put(it, AtlasLiving) }
+            }
         }
+        AtlasGeoCanvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(150.dp),
+            highlightColorByIso2 = highlightColorByIso2,
+        )
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
         ) {
@@ -202,40 +215,6 @@ private fun LegendItem(label: String, color: Color) {
             style = MaterialTheme.typography.labelSmall,
             color = AtlasOnSurfaceMuted,
         )
-    }
-}
-
-@Composable
-private fun SampleWorldMarkers() {
-    val markers = listOf(
-        0.30f to 0.58f,
-        0.45f to 0.32f,
-        0.50f to 0.28f,
-        0.55f to 0.38f,
-        0.68f to 0.52f,
-        0.78f to 0.35f,
-    )
-    markers.forEachIndexed { index, marker ->
-        val color = when (index % 4) {
-            0 -> AtlasVisited
-            1 -> AtlasWished
-            2 -> AtlasPlanned
-            else -> AtlasLived
-        }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .offset(x = (marker.first * 280).dp, y = (marker.second * 120).dp)
-                    .size(9.dp)
-                    .clip(CircleShape)
-                    .background(color),
-            )
-        }
     }
 }
 
@@ -355,7 +334,7 @@ private fun CountryKpis(uiState: DashboardUiState) {
 private fun TravelKpis(uiState: DashboardUiState) {
     Row(
         modifier = Modifier.padding(horizontal = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         TravelKpi(
             modifier = Modifier.weight(1f),
@@ -370,6 +349,13 @@ private fun TravelKpis(uiState: DashboardUiState) {
             value = uiState.flightCount.toString(),
             label = "Vols",
             colors = AtlasSemanticColors(AtlasPrimary, AtlasLivingContainer, "Vols"),
+        )
+        TravelKpi(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Filled.Flag,
+            value = uiState.flownDistanceKm.toCompactKm(),
+            label = "km volats",
+            colors = AtlasSemanticColors(AtlasNavy, AtlasPlannedContainer, "km volats"),
         )
     }
 }
@@ -635,5 +621,14 @@ private fun RouteLineCanvas() {
         listOf(p1, p2, p3).forEach {
             drawCircle(Color.White, radius = 4.dp.toPx(), center = it)
         }
+    }
+}
+
+private fun Double.toCompactKm(): String {
+    val rounded = kotlin.math.round(this).toLong()
+    return if (rounded >= 10_000) {
+        "${rounded / 1_000} k"
+    } else {
+        rounded.toString()
     }
 }

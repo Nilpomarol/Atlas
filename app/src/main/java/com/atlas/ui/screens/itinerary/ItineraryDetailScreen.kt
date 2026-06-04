@@ -50,6 +50,7 @@ import com.atlas.domain.model.Flight
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
+import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.flight.FlightEditorDraftUiState
 import com.atlas.presentation.itinerary.GroupEditorDraft
 import com.atlas.presentation.itinerary.ItineraryDetailUiState
@@ -522,7 +523,7 @@ private fun GroupFlightRow(
                     color = AtlasOnSurfaceStrong,
                 )
                 val meta = buildList {
-                    flight.scheduledDepartureAt?.let { add(it.take(10)) }
+                    flight.scheduledDepartureAt?.let { itineraryDateFormatter.formatIsoDate(it)?.let(::add) }
                     flight.flightNumber?.let { add(it) }
                 }.joinToString(" · ")
                 if (meta.isNotBlank()) {
@@ -621,3 +622,5 @@ private fun GroupEditorDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·la") } },
     )
 }
+
+private val itineraryDateFormatter = FlexibleDateFormatter()

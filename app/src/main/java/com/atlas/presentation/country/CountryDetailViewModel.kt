@@ -504,28 +504,7 @@ private fun Trip.toCountryTripSummary(
 
 private fun Airport.shortLabel(): String = iata ?: icao ?: city
 
-private fun String.toCompactDateText(): String? {
-    val date = take(10)
-    val parts = date.split("-")
-    if (parts.size != 3) return null
-    val year = parts[0].toIntOrNull() ?: return null
-    val month = parts[1].toIntOrNull() ?: return null
-    val day = parts[2].toIntOrNull() ?: return null
-    return "$day ${month.shortCatalanMonthLower()} ${(year % 100).toString().padStart(2, '0')}"
-}
+private fun String.toCompactDateText(): String? =
+    countryDetailDateFormatter.formatIsoDate(this)
 
-private fun Int.shortCatalanMonthLower(): String = when (this) {
-    1 -> "gen."
-    2 -> "febr."
-    3 -> "març"
-    4 -> "abr."
-    5 -> "maig"
-    6 -> "juny"
-    7 -> "jul."
-    8 -> "ag."
-    9 -> "set."
-    10 -> "oct."
-    11 -> "nov."
-    12 -> "des."
-    else -> ""
-}
+private val countryDetailDateFormatter = FlexibleDateFormatter()

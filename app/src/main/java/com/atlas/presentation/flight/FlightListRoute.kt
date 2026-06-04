@@ -18,6 +18,7 @@ fun FlightListRoute(
         factory = FlightListViewModel.Factory(
             flightRepository = app.container.flightRepository,
             itineraryRepository = app.container.itineraryRepository,
+            tripRepository = app.container.tripRepository,
             airportRepository = app.container.airportRepository,
             airlineRepository = app.container.airlineRepository,
             searchAirportsUseCase = app.container.searchAirportsUseCase,

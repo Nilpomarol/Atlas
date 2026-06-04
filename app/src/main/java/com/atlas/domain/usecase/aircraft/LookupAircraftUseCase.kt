@@ -21,12 +21,13 @@ class LookupAircraftUseCase(
             ?.takeIf { it.isNotBlank() }
             ?: return null
 
-        aircraftRepository.getAircraftByRegistration(normalizedRegistration)?.let { cached ->
-            return cached.takeIf { it.lastLookupStatus == LOOKUP_SUCCESS }
+        val cached = aircraftRepository.getAircraftByRegistration(normalizedRegistration)
+        if (cached?.lastLookupStatus == LOOKUP_SUCCESS && !cached.imageUrl.isNullOrBlank()) {
+            return cached
         }
 
         val apiKey = apiKeyRepository.observeRapidApiKey().first().trim()
-        if (apiKey.isBlank()) return null
+        if (apiKey.isBlank()) return cached?.takeIf { it.lastLookupStatus == LOOKUP_SUCCESS }
 
         val now = Instant.now().toString()
         return when (val result = aircraftApiClient.lookupAircraftByRegistration(normalizedRegistration, apiKey)) {
@@ -36,14 +37,17 @@ class LookupAircraftUseCase(
                 aircraft
             }
             AircraftApiResult.NotFound -> {
+                if (cached?.lastLookupStatus == LOOKUP_SUCCESS) return cached
                 aircraftRepository.upsertLookupStatus(normalizedRegistration, LOOKUP_NOT_FOUND, now)
                 null
             }
             AircraftApiResult.RateLimited -> {
+                if (cached?.lastLookupStatus == LOOKUP_SUCCESS) return cached
                 aircraftRepository.upsertLookupStatus(normalizedRegistration, LOOKUP_RATE_LIMITED, now)
                 null
             }
             is AircraftApiResult.NetworkError -> {
+                if (cached?.lastLookupStatus == LOOKUP_SUCCESS) return cached
                 aircraftRepository.upsertLookupStatus(normalizedRegistration, LOOKUP_ERROR, now)
                 null
             }

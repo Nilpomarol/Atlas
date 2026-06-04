@@ -48,6 +48,7 @@ import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripListItemUiState
 import com.atlas.presentation.trip.TripListUiState
 import com.atlas.ui.components.AtlasPage
+import com.atlas.ui.components.AtlasFilterPill
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasAccentContainer
@@ -196,28 +197,7 @@ private fun TripStatusFilterChip(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-            )
-        },
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = AtlasOutline,
-            selectedBorderColor = AtlasAccentContainer,
-        ),
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = AtlasSurface,
-            selectedContainerColor = AtlasAccentContainer,
-            labelColor = AtlasOnSurfaceMuted,
-            selectedLabelColor = AtlasPrimary,
-        ),
-    )
+    AtlasFilterPill(label = label, selected = selected, onClick = onClick)
 }
 
 @Composable

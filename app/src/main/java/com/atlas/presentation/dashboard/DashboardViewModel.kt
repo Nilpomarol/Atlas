@@ -90,11 +90,22 @@ class DashboardViewModel(
         val nextPlannedTrip = trips.firstOrNull { it.status == TravelStatus.PLANNED }
         val featuredTrip = currentTrip ?: nextPlannedTrip
 
+        val livingIso2s = countryStates.filter { it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
+        val livedIso2s = countryStates.filter { it.second.lived && !it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
+        val visitedIso2s = countryStates.filter { it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
+        val plannedIso2s = countryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
+        val wishedIso2s = countryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
+
         DashboardUiState(
             visitedCount = countryStates.count { it.second.visited },
             wishedCount = countryStates.count { it.second.wished },
             plannedCount = countryStates.count { it.second.planned },
             livedCount = countryStates.count { it.second.lived },
+            livingIso2s = livingIso2s,
+            livedIso2s = livedIso2s,
+            visitedIso2s = visitedIso2s,
+            plannedIso2s = plannedIso2s,
+            wishedIso2s = wishedIso2s,
             visitedContinentCount = countryStates
                 .filter { it.second.visited || it.second.lived }
                 .map { it.first.continent }
@@ -102,6 +113,7 @@ class DashboardViewModel(
                 .size,
             tripCount = trips.size,
             flightCount = flights.size,
+            flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 },
             stopCount = tripStops.size,
             trackableCountryCount = countries.size,
             currentlyLivingCountryName = currentlyLivingIso2?.let { countryNamesByIso2[it] },
@@ -199,9 +211,15 @@ data class DashboardUiState(
     val wishedCount: Int = 0,
     val plannedCount: Int = 0,
     val livedCount: Int = 0,
+    val livingIso2s: Set<String> = emptySet(),
+    val livedIso2s: Set<String> = emptySet(),
+    val visitedIso2s: Set<String> = emptySet(),
+    val plannedIso2s: Set<String> = emptySet(),
+    val wishedIso2s: Set<String> = emptySet(),
     val visitedContinentCount: Int = 0,
     val tripCount: Int = 0,
     val flightCount: Int = 0,
+    val flownDistanceKm: Double = 0.0,
     val stopCount: Int = 0,
     val trackableCountryCount: Int = 0,
     val currentlyLivingCountryName: String? = null,

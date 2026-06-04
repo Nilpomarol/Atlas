@@ -48,6 +48,7 @@ import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasSurface
+import com.atlas.domain.service.FlexibleDateFormatter
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -314,20 +315,7 @@ private fun parseIsoTime(value: String): LocalTime {
 }
 
 private fun formatIsoDisplay(value: String): String {
-    return try {
-        val date = LocalDate.parse(value.take(10), DateTimeFormatter.ISO_LOCAL_DATE)
-        val time = value.drop(11).take(5)
-        val monthLabel = date.monthValue.toDisplayMonthLabel()
-        "${date.dayOfMonth} $monthLabel ${date.year}  ·  $time"
-    } catch (_: Exception) {
-        value
-    }
+    return dateTimeFieldFormatter.formatIsoDateTime(value) ?: value
 }
 
-private fun Int.toDisplayMonthLabel(): String = when (this) {
-    1  -> "Gen."  2  -> "Febr." 3  -> "Març"
-    4  -> "Abr."  5  -> "Maig"  6  -> "Juny"
-    7  -> "Jul."  8  -> "Ag."   9  -> "Set."
-    10 -> "Oct."  11 -> "Nov."  12 -> "Des."
-    else -> "$this"
-}
+private val dateTimeFieldFormatter = FlexibleDateFormatter()

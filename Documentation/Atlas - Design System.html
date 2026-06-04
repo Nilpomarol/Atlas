@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Atlas — Design System · Cartographer's Ink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="atlas.css" rel="stylesheet" />
+<style>
+body{background:#E0D6C1;color:var(--ink);
+  background-image:linear-gradient(rgba(30,42,46,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(30,42,46,.04) 1px,transparent 1px);
+  background-size:36px 36px;}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");}
+.wrap{position:relative;z-index:1;max-width:1120px;margin:0 auto;padding:0 30px 130px;}
+
+/* masthead */
+.mast{display:flex;align-items:center;gap:22px;padding:52px 0 28px;border-bottom:1.5px solid var(--ink);}
+.mast img{width:62px;height:62px;border-radius:50%;}
+.mast .mt{font-family:var(--serif);font-size:34px;font-weight:500;letter-spacing:-.01em;line-height:1;white-space:nowrap;}
+.mast .ms{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:8px;}
+.mast .mr{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:2;}
+.mast .mr a{color:var(--primary);text-decoration:none;}
+
+.intro{font-family:var(--serif);font-size:21px;line-height:1.45;color:#3b332a;max-width:62ch;margin:32px 0 8px;font-weight:400;}
+
+/* section scaffold */
+section{padding:46px 0 6px;border-bottom:1px solid var(--line);}
+.sh{display:flex;align-items:baseline;gap:15px;margin-bottom:26px;}
+.sh .n{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--primary);}
+.sh h2{font-family:var(--serif);font-size:29px;font-weight:500;margin:0;letter-spacing:-.01em;}
+.sh .note{margin-left:auto;font-size:13px;color:var(--muted);max-width:40ch;text-align:right;}
+
+.grid{display:grid;gap:18px;}
+.g2{grid-template-columns:1fr 1fr;}
+.g3{grid-template-columns:repeat(3,1fr);}
+.card-pad{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;}
+.lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.cap{font-size:13px;color:#5c5343;margin:10px 0 0;}
+p{max-width:64ch;}
+
+/* principles */
+.principles{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 36px;}
+.principles li{padding:16px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:26px 1fr;gap:13px;}
+.principles .pi{font-family:var(--mono);font-size:12px;color:var(--primary);font-weight:700;}
+.principles b{font-size:15px;}
+.principles span{display:block;font-size:13px;color:#5c5343;margin-top:3px;}
+
+/* type specimens */
+.type-row{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 24px;display:grid;grid-template-columns:170px 1fr;gap:24px;align-items:center;margin-bottom:12px;}
+.type-row .tm .tn{font-size:15px;font-weight:700;}
+.type-row .tm .td{font-family:var(--mono);font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;}
+.sp-serif{font-family:var(--serif);font-size:36px;line-height:1.05;}
+.sp-sans .a{font-size:20px;font-weight:700;}
+.sp-sans .b{font-size:14px;color:#5c5343;}
+.sp-mono{font-family:var(--mono);font-size:15px;}
+.sp-mono .l{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.scale{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:baseline;font-family:var(--serif);}
+.scale span{line-height:1;}
+
+/* swatches */
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.sw-tile{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--surface);}
+.sw-chip{height:72px;}
+.sw-meta{padding:10px 12px;}
+.sw-meta .nm{font-size:13px;font-weight:700;}
+.sw-meta .hx{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:1px;text-transform:uppercase;}
+.state-row{display:flex;flex-wrap:wrap;gap:10px;}
+
+/* spec sheet block */
+.specimen{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;}
+.specimen.tight{padding:18px;}
+.demo-paper{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;}
+
+.tokens{font-family:var(--mono);font-size:12px;line-height:2;color:var(--ink-soft);}
+.tokens .k{color:var(--primary);}
+.tokens .c{color:var(--muted);}
+
+.screen-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.screen-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 17px;}
+.screen-item .si-n{font-family:var(--mono);font-size:11px;color:var(--primary);font-weight:700;}
+.screen-item h3{font-family:var(--serif);font-size:18px;font-weight:500;margin:6px 0 5px;}
+.screen-item p{font-size:12.5px;color:#5c5343;margin:0;}
+
+.footer-cta{margin-top:30px;background:var(--ink);color:#EDE2CC;border-radius:18px;padding:26px 28px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.footer-cta .fc-t{font-family:var(--serif);font-size:22px;color:#fff;}
+.footer-cta .fc-d{font-size:14px;color:#cdbfa6;max-width:50ch;}
+.footer-cta a{margin-left:auto;font-family:var(--sans);font-weight:700;font-size:14px;background:var(--primary);color:#FBF1E2;padding:12px 20px;border-radius:12px;text-decoration:none;}
+
+@media(max-width:900px){.g2,.g3,.principles,.screen-list,.swatches{grid-template-columns:1fr;}.type-row{grid-template-columns:1fr;gap:12px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <img src="assets/atlas-logo.png" alt="Atlas" />
+    <div>
+      <div class="mt">Atlas — design system</div>
+      <div class="ms">Cartographer's Ink · v3.1 · final</div>
+    </div>
+    <div class="mr">
+      Reference<br />
+      <a href="Atlas Redesign - Prototype.html">Open prototype →</a>
+    </div>
+  </header>
+
+  <p class="intro">Atlas reads like a printed travel atlas you keep adding to — warm paper and ink, map graticules, stamped monospace labels, and pages where one thing is clearly the subject. This is the locked system behind the v3.1 redesign: foundations, the component kit, and the screen catalogue.</p>
+
+  <!-- 01 PRINCIPLES -->
+  <section>
+    <div class="sh"><span class="n">01</span><h2>Principles</h2><span class="note">The rules that override individual decisions.</span></div>
+    <ul class="principles">
+      <li><span class="pi">A</span><div><b>Paper &amp; ink, dialled up</b><span>Warm paper, deep ink, real contrast. Subtle grain and a map grid as texture — never flat.</span></div></li>
+      <li><span class="pi">B</span><div><b>One subject per screen</b><span>A clear hero — a map, a number, a route — then supporting detail in quieter tiers.</span></div></li>
+      <li><span class="pi">C</span><div><b>Mono is the instrument layer</b><span>Codes, coordinates, dates and labels in monospace — the cartographer's hand.</span></div></li>
+      <li><span class="pi">D</span><div><b>Data as decoration</b><span>Route arcs, duration, distance, aircraft, layovers and timelines do the visual work.</span></div></li>
+      <li><span class="pi">E</span><div><b>A kit with range</b><span>Ledgers, rows, panels, feature cards — differentiated on purpose, not one box repeated.</span></div></li>
+      <li><span class="pi">F</span><div><b>Colour always means the same</b><span>The six-state palette drives chips, map fills, timeline nodes and card tints everywhere.</span></div></li>
+    </ul>
+  </section>
+
+  <!-- 02 TYPE -->
+  <section>
+    <div class="sh"><span class="n">02</span><h2>Typography</h2><span class="note">An editorial serif, a warm grotesk, a cartographic mono.</span></div>
+    <div class="type-row">
+      <div class="tm"><div class="tn">Newsreader</div><div class="td">Display · serif</div></div>
+      <div class="sp-serif">El teu atlas · Tòquio, Japó</div>
+    </div>
+    <div class="type-row">
+      <div class="tm"><div class="tn">Hanken Grotesk</div><div class="td">UI · body sans</div></div>
+      <div class="sp-sans"><div class="a">Vincula itinerari · Afegeix parada</div><div class="b">Buttons, body copy and supporting text — quiet, warm, legible at small sizes.</div></div>
+    </div>
+    <div class="type-row">
+      <div class="tm"><div class="tn">Space Mono</div><div class="td">Labels · data · codes</div></div>
+      <div class="sp-mono"><span class="l">Capital · Regió · Codi</span><br />BCN → DFW · AA 193 · 35.6769, 139.7639</div>
+    </div>
+    <div class="type-row" style="grid-template-columns:170px 1fr;">
+      <div class="tm"><div class="tn">Display scale</div><div class="td">Newsreader 500</div></div>
+      <div class="scale"><span style="font-size:46px;">60</span><span style="font-size:34px;">34</span><span style="font-size:27px;">27</span><span style="font-size:22px;">22</span><span style="font-size:18px;">18</span><span style="font-size:16px;">16</span></div>
+    </div>
+  </section>
+
+  <!-- 03 COLOUR -->
+  <section>
+    <div class="sh"><span class="n">03</span><h2>Colour — Cartographer's Ink</h2><span class="note">Built from the logo: paper, ink, vermilion, navy and gold.</span></div>
+    <div class="lbl">Core palette</div>
+    <div class="swatches" style="margin-bottom:26px;">
+      <div class="sw-tile"><div class="sw-chip" style="background:#ECE3D2;"></div><div class="sw-meta"><div class="nm">Paper</div><div class="hx">#ECE3D2</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#F8F3E8;"></div><div class="sw-meta"><div class="nm">Surface</div><div class="hx">#F8F3E8</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#1E2A2E;"></div><div class="sw-meta"><div class="nm">Ink</div><div class="hx">#1E2A2E</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#857C6A;"></div><div class="sw-meta"><div class="nm">Muted</div><div class="hx">#857C6A</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#C2502B;"></div><div class="sw-meta"><div class="nm">Primary · vermilion</div><div class="hx">#C2502B</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#1E3D52;"></div><div class="sw-meta"><div class="nm">Navy · structure</div><div class="hx">#1E3D52</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#C99A4E;"></div><div class="sw-meta"><div class="nm">Gold</div><div class="hx">#C99A4E</div></div></div>
+      <div class="sw-tile"><div class="sw-chip" style="background:#6E7E4F;"></div><div class="sw-meta"><div class="nm">Olive</div><div class="hx">#6E7E4F</div></div></div>
+    </div>
+    <div class="lbl">The six-state language — constant across the whole app</div>
+    <div class="specimen tight">
+      <div class="state-row">
+        <span class="chip c-living"><span class="dot"></span>Vivint-hi</span>
+        <span class="chip c-lived"><span class="dot"></span>Viscut</span>
+        <span class="chip c-visited"><span class="dot"></span>Visitat</span>
+        <span class="chip c-planned"><span class="dot"></span>Planificat</span>
+        <span class="chip c-wished"><span class="dot"></span>Desitjat</span>
+        <span class="chip c-never"><span class="dot"></span>No visitat</span>
+      </div>
+      <p class="cap">Each state is a hue + soft tint + dot. The dot colour also fills map polygons, timeline nodes and trip-card gradients, so colour is never ambiguous. Living #C2602B · Lived #7A57A3 · Visited #3E9173 · Planned #4C73AC · Wished #BC5187 · Never #9C9180.</p>
+    </div>
+  </section>
+
+  <!-- 04 COMPONENTS -->
+  <section>
+    <div class="sh"><span class="n">04</span><h2>Component kit</h2><span class="note">Live specimens — the same classes the app screens use.</span></div>
+
+    <div class="grid g2" style="margin-bottom:18px;">
+      <div class="specimen">
+        <div class="lbl">Stat ledger · dashboard</div>
+        <div class="ledger">
+          <div class="led-cap"><span class="lc-l">El teu món</span><span class="lc-r">3 / 7 continents</span></div>
+          <div class="led-hero"><span class="led-big">9</span><span class="led-of">/ 244 llocs visitats</span></div>
+          <div class="led-grid">
+            <div class="lstat"><div class="lv">1</div><div class="ll"><span class="dot" style="background:var(--s-lived);"></span>Viscuts</div></div>
+            <div class="lstat"><div class="lv">3</div><div class="ll"><span class="dot" style="background:var(--s-planned);"></span>Plans</div></div>
+            <div class="lstat"><div class="lv">1</div><div class="ll"><span class="dot" style="background:var(--s-wished);"></span>Desitjats</div></div>
+            <div class="lstat"><div class="lv">9</div><div class="ll"><span class="dot" style="background:var(--s-visited);"></span>Visitats</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="specimen">
+        <div class="lbl">Country rows · compact, state-ticked</div>
+        <div class="demo-paper" style="padding:8px 12px;">
+          <div class="crow"><span class="ctick" style="background:var(--s-visited);"></span><span class="cflag">🇯🇵</span><div class="cmid"><div class="cn">Japó</div><div class="cm">Tòquio · Àsia Oriental</div></div><span class="cstate" style="color:var(--s-visited-d);"><span class="dot" style="background:var(--s-visited);"></span>Visitat</span></div>
+          <div class="crow"><span class="ctick" style="background:var(--s-wished);"></span><span class="cflag">🇲🇦</span><div class="cmid"><div class="cn">Marroc</div><div class="cm">Rabat · Àfrica del Nord</div></div><span class="cstate" style="color:var(--s-wished-d);"><span class="dot" style="background:var(--s-wished);"></span>Desitjat</span></div>
+          <div class="crow"><span class="ctick" style="background:var(--s-never);"></span><span class="cflag">🇫🇷</span><div class="cmid"><div class="cn">França</div><div class="cm">París · Europa Occidental</div></div><span class="cstate" style="color:var(--s-never-d);"><span class="dot" style="background:var(--s-never);"></span>No visitat</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-bottom:18px;">
+      <div class="specimen">
+        <div class="lbl">Itinerary card</div>
+        <div class="itcard">
+          <div class="it-top"><span class="it-kick"><svg viewBox="0 0 24 24" style="width:15px;height:15px;stroke:var(--navy);fill:none;stroke-width:1.7;"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 013 3 3 3 0 01-3 3H9a3 3 0 00-3 3"/></svg>Itinerari · 2 grups</span><span class="it-status chip c-visited"><span class="dot"></span>Completat</span></div>
+          <div class="it-title">japo</div>
+          <div class="it-route">Barcelona <span class="swap"><svg viewBox="0 0 24 24" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></span> Tòquio</div>
+          <div class="it-via">via Doha · 4 vols</div>
+          <div class="it-foot"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.7;"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Vinculat a <b>japo 2026</b></div>
+        </div>
+      </div>
+      <div class="specimen">
+        <div class="lbl">Solo flight card · route is the hero</div>
+        <div class="fcard">
+          <div class="fc-top"><span class="fc-logo" style="background:#0078D2;"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L12 19v-5.5L21 16Z"/></svg></span><span class="fc-air">American Airlines</span><span class="fc-sep">·</span><span class="fc-no">AA 193</span><span class="fc-status chip chip-delay"><span class="dot"></span>+25 min</span></div>
+          <div class="route"><div class="ep"><div class="code">BCN</div><div class="city">Barcelona</div></div><div class="mid"><div class="dur">10 h 10 m</div><div class="line"><svg viewBox="0 0 120 16" preserveAspectRatio="none"><line x1="4" y1="8" x2="116" y2="8" stroke="#C2502B" stroke-width="1.4" stroke-dasharray="2 3"/><circle cx="4" cy="8" r="3" fill="#C2502B"/><circle cx="116" cy="8" r="3" fill="none" stroke="#C2502B" stroke-width="1.4"/><path d="M56 4l8 4-8 4 2-4z" fill="#C2502B"/></svg></div></div><div class="ep r"><div class="code">DFW</div><div class="city">Dallas-Fort Worth</div></div></div>
+          <div class="fc-times"><span class="t">10:45</span><span class="t">14:55</span></div>
+          <div class="fc-foot"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>03 Jun 2026 <span class="fsep">·</span><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L12 19v-5.5L21 16Z"/></svg>Boeing 777-200</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2" style="margin-bottom:18px;">
+      <div class="specimen">
+        <div class="lbl">Derivation timeline · "why this state"</div>
+        <div class="tline">
+          <div class="tline-item">
+            <div class="tline-rail"><span class="tline-node" style="background:var(--s-living);"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/></svg></span><span class="tline-spine"></span></div>
+            <div class="tline-card"><div class="tline-top"><span class="tline-date">01 — 15 maig 2026</span><span class="tline-src" style="background:var(--s-living-t);color:var(--s-living-d);">Viatge</span></div><div class="tline-title">Test BCN</div><div class="tline-meta">Sta. Maria del Mar → Vancouver</div></div>
+          </div>
+          <div class="tline-item">
+            <div class="tline-rail"><span class="tline-node" style="background:var(--s-visited);"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L12 19v-5.5L21 16Z"/></svg></span><span class="tline-spine"></span></div>
+            <div class="tline-card"><div class="tline-top"><span class="tline-date">12 abr 2024</span><span class="tline-src" style="background:var(--s-visited-t);color:var(--s-visited-d);">Vol</span></div><div class="tline-title">BCN → MAD</div><div class="tline-meta">Iberia · IB 462</div></div>
+          </div>
+          <div class="tline-item">
+            <div class="tline-rail"><span class="tline-node" style="background:var(--s-lived);"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span class="tline-spine"></span></div>
+            <div class="tline-card"><div class="tline-top"><span class="tline-date">2003 — 2019</span><span class="tline-src" style="background:var(--s-lived-t);color:var(--s-lived-d);">Residència</span></div><div class="tline-title">Vivint a Madrid</div><div class="tline-meta">16 anys</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="specimen">
+        <div class="lbl">Itinerary route · layover-aware</div>
+        <div class="g2" style="background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:14px 15px;">
+          <div class="airoute">
+            <div class="ar-row ar-node"><div class="ar-rail"><span class="ar-dot fill"></span></div><div class="ar-body"><span class="ar-code">BCN</span><span class="ar-city">Barcelona</span><span class="ar-time">10:45</span></div></div>
+            <div class="ar-row ar-edge"><div class="ar-rail"></div><div class="ar-body"><span class="pl"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L12 19v-5.5L21 16Z"/></svg></span>Qatar · QR 146 · 6 h 25</div></div>
+            <div class="ar-row ar-node"><div class="ar-rail"><span class="ar-dot"></span></div><div class="ar-body"><span class="ar-code">DOH</span><span class="ar-city">Doha</span><span class="ar-ev">arribada</span><span class="ar-time">19:10</span></div></div>
+            <div class="ar-row ar-lay"><div class="ar-rail"></div><div class="ar-body"><span class="lay-chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Escala · 2 h 30 m</span></div></div>
+            <div class="ar-row ar-node"><div class="ar-rail"><span class="ar-dot"></span></div><div class="ar-body"><span class="ar-code">DOH</span><span class="ar-city">Doha</span><span class="ar-ev">sortida</span><span class="ar-time">21:40</span></div></div>
+            <div class="ar-row ar-edge"><div class="ar-rail"></div><div class="ar-body"><span class="pl"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L12 19v-5.5L21 16Z"/></svg></span>Qatar · QR 812 · 9 h 40</div></div>
+            <div class="ar-row ar-node"><div class="ar-rail"><span class="ar-dot fill"></span></div><div class="ar-body"><span class="ar-code">HND</span><span class="ar-city">Tòquio</span><span class="ar-time">17:55</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-bottom:18px;">
+      <div class="specimen tight">
+        <div class="lbl">Flight stat strip</div>
+        <div class="fstats">
+          <div class="fst"><div class="fsv">10<small>h</small>10</div><div class="fsl">Durada</div></div>
+          <div class="fst"><div class="fsv">7 812<small> km</small></div><div class="fsl">Distància</div></div>
+          <div class="fst"><div class="fsv delay">+25<small>m</small></div><div class="fsl">Retard</div></div>
+        </div>
+      </div>
+      <div class="specimen tight">
+        <div class="lbl">Switches &amp; toggle</div>
+        <div class="seg" style="margin-bottom:14px;"><span class="on" style="--x:1;">Local</span><span>UTC</span></div>
+        <div style="display:flex;gap:14px;align-items:center;"><span class="sw on sw-wished"><span class="kn"></span></span><span class="sw on"><span class="kn"></span></span><span class="sw"><span class="kn"></span></span></div>
+      </div>
+      <div class="specimen tight">
+        <div class="lbl">Buttons</div>
+        <div style="display:flex;flex-direction:column;gap:9px;">
+          <button class="btn btn-primary">Afegeix registre</button>
+          <button class="btn btn-accent">Edita viatge</button>
+          <button class="btn btn-ghost">Importa</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid g2">
+      <div class="specimen">
+        <div class="lbl">Trip card · real map + route background</div>
+        <div class="tripcard compact">
+          <div class="tc-top">
+            <div class="tc-mapbg"></div>
+            <div class="tc-ov" style="background:linear-gradient(150deg,rgba(62,145,115,.08) 0%,rgba(62,145,115,.40) 45%,rgba(40,108,84,.86) 100%);"></div>
+            <svg class="tc-route" style="z-index:2;" viewBox="0 0 350 104" preserveAspectRatio="none"><polyline points="30,44 150,34 250,58 318,38" fill="none" stroke="#FBF3E6" stroke-width="2.2" opacity=".85"/><circle cx="30" cy="44" r="5" fill="#FBF3E6"/><circle cx="150" cy="34" r="5" fill="#FBF3E6"/><circle cx="250" cy="58" r="5" fill="#FBF3E6"/><circle cx="318" cy="38" r="5" fill="#FBF3E6"/></svg>
+            <div class="tc-inner"><span class="chip chip-glass" style="align-self:flex-start;"><span class="dot"></span>Completat</span><div><div class="tc-title">Copenhaguen</div><div class="tc-dates">10 DES — 14 DES 2025</div></div></div>
+          </div>
+          <div class="tc-foot"><span class="tfi"><svg viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/></svg></span><span class="tfr">Copenhaguen → París</span><span class="tfs">5 parades</span></div>
+        </div>
+      </div>
+      <div class="specimen">
+        <div class="lbl">Route stop · spine + photo slot</div>
+        <div class="rstops">
+          <div class="rstop"><div class="rstop-rail"><span class="rstop-pin" style="background:var(--s-visited);">1</span><span class="rstop-spine"></span></div><div class="rstop-card"><div class="rstop-photo"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.5-2h5L16 6"/></svg></div><div class="rstop-main"><div class="rstop-name">Copenhaguen <span class="stag">Mapa</span></div><div class="rstop-meta">Dinamarca · 10 des · 55,69, 12,57</div></div></div></div>
+          <div class="rexc"><div class="rexc-rail"></div><div class="rexc-card"><div class="rexc-h"><span class="rexc-tag">Excursió</span><span class="rexc-t">Potsdam</span></div><div class="rexc-stops"><span class="rexc-chip"><span class="n">1</span>Sanssouci</span><span class="rexc-chip"><span class="n">2</span>Cecilienhof</span></div></div></div>
+          <div class="rstop"><div class="rstop-rail"><span class="rstop-pin" style="background:var(--s-visited);">2</span></div><div class="rstop-card"><div class="rstop-photo"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.5-2h5L16 6"/></svg></div><div class="rstop-main"><div class="rstop-name">París <span class="stag">Mapa</span></div><div class="rstop-meta">França · 14 des · 48,85, 2,35</div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 TEXTURE & MAPS -->
+  <section>
+    <div class="sh"><span class="n">05</span><h2>Texture &amp; maps</h2><span class="note">Paper, graticule, and countries filled by state.</span></div>
+    <div class="grid g3">
+      <div class="card-pad"><div class="lbl">Paper grain</div><div style="height:90px;border-radius:12px;background:var(--paper);border:1px solid var(--line);position:relative;overflow:hidden;"></div><p class="cap">A faint multiply-blended grain over every surface keeps the risograph, printed feel.</p></div>
+      <div class="card-pad"><div class="lbl">Map graticule</div><div class="map" style="height:90px;border-radius:12px;border:1px solid var(--line);"></div><p class="cap">A faint navy grid stands in for the cartographic graticule behind maps and trip cards.</p></div>
+      <div class="card-pad"><div class="lbl">State polygons</div><div class="map" style="height:90px;border-radius:12px;border:1px solid var(--line);position:relative;overflow:hidden;"><div class="poly" style="width:54px;height:34px;left:16px;top:18px;background:rgba(62,145,115,.42);border-radius:46% 54% 52% 48%;"></div><div class="poly" style="width:40px;height:30px;left:78px;top:40px;background:rgba(122,87,163,.40);border-radius:50%;"></div><div class="poly" style="width:46px;height:32px;left:130px;top:20px;background:rgba(76,115,172,.40);border-radius:50%;"></div></div><p class="cap">Countries render as polygons filled with their state colour — never plain dots.</p></div>
+    </div>
+  </section>
+
+  <!-- 06 TOKENS -->
+  <section>
+    <div class="sh"><span class="n">06</span><h2>Tokens</h2><span class="note">The CSS variables behind every component.</span></div>
+    <div class="grid g2">
+      <div class="specimen"><div class="lbl">Type &amp; surfaces</div><div class="tokens">
+        <span class="k">--serif</span>: Newsreader <span class="c">/* display */</span><br />
+        <span class="k">--sans</span>: Hanken Grotesk <span class="c">/* UI */</span><br />
+        <span class="k">--mono</span>: Space Mono <span class="c">/* labels */</span><br />
+        <span class="k">--paper</span>: #ECE3D2<br />
+        <span class="k">--surface</span>: #F8F3E8<br />
+        <span class="k">--ink</span>: #1E2A2E<br />
+        <span class="k">--muted</span>: #857C6A
+      </div></div>
+      <div class="specimen"><div class="lbl">Accents &amp; states</div><div class="tokens">
+        <span class="k">--primary</span>: #C2502B <span class="c">/* vermilion */</span><br />
+        <span class="k">--navy</span>: #1E3D52 <span class="c">/* structure */</span><br />
+        <span class="k">--gold</span>: #C99A4E<br />
+        <span class="k">--s-visited</span>: #3E9173 &nbsp; <span class="k">--s-lived</span>: #7A57A3<br />
+        <span class="k">--s-living</span>: #C2602B &nbsp; <span class="k">--s-planned</span>: #4C73AC<br />
+        <span class="k">--s-wished</span>: #BC5187 &nbsp; <span class="k">--s-never</span>: #9C9180<br />
+        <span class="c">radius 14–20px · line rgba(30,42,46,.12)</span>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- 07 SCREENS -->
+  <section style="border-bottom:none;">
+    <div class="sh"><span class="n">07</span><h2>Screen catalogue</h2><span class="note">Nine screens, one tappable prototype.</span></div>
+    <div class="screen-list">
+      <div class="screen-item"><div class="si-n">01</div><h3>Inici · Dashboard</h3><p>Polygon-map hero with a living marker, stat ledger, featured trip, domain stats (incl. distance), and what's next.</p></div>
+      <div class="screen-item"><div class="si-n">02</div><h3>Països · list</h3><p>Search, state filters, continent groups, and compact colour-ticked rows.</p></div>
+      <div class="screen-item"><div class="si-n">03</div><h3>País · detail</h3><p>Country map, slim identity with multi-state pills, info spec-sheet, toggles, and the derivation timeline.</p></div>
+      <div class="screen-item"><div class="si-n">04</div><h3>Viatges · list</h3><p>Trip cards on a real map + route, status as gradient and glass chip.</p></div>
+      <div class="screen-item"><div class="si-n">05</div><h3>Viatge · detail</h3><p>Header with kebab menu, country pills, route map, and route stops with photo slots + excursions.</p></div>
+      <div class="screen-item"><div class="si-n">06</div><h3>Vols · list</h3><p>Distinct itinerary cards above route-hero solo flight cards.</p></div>
+      <div class="screen-item"><div class="si-n">07</div><h3>Vol · detail</h3><p>Route arc, delay treatment, distance, origin/destination countries, UTC/local, and the aircraft spec-sheet.</p></div>
+      <div class="screen-item"><div class="si-n">08</div><h3>Itinerari · detail</h3><p>Airport route with flight edges, layover chips, and derived destinations per leg.</p></div>
+      <div class="screen-item"><div class="si-n">09</div><h3>Configuració</h3><p>Backup, API key and dataset-health as calm, legible panels.</p></div>
+    </div>
+
+    <div class="footer-cta">
+      <div>
+        <div class="fc-t">The system, alive</div>
+        <div class="fc-d">Every specimen here is the real component class. Tap through all nine screens in the interactive prototype.</div>
+      </div>
+      <a href="Atlas Redesign - Prototype.html">Open prototype →</a>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

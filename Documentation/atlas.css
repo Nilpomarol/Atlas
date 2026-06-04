@@ -1,0 +1,590 @@
+/* =====================================================================
+   ATLAS — Cartographer's Ink (Palette B)
+   Shared design system: tokens, phone frame, component kit
+   ===================================================================== */
+
+:root{
+  --serif:"Newsreader",Georgia,serif;
+  --sans:"Hanken Grotesk",system-ui,sans-serif;
+  --mono:"Space Mono",ui-monospace,monospace;
+
+  /* Palette B — Cartographer's Ink */
+  --paper:#ECE3D2;          /* app background */
+  --surface:#F8F3E8;        /* cards / panels */
+  --surface-2:#FBF8F0;      /* raised / inner */
+  --ink:#1E2A2E;            /* primary text */
+  --ink-soft:#3c4548;
+  --muted:#857C6A;          /* labels, secondary */
+  --faint:#A89E89;
+  --line:rgba(30,42,46,.12);
+  --line-soft:rgba(30,42,46,.07);
+
+  --primary:#C2502B;        /* vermilion — actions, routes, accent */
+  --primary-ink:#a8431f;
+  --navy:#1E3D52;           /* structural — headers, nav, hero */
+  --navy-soft:#2d5066;
+  --gold:#C99A4E;
+  --olive:#6E7E4F;
+
+  /* state system (semantic, constant) */
+  --s-visited:#3E9173;  --s-visited-t:rgba(62,145,115,.15);  --s-visited-d:#2c6e54;
+  --s-lived:#7A57A3;    --s-lived-t:rgba(122,87,163,.16);    --s-lived-d:#5f3f86;
+  --s-living:#C2602B;   --s-living-t:rgba(194,96,43,.16);    --s-living-d:#a44e1f;
+  --s-planned:#4C73AC;  --s-planned-t:rgba(76,115,172,.16);  --s-planned-d:#3a5d92;
+  --s-wished:#BC5187;   --s-wished-t:rgba(188,81,135,.15);   --s-wished-d:#9c3f6e;
+  --s-never:#9C9180;    --s-never-t:rgba(156,145,128,.18);   --s-never-d:#6f6557;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  line-height:1.45;
+}
+
+/* =====================================================================
+   CANVAS (review board)
+   ===================================================================== */
+.canvas{
+  min-height:100vh;
+  background-color:#E0D6C1;
+  background-image:
+    linear-gradient(rgba(30,42,46,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,42,46,.04) 1px,transparent 1px);
+  background-size:36px 36px;
+  padding:0 0 100px;
+}
+.canvas::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply;
+}
+.board-masthead{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:48px 32px 26px;display:flex;align-items:center;gap:20px;border-bottom:1.5px solid var(--ink);}
+.board-masthead img{width:58px;height:58px;border-radius:50%;}
+.board-masthead .bm-title{font-family:var(--serif);font-size:38px;font-weight:500;letter-spacing:-.01em;line-height:1;}
+.board-masthead .bm-sub{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:7px;}
+.board-masthead .bm-right{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);line-height:1.9;}
+.board-masthead .bm-right a{color:var(--primary);text-decoration:none;}
+
+.frames{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:44px 32px 0;display:flex;flex-wrap:wrap;gap:54px 46px;align-items:flex-start;justify-content:center;}
+.frame{display:flex;flex-direction:column;align-items:center;}
+.frame-label{font-family:var(--serif);font-size:22px;font-weight:500;margin-bottom:3px;text-align:center;}
+.frame-cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;text-align:center;}
+
+/* =====================================================================
+   PHONE FRAME
+   ===================================================================== */
+.phone{
+  width:390px;height:834px;flex:none;
+  background:#15110c;border-radius:46px;padding:11px;
+  box-shadow:0 30px 60px -24px rgba(30,30,20,.5),0 0 0 1px rgba(0,0,0,.4);
+  position:relative;
+}
+.screen{
+  width:100%;height:100%;border-radius:36px;overflow:hidden;position:relative;
+  background:var(--paper);display:flex;flex-direction:column;
+}
+.screen::after{ /* grain on screen */
+  content:"";position:absolute;inset:0;z-index:50;pointer-events:none;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n2)' opacity='0.4'/%3E%3C/svg%3E");
+  mix-blend-mode:multiply;
+}
+
+/* status bar */
+.statusbar{height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px 0 30px;font-family:var(--mono);font-weight:700;font-size:14px;color:var(--ink);position:relative;z-index:20;}
+.statusbar .sb-r{display:flex;align-items:center;gap:7px;}
+.statusbar .sb-r svg{display:block;}
+.statusbar .batt{font-size:11px;border:1.5px solid var(--ink);border-radius:4px;padding:1px 4px;letter-spacing:.02em;}
+
+/* scroll body */
+.body{flex:1;overflow:hidden;position:relative;z-index:10;}
+.body-pad{padding:6px 20px 22px;}
+
+/* bottom nav */
+.nav{height:74px;flex:none;background:var(--surface);border-top:1px solid var(--line);display:flex;align-items:center;padding:6px 8px 14px;position:relative;z-index:20;}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:var(--faint);}
+.nav .ni-ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.nav .ni-ic svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.nav .ni-lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;}
+.nav a.on{color:var(--primary);}
+.nav a.on .ni-pill{}
+.nav a.on .ni-ic{background:var(--s-living-t);border-radius:14px;width:48px;height:30px;}
+
+/* =====================================================================
+   SHARED PRIMITIVES
+   ===================================================================== */
+.kick{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:400;}
+.h-app{font-family:var(--serif);font-weight:500;font-size:34px;letter-spacing:-.015em;line-height:1;white-space:nowrap;}
+.h-sec{font-family:var(--serif);font-weight:500;font-size:22px;letter-spacing:-.01em;}
+.mono{font-family:var(--mono);}
+
+.app-head{display:flex;align-items:flex-start;justify-content:space-between;padding:8px 0 16px;}
+.app-head .ah-sub{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
+.avatar{width:42px;height:42px;border-radius:50%;flex:none;}
+
+/* chips / states */
+.chip{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:5px 11px 5px 9px;border-radius:30px;font-weight:700;white-space:nowrap;}
+.chip .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+.c-visited{background:var(--s-visited-t);color:var(--s-visited-d);} .c-visited .dot{background:var(--s-visited);}
+.c-lived{background:var(--s-lived-t);color:var(--s-lived-d);} .c-lived .dot{background:var(--s-lived);}
+.c-living{background:var(--s-living-t);color:var(--s-living-d);} .c-living .dot{background:var(--s-living);}
+.c-planned{background:var(--s-planned-t);color:var(--s-planned-d);} .c-planned .dot{background:var(--s-planned);}
+.c-wished{background:var(--s-wished-t);color:var(--s-wished-d);} .c-wished .dot{background:var(--s-wished);}
+.c-never{background:var(--s-never-t);color:var(--s-never-d);} .c-never .dot{background:var(--s-never);}
+
+/* filter pills */
+.filters{display:flex;gap:8px;overflow:hidden;padding:2px 0;}
+.fpill{font-family:var(--mono);font-size:11px;letter-spacing:.02em;padding:8px 15px;border-radius:24px;background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;}
+.fpill.on{background:var(--navy);border-color:var(--navy);color:#F1E7D2;}
+
+/* buttons */
+.btn{font-family:var(--sans);font-weight:700;font-size:14px;border-radius:13px;padding:13px 18px;text-align:center;border:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary{background:var(--navy);color:#F1E7D2;}
+.btn-accent{background:var(--primary);color:#FBF1E2;}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink);}
+.btn-soft{background:var(--s-living-t);color:var(--primary-ink);}
+
+/* search */
+.search{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 16px;color:var(--faint);font-size:15px;}
+.search svg{width:19px;height:19px;stroke:var(--muted);fill:none;stroke-width:1.8;flex:none;}
+
+/* generic card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;}
+
+/* map / graticule placeholder */
+.map{position:relative;background:#E4DAC5;overflow:hidden;
+  background-image:
+    linear-gradient(rgba(30,61,82,.10) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,61,82,.10) 1px,transparent 1px);
+  background-size:26px 26px;}
+.map .map-tag{position:absolute;left:12px;bottom:10px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);opacity:.6;display:flex;align-items:center;gap:5px;}
+.map .land{position:absolute;background:rgba(110,126,79,.20);border-radius:46% 54% 60% 40%/50% 44% 56% 50%;}
+
+/* =====================================================================
+   DASHBOARD — stat ledger (one box, no divider lines)
+   ===================================================================== */
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px 22px 18px;}
+.ledger .led-cap{display:flex;align-items:center;justify-content:space-between;}
+.ledger .led-cap .lc-l{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.ledger .led-cap .lc-r{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--navy);}
+.ledger .led-hero{display:flex;align-items:baseline;gap:10px;margin:6px 0 16px;}
+.ledger .led-big{font-family:var(--serif);font-size:60px;font-weight:500;line-height:.85;letter-spacing:-.02em;}
+.ledger .led-of{font-family:var(--mono);font-size:14px;color:var(--muted);}
+.ledger .led-grid{display:flex;gap:8px;}
+.ledger .lstat{flex:1;}
+.ledger .lstat .lv{font-family:var(--serif);font-size:25px;font-weight:500;line-height:1;}
+.ledger .lstat .ll{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px;margin-top:5px;}
+.ledger .lstat .ll .dot{width:6px;height:6px;border-radius:50%;flex:none;}
+
+/* mini domain stats (trips/flights) */
+.duo{display:flex;gap:10px;}
+.dstat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;}
+.dstat .di{width:38px;height:38px;border-radius:11px;background:var(--s-living-t);display:flex;align-items:center;justify-content:center;color:var(--primary);flex:none;}
+.dstat .di svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.dstat .dv{font-family:var(--serif);font-size:26px;font-weight:500;line-height:1;}
+.dstat .dl{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* featured trip card */
+.feature{border-radius:20px;overflow:hidden;position:relative;color:#F4ECDB;}
+.feature .ft-body{padding:18px 20px 16px;position:relative;z-index:2;}
+.feature .ft-route-svg{position:absolute;inset:0;z-index:1;}
+.feature .ft-title{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;margin-top:42px;}
+.feature .ft-dates{font-family:var(--mono);font-size:11px;letter-spacing:.06em;margin-top:7px;opacity:.9;}
+.feature .ft-foot{background:var(--surface);color:var(--ink);padding:12px 16px;display:flex;align-items:center;gap:10px;position:relative;z-index:2;}
+.feature .ft-foot .fic{color:var(--primary);display:flex;}
+.feature .ft-foot .fr{font-family:var(--serif);font-size:15px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.feature .ft-foot .fs{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+.chip-glass{background:rgba(255,255,255,.22);color:#fff;}
+.chip-glass .dot{background:#fff;}
+
+/* upcoming row */
+.up{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 16px;}
+.up .uf{width:42px;height:42px;border-radius:50%;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;flex:none;}
+.up .un{font-family:var(--serif);font-size:18px;font-weight:500;line-height:1.05;}
+.up .ud{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);margin-top:3px;}
+.up .uc{margin-left:auto;text-align:right;}
+.up .uc .ucn{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--primary);line-height:1;}
+.up .uc .ucl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+/* =====================================================================
+   COUNTRIES — compact colorful rows (no card container)
+   ===================================================================== */
+.cont-head{display:flex;align-items:center;gap:10px;padding:18px 2px 8px;}
+.cont-head .ch-n{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.cont-head .ch-c{font-family:var(--mono);font-size:11px;color:var(--faint);}
+.cont-head .ch-line{flex:1;height:1px;background:var(--line);}
+.cont-head .ch-car{color:var(--muted);}
+
+.crow{display:flex;align-items:center;gap:12px;padding:11px 6px 11px 12px;position:relative;border-radius:11px;}
+.crow + .crow{border-top:1px solid var(--line-soft);}
+.crow .ctick{position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;}
+.crow .cflag{width:34px;height:34px;border-radius:9px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;flex:none;}
+.crow .cmid{flex:1;min-width:0;}
+.crow .cn{font-family:var(--serif);font-size:17px;font-weight:500;line-height:1.05;}
+.crow .cm{font-family:var(--mono);font-size:10px;letter-spacing:.03em;color:var(--muted);text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.crow .cstate{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.crow .cstate .dot{width:8px;height:8px;border-radius:50%;}
+
+/* =====================================================================
+   FLIGHTS — solo flight card + itinerary card (reference-led)
+   ===================================================================== */
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px 14px;}
+.fcard .fc-top{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.fcard .fc-logo{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex:none;}
+.fcard .fc-logo img{max-width:100%;max-height:100%;}
+.fcard .fc-air{font-family:var(--sans);font-weight:700;font-size:13px;white-space:nowrap;}
+.fcard .fc-no{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);white-space:nowrap;}
+.fcard .fc-sep{color:var(--faint);}
+.fcard .fc-status{margin-left:auto;flex:none;}
+
+.route{display:flex;align-items:flex-start;gap:8px;}
+.route .ep{text-align:left;min-width:0;}
+.route .ep.r{text-align:right;}
+.route .ep .code{font-family:var(--serif);font-size:34px;font-weight:500;line-height:.9;letter-spacing:-.01em;}
+.route .ep .city{font-family:var(--sans);font-size:11.5px;color:var(--ink-soft);margin-top:3px;font-weight:600;}
+.route .mid{flex:1;display:flex;flex-direction:column;align-items:center;padding-top:6px;}
+.route .mid .dur{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--muted);margin-bottom:3px;}
+.route .line{width:100%;height:16px;position:relative;}
+.route .line svg{position:absolute;inset:0;width:100%;height:100%;}
+.fcard .fc-times{display:flex;justify-content:space-between;margin-top:5px;}
+.fcard .fc-times .t{font-family:var(--mono);font-size:13px;color:var(--ink-soft);font-weight:700;}
+.fcard .fc-foot{display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line);font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;}
+.fcard .fc-foot svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.7;}
+.fcard .fc-foot .fsep{opacity:.4;}
+
+/* itinerary card */
+.itcard{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px 14px;}
+.itcard .it-top{display:flex;align-items:center;gap:8px;margin-bottom:11px;}
+.itcard .it-kick{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:7px;}
+.itcard .it-kick svg{width:15px;height:15px;stroke:var(--navy);fill:none;stroke-width:1.7;}
+.itcard .it-status{margin-left:auto;}
+.itcard .it-title{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1;letter-spacing:-.01em;}
+.itcard .it-route{display:flex;align-items:center;gap:9px;margin-top:11px;font-family:var(--sans);font-weight:700;font-size:15px;}
+.itcard .it-route .swap{color:var(--primary);display:flex;}
+.itcard .it-route .swap svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;}
+.itcard .it-via{font-family:var(--mono);font-size:11px;letter-spacing:.03em;color:var(--muted);margin-top:5px;}
+.itcard .it-foot{display:flex;align-items:center;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--sans);font-size:12px;color:var(--muted);white-space:nowrap;}
+.itcard .it-foot svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.7;}
+.itcard .it-foot b{color:var(--ink);font-weight:700;}
+
+/* =====================================================================
+   FLIGHT DETAIL — spec sheet
+   ===================================================================== */
+.detail-hero{position:relative;height:188px;}
+.detail-hero .dh-route{position:absolute;inset:0;}
+.detail-hero .dh-back{position:absolute;top:14px;left:16px;z-index:5;background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:8px 15px 8px 11px;display:flex;align-items:center;gap:7px;font-family:var(--sans);font-weight:700;font-size:13px;}
+.detail-hero .dh-back svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2;}
+
+.spec{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+.spec .srow{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;}
+.spec .srow + .srow{border-top:1px solid var(--line-soft);}
+.spec .sl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.spec .sv{font-family:var(--sans);font-size:15px;font-weight:600;}
+.spec .sv.mono{font-family:var(--mono);font-size:14px;font-weight:700;}
+
+/* aircraft block */
+.aircraft{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+.aircraft .ac-img{height:150px;background:#E4DAC5;position:relative;overflow:hidden;
+  background-image:repeating-linear-gradient(135deg,#E0D5BE,#E0D5BE 9px,#E7DDC8 9px,#E7DDC8 18px);}
+.aircraft .ac-img .ac-cap{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--navy);opacity:.65;background:rgba(248,243,232,.7);padding:4px 8px;border-radius:6px;}
+.aircraft .ac-name{padding:15px 18px 4px;}
+.aircraft .ac-model{font-family:var(--serif);font-size:22px;font-weight:500;}
+.aircraft .ac-reg{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-top:2px;}
+.aircraft .ac-specs{display:flex;padding:12px 18px 16px;gap:6px;}
+.aircraft .ac-specs .as{flex:1;}
+.aircraft .ac-specs .asv{font-family:var(--serif);font-size:19px;font-weight:500;}
+.aircraft .ac-specs .asl{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* segmented toggle (UTC/local) */
+.seg{display:inline-flex;background:var(--paper);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px;}
+.seg span{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:8px;color:var(--muted);}
+.seg span.on{background:var(--navy);color:#F1E7D2;}
+
+/* section label within screens */
+.s-label{display:flex;align-items:center;gap:10px;margin:20px 2px 11px;}
+.s-label .sl-t{font-family:var(--serif);font-size:19px;font-weight:500;}
+.s-label .sl-line{flex:1;height:1px;background:var(--line);}
+.s-label .sl-act{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--primary);}
+
+/* dual action row */
+.acts2{display:flex;gap:10px;}
+.acts2 .btn{flex:1;}
+
+/* =====================================================================
+   COUNTRY DETAIL
+   ===================================================================== */
+.id-card{display:flex;align-items:center;gap:15px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px;}
+.id-card .id-flag{width:56px;height:56px;border-radius:14px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font-size:30px;flex:none;}
+.id-card .id-kick{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--primary);font-weight:700;}
+.id-card .id-name{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;margin:2px 0 9px;}
+.id-card .id-chips{display:flex;flex-wrap:wrap;gap:6px;}
+
+/* info spec sheet (one container, hairline grid) */
+.ispec{display:grid;grid-template-columns:1fr 1fr;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+.ispec .ic{padding:12px 16px;border-bottom:1px solid var(--line-soft);}
+.ispec .ic:nth-child(odd){border-right:1px solid var(--line-soft);}
+.ispec .ic:nth-last-child(-n+2){border-bottom:none;}
+.ispec .icl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.ispec .icv{font-size:15px;font-weight:600;margin-top:3px;}
+
+/* toggle rows + switch */
+.toggle-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 16px;}
+.trow{display:flex;align-items:center;gap:13px;padding:14px 0;}
+.trow + .trow{border-top:1px solid var(--line-soft);}
+.trow .tic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex:none;}
+.trow .tic svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.trow .tt{font-weight:700;font-size:15px;}
+.trow .td{font-size:12px;color:var(--muted);margin-top:1px;}
+.sw{width:48px;height:28px;border-radius:20px;background:rgba(30,42,46,.16);position:relative;flex:none;margin-left:auto;cursor:pointer;transition:background .2s;}
+.sw .kn{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s;}
+.sw.on{background:var(--primary);}
+.sw.on.sw-wished{background:var(--s-wished);}
+.sw.on .kn{left:23px;}
+
+/* timeline */
+.tl-item{position:relative;padding:0 0 16px 40px;}
+.tl-item::before{content:"";position:absolute;left:13px;top:30px;bottom:-2px;width:2px;background:var(--line);}
+.tl-item:last-child::before{display:none;}
+.tl-node{position:absolute;left:0;top:2px;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;}
+.tl-node svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.9;}
+.tl-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 14px;display:flex;align-items:flex-start;gap:10px;}
+.tl-card .tl-main{flex:1;min-width:0;}
+.tl-date{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;}
+.tl-title{font-family:var(--serif);font-size:17px;font-weight:500;margin-top:1px;}
+.tl-meta{font-size:12.5px;color:var(--ink-soft);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tl-icons{display:flex;gap:10px;color:var(--faint);}
+.tl-icons svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;}
+
+/* =====================================================================
+   TRIP CARDS (list) + TRIP DETAIL
+   ===================================================================== */
+.tripcard{border-radius:18px;overflow:hidden;color:#F4ECDB;}
+.tripcard .tc-top{position:relative;padding:16px 18px 18px;min-height:120px;}
+.tripcard .tc-route{position:absolute;inset:0;}
+.tripcard .tc-title{font-family:var(--serif);font-size:27px;font-weight:500;line-height:1;margin-top:0;position:relative;}
+.tripcard .tc-dates{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;margin-top:6px;opacity:.92;position:relative;}
+.tripcard .tc-foot{background:var(--surface);color:var(--ink);display:flex;align-items:center;gap:9px;padding:11px 16px;}
+.tripcard .tc-foot .tfi{color:var(--primary);display:flex;}
+.tripcard .tc-foot .tfi svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.tripcard .tc-foot .tfr{font-family:var(--serif);font-size:15px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tripcard .tc-foot .tfs{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+
+.trip-head{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;}
+.trip-head .th-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.trip-head .th-title{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;}
+.trip-head .th-dates{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-top:8px;}
+.trip-head .th-stats{display:flex;gap:26px;margin:15px 0 16px;}
+.trip-head .th-stat .tsv{font-family:var(--serif);font-size:30px;font-weight:500;line-height:1;}
+.trip-head .th-stat .tsl{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+
+/* stops */
+.stop{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 13px;}
+.stop .snum{width:40px;height:40px;border-radius:11px;background:var(--s-living-t);display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;position:relative;color:var(--primary);}
+.stop .snum svg{width:18px;height:18px;}
+.stop .snum b{position:absolute;right:-4px;bottom:-4px;width:17px;height:17px;border-radius:50%;background:var(--ink);color:#F4ECDB;font-family:var(--mono);font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+.stop .smid{flex:1;min-width:0;}
+.stop .snm{font-family:var(--serif);font-size:17px;font-weight:500;display:flex;align-items:center;gap:8px;}
+.stop .stag{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;padding:2px 6px;border-radius:5px;background:var(--s-living-t);color:var(--primary-ink);}
+.stop .stag.it{background:var(--s-planned-t);color:var(--s-planned-d);}
+.stop .smeta{font-family:var(--mono);font-size:10px;letter-spacing:.02em;color:var(--muted);margin-top:3px;}
+.stop .sact{display:flex;flex-direction:column;gap:6px;}
+.mini-btn{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;padding:6px 11px;border-radius:9px;background:var(--paper);border:1px solid var(--line);color:var(--ink-soft);white-space:nowrap;}
+.mini-btn.danger{color:#a33;}
+
+/* excursion block (nested) */
+.exc{background:var(--surface-2);border:1px dashed var(--line);border-radius:14px;padding:13px 14px;margin:8px 0 0 22px;}
+.exc .exc-h{display:flex;align-items:center;justify-content:space-between;}
+.exc .exc-t{font-family:var(--serif);font-size:16px;font-weight:500;}
+.exc .exc-a{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
+
+/* =====================================================================
+   ITINERARY DETAIL
+   ===================================================================== */
+.link-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.link-card .lk-l{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.link-card .lk-n{font-family:var(--serif);font-size:20px;font-weight:500;margin-top:2px;}
+.link-card .lk-act{font-family:var(--sans);font-weight:700;font-size:13px;color:var(--primary);}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 16px;}
+.group .g-head{display:flex;align-items:center;gap:9px;margin-bottom:11px;}
+.group .g-name{font-family:var(--serif);font-size:18px;font-weight:500;}
+.group .g-tools{margin-left:auto;display:flex;gap:11px;color:var(--faint);}
+.group .g-tools svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.gflight{display:flex;align-items:center;gap:11px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:11px;padding:11px 13px;}
+.gflight .gf-ic{color:var(--primary);display:flex;}
+.gflight .gf-ic svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.gflight .gf-r{font-family:var(--serif);font-size:17px;font-weight:500;}
+.gflight .gf-meta{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.gflight .gf-tools{margin-left:auto;display:flex;gap:9px;color:var(--faint);}
+.gflight .gf-tools svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.g-add{font-family:var(--sans);font-weight:700;font-size:13px;color:var(--primary);margin-top:11px;display:flex;align-items:center;gap:6px;justify-content:flex-end;}
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;}
+.panel .p-head{display:flex;align-items:center;gap:11px;padding:15px 18px 13px;}
+.panel .p-head .pi{width:34px;height:34px;border-radius:10px;background:var(--navy);color:#F1E7D2;display:flex;align-items:center;justify-content:center;flex:none;}
+.panel .p-head .pi svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.panel .p-head .pt{font-family:var(--serif);font-size:19px;font-weight:500;}
+.panel .p-head .ps{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:1px;}
+.panel .p-body{padding:0 18px 16px;}
+.panel .p-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line-soft);}
+.panel .p-row .prl{font-size:13.5px;}
+.panel .p-row .prv{font-family:var(--mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.keyfield{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:var(--mono);font-size:13px;color:var(--ink-soft);letter-spacing:.08em;}
+.keyfield .kf-eye{margin-left:auto;color:var(--muted);display:flex;}
+.keyfield .kf-eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.dot-ok{width:8px;height:8px;border-radius:50%;background:var(--s-visited);flex:none;}
+
+/* compact featured trip card (dashboard) */
+.tripcard.compact .tc-top{min-height:104px;}
+.tripcard.compact .tc-inner{min-height:104px;padding-top:13px;padding-bottom:14px;}
+.tripcard.compact .tc-title{font-size:24px;}
+
+/* danger text button */
+.t-danger{color:#b23a2c;font-weight:700;}
+
+/* =====================================================================
+   REV 2 — feedback pass
+   ===================================================================== */
+
+/* polygon-style map fills (countries coloured by state, not dots) */
+.poly{position:absolute;box-shadow:inset 0 0 0 1.5px rgba(248,243,232,.75);}
+.livemark{position:absolute;display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:5px 12px 5px 9px;font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);box-shadow:0 6px 16px -8px rgba(0,0,0,.4);z-index:4;}
+.livemark .lv-dot{width:9px;height:9px;border-radius:50%;background:var(--s-living);box-shadow:0 0 0 3px rgba(194,96,43,.28);flex:none;}
+.livemark b{font-family:var(--serif);font-weight:600;font-size:12px;letter-spacing:0;text-transform:none;}
+
+/* dashboard: compact summary bar */
+.sumbar{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;gap:13px;}
+.sumbar .sb-big{font-family:var(--serif);font-size:30px;font-weight:500;line-height:.9;}
+.sumbar .sb-of{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);line-height:1.5;}
+.sumbar .sb-kpis{margin-left:auto;display:flex;gap:14px;}
+.skpi{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+.skpi .sv{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);}
+.skpi .dot{width:7px;height:7px;border-radius:50%;flex:none;}
+
+/* dashboard: trio domain stats (adds distance) */
+.trio{display:flex;gap:9px;}
+.trio .tcell{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px 14px;}
+.trio .tcell .tcv{font-family:var(--serif);font-size:23px;font-weight:500;line-height:1;}
+.trio .tcell .tcv small{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:400;}
+.trio .tcell .tcl{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:5px;display:flex;align-items:center;gap:5px;}
+.trio .tcell .tcl svg{width:13px;height:13px;stroke:var(--primary);fill:none;stroke-width:1.8;}
+
+/* upcoming flight avatar */
+.up .uf.plane{color:var(--primary);}
+.up .uf.plane svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.7;}
+
+/* country detail: slim identity card */
+.id-card.slim{padding:13px 15px;gap:13px;}
+.id-card.slim .id-flag{width:46px;height:46px;font-size:25px;border-radius:12px;}
+.id-card.slim .id-name{font-size:25px;margin:1px 0 8px;}
+
+/* country detail: redesigned derivation timeline */
+.tline{position:relative;}
+.tline-item{position:relative;display:flex;gap:13px;padding-bottom:13px;}
+.tline-rail{width:36px;flex:none;display:flex;justify-content:center;position:relative;}
+.tline-node{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;z-index:2;box-shadow:0 0 0 4px var(--paper);flex:none;}
+.tline-node svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.tline-spine{position:absolute;left:50%;top:36px;bottom:-13px;width:2px;background:var(--line);transform:translateX(-1px);z-index:1;}
+.tline-item:last-child .tline-spine{display:none;}
+.tline-card{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:11px 14px;}
+.tline-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;}
+.tline-date{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+.tline-src{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:3px 8px;border-radius:20px;}
+.tline-title{font-family:var(--serif);font-size:18px;font-weight:500;line-height:1.05;}
+.tline-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+
+/* trip cards: map + route background */
+.tripcard .tc-top{position:relative;min-height:132px;overflow:hidden;padding:0;}
+.tc-mapbg{position:absolute;inset:0;background-color:#DAD0BA;background-image:linear-gradient(rgba(30,61,82,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(30,61,82,.10) 1px,transparent 1px);background-size:24px 24px;}
+.tc-ov{position:absolute;inset:0;z-index:2;}
+.tc-inner{position:relative;z-index:3;padding:15px 18px 17px;min-height:132px;display:flex;flex-direction:column;justify-content:space-between;}
+
+/* kebab menu */
+.kebab{width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;}
+.kebab svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:2;}
+.menu-wrap{position:relative;margin-left:auto;}
+.menu{position:absolute;right:0;top:48px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 38px -12px rgba(0,0,0,.4);padding:6px;min-width:158px;z-index:40;display:none;}
+.menu.open{display:block;}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;background:none;border:none;font-family:var(--sans);font-size:14px;font-weight:600;color:var(--ink);padding:10px 12px;border-radius:9px;cursor:pointer;text-align:left;}
+.menu button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;}
+.menu button.danger{color:#b23a2c;}
+
+/* trip detail: country pills */
+.cpills{display:flex;flex-wrap:wrap;gap:6px;}
+.cpill{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:4px 11px 4px 8px;font-size:12px;font-weight:600;}
+.cpill .fl{font-size:14px;}
+
+/* trip detail: route stops with spine + photo slot */
+.rstop{display:flex;gap:0;}
+.rstop-rail{width:40px;flex:none;position:relative;display:flex;justify-content:center;}
+.rstop-pin{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:700;color:#fff;z-index:2;box-shadow:0 0 0 4px var(--paper);margin-top:12px;flex:none;}
+.rstop-spine{position:absolute;left:50%;top:20px;bottom:-2px;width:2px;background:var(--line);transform:translateX(-1px);}
+.rstop:last-child .rstop-spine{display:none;}
+.rstop-card{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 11px;margin:0 0 10px 4px;display:flex;gap:11px;align-items:center;}
+.rstop-photo{width:48px;height:48px;border-radius:10px;flex:none;background:repeating-linear-gradient(135deg,#E0D5BE,#E0D5BE 6px,#E7DDC8 6px,#E7DDC8 12px);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;color:var(--faint);}
+.rstop-photo svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.6;}
+.rstop-main{flex:1;min-width:0;}
+.rstop-name{font-family:var(--serif);font-size:16px;font-weight:500;display:flex;align-items:center;gap:7px;}
+.rstop-meta{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.02em;}
+.rstop-kb{color:var(--faint);cursor:pointer;flex:none;align-self:flex-start;}
+.rstop-kb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;}
+
+/* excursion branch */
+.rexc{display:flex;gap:0;}
+.rexc-rail{width:40px;flex:none;position:relative;}
+.rexc-rail::before{content:"";position:absolute;left:50%;top:-12px;height:30px;width:2px;border-left:2px dashed var(--faint);transform:translateX(-1px);}
+.rexc-rail::after{content:"";position:absolute;left:50%;top:18px;width:13px;height:2px;border-top:2px dashed var(--faint);}
+.rexc-card{flex:1;min-width:0;background:var(--surface-2);border:1px dashed var(--line);border-radius:13px;padding:11px 13px;margin:0 0 10px -4px;}
+.rexc-h{display:flex;align-items:center;gap:8px;}
+.rexc-tag{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:5px;background:var(--s-lived-t);color:var(--s-lived-d);}
+.rexc-t{font-family:var(--serif);font-size:15px;font-weight:500;}
+.rexc-stops{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.rexc-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px 10px;font-size:11.5px;font-weight:600;}
+.rexc-chip .n{font-family:var(--mono);font-size:9px;color:var(--muted);}
+
+/* itinerary: airport route with layovers */
+.g2{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 16px 14px;}
+.g2-head{display:flex;align-items:center;gap:9px;margin-bottom:13px;}
+.g2-leg{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+.g2-dest{font-family:var(--serif);font-size:18px;font-weight:500;line-height:1;margin-top:2px;}
+.g2-tools{margin-left:auto;display:flex;gap:11px;color:var(--faint);align-self:flex-start;}
+.g2-tools svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;cursor:pointer;}
+.airoute{position:relative;}
+.ar-row{display:flex;gap:13px;}
+.ar-rail{width:26px;flex:none;display:flex;justify-content:center;position:relative;}
+.ar-node .ar-dot{width:14px;height:14px;border-radius:50%;border:2.5px solid var(--primary);background:var(--surface);z-index:2;margin:2px 0;}
+.ar-node .ar-dot.fill{background:var(--primary);}
+.ar-node{align-items:center;}
+.ar-node .ar-body{display:flex;align-items:baseline;gap:9px;flex:1;padding:1px 0;}
+.ar-node .ar-code{font-family:var(--serif);font-size:19px;font-weight:500;}
+.ar-node .ar-city{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);}
+.ar-node .ar-time{margin-left:auto;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink-soft);}
+.ar-node .ar-ev{font-family:var(--mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-left:6px;}
+.ar-edge .ar-rail::before,.ar-lay .ar-rail::before{content:"";position:absolute;left:50%;top:-4px;bottom:-4px;width:2px;background:var(--primary);transform:translateX(-1px);}
+.ar-lay .ar-rail::before{background:none;border-left:2px dashed var(--faint);}
+.ar-edge .ar-body{padding:7px 0;font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;}
+.ar-edge .ar-body .pl{color:var(--primary);display:flex;}
+.ar-edge .ar-body .pl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;}
+.ar-lay .ar-body{padding:6px 0;}
+.ar-lay .lay-chip{display:inline-flex;align-items:center;gap:7px;background:var(--s-living-t);color:var(--primary-ink);font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:6px 12px;border-radius:20px;font-weight:700;}
+.ar-lay .lay-chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;}
+
+/* flight detail: stat strip, delays, country flags */
+.fstats{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+.fstats .fst{flex:1;padding:13px 14px;border-right:1px solid var(--line-soft);}
+.fstats .fst:last-child{border-right:none;}
+.fstats .fst .fsv{font-family:var(--serif);font-size:21px;font-weight:500;line-height:1;}
+.fstats .fst .fsv small{font-family:var(--mono);font-size:9px;color:var(--muted);font-weight:400;}
+.fstats .fst .fsl{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:5px;}
+.fstats .fst .fsv.delay{color:#b07026;}
+.chip-delay{background:rgba(176,112,38,.16);color:#8f591c;}
+.chip-delay .dot{background:#b07026;}
+.cty-flag{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);font-weight:600;margin-top:4px;}
+.cty-flag .fl{font-size:13px;}
+.route .ep.r .cty-flag{justify-content:flex-end;}
+.spec .sv.delayv{color:#b07026;}
+.spec .sv .dtag{font-family:var(--mono);font-size:10px;background:rgba(176,112,38,.16);color:#8f591c;padding:1px 6px;border-radius:10px;margin-left:6px;font-weight:700;}

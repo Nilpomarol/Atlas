@@ -1,5 +1,5 @@
 {
-    "version": "2026.2",
+    "version":  "2026.3",
     "aircraft_types":  [
                            {
                                "code":  "A19N",
@@ -12,7 +12,8 @@
                                                "Airbus A319 neo"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/A319neo.jpg"
                            },
                            {
                                "code":  "A20N",
@@ -25,7 +26,8 @@
                                                "Airbus A320 neo"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a320neo.jpg"
                            },
                            {
                                "code":  "A21N",
@@ -38,7 +40,8 @@
                                                "Airbus A321 neo"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a321neo.png"
                            },
                            {
                                "code":  "A318",
@@ -50,7 +53,8 @@
                                                "Airbus A318-100"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a318.webp"
                            },
                            {
                                "code":  "A319",
@@ -62,7 +66,8 @@
                                                "Airbus A319-100"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a319.webp"
                            },
                            {
                                "code":  "A320",
@@ -74,7 +79,8 @@
                                                "Airbus A320-200"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a320.webp"
                            },
                            {
                                "code":  "A321",
@@ -86,7 +92,8 @@
                                                "Airbus A321-200"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a321.webp"
                            },
                            {
                                "code":  "A332",
@@ -99,7 +106,8 @@
                                                "Airbus A330 200"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a330-200.png"
                            },
                            {
                                "code":  "A333",
@@ -112,7 +120,8 @@
                                                "Airbus A330 300"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a330-300.jpg"
                            },
                            {
                                "code":  "A339",
@@ -125,7 +134,8 @@
                                                "Airbus A330neo"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a330neo.webp"
                            },
                            {
                                "code":  "A342",
@@ -137,7 +147,8 @@
                                                "A340-200"
                                            ],
                                "num_engines":  4,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/A340-200.png"
                            },
                            {
                                "code":  "A343",
@@ -149,7 +160,8 @@
                                                "A340-300"
                                            ],
                                "num_engines":  4,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/A340-300.jpg"
                            },
                            {
                                "code":  "A359",
@@ -162,7 +174,8 @@
                                                "Airbus A350"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a350-900.jpg"
                            },
                            {
                                "code":  "A35K",
@@ -174,7 +187,8 @@
                                                "A350-1000"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/a350-1000.jpg"
                            },
                            {
                                "code":  "A388",
@@ -187,7 +201,8 @@
                                                "Airbus A380"
                                            ],
                                "num_engines":  4,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/A380-800.webp"
                            },
                            {
                                "code":  "B38M",
@@ -201,7 +216,8 @@
                                                "Boeing 737 8 MAX"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737-8-max.webp"
                            },
                            {
                                "code":  "B39M",
@@ -215,7 +231,8 @@
                                                "Boeing 737 9 MAX"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737-max-9.jpg"
                            },
                            {
                                "code":  "B3XM",
@@ -228,7 +245,8 @@
                                                "Boeing 737-10 MAX"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737max.webp"
                            },
                            {
                                "code":  "B733",
@@ -240,7 +258,8 @@
                                                "737-300"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/737-300.jpg"
                            },
                            {
                                "code":  "B734",
@@ -252,7 +271,8 @@
                                                "737-400"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/737-400.png"
                            },
                            {
                                "code":  "B735",
@@ -264,7 +284,8 @@
                                                "737-500"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737.webp"
                            },
                            {
                                "code":  "B737",
@@ -277,7 +298,8 @@
                                                "Boeing 737 700"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737-700.webp"
                            },
                            {
                                "code":  "B738",
@@ -290,7 +312,8 @@
                                                "Boeing 737 800"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737-800.webp"
                            },
                            {
                                "code":  "B739",
@@ -303,7 +326,8 @@
                                                "Boeing 737 900"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b737-900.avif"
                            },
                            {
                                "code":  "B752",
@@ -315,7 +339,8 @@
                                                "757-200"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b757.webp"
                            },
                            {
                                "code":  "B753",
@@ -327,7 +352,8 @@
                                                "757-300"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b757.webp"
                            },
                            {
                                "code":  "B763",
@@ -339,7 +365,8 @@
                                                "767-300"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b767.webp"
                            },
                            {
                                "code":  "B764",
@@ -351,7 +378,8 @@
                                                "767-400"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b767.webp"
                            },
                            {
                                "code":  "B772",
@@ -363,7 +391,8 @@
                                                "777-200"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b777-200er.webp"
                            },
                            {
                                "code":  "B77L",
@@ -375,7 +404,8 @@
                                                "777-200LR"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b777-200lr.webp"
                            },
                            {
                                "code":  "B773",
@@ -387,7 +417,8 @@
                                                "777-300"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b777-300er.webp"
                            },
                            {
                                "code":  "B77W",
@@ -399,7 +430,8 @@
                                                "777-300ER"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b777-300er.webp"
                            },
                            {
                                "code":  "B788",
@@ -412,7 +444,8 @@
                                                "Dreamliner 787-8"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b787-8.webp"
                            },
                            {
                                "code":  "B789",
@@ -425,7 +458,8 @@
                                                "Dreamliner 787-9"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b787-9.webp"
                            },
                            {
                                "code":  "B78X",
@@ -438,7 +472,8 @@
                                                "Dreamliner 787-10"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b787-10.webp"
                            },
                            {
                                "code":  "B744",
@@ -450,7 +485,8 @@
                                                "747-400"
                                            ],
                                "num_engines":  4,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b747-400.webp"
                            },
                            {
                                "code":  "B748",
@@ -463,7 +499,8 @@
                                                "747-8I"
                                            ],
                                "num_engines":  4,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/b747-8.webp"
                            },
                            {
                                "code":  "E170",
@@ -476,7 +513,8 @@
                                                "ERJ 170"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/E170.avif"
                            },
                            {
                                "code":  "E175",
@@ -489,7 +527,8 @@
                                                "ERJ 175"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/E175.avif"
                            },
                            {
                                "code":  "E190",
@@ -502,7 +541,8 @@
                                                "ERJ 190"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/e190.webp"
                            },
                            {
                                "code":  "E195",
@@ -515,7 +555,8 @@
                                                "ERJ 195"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/e195.jpg"
                            },
                            {
                                "code":  "E290",
@@ -528,7 +569,8 @@
                                                "Embraer 190-E2"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/e190-e2.jpeg"
                            },
                            {
                                "code":  "E295",
@@ -541,7 +583,8 @@
                                                "Embraer 195-E2"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/e195-e2.png"
                            },
                            {
                                "code":  "CRJ7",
@@ -554,7 +597,8 @@
                                                "CRJ-700"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/CRJ700.avif"
                            },
                            {
                                "code":  "CRJ9",
@@ -567,7 +611,8 @@
                                                "CRJ-900"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/CRJ900.webp"
                            },
                            {
                                "code":  "CRJX",
@@ -580,7 +625,8 @@
                                                "CRJ-1000"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "JET"
+                               "engine_type":  "JET",
+                               "image_asset_ref":  "aircraft/images/CRJ1000.webp"
                            },
                            {
                                "code":  "AT43",
@@ -594,7 +640,8 @@
                                                "ATR 42-600"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "TURBOPROP"
+                               "engine_type":  "TURBOPROP",
+                               "image_asset_ref":  "aircraft/images/ATR 42.png"
                            },
                            {
                                "code":  "AT72",
@@ -608,7 +655,8 @@
                                                "ATR 72-600"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "TURBOPROP"
+                               "engine_type":  "TURBOPROP",
+                               "image_asset_ref":  "aircraft/images/atr72.png"
                            },
                            {
                                "code":  "DH8D",
@@ -634,7 +682,8 @@
                                                "Saab SF340"
                                            ],
                                "num_engines":  2,
-                               "engine_type":  "TURBOPROP"
+                               "engine_type":  "TURBOPROP",
+                               "image_asset_ref":  "aircraft/images/Saab 340.webp"
                            }
                        ]
 }

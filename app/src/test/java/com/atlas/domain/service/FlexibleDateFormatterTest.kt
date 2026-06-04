@@ -27,7 +27,7 @@ class FlexibleDateFormatterTest {
     @Test
     fun formatsMonthPrecision() {
         assertEquals(
-            "06-2024",
+            "juny 2024",
             formatter.format(
                 FlexibleDate(
                     year = 2024,
@@ -42,7 +42,7 @@ class FlexibleDateFormatterTest {
     @Test
     fun formatsDayPrecision() {
         assertEquals(
-            "09-06-2024",
+            "9 juny 2024",
             formatter.format(
                 FlexibleDate(
                     year = 2024,
@@ -66,5 +66,15 @@ class FlexibleDateFormatterTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun formatsIsoDate() {
+        assertEquals("31 gen. 2026", formatter.formatIsoDate("2026-01-31"))
+    }
+
+    @Test
+    fun formatsIsoDateTime() {
+        assertEquals("31 gen. 2026 · 09:05", formatter.formatIsoDateTime("2026-01-31T09:05"))
     }
 }

@@ -44,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.date.FlexibleDateRangeDraftUiState
 import com.atlas.ui.theme.AtlasAccent
@@ -662,12 +664,12 @@ private fun formatDraftDate(
         DatePrecision.YEAR  -> y.toString()
         DatePrecision.MONTH -> {
             val m = month.toIntOrNull()?.coerceIn(1, 12) ?: return "Sense data"
-            "${m.toMonthLabel()} $y"
+            flexibleDateRangeFieldFormatter.format(FlexibleDate(y, m, null, DatePrecision.MONTH))
         }
         DatePrecision.DAY   -> {
             val m = month.toIntOrNull()?.coerceIn(1, 12) ?: return "Sense data"
             val d = day.toIntOrNull() ?: return "Sense data"
-            "$d ${m.toMonthLabel()} $y"
+            flexibleDateRangeFieldFormatter.format(FlexibleDate(y, m, d, DatePrecision.DAY))
         }
     }
 }
@@ -694,6 +696,8 @@ private fun Int.toMonthLabel(): String = when (this) {
     10 -> "Oct."  11 -> "Nov."  12 -> "Des."
     else -> "Mes $this"
 }
+
+private val flexibleDateRangeFieldFormatter = FlexibleDateFormatter()
 
 private fun currentYear()  = LocalDate.now().year
 private fun currentMonth() = LocalDate.now().monthValue

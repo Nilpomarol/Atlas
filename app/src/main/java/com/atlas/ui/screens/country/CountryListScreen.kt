@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -45,6 +47,7 @@ import com.atlas.presentation.country.CountryListFilter
 import com.atlas.presentation.country.CountryListItemUiState
 import com.atlas.presentation.country.CountryListUiState
 import com.atlas.ui.components.AtlasPage
+import com.atlas.ui.components.AtlasFilterPill
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
 import com.atlas.ui.components.primaryStateColors
@@ -194,29 +197,10 @@ private fun CountryListHeader(
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(CountryListFilter.entries) { filter ->
-                val filterColors = filter.colors()
-                FilterChip(
+                AtlasFilterPill(
+                    label = filter.label,
                     selected = uiState.selectedFilter == filter,
                     onClick = { onFilterSelected(filter) },
-                    label = {
-                        Text(
-                            text = filter.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    },
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = uiState.selectedFilter == filter,
-                        borderColor = AtlasOutline,
-                        selectedBorderColor = filterColors.foreground.copy(alpha = 0.3f),
-                    ),
-                    colors = FilterChipDefaults.filterChipColors(
-                        containerColor = AtlasSurface,
-                        selectedContainerColor = filterColors.container,
-                        labelColor = AtlasOnSurfaceMuted,
-                        selectedLabelColor = filterColors.foreground,
-                    ),
                 )
             }
         }
@@ -301,19 +285,26 @@ private fun CountryRow(
         Row(
             modifier = Modifier.padding(vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
+                    .width(3.dp)
+                    .height(36.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(stateColors.foreground),
+            )
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(9.dp))
                     .background(AtlasSurfaceRaised),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = country.flagEmoji?.takeIf { it.isNotBlank() } ?: country.iso2,
                     style = MaterialTheme.typography.labelMedium,
-                    fontSize = 22.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceStrong,
                 )

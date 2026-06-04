@@ -75,8 +75,8 @@ fun FlightRouteGeoMap(
         nextContextAirport?.toGeoCoordinate()?.let {
             add(GeoMarker(it, statusColors.foreground, radiusMultiplier = 0.72f, alpha = 0.6f))
         }
-        origin?.let { add(GeoMarker(it, statusColors.foreground, radiusMultiplier = 1.0f)) }
-        destination?.let { add(GeoMarker(it, statusColors.foreground, radiusMultiplier = 1.0f)) }
+        origin?.let { add(GeoMarker(it, statusColors.foreground, radiusMultiplier = 0.72f, label = originAirport.city)) }
+        destination?.let { add(GeoMarker(it, statusColors.foreground, radiusMultiplier = 0.72f, label = destinationAirport.city)) }
     }
 
     AtlasGeoCanvas(

@@ -1,6 +1,8 @@
 package com.atlas.ui.screens.flight
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,11 +11,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,14 +38,25 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
+import coil.compose.SubcomposeAsyncImage
+import coil.compose.SubcomposeAsyncImageContent
+import coil.request.ImageRequest
 import com.atlas.domain.model.Aircraft
 import com.atlas.domain.model.AircraftType
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.TravelStatus
+import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.flight.FlightDetailUiState
 import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
@@ -51,17 +65,18 @@ import com.atlas.ui.components.AtlasSemanticColors
 import com.atlas.ui.components.geo.FlightRouteGeoMap
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.screens.country.BackPill
-import com.atlas.ui.screens.trip.toCatalanLabel
 import com.atlas.ui.theme.AtlasBackground
-import com.atlas.ui.theme.AtlasOnSurfaceFaint
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
+import com.atlas.ui.theme.AtlasSurfaceSubtle
+import java.time.Duration
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 @Composable
@@ -104,6 +119,7 @@ fun FlightDetailScreen(
     }
 
     val statusColors = flight.status.tripStatusColors()
+    var timeDisplayMode by remember { mutableStateOf(TimeDisplayMode.Local) }
 
     Column(
         modifier = Modifier
@@ -123,8 +139,9 @@ fun FlightDetailScreen(
 
         Column(
             modifier = Modifier
-                .offset(y = (-42).dp)
-                .padding(horizontal = 20.dp),
+                .fillMaxWidth()
+                .background(AtlasBackground)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             FlightIdentityCard(
@@ -135,21 +152,34 @@ fun FlightDetailScreen(
                 groupPositionLabel = uiState.groupPositionLabel,
             )
 
-            FlightDatesCard(flight)
+            FlightStatStrip(flight = flight)
 
-            val hasAnyMeta = flight.airline != null ||
-                flight.flightNumber != null ||
-                flight.aircraft != null ||
+            FlightDatesCard(
+                flight = flight,
+                originAirport = uiState.originAirport,
+                destinationAirport = uiState.destinationAirport,
+                displayMode = timeDisplayMode,
+                onDisplayModeChanged = { timeDisplayMode = it },
+            )
+
+            val hasAircraftInfo = flight.aircraft != null ||
                 flight.aircraftRegistration != null ||
-                flight.distanceKm != null
-            if (hasAnyMeta) {
-                FlightMetaCard(
+                uiState.resolvedAircraftType != null ||
+                uiState.resolvedAircraft != null
+            if (hasAircraftInfo) {
+                AircraftVisualCard(
                     flight = flight,
-                    resolvedAirlineName = uiState.resolvedAirlineName,
                     resolvedAircraftType = uiState.resolvedAircraftType,
                     resolvedAircraft = uiState.resolvedAircraft,
                 )
             }
+
+            FlightDataCard(
+                flight = flight,
+                resolvedAirlineName = uiState.resolvedAirlineName,
+                resolvedAircraftType = uiState.resolvedAircraftType,
+                resolvedAircraft = uiState.resolvedAircraft,
+            )
 
             if (!flight.notes.isNullOrBlank()) {
                 FlightNotesCard(flight.notes)
@@ -225,7 +255,8 @@ private fun FlightHero(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(230.dp),
+            .height(230.dp)
+            .clipToBounds(),
     ) {
         FlightRouteGeoMap(
             originAirport = originAirport,
@@ -275,155 +306,663 @@ private fun FlightIdentityCard(
     val destCity = destinationAirport?.city
 
     AtlasCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Route headline
+        Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    text = originCode,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AtlasOnSurfaceStrong,
-                )
-                Icon(
-                    imageVector = Icons.Filled.Flight,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                    tint = AtlasOnSurfaceMuted,
-                )
-                Text(
-                    text = destCode,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AtlasOnSurfaceStrong,
-                )
-            }
-
-            // City names
-            if (originCity != null || destCity != null) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    originCity?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    destCity?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-
-            // Pills row
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AtlasPill(label = statusColors.label, colors = statusColors)
-                if (groupPositionLabel != null) {
-                    AtlasPill(
-                        label = groupPositionLabel,
-                        colors = AtlasSemanticColors(
-                            foreground = AtlasOnSurfaceMuted,
-                            container = AtlasSurface,
-                            label = groupPositionLabel,
-                        ),
+                flight.airline?.let { iata ->
+                    AirlineLogo(
+                        iata = iata,
+                        modifier = Modifier
+                            .height(36.dp)
+                            .widthIn(max = 96.dp),
                     )
-                }
+                } ?: AirlineFallbackLogo(statusColors.foreground, statusColors.container)
+                Text(
+                    text = flight.flightNumber?.takeIf { it.isNotBlank() } ?: "Vol",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                AtlasPill(
+                    label = statusColors.label,
+                    colors = statusColors,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+            ) {
+                DetailAirportEndpoint(
+                    airportCode = originCode,
+                    city = originCity,
+                    primaryTime = flight.actualDepartureAt?.timePart() ?: flight.scheduledDepartureAt?.timePart(),
+                    secondaryTime = flight.actualDepartureAt?.let { flight.scheduledDepartureAt?.timePart() },
+                    modifier = Modifier.weight(1f),
+                )
+                DetailRouteMiddle(
+                    distanceKm = flight.distanceKm,
+                    color = statusColors.foreground,
+                    modifier = Modifier.weight(1.15f),
+                )
+                DetailAirportEndpoint(
+                    airportCode = destCode,
+                    city = destCity,
+                    primaryTime = flight.actualArrivalAt?.timePart() ?: flight.scheduledArrivalAt?.timePart(),
+                    secondaryTime = flight.actualArrivalAt?.let { flight.scheduledArrivalAt?.timePart() },
+                    modifier = Modifier.weight(1f),
+                    alignEnd = true,
+                )
+            }
+
+            groupPositionLabel?.let {
+                AtlasPill(
+                    label = it,
+                    colors = AtlasSemanticColors(
+                        foreground = AtlasOnSurfaceMuted,
+                        container = AtlasSurface,
+                        label = it,
+                    ),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun FlightDatesCard(flight: Flight) {
+private fun FlightStatStrip(flight: Flight) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row {
+            FlightStatCell(
+                value = flight.durationMinutes()?.toDurationText() ?: "—",
+                label = "Durada",
+                modifier = Modifier.weight(1f),
+            )
+            FlightStatCell(
+                value = flight.distanceKm?.let(::formatDistanceKm) ?: "—",
+                label = "Distància",
+                modifier = Modifier.weight(1f),
+            )
+            FlightStatCell(
+                value = flight.delayMinutes()?.toDelayText() ?: "—",
+                label = "Retard",
+                valueColor = flight.delayMinutes()?.delayColor() ?: AtlasOnSurfaceStrong,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FlightStatCell(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+    valueColor: Color = AtlasOnSurfaceStrong,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = valueColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = AtlasOnSurfaceMuted,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun FlightDatesCard(
+    flight: Flight,
+    originAirport: Airport?,
+    destinationAirport: Airport?,
+    displayMode: TimeDisplayMode,
+    onDisplayModeChanged: (TimeDisplayMode) -> Unit,
+) {
     val hasScheduled = flight.scheduledDepartureAt != null || flight.scheduledArrivalAt != null
     val hasActual = flight.actualDepartureAt != null || flight.actualArrivalAt != null
     if (!hasScheduled && !hasActual) return
 
-    AtlasCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (hasScheduled) {
+    val originCode = originAirport?.iata ?: originAirport?.icao ?: flight.originAirportId.uppercase()
+    val destinationCode = destinationAirport?.iata ?: destinationAirport?.icao ?: flight.destinationAirportId.uppercase()
+
+    AtlasCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
-                    text = "Horari programat",
-                    style = MaterialTheme.typography.labelMedium,
+                    text = "Horari".uppercase(),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
                     fontWeight = FontWeight.ExtraBold,
                     color = AtlasOnSurfaceMuted,
                 )
-                flight.scheduledDepartureAt?.let {
-                    DatetimeRow("Sortida", it, flight.scheduledDepartureUtc)
-                }
-                flight.scheduledArrivalAt?.let {
-                    DatetimeRow("Arribada", it, flight.scheduledArrivalUtc)
-                }
-            }
-            if (hasScheduled && hasActual) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(AtlasOnSurfaceFaint.copy(alpha = 0.25f)),
+                TimeModeToggle(
+                    selected = displayMode,
+                    onSelected = onDisplayModeChanged,
                 )
             }
-            if (hasActual) {
+            DatetimeRow(
+                label = "Sortida · $originCode",
+                primaryValue = flight.actualDepartureAt ?: flight.scheduledDepartureAt,
+                secondaryValue = flight.actualDepartureAt?.let { flight.scheduledDepartureAt },
+                utcPrimaryValue = flight.actualDepartureUtc ?: flight.scheduledDepartureUtc,
+                utcSecondaryValue = flight.actualDepartureUtc?.let { flight.scheduledDepartureUtc },
+                displayMode = displayMode,
+            )
+            DatetimeRow(
+                label = "Arribada · $destinationCode",
+                primaryValue = flight.actualArrivalAt ?: flight.scheduledArrivalAt,
+                secondaryValue = flight.actualArrivalAt?.let { flight.scheduledArrivalAt },
+                utcPrimaryValue = flight.actualArrivalUtc ?: flight.scheduledArrivalUtc,
+                utcSecondaryValue = flight.actualArrivalUtc?.let { flight.scheduledArrivalUtc },
+                displayMode = displayMode,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DatetimeRow(
+    label: String,
+    primaryValue: String?,
+    secondaryValue: String?,
+    utcPrimaryValue: String?,
+    utcSecondaryValue: String?,
+    displayMode: TimeDisplayMode,
+) {
+    val displayedPrimary = when (displayMode) {
+        TimeDisplayMode.Local -> primaryValue
+        TimeDisplayMode.Utc -> utcPrimaryValue
+    } ?: return
+    val displayedSecondary = when (displayMode) {
+        TimeDisplayMode.Local -> secondaryValue
+        TimeDisplayMode.Utc -> utcSecondaryValue
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceStrong,
+        )
+        Column(horizontalAlignment = Alignment.End) {
+            displayedSecondary?.takeIf { it != displayedPrimary }?.let {
                 Text(
-                    text = "Horari real",
+                    text = if (displayMode == TimeDisplayMode.Utc) formatUtcDatetime(it) else formatDatetime(it),
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceMuted,
+                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
                 )
-                flight.actualDepartureAt?.let {
-                    DatetimeRow("Sortida", it, flight.actualDepartureUtc)
-                }
-                flight.actualArrivalAt?.let {
-                    DatetimeRow("Arribada", it, flight.actualArrivalUtc)
-                }
+            }
+            Text(
+                text = if (displayMode == TimeDisplayMode.Utc) formatUtcDatetime(displayedPrimary) else formatDatetime(displayedPrimary),
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 21.sp),
+                fontWeight = FontWeight.ExtraBold,
+                color = (primaryValue.delayAgainst(secondaryValue)).delayColor(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimeModeToggle(
+    selected: TimeDisplayMode,
+    onSelected: (TimeDisplayMode) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(AtlasSurfaceSubtle)
+            .padding(3.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        TimeModeToggleOption("Local", TimeDisplayMode.Local, selected, onSelected)
+        TimeModeToggleOption("UTC", TimeDisplayMode.Utc, selected, onSelected)
+    }
+}
+
+@Composable
+private fun TimeModeToggleOption(
+    label: String,
+    value: TimeDisplayMode,
+    selected: TimeDisplayMode,
+    onSelected: (TimeDisplayMode) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected == value) AtlasNavy else Color.Transparent)
+            .padding(horizontal = 13.dp, vertical = 8.dp)
+            .clickable { onSelected(value) },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (selected == value) AtlasSurface else AtlasOnSurfaceMuted,
+        )
+    }
+}
+
+@Composable
+private fun AirlineFallbackLogo(
+    foreground: Color,
+    container: Color,
+) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Flight,
+            contentDescription = null,
+            tint = foreground,
+            modifier = Modifier.size(21.dp),
+        )
+    }
+}
+
+@Composable
+private fun DetailAirportEndpoint(
+    airportCode: String,
+    city: String?,
+    primaryTime: String?,
+    secondaryTime: String?,
+    modifier: Modifier = Modifier,
+    alignEnd: Boolean = false,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
+    ) {
+        Text(
+            text = airportCode,
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 34.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
+        )
+        city?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = AtlasOnSurfaceStrong,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        primaryTime?.let {
+            Text(
+                text = it,
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
+                fontWeight = FontWeight.ExtraBold,
+                color = AtlasOnSurfaceStrong,
+            )
+        }
+        secondaryTime?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DetailRouteMiddle(
+    distanceKm: Double?,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(top = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = distanceKm?.let(::formatDistanceKm) ?: "Ruta",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = AtlasOnSurfaceMuted,
+            maxLines = 1,
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 7.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(color.copy(alpha = 0.5f)),
+            )
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(AtlasSurface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Flight,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(19.dp),
+                )
             }
         }
     }
 }
 
 @Composable
-private fun DatetimeRow(label: String, isoValue: String, utcValue: String? = null) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = AtlasOnSurfaceMuted,
-        )
-        Column(horizontalAlignment = Alignment.End) {
-            Text(
-                text = formatDatetime(isoValue),
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.SemiBold,
-                color = AtlasOnSurfaceStrong,
+private fun AircraftVisualCard(
+    flight: Flight,
+    resolvedAircraftType: AircraftType?,
+    resolvedAircraft: Aircraft?,
+) {
+    val aircraftTitle = resolvedAircraft?.model ?: resolvedAircraftType?.displayName ?: flight.aircraft ?: "Aeronau"
+    val aircraftMeta = listOfNotNull(
+        resolvedAircraft?.registration ?: flight.aircraftRegistration,
+        resolvedAircraftType?.category?.toCatalanAircraftCategory(),
+    ).joinToString(" · ")
+
+    AtlasCard {
+        Column {
+            AircraftImage(
+                imageUrl = resolvedAircraft?.imageUrl,
+                imageAssetRef = resolvedAircraftType?.imageAssetRef,
+                label = aircraftTitle,
             )
-            utcValue?.let {
+            Text(
+                text = aircraftTitle,
+                modifier = Modifier.padding(top = 14.dp),
+                style = MaterialTheme.typography.titleLarge,
+                color = AtlasOnSurfaceStrong,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (aircraftMeta.isNotBlank()) {
                 Text(
-                    text = "UTC ${formatUtcDatetime(it)}",
-                    style = MaterialTheme.typography.labelSmall,
+                    text = aircraftMeta,
+                    modifier = Modifier.padding(top = 5.dp),
+                    style = MaterialTheme.typography.labelMedium,
                     color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                AircraftMetric(
+                    value = (resolvedAircraft?.numEngines ?: resolvedAircraftType?.numEngines)?.toString() ?: "—",
+                    label = "Motors",
+                )
+                AircraftMetric(
+                    value = (resolvedAircraft?.engineType ?: resolvedAircraftType?.engineType)?.toCatalanEngineType() ?: "—",
+                    label = "Tipus",
+                )
+                AircraftMetric(
+                    value = resolvedAircraft?.numSeats?.toString() ?: "—",
+                    label = "Seients",
+                )
+                AircraftMetric(
+                    value = resolvedAircraft?.firstFlightDate?.let { formatDateOnly(it).takeLast(4) } ?: "—",
+                    label = "Primer vol",
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AircraftImage(
+    imageUrl: String?,
+    imageAssetRef: String?,
+    label: String,
+) {
+    val imageData = imageUrl?.takeIf { it.isNotBlank() }
+        ?: imageAssetRef?.takeIf { it.isNotBlank() }?.let { "file:///android_asset/$it" }
+
+    imageData?.let { source ->
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(132.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(AtlasSurfaceSubtle),
+        ) {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(source)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = label,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                when (painter.state) {
+                    is AsyncImagePainter.State.Success -> {
+                        SubcomposeAsyncImageContent(
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+                    is AsyncImagePainter.State.Error,
+                    is AsyncImagePainter.State.Empty -> AircraftImagePlaceholder(label = label)
+                    else -> AircraftImagePlaceholder(label = label)
+                }
+            }
+        }
+        return
+    }
+
+    AircraftImagePlaceholder(label = label)
+}
+
+@Composable
+private fun AircraftImagePlaceholder(label: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(132.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(AtlasSurfaceSubtle),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stripeColor = AtlasOutline.copy(alpha = 0.28f)
+            var x = -size.height
+            while (x < size.width) {
+                drawLine(
+                    color = stripeColor,
+                    start = androidx.compose.ui.geometry.Offset(x, size.height),
+                    end = androidx.compose.ui.geometry.Offset(x + size.height, 0f),
+                    strokeWidth = 9.dp.toPx(),
+                )
+                x += 24.dp.toPx()
+            }
+        }
+        Text(
+            text = "IMATGE · $label",
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(12.dp)
+                .clip(RoundedCornerShape(7.dp))
+                .background(AtlasSurface.copy(alpha = 0.82f))
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = AtlasOnSurfaceMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun AircraftImageLabel(
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = "IMATGE · $label",
+        modifier = modifier
+            .padding(12.dp)
+            .clip(RoundedCornerShape(7.dp))
+            .background(AtlasSurface.copy(alpha = 0.82f))
+            .padding(horizontal = 8.dp, vertical = 5.dp),
+        style = MaterialTheme.typography.labelSmall,
+        fontWeight = FontWeight.Bold,
+        color = AtlasOnSurfaceMuted,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
+
+@Composable
+private fun AircraftMetric(
+    value: String,
+    label: String,
+) {
+    Column {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+        )
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = AtlasOnSurfaceMuted,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun FlightDataCard(
+    flight: Flight,
+    resolvedAirlineName: String?,
+    resolvedAircraftType: AircraftType?,
+    resolvedAircraft: Aircraft?,
+) {
+    val rows = buildList {
+        flight.flightNumber?.let { add("Número de vol" to it) }
+        flight.aircraftRegistration?.let { add("Matrícula" to it) }
+        resolvedAircraft?.deliveryDate?.let { add("Lliurament" to formatDateOnly(it)) }
+        resolvedAircraft?.ageYears?.let { add("Edat" to "${"%.1f".format(it)} anys") }
+        resolvedAircraftType?.category?.let { add("Categoria" to it.toCatalanAircraftCategory()) }
+        add("Seguiment destí" to if (flight.destinationCountsForCountryTracking) "Sí" else "No")
+        add("Seguiment origen" to if (flight.originCountsForCountryTracking) "Sí" else "No")
+    }
+    if (rows.isEmpty() && flight.airline == null) return
+
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
+            Text(
+                text = "Dades",
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
+                fontWeight = FontWeight.ExtraBold,
+                color = AtlasOnSurfaceMuted,
+            )
+            flight.airline?.let { iata ->
+                AirlineDataRow(iata = iata)
+            }
+            rows.forEach { (label, value) ->
+                DataRow(label, value)
+            }
+        }
+    }
+}
+
+@Composable
+private fun AirlineDataRow(iata: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = "Companyia",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = AtlasOnSurfaceMuted,
+        )
+        AirlineLogo(
+            iata = iata,
+            modifier = Modifier
+                .height(32.dp)
+                .widthIn(max = 96.dp),
+        )
+    }
+}
+
+@Composable
+private fun DataRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = AtlasOnSurfaceMuted,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -572,31 +1111,17 @@ private fun FlightActions(
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 private fun formatDatetime(value: String): String {
-    return try {
-        val date = LocalDate.parse(value.take(10), DateTimeFormatter.ISO_LOCAL_DATE)
-        val time = value.drop(11).take(5)
-        val month = date.monthValue.toMonthLabel()
-        "${date.dayOfMonth} $month ${date.year}  ·  $time"
-    } catch (_: Exception) {
-        value
-    }
+    return flightDetailDateFormatter.formatIsoDateTime(value) ?: value
 }
 
 private fun formatDateOnly(value: String): String {
-    return try {
-        val date = LocalDate.parse(value.take(10), DateTimeFormatter.ISO_LOCAL_DATE)
-        val month = date.monthValue.toMonthLabel()
-        "${date.dayOfMonth} $month ${date.year}"
-    } catch (_: Exception) {
-        value
-    }
+    return flightDetailDateFormatter.formatIsoDate(value) ?: value
 }
 
 private fun formatUtcDatetime(value: String): String {
     return try {
         val dateTime = LocalDateTime.ofInstant(Instant.parse(value), ZoneOffset.UTC)
-        val month = dateTime.monthValue.toMonthLabel()
-        "${dateTime.dayOfMonth} $month ${dateTime.year}  ·  ${"%02d:%02d".format(dateTime.hour, dateTime.minute)}"
+        flightDetailDateFormatter.format(dateTime)
     } catch (_: Exception) {
         value
     }
@@ -605,13 +1130,59 @@ private fun formatUtcDatetime(value: String): String {
 private fun formatDistanceKm(value: Double): String =
     "%,d km".format(value.roundToInt()).replace(",", ".")
 
-private fun Int.toMonthLabel(): String = when (this) {
-    1  -> "Gen."  2  -> "Febr." 3  -> "Març"
-    4  -> "Abr."  5  -> "Maig"  6  -> "Juny"
-    7  -> "Jul."  8  -> "Ag."   9  -> "Set."
-    10 -> "Oct."  11 -> "Nov."  12 -> "Des."
-    else -> "$this"
+private fun Flight.durationMinutes(): Long? {
+    val departure = actualDepartureAt ?: scheduledDepartureAt
+    val arrival = actualArrivalAt ?: scheduledArrivalAt
+    return minutesBetween(departure, arrival)
 }
+
+private fun Flight.delayMinutes(): Long? =
+    minutesBetween(scheduledArrivalAt, actualArrivalAt)
+        ?: minutesBetween(scheduledDepartureAt, actualDepartureAt)
+
+private fun String?.delayAgainst(scheduled: String?): Long? =
+    minutesBetween(scheduled, this)
+
+private fun minutesBetween(start: String?, end: String?): Long? {
+    val startTime = runCatching { LocalDateTime.parse(start ?: return null) }.getOrNull() ?: return null
+    val endTime = runCatching { LocalDateTime.parse(end ?: return null) }.getOrNull() ?: return null
+    return Duration.between(startTime, endTime).toMinutes()
+}
+
+private fun Long.toDurationText(): String {
+    val absolute = kotlin.math.abs(this)
+    val hours = absolute / 60
+    val minutes = absolute % 60
+    return when {
+        hours > 0 && minutes > 0 -> "${hours} h ${minutes} m"
+        hours > 0 -> "${hours} h"
+        else -> "${minutes} m"
+    }
+}
+
+private fun Long.toDelayText(): String =
+    when {
+        this > 0 -> "+${this} min"
+        this < 0 -> "${this} min"
+        else -> "0 min"
+    }
+
+private fun Long?.delayColor(): Color =
+    when {
+        this == null -> AtlasOnSurfaceStrong
+        this > 15 -> AtlasPrimary
+        this < 0 -> AtlasOnSurfaceMuted
+        else -> AtlasOnSurfaceStrong
+    }
+
+private fun String.timePart(): String? =
+    substringAfter('T', missingDelimiterValue = "")
+        .take(5)
+        .takeIf { it.length == 5 }
+
+private enum class TimeDisplayMode { Local, Utc }
+
+private val flightDetailDateFormatter = FlexibleDateFormatter()
 
 private fun String.toCatalanAircraftCategory(): String = when (uppercase()) {
     "NARROWBODY" -> "Fuselatge estret"

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -34,7 +35,7 @@ fun AtlasGeoCanvas(
     viewport: GeoViewport = GeoViewport.World,
     routeSegments: List<GeoRouteSegment> = emptyList(),
     markers: List<GeoMarker> = emptyList(),
-    highlightedIso2: Set<String> = emptySet(),
+    highlightColorByIso2: Map<String, Color> = emptyMap(),
 ) {
     val context = LocalContext.current
     var features by remember { mutableStateOf<GeoFeatureCollection?>(null) }
@@ -62,14 +63,14 @@ fun AtlasGeoCanvas(
 
             if (collection != null) {
                 collection.countries.forEach { country ->
-                    val isHighlighted = country.iso2 != null && country.iso2 in highlightedIso2
-                    val fill = if (isHighlighted) {
-                        AtlasSurface.copy(alpha = 0.96f)
+                    val highlightColor = country.iso2?.let { highlightColorByIso2[it] }
+                    val fill = if (highlightColor != null) {
+                        highlightColor.copy(alpha = 0.22f)
                     } else {
                         AtlasSurface.copy(alpha = 0.76f)
                     }
-                    val stroke = if (isHighlighted) {
-                        AtlasOutlineStrong.copy(alpha = 0.72f)
+                    val stroke = if (highlightColor != null) {
+                        highlightColor.copy(alpha = 0.70f)
                     } else {
                         AtlasOutline.copy(alpha = 0.45f)
                     }
@@ -79,7 +80,7 @@ fun AtlasGeoCanvas(
                         drawPath(
                             path = path,
                             color = stroke,
-                            style = Stroke(width = if (isHighlighted) 1.2.dp.toPx() else 0.65.dp.toPx()),
+                            style = Stroke(width = if (highlightColor != null) 1.2.dp.toPx() else 0.65.dp.toPx()),
                         )
                     }
                 }
@@ -97,17 +98,57 @@ fun AtlasGeoCanvas(
                     radius = radius + 3.dp.toPx(),
                     center = center,
                 )
-                drawCircle(
-                    color = marker.color.copy(alpha = marker.alpha),
-                    radius = radius,
-                    center = center,
-                )
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.92f * marker.alpha),
-                    radius = radius,
-                    center = center,
-                    style = Stroke(width = 1.4.dp.toPx()),
-                )
+                if (marker.isHollow) {
+                    drawCircle(
+                        color = Color.White.copy(alpha = marker.alpha),
+                        radius = radius,
+                        center = center,
+                    )
+                    drawCircle(
+                        color = marker.color.copy(alpha = marker.alpha),
+                        radius = radius,
+                        center = center,
+                        style = Stroke(width = 2.dp.toPx()),
+                    )
+                } else {
+                    drawCircle(
+                        color = marker.color.copy(alpha = marker.alpha),
+                        radius = radius,
+                        center = center,
+                    )
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.92f * marker.alpha),
+                        radius = radius,
+                        center = center,
+                        style = Stroke(width = 1.4.dp.toPx()),
+                    )
+                }
+                marker.label?.takeIf { it.isNotBlank() }?.let { label ->
+                    drawContext.canvas.nativeCanvas.apply {
+                        val textPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                            color = android.graphics.Color.rgb(30, 42, 46)
+                            textSize = 10.dp.toPx()
+                            typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
+                            textAlign = android.graphics.Paint.Align.CENTER
+                        }
+                        val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                            color = android.graphics.Color.argb(216, 248, 243, 232)
+                        }
+                        val textWidth = textPaint.measureText(label)
+                        val x = center.x
+                        val y = center.y - radius - 9.dp.toPx()
+                        drawRoundRect(
+                            x - textWidth / 2f - 6.dp.toPx(),
+                            y - 13.dp.toPx(),
+                            x + textWidth / 2f + 6.dp.toPx(),
+                            y + 4.dp.toPx(),
+                            5.dp.toPx(),
+                            5.dp.toPx(),
+                            bgPaint,
+                        )
+                        drawText(label, x, y, textPaint)
+                    }
+                }
             }
         }
     }

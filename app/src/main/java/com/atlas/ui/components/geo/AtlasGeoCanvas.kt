@@ -235,7 +235,7 @@ private fun DrawScope.drawRouteSegment(
         path = path,
         color = segment.color.copy(alpha = 0.22f * segment.alpha),
         style = Stroke(
-            width = if (segment.isDashed) 4.dp.toPx() else 6.dp.toPx(),
+            width = if (segment.isDashed) 3.2.dp.toPx() else 4.8.dp.toPx(),
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,
             pathEffect = if (segment.isDashed) PathEffect.dashPathEffect(floatArrayOf(12.dp.toPx(), 9.dp.toPx())) else null,
@@ -245,7 +245,7 @@ private fun DrawScope.drawRouteSegment(
         path = path,
         color = segment.color.copy(alpha = segment.alpha),
         style = Stroke(
-            width = if (segment.isDashed) 1.8.dp.toPx() else 2.8.dp.toPx(),
+            width = if (segment.isDashed) 1.5.dp.toPx() else 2.2.dp.toPx(),
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,
             pathEffect = if (segment.isDashed) PathEffect.dashPathEffect(floatArrayOf(12.dp.toPx(), 9.dp.toPx())) else null,

@@ -44,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -84,6 +85,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
 
 @Composable
@@ -467,6 +469,14 @@ private fun FlightDatesCard(
 
     val originCode = originAirport?.iata ?: originAirport?.icao ?: flight.originAirportId.uppercase()
     val destinationCode = destinationAirport?.iata ?: destinationAirport?.icao ?: flight.destinationAirportId.uppercase()
+    val localArrivalDayOffset = dayOffsetBetween(
+        departureDatetime = flight.actualDepartureAt ?: flight.scheduledDepartureAt,
+        arrivalDatetime = flight.actualArrivalAt ?: flight.scheduledArrivalAt,
+    )
+    val utcArrivalDayOffset = utcDayOffsetBetween(
+        departureInstant = flight.actualDepartureUtc ?: flight.scheduledDepartureUtc,
+        arrivalInstant = flight.actualArrivalUtc ?: flight.scheduledArrivalUtc,
+    )
 
     AtlasCard(contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -501,6 +511,8 @@ private fun FlightDatesCard(
                 utcPrimaryValue = flight.actualArrivalUtc ?: flight.scheduledArrivalUtc,
                 utcSecondaryValue = flight.actualArrivalUtc?.let { flight.scheduledArrivalUtc },
                 displayMode = displayMode,
+                localDayOffset = localArrivalDayOffset,
+                utcDayOffset = utcArrivalDayOffset,
             )
         }
     }
@@ -514,6 +526,8 @@ private fun DatetimeRow(
     utcPrimaryValue: String?,
     utcSecondaryValue: String?,
     displayMode: TimeDisplayMode,
+    localDayOffset: Int? = null,
+    utcDayOffset: Int? = null,
 ) {
     val displayedPrimary = when (displayMode) {
         TimeDisplayMode.Local -> primaryValue
@@ -522,6 +536,10 @@ private fun DatetimeRow(
     val displayedSecondary = when (displayMode) {
         TimeDisplayMode.Local -> secondaryValue
         TimeDisplayMode.Utc -> utcSecondaryValue
+    }
+    val displayedDayOffset = when (displayMode) {
+        TimeDisplayMode.Local -> localDayOffset
+        TimeDisplayMode.Utc -> utcDayOffset
     }
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -537,18 +555,40 @@ private fun DatetimeRow(
         Column(horizontalAlignment = Alignment.End) {
             displayedSecondary?.takeIf { it != displayedPrimary }?.let {
                 Text(
-                    text = if (displayMode == TimeDisplayMode.Utc) formatUtcDatetime(it) else formatDatetime(it),
+                    text = "${formatTimeOnly(it, displayMode)} · ${formatDateOnlyForMode(it, displayMode)}",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceMuted,
-                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough,
+                    textDecoration = TextDecoration.LineThrough,
                 )
             }
+            Row(
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = formatTimeOnly(displayedPrimary, displayMode),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = (primaryValue.delayAgainst(secondaryValue)).delayColor(),
+                )
+                displayedDayOffset?.let {
+                    Text(
+                        text = if (it > 0) "+$it" else "$it",
+                        modifier = Modifier.padding(top = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
             Text(
-                text = if (displayMode == TimeDisplayMode.Utc) formatUtcDatetime(displayedPrimary) else formatDatetime(displayedPrimary),
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 21.sp),
-                fontWeight = FontWeight.ExtraBold,
-                color = (primaryValue.delayAgainst(secondaryValue)).delayColor(),
+                text = formatDateOnlyForMode(displayedPrimary, displayMode),
+                style = MaterialTheme.typography.labelMedium
+
+                ,
+                fontWeight = FontWeight.Bold,
+                color = AtlasOnSurfaceMuted,
             )
         }
     }
@@ -1159,6 +1199,41 @@ private fun formatUtcDatetime(value: String): String {
     } catch (_: Exception) {
         value
     }
+}
+
+private fun formatTimeOnly(value: String, displayMode: TimeDisplayMode): String =
+    when (displayMode) {
+        TimeDisplayMode.Local -> value.timePart() ?: value
+        TimeDisplayMode.Utc -> formatUtcTimeOnly(value)
+    }
+
+private fun formatDateOnlyForMode(value: String, displayMode: TimeDisplayMode): String =
+    when (displayMode) {
+        TimeDisplayMode.Local -> formatDateOnly(value)
+        TimeDisplayMode.Utc -> formatUtcDateOnly(value)
+    }
+
+private fun formatUtcTimeOnly(value: String): String =
+    runCatching {
+        val dateTime = LocalDateTime.ofInstant(Instant.parse(value), ZoneOffset.UTC)
+        "%02d:%02d".format(dateTime.hour, dateTime.minute)
+    }.getOrElse { value }
+
+private fun formatUtcDateOnly(value: String): String =
+    runCatching {
+        val dateTime = LocalDateTime.ofInstant(Instant.parse(value), ZoneOffset.UTC)
+        flightDetailDateFormatter.format(dateTime.toLocalDate())
+    }.getOrElse { value }
+
+private fun utcDayOffsetBetween(departureInstant: String?, arrivalInstant: String?): Int? {
+    val departureDate = runCatching {
+        LocalDateTime.ofInstant(Instant.parse(departureInstant ?: return null), ZoneOffset.UTC).toLocalDate()
+    }.getOrNull() ?: return null
+    val arrivalDate = runCatching {
+        LocalDateTime.ofInstant(Instant.parse(arrivalInstant ?: return null), ZoneOffset.UTC).toLocalDate()
+    }.getOrNull() ?: return null
+    val days = ChronoUnit.DAYS.between(departureDate, arrivalDate).toInt()
+    return if (days != 0) days else null
 }
 
 private fun formatDistanceKm(value: Double): String =

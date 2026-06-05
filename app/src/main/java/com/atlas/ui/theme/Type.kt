@@ -9,9 +9,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 val AtlasSerif = FontFamily(
-    Font(R.font.newsreader_variable, FontWeight.Normal),
-    Font(R.font.newsreader_variable, FontWeight.Medium),
-    Font(R.font.newsreader_variable, FontWeight.SemiBold),
+    Font(R.font.fraunces_variable, FontWeight.Normal),
+    Font(R.font.fraunces_variable, FontWeight.Medium),
+    Font(R.font.fraunces_variable, FontWeight.SemiBold),
+    Font(R.font.fraunces_variable, FontWeight.Bold),
+    Font(R.font.fraunces_variable, FontWeight.ExtraBold),
+    Font(R.font.fraunces_variable, FontWeight.Black),
 )
 
 val AtlasSans = FontFamily(
@@ -48,7 +51,7 @@ val AtlasTypography = Typography(
     ),
     titleLarge = TextStyle(
         fontFamily = AtlasSerif,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 26.sp,
     ),

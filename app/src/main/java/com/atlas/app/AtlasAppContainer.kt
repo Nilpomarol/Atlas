@@ -9,6 +9,7 @@ import com.atlas.data.dataset.AirportDatasetImporter
 import com.atlas.data.dataset.CountryDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
+import com.atlas.data.preferences.TripMapPreferencesDataSource
 import com.atlas.data.local.database.AtlasDatabase
 import com.atlas.data.repository.AircraftTypeRepositoryImpl
 import com.atlas.data.repository.AircraftRepositoryImpl
@@ -34,6 +35,7 @@ import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.LocationSearchRepository
 import com.atlas.domain.repository.TripRepository
+import com.atlas.domain.repository.TripMapPreferencesRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.domain.service.ItineraryGeneratedStopService
@@ -173,6 +175,8 @@ class AtlasAppContainer(context: Context) {
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
 
     val apiKeyRepository: ApiKeyRepository = ApiKeyPreferencesDataSource(applicationContext)
+    val tripMapPreferencesRepository: TripMapPreferencesRepository =
+        TripMapPreferencesDataSource(applicationContext)
     private val aeroDataBoxClient = AeroDataBoxClient()
     val flightApiClient: FlightApiClient = aeroDataBoxClient
     val aircraftApiClient: AircraftApiClient = aeroDataBoxClient

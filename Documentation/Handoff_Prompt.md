@@ -285,8 +285,9 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 5. ✅ **Shared FlightCard + visual polish** — `FlightCard` extracted to `ui/components/FlightCard.kt` and reused in both `FlightListScreen` (solo flights) and `ItineraryDetailScreen` (group flights). Card shows duration (not distance) in the middle. Actual times are color-coded by delay (green/amber/red). Scheduled times show with strikethrough when actual exists. Arrival time shows a `+N` day-offset label when landing crosses midnight. `ItinerarySummaryCard` per-group rows follow the same time display rules and show total group duration (not layover wait time). FlightDetail stat strip delay formatted as compact `+1h 44min`.
 6. ✅ **Itinerary flight management** — Add existing solo flights to a group (`+ Vol existent` → `SoloFlightPickerDialog`). In reorder mode each flight card shows `Treu` (remove from itinerary, with confirmation) and `Mou →` (move to another group in the same itinerary, via `MoveFlightToGroupDialog`). `ItineraryDetailViewModel` now depends on `FlightRepository` to observe solo flights reactively.
 
+7. ✅ **Flight creation modal redesign** — custom Atlas-styled dialog container, clearer search/detail step indicator, richer API search/result states, and sectioned route/status/time/flight form cards. Existing two-step behavior and all ViewModel callbacks are preserved.
+
 ### Next: v3.1 remaining screens
-- **Flight creation modal** - Still needs work.
 - **TripList** — status filter chips, route trip cards (similar style to flight list)
 - **TripDetail** — map preview, linked itinerary panel, stops timeline, excursions inline
 - **CountryList** — search, state filters, continent groups, compact ticked rows

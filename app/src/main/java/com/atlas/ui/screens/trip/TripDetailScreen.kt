@@ -518,29 +518,6 @@ private fun TripDetailContent(
         // Spacer to clear the fixed overlay top bar
         Spacer(Modifier.height(54.dp))
 
-        // Static MapLibre map card (gestures disabled)
-        TripMapPreview(
-            stops = uiState.stops,
-            excursions = uiState.excursions,
-            mapHeight = 220.dp,
-            gesturesEnabled = false,
-            showFooter = true,
-        )
-
-        // Expand to interactive map — subtle link below the map card
-        TextButton(
-            onClick = onExpandMap,
-            colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
-            modifier = Modifier.align(Alignment.End),
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
-        ) {
-            Text(
-                text = "Obrir mapa interactiu →",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.ExtraBold,
-            )
-        }
-
         TripInfoCard(
             trip = trip,
             stopCount = uiState.stops.size,
@@ -553,6 +530,16 @@ private fun TripDetailContent(
             onItineraryClick = onItineraryClick,
             onOpenItineraryPicker = onOpenItineraryPicker,
             onUnlinkItinerary = onUnlinkItinerary,
+        )
+
+        // Static MapLibre map card (gestures disabled; expand icon in footer)
+        TripMapPreview(
+            stops = uiState.stops,
+            excursions = uiState.excursions,
+            mapHeight = 220.dp,
+            gesturesEnabled = false,
+            showFooter = true,
+            onExpandClick = onExpandMap,
         )
 
         TripStopsSection(

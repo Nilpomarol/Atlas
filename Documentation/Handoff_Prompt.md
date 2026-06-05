@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (TripDetail redesign in progress — stops timeline done, visual polish ongoing; country visit history migrated from old app)
+* **Last updated:** 2026-06-05 (TripDetail redesign in progress — stops timeline done, visual polish ongoing; CountryList polished)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -93,6 +93,7 @@
 ### Maps
 * `AtlasMapView` composable (`ui/components/map/AtlasMapView.kt`) — lifecycle-aware MapLibre wrapper, reused across all map surfaces.
 * `TripMapPreview` — MapLibre map; blue main-stop markers, amber generated itinerary-stop markers, purple excursion markers; separate LineLayer for main and excursion routes; camera fits all points.
+* `CountryFlag` (`ui/components/CountryFlag.kt`) — loads flag PNG from `https://flagcdn.com/w40/{iso2_lower}.png` via Coil; falls back to ISO2 text. Used in `CountryListScreen`; reusable elsewhere.
 * `ui/components/geo/*` — reusable offline vector geo foundation. Loads bundled Natural Earth 1:110m admin-0 country polygons (`assets/geo/ne_110m_admin_0_countries.geojson`), fits a Mercator-like projection to route or world viewports, draws graticules, country polygons, great-circle arcs, and markers with Compose Canvas.
   * `AtlasGeoCanvas` — core composable. Key params: `viewport`, `routeSegments`, `markers`, `highlightColorByIso2: Map<String, Color>`. Highlighted countries get a tinted fill + accent stroke in their specified color.
   * `GeoMarker` has `isHollow: Boolean` — hollow markers (white fill + colored stroke ring) are used for capital cities.
@@ -304,7 +305,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 
 ### Next: v3.1 remaining screens
 - **TripDetail QA/commit** — finish device review of current uncommitted work, accept or iterate
-- **CountryList** — search, state filters, continent groups, compact ticked rows
+- **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, flag images via FlagCDN (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
 - **CountryDetail** — state-colored map hero, identity card, info spec-sheet, toggles, derivation timeline
 
 - **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent

@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.TripStop
@@ -62,6 +63,9 @@ fun TripMapPreview(
     stops: List<TripStop>,
     excursions: List<Excursion> = emptyList(),
     modifier: Modifier = Modifier,
+    mapHeight: Dp = 210.dp,
+    gesturesEnabled: Boolean = true,
+    showFooter: Boolean = true,
 ) {
     val coordinateStops = stops.filter { it.latitude != null && it.longitude != null }
     val mappableExcursionStops = excursions.sumOf { e -> e.stops.count { it.latitude != null && it.longitude != null } }
@@ -81,15 +85,23 @@ fun TripMapPreview(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(210.dp),
+                .height(mapHeight),
         ) {
             AtlasMapView(
                 modifier = Modifier.matchParentSize(),
-                onMapReady = { map, style -> mapRef.value = Pair(map, style) },
+                onMapReady = { map, style ->
+                    if (!gesturesEnabled) {
+                        map.uiSettings.isScrollGesturesEnabled = false
+                        map.uiSettings.isZoomGesturesEnabled = false
+                        map.uiSettings.isRotateGesturesEnabled = false
+                        map.uiSettings.isTiltGesturesEnabled = false
+                    }
+                    mapRef.value = Pair(map, style)
+                },
             )
         }
 
-        Row(
+        if (showFooter) Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -232,7 +244,7 @@ private fun addTripContent(
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(allCoords[0], 10.0))
         else -> {
             val bounds = LatLngBounds.Builder().apply { allCoords.forEach { include(it) } }.build()
-            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 60))
+            map.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 36))
         }
     }
 }

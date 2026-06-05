@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (shared FlightCard, delay colors, +N day offset, itinerary flight management)
+* **Last updated:** 2026-06-05 (Fraunces display font trial, FlightDetail Horari polish, Itinerary group-card header polish)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -53,9 +53,9 @@
 * Deleting a group sets its flights back to solo (FK `SET NULL`). Deleting an itinerary manually clears group refs before deleting.
 * **Flight country derivation is implemented.** Solo flights: COMPLETED → destination visited; PLANNED → destination planned; IN_PROGRESS/UNKNOWN → no effect. Itinerary groups use the layover-safe endpoint rule (see §Critical Reference Logic).
 * `FlightDetailScreen` is navigable from the flight list **and** from itinerary detail flight rows. Route: `flights/{flightId}`.
-* **FlightDetailScreen is redesigned in v3.1:** solo-flight style identity card, duration/distance/delay strip, larger visual Horari card with Local/UTC toggle, aircraft visual card, larger Dades card, edit/delete in detail.
+* **FlightDetailScreen is redesigned in v3.1:** solo-flight style identity card, duration/distance/delay strip, larger visual Horari card with Local/UTC toggle, aircraft visual card, larger Dades card, edit/delete in detail. Horari primary values show time only in the display font; the date is a secondary line below, scheduled values are smaller/crossed when actual exists, and arrival shows `+N` day offset when the displayed arrival date differs from departure.
 * **FlightDetailScreen hero uses the offline Canvas geo renderer** (Natural Earth polygons, route arc, smaller labeled endpoint markers, and group context airports as ghost nodes).
-* **Flight time display rule:** airport-local time is primary by default. Flight detail has a Local/UTC segmented toggle and shows only the selected time mode. Actual times are primary when present; scheduled times appear smaller/crossed as secondary.
+* **Flight time display rule:** airport-local time is primary by default. Flight detail has a Local/UTC segmented toggle and shows only the selected time mode. Actual times are primary when present; scheduled times appear smaller/crossed as secondary. In FlightDetail Horari rows, the primary text is `HH:mm`, the date is shown below, and arrival uses `+N` notation for later/earlier calendar-day offsets.
 * **Flight duration/sorting rule:** `domain/util/FlightTimeCalculations.kt` is the shared UTC-first helper. Duration, delay, layover durations, DAO flight ordering, and first/last-flight fallback ordering prefer derived UTC fields and fall back to local `"YYYY-MM-DDTHH:mm"` strings only when UTC is missing.
 * **Timezone data caveat:** UTC fields are derived on flight create/update from origin/destination airport timezones. If an airport timezone is corrected in `airports.json` after flights already exist (for example DOH/Hamad), existing DB airport rows and existing flight UTC fields can remain stale until the airport dataset is reimported and affected flights are edited/re-saved or otherwise recomputed.
 * **Flight distance:** `distance_km` is a nullable derived value calculated from origin/destination airport coordinates using great-circle distance. Existing rows migrated to v18 start null until edited/recreated/imported with the new field.
@@ -112,6 +112,7 @@
 
 ### UI
 * **Warm Editorial Atlas** visual direction: warm parchment `AtlasBackground`, paper cards with subtle borders (`AtlasOutline`), editorial headings, state colors as restrained accents.
+* **Typography:** `AtlasSerif` currently uses Fraunces (`res/font/fraunces_variable.ttf`) for display/headline/title text. `headlineLarge` and `headlineMedium` use Medium; `headlineSmall` and `titleLarge` use SemiBold. `AtlasSans` remains Hanken Grotesk and `AtlasMono` remains Space Mono.
 * All screens use shared Atlas theme tokens (`AtlasBackground`, `AtlasSurface`, `AtlasOnSurfaceStrong`, etc.). Local color palettes have been removed from all screens.
 * Bottom nav: 5 tabs — Countries, Trips, Vols (Flights), Itineraris (Itineraries), Settings.
 * **Overflow menus (⋮)** are styled via `MaterialTheme` override: `surfaceContainer = AtlasSurface`, `shapes.extraSmall = RoundedCornerShape(14.dp)`, `Modifier.width(180.dp)` on the `DropdownMenu`, and a 1dp `Box` divider between items. Do not use raw `DropdownMenu`/`DropdownMenuItem` without this wrapper.
@@ -139,6 +140,8 @@
 * **Itinerary header overflow** — "Elimina" only.
 
 ### ItineraryDetail screen design (v3.1)
+
+**Group-card header polish:** `ItineraryGroupCard` now keeps the small uppercase route label, derived status pill, and group overflow/reorder controls on the top row. The large city route title gets a separate full-width row below, so long routes have room to breathe.
 
 Layout (top to bottom): back + overflow header → **route hero** → stat strip (Grups / Vols / Distància) → groups section → **linked-trip panel**.
 
@@ -286,6 +289,9 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 6. ✅ **Itinerary flight management** — Add existing solo flights to a group (`+ Vol existent` → `SoloFlightPickerDialog`). In reorder mode each flight card shows `Treu` (remove from itinerary, with confirmation) and `Mou →` (move to another group in the same itinerary, via `MoveFlightToGroupDialog`). `ItineraryDetailViewModel` now depends on `FlightRepository` to observe solo flights reactively.
 
 7. ✅ **Flight creation modal redesign** — custom Atlas-styled dialog container, clearer search/detail step indicator, richer API search/result states, compact full-width status chips without UNKNOWN, section-level optional labels, and a cleaned-up Horaris section with full-width date/time rows. Existing two-step behavior and all ViewModel callbacks are preserved.
+
+8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces with moderated display weights; FlightDetail Horari rows show large display-font time, date as supporting text, crossed scheduled values when actual exists, and `+N` day offset on arrival.
+9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row; the large city route title now gets its own full-width row.
 
 ### Next: v3.1 remaining screens
 - **TripList** — status filter chips, route trip cards (similar style to flight list)

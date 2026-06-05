@@ -733,30 +733,18 @@ private fun ItineraryGroupCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = route.label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = AtlasOnSurfaceMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(9.dp),
-                    ) {
-                        RoutePairRow(
-                            origin = route.origin,
-                            destination = route.destination,
-                            modifier = Modifier.weight(1f),
-                        )
-                        derivedStatus?.let { status ->
-                            val colors = status.tripStatusColors()
-                            AtlasPill(label = colors.label, colors = colors)
-                        }
-                    }
+                Text(
+                    text = route.label.uppercase(),
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                derivedStatus?.let { status ->
+                    val colors = status.tripStatusColors()
+                    AtlasPill(label = colors.label, colors = colors)
                 }
                 if (isGroupReorderMode) {
                     IconButton(onClick = onMoveGroupUp, enabled = !isFirstGroup, modifier = Modifier.size(32.dp)) {
@@ -798,6 +786,12 @@ private fun ItineraryGroupCard(
                     }
                 }
             }
+
+            RoutePairRow(
+                origin = route.origin,
+                destination = route.destination,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
             if (group.flights.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

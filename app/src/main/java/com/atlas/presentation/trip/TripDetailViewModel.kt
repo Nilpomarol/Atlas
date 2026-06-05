@@ -12,9 +12,11 @@ import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.TripMapPreferencesRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
@@ -26,7 +28,6 @@ import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
 import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
 import com.atlas.domain.usecase.excursion.ReorderExcursionsUseCase
 import com.atlas.domain.usecase.excursion.UpdateExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.UpdateExcursionUseCase
 import com.atlas.domain.usecase.trip.CreateTripStopUseCase
 import com.atlas.domain.usecase.trip.DeleteTripUseCase
 import com.atlas.domain.usecase.trip.DeleteTripStopUseCase
@@ -64,7 +65,6 @@ class TripDetailViewModel(
     private val deleteTripStopUseCase: DeleteTripStopUseCase,
     private val searchLocationsUseCase: SearchLocationsUseCase,
     private val createExcursionUseCase: CreateExcursionUseCase,
-    private val updateExcursionUseCase: UpdateExcursionUseCase,
     private val deleteExcursionUseCase: DeleteExcursionUseCase,
     private val reorderExcursionsUseCase: ReorderExcursionsUseCase,
     private val createExcursionStopUseCase: CreateExcursionStopUseCase,
@@ -72,13 +72,13 @@ class TripDetailViewModel(
     private val deleteExcursionStopUseCase: DeleteExcursionStopUseCase,
     private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
     private val flexibleDateValidator: FlexibleDateValidator,
-    tripId: String,
+    private val tripMapPreferencesRepository: TripMapPreferencesRepository,
+    private val tripId: String,
 ) : ViewModel() {
     private val stopDraft = MutableStateFlow(TripStopDraftUiState())
     private val tripDraft = MutableStateFlow(TripEditorDraftUiState())
     private var stopLocationSearchJob: Job? = null
     private var excursionStopLocationSearchJob: Job? = null
-    private val excursionDraft = MutableStateFlow(ExcursionDraftUiState())
     private val excursionStopDraft = MutableStateFlow(ExcursionStopDraftUiState())
     private val isItineraryPickerOpen = MutableStateFlow(false)
 
@@ -94,18 +94,18 @@ class TripDetailViewModel(
     private val draftData = combine(
         stopDraft,
         tripDraft,
-        excursionDraft,
         excursionStopDraft,
         isItineraryPickerOpen,
-    ) { stopDraft, tripDraft, excursionDraft, excursionStopDraft, isItineraryPickerOpen ->
-        TripDraftData(stopDraft, tripDraft, excursionDraft, excursionStopDraft, isItineraryPickerOpen)
+    ) { stopDraft, tripDraft, excursionStopDraft, isItineraryPickerOpen ->
+        TripDraftData(stopDraft, tripDraft, excursionStopDraft, isItineraryPickerOpen)
     }
 
     val uiState: StateFlow<TripDetailUiState> = combine(
         tripContentData,
         itineraryRepository.observeItineraries(),
         draftData,
-    ) { content, itineraries, drafts ->
+        tripMapPreferencesRepository.observeGeneratedStopsVisible(tripId),
+    ) { content, itineraries, drafts, generatedStopsVisibleOnMap ->
         val linkedItinerary = itineraries.firstOrNull { it.tripId == tripId }
         TripDetailUiState(
             trip = content.trip,
@@ -116,9 +116,9 @@ class TripDetailViewModel(
             availableItineraries = itineraries.filter { it.tripId == null },
             stopDraft = drafts.stopDraft,
             tripDraft = drafts.tripDraft,
-            excursionDraft = drafts.excursionDraft,
             excursionStopDraft = drafts.excursionStopDraft,
             isItineraryPickerOpen = drafts.isItineraryPickerOpen,
+            generatedStopsVisibleOnMap = generatedStopsVisibleOnMap,
         )
     }
         .stateIn(
@@ -461,62 +461,15 @@ class TripDetailViewModel(
     }
 
     fun onAddExcursionClick(anchorTripStopId: String? = null) {
-        excursionDraft.update {
-            ExcursionDraftUiState(
-                isOpen = true,
-                anchorTripStopId = anchorTripStopId,
-            )
-        }
-    }
-
-    fun onEditExcursion(excursion: Excursion) {
-        excursionDraft.update { ExcursionDraftUiState.fromExcursion(excursion) }
-    }
-
-    fun onDismissExcursionDraft() {
-        excursionDraft.update { ExcursionDraftUiState() }
-    }
-
-    fun onExcursionTitleChanged(title: String) {
-        excursionDraft.update { it.copy(title = title, validationError = null) }
-    }
-
-    fun onExcursionAnchorChanged(anchorTripStopId: String?) {
-        excursionDraft.update { it.copy(anchorTripStopId = anchorTripStopId) }
-    }
-
-    fun onExcursionNotesChanged(notes: String) {
-        excursionDraft.update { it.copy(notes = notes) }
-    }
-
-    fun onSaveExcursionDraft() {
         val trip = uiState.value.trip ?: return
-        val draft = excursionDraft.value
-        val title = draft.title.trim()
-        if (title.isBlank()) {
-            excursionDraft.update { it.copy(validationError = "El titol es obligatori.") }
-            return
-        }
 
         viewModelScope.launch {
-            if (draft.excursionId == null) {
-                createExcursionUseCase(
-                    tripId = trip.id,
-                    anchorTripStopId = draft.anchorTripStopId,
-                    title = title,
-                    notes = draft.notes,
-                )
-            } else {
-                val existing = uiState.value.excursions.firstOrNull { it.id == draft.excursionId } ?: return@launch
-                updateExcursionUseCase(
-                    existing.copy(
-                        title = title,
-                        anchorTripStopId = draft.anchorTripStopId,
-                        notes = draft.notes,
-                    ),
-                )
-            }
-            onDismissExcursionDraft()
+            createExcursionUseCase(
+                tripId = trip.id,
+                anchorTripStopId = anchorTripStopId,
+                title = DEFAULT_EXCURSION_TITLE,
+                notes = null,
+            )
         }
     }
 
@@ -758,10 +711,21 @@ class TripDetailViewModel(
         }
     }
 
+    fun onGeneratedStopsVisibleOnMapChanged(isVisible: Boolean) {
+        viewModelScope.launch {
+            tripMapPreferencesRepository.setGeneratedStopsVisible(
+                tripId = tripId,
+                isVisible = isVisible,
+            )
+        }
+    }
+
     private fun moveStop(
         stop: TripStop,
         offset: Int,
     ) {
+        if (stop.source != TripStopSource.MANUAL) return
+
         val stops = uiState.value.stops.toMutableList()
         val fromIndex = stops.indexOfFirst { it.id == stop.id }
         val toIndex = fromIndex + offset
@@ -829,7 +793,6 @@ class TripDetailViewModel(
         private val deleteTripStopUseCase: DeleteTripStopUseCase,
         private val searchLocationsUseCase: SearchLocationsUseCase,
         private val createExcursionUseCase: CreateExcursionUseCase,
-        private val updateExcursionUseCase: UpdateExcursionUseCase,
         private val deleteExcursionUseCase: DeleteExcursionUseCase,
         private val reorderExcursionsUseCase: ReorderExcursionsUseCase,
         private val createExcursionStopUseCase: CreateExcursionStopUseCase,
@@ -837,6 +800,7 @@ class TripDetailViewModel(
         private val deleteExcursionStopUseCase: DeleteExcursionStopUseCase,
         private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
         private val flexibleDateValidator: FlexibleDateValidator,
+        private val tripMapPreferencesRepository: TripMapPreferencesRepository,
         private val tripId: String,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -857,7 +821,6 @@ class TripDetailViewModel(
                 deleteTripStopUseCase = deleteTripStopUseCase,
                 searchLocationsUseCase = searchLocationsUseCase,
                 createExcursionUseCase = createExcursionUseCase,
-                updateExcursionUseCase = updateExcursionUseCase,
                 deleteExcursionUseCase = deleteExcursionUseCase,
                 reorderExcursionsUseCase = reorderExcursionsUseCase,
                 createExcursionStopUseCase = createExcursionStopUseCase,
@@ -865,9 +828,14 @@ class TripDetailViewModel(
                 deleteExcursionStopUseCase = deleteExcursionStopUseCase,
                 reorderExcursionStopsUseCase = reorderExcursionStopsUseCase,
                 flexibleDateValidator = flexibleDateValidator,
+                tripMapPreferencesRepository = tripMapPreferencesRepository,
                 tripId = tripId,
             ) as T
         }
+    }
+
+    private companion object {
+        const val DEFAULT_EXCURSION_TITLE = "Excursió"
     }
 }
 
@@ -880,9 +848,9 @@ data class TripDetailUiState(
     val availableItineraries: List<Itinerary> = emptyList(),
     val stopDraft: TripStopDraftUiState = TripStopDraftUiState(),
     val tripDraft: TripEditorDraftUiState = TripEditorDraftUiState(),
-    val excursionDraft: ExcursionDraftUiState = ExcursionDraftUiState(),
     val excursionStopDraft: ExcursionStopDraftUiState = ExcursionStopDraftUiState(),
     val isItineraryPickerOpen: Boolean = false,
+    val generatedStopsVisibleOnMap: Boolean = true,
 )
 
 private data class TripContentData(
@@ -895,32 +863,9 @@ private data class TripContentData(
 private data class TripDraftData(
     val stopDraft: TripStopDraftUiState,
     val tripDraft: TripEditorDraftUiState,
-    val excursionDraft: ExcursionDraftUiState,
     val excursionStopDraft: ExcursionStopDraftUiState,
     val isItineraryPickerOpen: Boolean,
 )
-
-data class ExcursionDraftUiState(
-    val isOpen: Boolean = false,
-    val excursionId: String? = null,
-    val title: String = "",
-    val anchorTripStopId: String? = null,
-    val notes: String = "",
-    val sortOrder: Int = 0,
-    val validationError: String? = null,
-) {
-    companion object {
-        fun fromExcursion(excursion: Excursion): ExcursionDraftUiState =
-            ExcursionDraftUiState(
-                isOpen = true,
-                excursionId = excursion.id,
-                title = excursion.title,
-                anchorTripStopId = excursion.anchorTripStopId,
-                notes = excursion.notes.orEmpty(),
-                sortOrder = excursion.sortOrder,
-            )
-    }
-}
 
 data class ExcursionStopDraftUiState(
     val isOpen: Boolean = false,

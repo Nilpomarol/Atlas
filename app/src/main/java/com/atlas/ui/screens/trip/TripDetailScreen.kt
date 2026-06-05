@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,7 +66,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -85,7 +91,6 @@ import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
-import com.atlas.presentation.trip.ExcursionDraftUiState
 import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
@@ -94,6 +99,7 @@ import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasSurfaceSubtle
 import com.atlas.ui.theme.AtlasError
+import com.atlas.ui.theme.AtlasMono
 import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -102,10 +108,17 @@ import com.atlas.ui.theme.AtlasPlanned
 import com.atlas.ui.theme.AtlasPlannedContainer
 import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
+import com.atlas.ui.theme.AtlasVisited
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 private val dateRangeFormatter = FlexibleDateFormatter()
+
+private data class TripCountryPillUiState(
+    val iso2: String,
+    val name: String,
+    val flagEmoji: String?,
+)
 
 // ─────────────────────────────────────────────
 // Entry point
@@ -141,20 +154,15 @@ fun TripDetailScreen(
     onStopDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
     onStopNotesChanged: (String) -> Unit,
     onSaveStopDraft: () -> Unit,
+    onShowGeneratedStopsOnMapChanged: (Boolean) -> Unit,
     onEditStop: (TripStop) -> Unit,
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
     onAddExcursionClick: (String?) -> Unit,
-    onEditExcursion: (Excursion) -> Unit,
     onDeleteExcursion: (Excursion) -> Unit,
     onMoveExcursionUp: (Excursion) -> Unit,
     onMoveExcursionDown: (Excursion) -> Unit,
-    onDismissExcursionDraft: () -> Unit,
-    onExcursionTitleChanged: (String) -> Unit,
-    onExcursionAnchorChanged: (String?) -> Unit,
-    onExcursionNotesChanged: (String) -> Unit,
-    onSaveExcursionDraft: () -> Unit,
     onAddExcursionStopClick: (String) -> Unit,
     onEditExcursionStop: (ExcursionStop) -> Unit,
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
@@ -200,6 +208,8 @@ fun TripDetailScreen(
                 trip = trip,
                 isReorderMode = isReorderMode,
                 onReorderModeChanged = { isReorderMode = it },
+                showGeneratedStopsOnMap = uiState.generatedStopsVisibleOnMap,
+                onShowGeneratedStopsOnMapChanged = onShowGeneratedStopsOnMapChanged,
                 onExpandMap = { showMapModal = true },
                 onItineraryClick = onItineraryClick,
                 onOpenItineraryPicker = onOpenItineraryPicker,
@@ -210,7 +220,6 @@ fun TripDetailScreen(
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = { pendingDeleteStop = it },
                 onAddExcursionClick = onAddExcursionClick,
-                onEditExcursion = onEditExcursion,
                 onDeleteExcursion = { pendingDeleteExcursion = it },
                 onMoveExcursionUp = onMoveExcursionUp,
                 onMoveExcursionDown = onMoveExcursionDown,
@@ -247,6 +256,8 @@ fun TripDetailScreen(
                     stops = uiState.stops,
                     excursions = uiState.excursions,
                     mapHeight = (screenHeightDp * 0.72f).dp,
+                    generatedStopsVisible = uiState.generatedStopsVisibleOnMap,
+                    onGeneratedStopsVisibilityChanged = onShowGeneratedStopsOnMapChanged,
                 )
                 Surface(
                     modifier = Modifier
@@ -306,18 +317,6 @@ fun TripDetailScreen(
             itineraries = uiState.availableItineraries,
             onDismiss = onDismissItineraryPicker,
             onSelect = onLinkItinerary,
-        )
-    }
-
-    if (uiState.excursionDraft.isOpen) {
-        ExcursionDialog(
-            draft = uiState.excursionDraft,
-            stops = uiState.stops,
-            onDismiss = onDismissExcursionDraft,
-            onTitleChanged = onExcursionTitleChanged,
-            onAnchorChanged = onExcursionAnchorChanged,
-            onNotesChanged = onExcursionNotesChanged,
-            onSave = onSaveExcursionDraft,
         )
     }
 
@@ -484,6 +483,8 @@ private fun TripDetailContent(
     trip: Trip,
     isReorderMode: Boolean,
     onReorderModeChanged: (Boolean) -> Unit,
+    showGeneratedStopsOnMap: Boolean,
+    onShowGeneratedStopsOnMapChanged: (Boolean) -> Unit,
     onExpandMap: () -> Unit,
     onItineraryClick: (String) -> Unit,
     onOpenItineraryPicker: () -> Unit,
@@ -494,7 +495,6 @@ private fun TripDetailContent(
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
     onAddExcursionClick: (String?) -> Unit,
-    onEditExcursion: (Excursion) -> Unit,
     onDeleteExcursion: (Excursion) -> Unit,
     onMoveExcursionUp: (Excursion) -> Unit,
     onMoveExcursionDown: (Excursion) -> Unit,
@@ -508,8 +508,12 @@ private fun TripDetailContent(
         .mapNotNull { it.countryIso2?.takeIf { iso -> iso.isNotBlank() } }
         .distinct()
         .mapNotNull { iso2 ->
-            val name = uiState.countries.firstOrNull { it.iso2 == iso2 }?.nameCa ?: return@mapNotNull null
-            iso2 to name
+            val country = uiState.countries.firstOrNull { it.iso2 == iso2 } ?: return@mapNotNull null
+            TripCountryPillUiState(
+                iso2 = iso2,
+                name = country.nameCa,
+                flagEmoji = country.flagEmoji,
+            )
         }
 
     Column(
@@ -542,6 +546,8 @@ private fun TripDetailContent(
             mapHeight = 220.dp,
             gesturesEnabled = false,
             showFooter = true,
+            generatedStopsVisible = showGeneratedStopsOnMap,
+            onGeneratedStopsVisibilityChanged = onShowGeneratedStopsOnMapChanged,
             onExpandClick = onExpandMap,
         )
 
@@ -557,7 +563,6 @@ private fun TripDetailContent(
             onMoveStopDown = onMoveStopDown,
             onDeleteStop = onDeleteStop,
             onAddExcursionClick = onAddExcursionClick,
-            onEditExcursion = onEditExcursion,
             onDeleteExcursion = onDeleteExcursion,
             onMoveExcursionUp = onMoveExcursionUp,
             onMoveExcursionDown = onMoveExcursionDown,
@@ -580,7 +585,7 @@ private fun TripDetailContent(
 private fun TripInfoCard(
     trip: Trip,
     stopCount: Int,
-    tripCountries: List<Pair<String, String>>,
+    tripCountries: List<TripCountryPillUiState>,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -588,66 +593,62 @@ private fun TripInfoCard(
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Title + status
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 15.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(
+                        text = trip.title,
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp, lineHeight = 27.sp),
+                        fontWeight = FontWeight.Medium,
+                        color = AtlasOnSurfaceStrong,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    TripStatusPill(status = trip.status)
+                }
+
+                trip.dateRange?.let { range ->
+                    Text(
+                        text = dateRangeFormatter.format(range).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+
+                trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                    Text(
+                        text = notes,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                Text(
-                    text = trip.title,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
-                    fontWeight = FontWeight.SemiBold,
-                    color = AtlasOnSurfaceStrong,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                TripStatusPill(status = trip.status)
-            }
-
-            // Dates
-            trip.dateRange?.let { range ->
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = dateRangeFormatter.format(range),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AtlasOnSurfaceMuted,
-                )
-            }
-
-            // Notes
-            trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = notes,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AtlasOnSurfaceMuted,
-                )
-            }
-
-            Spacer(Modifier.height(14.dp))
-            HorizontalDivider(color = AtlasOutline)
-            Spacer(Modifier.height(14.dp))
-
-            // Stats row
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 TripStatItem(value = trip.dayCountText(), label = "DIES")
                 TripStatItem(value = stopCount.toString(), label = "PARADES")
                 TripStatItem(value = tripCountries.size.toString(), label = "PAÏSOS")
             }
 
-            // Country pills
             if (tripCountries.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    tripCountries.forEach { (iso2, name) ->
-                        TripCountryPill(iso2 = iso2, name = name)
+                    tripCountries.forEach { country ->
+                        TripCountryPill(country = country)
                     }
                 }
             }
@@ -656,43 +657,57 @@ private fun TripInfoCard(
 }
 
 @Composable
-private fun TripStatItem(value: String, label: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+private fun TripStatItem(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp, lineHeight = 25.sp),
+            fontWeight = FontWeight.Medium,
             color = AtlasOnSurfaceStrong,
         )
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
             color = AtlasOnSurfaceMuted,
         )
     }
 }
 
 @Composable
-private fun TripCountryPill(iso2: String, name: String) {
+private fun TripCountryPill(country: TripCountryPillUiState) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(999.dp))
             .background(AtlasBackground)
             .border(1.dp, AtlasOutline, RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+            .padding(horizontal = 9.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
+        country.flagEmoji?.takeIf { it.isNotBlank() }?.let { flag ->
+            Text(
+                text = flag,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
         Text(
-            text = iso2.uppercase(),
+            text = country.iso2.uppercase(),
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.ExtraBold,
             color = AtlasNavy,
         )
         Text(
-            text = name,
+            text = country.name,
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
             color = AtlasOnSurfaceStrong,
         )
     }
@@ -701,18 +716,26 @@ private fun TripCountryPill(iso2: String, name: String) {
 @Composable
 private fun TripStatusPill(status: TravelStatus) {
     val colors = status.tripStatusColors()
-    Box(
+    Row(
         modifier = Modifier
             .clip(RoundedCornerShape(100.dp))
             .background(colors.container)
-            .padding(horizontal = 11.dp, vertical = 4.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(colors.foreground),
+        )
         Text(
             text = status.toCatalanLabel().uppercase(),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
             color = colors.foreground,
-            letterSpacing = 0.12.sp,
+            letterSpacing = 0.sp,
         )
     }
 }
@@ -742,7 +765,7 @@ private fun LinkedItineraryPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Icon(Icons.Filled.Link, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(19.dp))
+                LinkedCardIcon()
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Itinerari vinculat".uppercase(),
@@ -752,18 +775,15 @@ private fun LinkedItineraryPanel(
                     )
                     Text(
                         text = "Sense itinerari assignat",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
                         color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 if (availableCount > 0) {
-                    Text(
-                        text = "Assigna",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = AtlasPrimary,
-                    )
+                    LinkedCardActionChip(text = "Assigna")
                 }
             }
         }
@@ -783,7 +803,7 @@ private fun LinkedItineraryPanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(Icons.Filled.Link, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(19.dp))
+            LinkedCardIcon()
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Itinerari vinculat".uppercase(),
@@ -793,15 +813,20 @@ private fun LinkedItineraryPanel(
                 )
                 Text(
                     text = linkedItinerary.title.ifBlank { "Itinerari" },
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 23.sp, lineHeight = 25.sp),
+                    fontWeight = FontWeight.SemiBold,
                     color = AtlasOnSurfaceStrong,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            TextButton(onClick = onUnlinkItinerary) {
-                Text("Desvincula", color = AtlasPrimary)
+            TextButton(
+                onClick = onUnlinkItinerary,
+                shape = RoundedCornerShape(999.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+            ) {
+                Text("Desvincula", fontWeight = FontWeight.ExtraBold)
             }
         }
     }
@@ -810,6 +835,38 @@ private fun LinkedItineraryPanel(
 // ─────────────────────────────────────────────
 // Itinerary picker dialog
 // ─────────────────────────────────────────────
+@Composable
+private fun LinkedCardIcon() {
+    Box(
+        modifier = Modifier
+            .size(34.dp)
+            .clip(RoundedCornerShape(11.dp))
+            .background(AtlasBackground)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(11.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.Link, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(17.dp))
+    }
+}
+
+@Composable
+private fun LinkedCardActionChip(text: String) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AtlasAccentContainer)
+            .padding(horizontal = 11.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasPrimary,
+        )
+    }
+}
+
 @Composable
 private fun ItineraryPickerDialog(
     itineraries: List<Itinerary>,
@@ -887,7 +944,6 @@ private fun TripStopsSection(
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
     onAddExcursionClick: (String?) -> Unit,
-    onEditExcursion: (Excursion) -> Unit,
     onDeleteExcursion: (Excursion) -> Unit,
     onMoveExcursionUp: (Excursion) -> Unit,
     onMoveExcursionDown: (Excursion) -> Unit,
@@ -950,21 +1006,16 @@ private fun TripStopsSection(
                 onMoveStopUp = onMoveStopUp,
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = onDeleteStop,
-                onEditExcursion = onEditExcursion,
                 onDeleteExcursion = onDeleteExcursion,
                 onMoveExcursionUp = onMoveExcursionUp,
                 onMoveExcursionDown = onMoveExcursionDown,
+                onAddExcursionClick = onAddExcursionClick,
                 onAddExcursionStopClick = onAddExcursionStopClick,
                 onEditExcursionStop = onEditExcursionStop,
                 onDeleteExcursionStop = onDeleteExcursionStop,
                 onMoveExcursionStopUp = onMoveExcursionStopUp,
                 onMoveExcursionStopDown = onMoveExcursionStopDown,
             )
-            TextButton(onClick = { onAddExcursionClick(null) }, colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary)) {
-                Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
-                Spacer(Modifier.width(5.dp))
-                Text("Afegeix excursió", fontWeight = FontWeight.ExtraBold)
-            }
         }
     }
 }
@@ -979,10 +1030,10 @@ private fun TripStopsTimeline(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onEditExcursion: (Excursion) -> Unit,
     onDeleteExcursion: (Excursion) -> Unit,
     onMoveExcursionUp: (Excursion) -> Unit,
     onMoveExcursionDown: (Excursion) -> Unit,
+    onAddExcursionClick: (String?) -> Unit,
     onAddExcursionStopClick: (String) -> Unit,
     onEditExcursionStop: (ExcursionStop) -> Unit,
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
@@ -1002,13 +1053,19 @@ private fun TripStopsTimeline(
                 Column(modifier = Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
                     StopNumberCircle(number = index + 1, modifier = Modifier.padding(top = 10.dp))
                     if (hasLineBelow) {
-                        Box(modifier = Modifier.width(2.dp).weight(1f).padding(vertical = 3.dp).background(AtlasOutline.copy(alpha = 0.5f)))
+                        Box(
+                            modifier = Modifier
+                                .width(2.dp)
+                                .weight(1f)
+                                .padding(vertical = 1.dp)
+                                .background(AtlasVisited.copy(alpha = 0.35f)),
+                        )
                     }
                 }
                 Spacer(Modifier.width(12.dp))
                 // Right side: stop card + anchored excursions
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Spacer(Modifier.height(6.dp))
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Spacer(Modifier.height(3.dp))
                     TripStopCard(
                         stop = stop,
                         countryName = countryName,
@@ -1019,17 +1076,16 @@ private fun TripStopsTimeline(
                         onMoveStopUp = onMoveStopUp,
                         onMoveStopDown = onMoveStopDown,
                         onDeleteStop = onDeleteStop,
+                        onAddExcursionClick = { onAddExcursionClick(stop.id) },
                     )
                     anchored.forEach { excursion ->
                         val excursionIndex = excursions.indexOf(excursion)
                         ExcursionTimelineCard(
                             excursion = excursion,
                             countries = countries,
-                            parentStopLabel = stop.displayTitle ?: stop.locationName,
                             isReorderMode = isReorderMode,
                             canMoveUp = excursionIndex > 0,
                             canMoveDown = excursionIndex < excursions.lastIndex,
-                            onEditExcursion = onEditExcursion,
                             onDeleteExcursion = onDeleteExcursion,
                             onMoveExcursionUp = onMoveExcursionUp,
                             onMoveExcursionDown = onMoveExcursionDown,
@@ -1040,7 +1096,7 @@ private fun TripStopsTimeline(
                             onMoveExcursionStopDown = onMoveExcursionStopDown,
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(1.dp))
                 }
             }
         }
@@ -1054,11 +1110,9 @@ private fun TripStopsTimeline(
                     modifier = Modifier.weight(1f),
                     excursion = excursion,
                     countries = countries,
-                    parentStopLabel = null,
                     isReorderMode = isReorderMode,
                     canMoveUp = excursionIndex > 0,
                     canMoveDown = excursionIndex < excursions.lastIndex,
-                    onEditExcursion = onEditExcursion,
                     onDeleteExcursion = onDeleteExcursion,
                     onMoveExcursionUp = onMoveExcursionUp,
                     onMoveExcursionDown = onMoveExcursionDown,
@@ -1069,7 +1123,7 @@ private fun TripStopsTimeline(
                     onMoveExcursionStopDown = onMoveExcursionStopDown,
                 )
             }
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
         }
     }
 }
@@ -1078,9 +1132,9 @@ private fun TripStopsTimeline(
 private fun StopNumberCircle(number: Int, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .size(30.dp)
+            .size(28.dp)
             .clip(CircleShape)
-            .background(AtlasNavy),
+            .background(AtlasVisited),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1088,7 +1142,7 @@ private fun StopNumberCircle(number: Int, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.ExtraBold,
             color = Color.White,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
         )
     }
 }
@@ -1104,6 +1158,7 @@ private fun TripStopCard(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
+    onAddExcursionClick: () -> Unit,
 ) {
     val hasCoords = stop.hasCoordinates()
     val isManual = stop.source == TripStopSource.MANUAL
@@ -1111,24 +1166,26 @@ private fun TripStopCard(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(13.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
-            StopIcon(modifier = Modifier.size(52.dp))
+            StopThumbnail(
+                modifier = Modifier.size(46.dp),
+                accent = if (isItinerary) AtlasPrimary else AtlasOnSurfaceMuted,
+            )
 
-            // Content
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = stop.displayTitle ?: stop.locationName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, lineHeight = 18.sp),
+                        fontWeight = FontWeight.SemiBold,
                         color = AtlasOnSurfaceStrong,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -1140,9 +1197,14 @@ private fun TripStopCard(
                 }
                 Text(
                     text = buildStopMetaLine(stop, countryName),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = AtlasMono,
+                        fontSize = 10.sp,
+                        lineHeight = 13.sp,
+                    ),
+                    fontWeight = FontWeight.SemiBold,
                     color = AtlasOnSurfaceMuted,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -1158,7 +1220,11 @@ private fun TripStopCard(
                     }
                 }
             } else if (!isReorderMode && isManual) {
-                StopOverflowMenu(onEdit = { onEditStop(stop) }, onDelete = { onDeleteStop(stop) })
+                StopOverflowMenu(
+                    onEdit = { onEditStop(stop) },
+                    onAddExcursion = onAddExcursionClick,
+                    onDelete = { onDeleteStop(stop) },
+                )
             }
         }
     }
@@ -1186,7 +1252,55 @@ private fun StopIcon(
 }
 
 @Composable
-private fun StopOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun StopThumbnail(
+    modifier: Modifier = Modifier,
+    accent: Color = AtlasOnSurfaceMuted,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(AtlasSurfaceSubtle)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(modifier = Modifier.matchParentSize()) {
+            val stripe = accent.copy(alpha = 0.10f)
+            val stroke = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+            var x = -size.height
+            while (x < size.width) {
+                drawLine(
+                    color = stripe,
+                    start = androidx.compose.ui.geometry.Offset(x, size.height),
+                    end = androidx.compose.ui.geometry.Offset(x + size.height, 0f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round,
+                )
+                x += 12.dp.toPx()
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(RoundedCornerShape(7.dp))
+                .background(AtlasSurface.copy(alpha = 0.72f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Place,
+                contentDescription = null,
+                tint = accent.copy(alpha = 0.72f),
+                modifier = Modifier.size(13.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun StopOverflowMenu(
+    onEdit: () -> Unit,
+    onAddExcursion: () -> Unit,
+    onDelete: () -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
@@ -1201,6 +1315,11 @@ private fun StopOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
                     text = { Text("Edita", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
                     leadingIcon = { Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
                     onClick = { expanded = false; onEdit() },
+                )
+                DropdownMenuItem(
+                    text = { Text("Afegeix excursió", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
+                    leadingIcon = { Icon(Icons.Filled.Add, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
+                    onClick = { expanded = false; onAddExcursion() },
                 )
                 Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                 DropdownMenuItem(
@@ -1225,15 +1344,14 @@ private fun TypeBadge(label: String, color: Color, background: Color) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExcursionTimelineCard(
     excursion: Excursion,
     countries: List<Country>,
-    parentStopLabel: String?,
     isReorderMode: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
-    onEditExcursion: (Excursion) -> Unit,
     onDeleteExcursion: (Excursion) -> Unit,
     onMoveExcursionUp: (Excursion) -> Unit,
     onMoveExcursionDown: (Excursion) -> Unit,
@@ -1246,10 +1364,26 @@ private fun ExcursionTimelineCard(
 ) {
     val sortedStops = excursion.stops.sortedBy { it.sortOrder }
 
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        // Header row: EXCURSIÓ badge + title + overflow/reorder
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(AtlasSurface)
+            .drawBehind {
+                drawRoundRect(
+                    color = ExcursionColor.copy(alpha = 0.34f),
+                    cornerRadius = CornerRadius(14.dp.toPx(), 14.dp.toPx()),
+                    style = Stroke(
+                        width = 1.dp.toPx(),
+                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx())),
+                    ),
+                )
+            }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        // Header row: EXCURSIÓ badge + overflow/reorder
         Row(
-            modifier = Modifier.padding(start = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -1257,20 +1391,11 @@ private fun ExcursionTimelineCard(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
                     .background(ExcursionColor.copy(alpha = 0.12f))
-                    .border(1.dp, ExcursionColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
                 Text("EXCURSIÓ", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
             }
-            Text(
-                text = excursion.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = AtlasOnSurfaceStrong,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            Spacer(modifier = Modifier.weight(1f))
             if (isReorderMode) {
                 Row {
                     IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
@@ -1281,30 +1406,81 @@ private fun ExcursionTimelineCard(
                     }
                 }
             } else {
-                ExcursionOverflowMenu(onEdit = { onEditExcursion(excursion) }, onDelete = { onDeleteExcursion(excursion) })
+                ExcursionOverflowMenu(onDelete = { onDeleteExcursion(excursion) })
             }
         }
 
-        // Excursion stops as full cards (same structure as main stop cards)
-        sortedStops.forEachIndexed { i, stop ->
-            val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
-            ExcursionStopCard(
-                stop = stop,
-                countryName = countryName,
-                parentStopLabel = parentStopLabel,
-                isReorderMode = isReorderMode,
-                canMoveUp = i > 0,
-                canMoveDown = i < sortedStops.lastIndex,
-                onEdit = { onEditExcursionStop(stop) },
-                onDelete = { onDeleteExcursionStop(stop) },
-                onMoveUp = { onMoveExcursionStopUp(excursion.id, stop) },
-                onMoveDown = { onMoveExcursionStopDown(excursion.id, stop) },
-            )
+        if (sortedStops.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                sortedStops.forEachIndexed { index, stop ->
+                    val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
+                    ExcursionStopCard(
+                        stop = stop,
+                        countryName = countryName,
+                        isReorderMode = isReorderMode,
+                        canMoveUp = index > 0,
+                        canMoveDown = index < sortedStops.lastIndex,
+                        onEdit = { onEditExcursionStop(stop) },
+                        onDelete = { onDeleteExcursionStop(stop) },
+                        onMoveUp = { onMoveExcursionStopUp(excursion.id, stop) },
+                        onMoveDown = { onMoveExcursionStopDown(excursion.id, stop) },
+                    )
+                }
+            }
         }
 
         if (!isReorderMode) {
-            TextButton(onClick = { onAddExcursionStopClick(excursion.id) }, contentPadding = PaddingValues(start = 4.dp, top = 0.dp, end = 0.dp, bottom = 0.dp)) {
+            TextButton(onClick = { onAddExcursionStopClick(excursion.id) }, modifier = Modifier.height(28.dp), contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) {
                 Text("+ Afegeix parada", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExcursionStopChip(
+    index: Int,
+    stop: ExcursionStop,
+    isReorderMode: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AtlasSurface)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(999.dp))
+            .clickable(onClick = onEdit)
+            .padding(start = 9.dp, top = 5.dp, end = if (isReorderMode) 3.dp else 10.dp, bottom = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Text(
+            text = index.toString(),
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = AtlasMono),
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceMuted,
+        )
+        Text(
+            text = stop.locationName,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        if (isReorderMode) {
+            Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
+                IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(22.dp)) {
+                    Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(15.dp))
+                }
+                IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(22.dp)) {
+                    Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(15.dp))
+                }
             }
         }
     }
@@ -1314,7 +1490,6 @@ private fun ExcursionTimelineCard(
 private fun ExcursionStopCard(
     stop: ExcursionStop,
     countryName: String,
-    parentStopLabel: String?,
     isReorderMode: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -1325,57 +1500,42 @@ private fun ExcursionStopCard(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(13.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
         Row(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
-            StopIcon(
-                modifier = Modifier.size(52.dp),
-                tint = ExcursionColor,
-                background = ExcursionContainerColor,
+            StopThumbnail(
+                modifier = Modifier.size(46.dp),
+                accent = ExcursionColor,
             )
 
-            // Content
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         text = stop.locationName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, lineHeight = 18.sp),
+                        fontWeight = FontWeight.SemiBold,
                         color = AtlasOnSurfaceStrong,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    // Parent stop badge instead of type badge
-                    if (parentStopLabel != null) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(100.dp))
-                                .background(AtlasBackground)
-                                .border(1.dp, AtlasOutline, RoundedCornerShape(100.dp))
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
-                        ) {
-                            Text(
-                                text = parentStopLabel.split(",").firstOrNull()?.trim() ?: parentStopLabel,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = AtlasOnSurfaceMuted,
-                                maxLines = 1,
-                            )
-                        }
-                    }
                 }
                 Text(
                     text = buildExcursionStopMetaLine(stop, countryName),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = AtlasMono,
+                        fontSize = 10.sp,
+                        lineHeight = 13.sp,
+                    ),
+                    fontWeight = FontWeight.SemiBold,
                     color = AtlasOnSurfaceMuted,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -1398,7 +1558,7 @@ private fun ExcursionStopCard(
 }
 
 @Composable
-private fun ExcursionOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun ExcursionOverflowMenu(onDelete: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }, modifier = Modifier.size(28.dp)) {
@@ -1409,12 +1569,6 @@ private fun ExcursionOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
             shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
         ) {
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(160.dp)) {
-                DropdownMenuItem(
-                    text = { Text("Edita", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
-                    leadingIcon = { Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
-                    onClick = { expanded = false; onEdit() },
-                )
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                 DropdownMenuItem(
                     text = { Text("Elimina", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasError) },
                     leadingIcon = { Icon(Icons.Filled.Delete, null, tint = AtlasError, modifier = Modifier.size(15.dp)) },
@@ -1471,86 +1625,6 @@ private fun EmptyStopsState(onAddStopClick: () -> Unit) {
 // ─────────────────────────────────────────────
 // Dialogs (unchanged from original)
 // ─────────────────────────────────────────────
-@Composable
-private fun ExcursionDialog(
-    draft: ExcursionDraftUiState,
-    stops: List<TripStop>,
-    onDismiss: () -> Unit,
-    onTitleChanged: (String) -> Unit,
-    onAnchorChanged: (String?) -> Unit,
-    onNotesChanged: (String) -> Unit,
-    onSave: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(22.dp),
-        containerColor = AtlasSurface,
-        title = {
-            Text(
-                text = if (draft.excursionId == null) "Afegeix excursió" else "Edita excursio",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = draft.title,
-                    onValueChange = onTitleChanged,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text("Titol", fontWeight = FontWeight.Bold) },
-                    shape = RoundedCornerShape(14.dp),
-                )
-                DialogSectionLabel("Parada d'ancoratge")
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(AtlasBackground)
-                        .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))
-                        .padding(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    TextButton(onClick = { onAnchorChanged(null) }) {
-                        Text(
-                            text = if (draft.anchorTripStopId == null) "Sense ancoratge seleccionat" else "Sense ancoratge",
-                            fontWeight = FontWeight.ExtraBold,
-                            color = if (draft.anchorTripStopId == null) AtlasPrimary else AtlasOnSurfaceMuted,
-                        )
-                    }
-                    stops.forEach { stop ->
-                        TextButton(onClick = { onAnchorChanged(stop.id) }) {
-                            Text(
-                                text = stop.displayTitle ?: stop.locationName,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = if (draft.anchorTripStopId == stop.id) AtlasPrimary else AtlasOnSurfaceStrong,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = draft.notes,
-                    onValueChange = onNotesChanged,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Notes", fontWeight = FontWeight.Bold) },
-                    shape = RoundedCornerShape(14.dp),
-                    minLines = 1,
-                    maxLines = 3,
-                )
-                draft.validationError?.let { error ->
-                    Text(error, color = AtlasError, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        },
-        confirmButton = { CompactTripDialogActionButton(onClick = onSave) { Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary) } },
-        dismissButton = { CompactTripDialogActionButton(onClick = onDismiss) { Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
-    )
-}
-
 @Composable
 private fun ExcursionStopDialog(
     draft: ExcursionStopDraftUiState,

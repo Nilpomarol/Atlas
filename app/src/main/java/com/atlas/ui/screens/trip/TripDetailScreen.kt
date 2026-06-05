@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,7 +33,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Place
@@ -87,11 +87,6 @@ import com.atlas.presentation.trip.ExcursionDraftUiState
 import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
-import com.atlas.ui.components.geo.AtlasGeoCanvas
-import com.atlas.ui.components.geo.GeoCoordinate
-import com.atlas.ui.components.geo.GeoMarker
-import com.atlas.ui.components.geo.GeoRouteSegment
-import com.atlas.ui.components.geo.GeoViewport
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasBackground
@@ -235,6 +230,7 @@ fun TripDetailScreen(
 
     // ── Interactive map modal ──
     if (showMapModal && trip != null) {
+        val screenHeightDp = LocalConfiguration.current.screenHeightDp
         Dialog(
             onDismissRequest = { showMapModal = false },
             properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -242,11 +238,12 @@ fun TripDetailScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(horizontal = 10.dp, vertical = 28.dp),
             ) {
                 TripMapPreview(
                     stops = uiState.stops,
                     excursions = uiState.excursions,
+                    mapHeight = (screenHeightDp * 0.72f).dp,
                 )
                 Surface(
                     modifier = Modifier
@@ -254,7 +251,7 @@ fun TripDetailScreen(
                         .padding(top = 6.dp, end = 6.dp),
                     onClick = { showMapModal = false },
                     shape = CircleShape,
-                    color = AtlasSurface,
+                    color = AtlasSurface.copy(alpha = 0.92f),
                     border = BorderStroke(1.dp, AtlasOutline),
                 ) {
                     Icon(
@@ -512,134 +509,76 @@ private fun TripDetailContent(
             iso2 to name
         }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        // Static geo canvas map hero
-        StaticTripMapHero(
+    Column(
+        modifier = Modifier
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        // Spacer to clear the fixed overlay top bar
+        Spacer(Modifier.height(54.dp))
+
+        // Static MapLibre map card (gestures disabled)
+        TripMapPreview(
             stops = uiState.stops,
-            trip = trip,
-            onExpandMap = onExpandMap,
+            excursions = uiState.excursions,
+            mapHeight = 220.dp,
+            gesturesEnabled = false,
+            showFooter = true,
         )
 
-        // Padded content below the map
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Spacer(Modifier.height(4.dp))
-
-            TripInfoCard(
-                trip = trip,
-                stopCount = uiState.stops.size,
-                tripCountries = tripCountries,
-            )
-
-            LinkedItineraryPanel(
-                linkedItinerary = uiState.linkedItinerary,
-                availableCount = uiState.availableItineraries.size,
-                onItineraryClick = onItineraryClick,
-                onOpenItineraryPicker = onOpenItineraryPicker,
-                onUnlinkItinerary = onUnlinkItinerary,
-            )
-
-            TripStopsSection(
-                stops = uiState.stops,
-                excursions = uiState.excursions,
-                countries = uiState.countries,
-                isReorderMode = isReorderMode,
-                onReorderModeChanged = onReorderModeChanged,
-                onAddStopClick = onAddStopClick,
-                onEditStop = onEditStop,
-                onMoveStopUp = onMoveStopUp,
-                onMoveStopDown = onMoveStopDown,
-                onDeleteStop = onDeleteStop,
-                onAddExcursionClick = onAddExcursionClick,
-                onEditExcursion = onEditExcursion,
-                onDeleteExcursion = onDeleteExcursion,
-                onMoveExcursionUp = onMoveExcursionUp,
-                onMoveExcursionDown = onMoveExcursionDown,
-                onAddExcursionStopClick = onAddExcursionStopClick,
-                onEditExcursionStop = onEditExcursionStop,
-                onDeleteExcursionStop = onDeleteExcursionStop,
-                onMoveExcursionStopUp = onMoveExcursionStopUp,
-                onMoveExcursionStopDown = onMoveExcursionStopDown,
-            )
-
-            Spacer(Modifier.height(24.dp))
-        }
-    }
-}
-
-// ─────────────────────────────────────────────
-// Static geo canvas map hero
-// ─────────────────────────────────────────────
-@Composable
-private fun StaticTripMapHero(
-    stops: List<TripStop>,
-    trip: Trip,
-    onExpandMap: () -> Unit,
-) {
-    val routeColor = trip.status.tripStatusColors().foreground
-    val visibleStops = stops
-        .filter { it.isVisible && it.latitude != null && it.longitude != null }
-        .sortedBy { it.sortOrder }
-    val coordinates = visibleStops.map { GeoCoordinate(it.latitude!!, it.longitude!!) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(240.dp),
-    ) {
-        if (coordinates.isEmpty()) {
-            AtlasGeoCanvas(modifier = Modifier.fillMaxSize())
-        } else {
-            AtlasGeoCanvas(
-                modifier = Modifier.fillMaxSize(),
-                viewport = GeoViewport.FitPoints(
-                    points = coordinates,
-                    minLongitudeSpanDegrees = 5.0,
-                    minLatitudeSpanDegrees = 3.5,
-                ),
-                routeSegments = coordinates.zipWithNext { from, to ->
-                    GeoRouteSegment(from = from, to = to, color = routeColor, alpha = 0.85f)
-                },
-                markers = visibleStops.mapIndexed { index, stop ->
-                    val coord = GeoCoordinate(stop.latitude!!, stop.longitude!!)
-                    GeoMarker(
-                        coordinate = coord,
-                        color = routeColor,
-                        radiusMultiplier = if (index == 0 || index == visibleStops.lastIndex) 0.62f else 0.46f,
-                        isHollow = index == visibleStops.lastIndex && visibleStops.size > 1,
-                        label = stop.displayTitle?.split(",")?.firstOrNull()?.trim()
-                            ?: stop.locationName.split(",").firstOrNull()?.trim(),
-                    )
-                },
-            )
-        }
-
-        // Expand to interactive map button
-        Surface(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(12.dp),
+        // Expand to interactive map — subtle link below the map card
+        TextButton(
             onClick = onExpandMap,
-            shape = RoundedCornerShape(9.dp),
-            color = AtlasSurface.copy(alpha = 0.92f),
-            border = BorderStroke(1.dp, AtlasOutline),
+            colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
+            modifier = Modifier.align(Alignment.End),
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Icon(Icons.Filled.Map, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(13.dp))
-                Text(
-                    text = "Mapa interactiu",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AtlasOnSurfaceStrong,
-                )
-            }
+            Text(
+                text = "Obrir mapa interactiu →",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.ExtraBold,
+            )
         }
+
+        TripInfoCard(
+            trip = trip,
+            stopCount = uiState.stops.size,
+            tripCountries = tripCountries,
+        )
+
+        LinkedItineraryPanel(
+            linkedItinerary = uiState.linkedItinerary,
+            availableCount = uiState.availableItineraries.size,
+            onItineraryClick = onItineraryClick,
+            onOpenItineraryPicker = onOpenItineraryPicker,
+            onUnlinkItinerary = onUnlinkItinerary,
+        )
+
+        TripStopsSection(
+            stops = uiState.stops,
+            excursions = uiState.excursions,
+            countries = uiState.countries,
+            isReorderMode = isReorderMode,
+            onReorderModeChanged = onReorderModeChanged,
+            onAddStopClick = onAddStopClick,
+            onEditStop = onEditStop,
+            onMoveStopUp = onMoveStopUp,
+            onMoveStopDown = onMoveStopDown,
+            onDeleteStop = onDeleteStop,
+            onAddExcursionClick = onAddExcursionClick,
+            onEditExcursion = onEditExcursion,
+            onDeleteExcursion = onDeleteExcursion,
+            onMoveExcursionUp = onMoveExcursionUp,
+            onMoveExcursionDown = onMoveExcursionDown,
+            onAddExcursionStopClick = onAddExcursionStopClick,
+            onEditExcursionStop = onEditExcursionStop,
+            onDeleteExcursionStop = onDeleteExcursionStop,
+            onMoveExcursionStopUp = onMoveExcursionStopUp,
+            onMoveExcursionStopDown = onMoveExcursionStopDown,
+        )
+
+        Spacer(Modifier.height(24.dp))
     }
 }
 

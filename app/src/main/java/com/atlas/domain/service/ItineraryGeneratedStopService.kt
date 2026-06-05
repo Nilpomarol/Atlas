@@ -4,6 +4,7 @@ import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.GeneratedTripStopDraft
 import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.util.utcAwareDepartureSortKey
 
 class ItineraryGeneratedStopService {
     fun buildGeneratedStops(
@@ -38,7 +39,7 @@ class ItineraryGeneratedStopService {
     ): String? {
         val flights = group.flights.sortedWith(
             compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-                .thenBy { it.scheduledDepartureAt ?: "" },
+                .thenBy { it.utcAwareDepartureSortKey() ?: "" },
         )
         val firstFlight = flights.firstOrNull() ?: return null
         val lastFlight = flights.lastOrNull() ?: return null

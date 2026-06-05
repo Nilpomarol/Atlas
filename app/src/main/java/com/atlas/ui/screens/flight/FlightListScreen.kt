@@ -39,15 +39,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
+import com.atlas.domain.util.dayOffsetBetween
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.service.FlexibleDateFormatter
@@ -57,13 +57,15 @@ import com.atlas.presentation.flight.ItineraryGroupRouteUiState
 import com.atlas.presentation.flight.ItinerarySummaryUiState
 import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasFilterPill
+import com.atlas.ui.components.FlightCard
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
 import com.atlas.ui.components.tripStatusColors
-import com.atlas.ui.screens.itinerary.ItineraryEditorDialog
 import com.atlas.ui.screens.trip.toCatalanLabel
 import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasDelay
+import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -71,6 +73,7 @@ import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasSurfaceRaised
+import com.atlas.ui.theme.AtlasVisited
 
 @Composable
 fun FlightListScreen(
@@ -81,10 +84,7 @@ fun FlightListScreen(
     onCreateItineraryClick: () -> Unit,
     onEditFlightClick: (Flight) -> Unit,
     onDeleteFlightClick: (Flight) -> Unit,
-    onEditItineraryClick: (Itinerary) -> Unit,
-    onDeleteItineraryClick: (Itinerary) -> Unit,
     onDismissDraft: () -> Unit,
-    onDismissItineraryDraft: () -> Unit,
     onOriginQueryChanged: (String) -> Unit,
     onOriginSelected: (Airport) -> Unit,
     onDestinationQueryChanged: (String) -> Unit,
@@ -104,10 +104,9 @@ fun FlightListScreen(
     onApiSearchDateChanged: (String) -> Unit,
     onSearchByFlightNumber: () -> Unit,
     onApplyApiResult: () -> Unit,
+    onManualEntryClick: () -> Unit,
+    onBackToSearch: () -> Unit,
     onSaveDraft: () -> Unit,
-    onItineraryTitleChanged: (String) -> Unit,
-    onItineraryNotesChanged: (String) -> Unit,
-    onSaveItineraryDraft: () -> Unit,
 ) {
     var selectedStatus by remember { mutableStateOf<TravelStatus?>(null) }
     val filteredFlights = uiState.flightItems.filter { selectedStatus == null || it.flight.status == selectedStatus }
@@ -177,23 +176,13 @@ fun FlightListScreen(
             onAircraftChanged = onAircraftChanged,
             onAircraftRegistrationChanged = onAircraftRegistrationChanged,
             onNotesChanged = onNotesChanged,
-            apiSearchCallbacks = FlightApiSearchCallbacks(
-                onApiFlightNumberChanged = onApiFlightNumberChanged,
-                onApiSearchDateChanged = onApiSearchDateChanged,
-                onSearchByFlightNumber = onSearchByFlightNumber,
-                onApplyApiResult = onApplyApiResult,
-            ),
+            onApiFlightNumberChanged = onApiFlightNumberChanged,
+            onApiSearchDateChanged = onApiSearchDateChanged,
+            onSearchByFlightNumber = onSearchByFlightNumber,
+            onApplyApiResult = onApplyApiResult,
+            onManualEntryClick = onManualEntryClick,
+            onBackToSearch = onBackToSearch,
             onSave = onSaveDraft,
-        )
-    }
-
-    if (uiState.itineraryDraft.isOpen) {
-        ItineraryEditorDialog(
-            draft = uiState.itineraryDraft,
-            onDismiss = onDismissItineraryDraft,
-            onTitleChanged = onItineraryTitleChanged,
-            onNotesChanged = onItineraryNotesChanged,
-            onSave = onSaveItineraryDraft,
         )
     }
 }
@@ -337,7 +326,7 @@ private fun ItinerarySummaryCard(
                 } else {
                     item.groupRoutes.forEachIndexed { index, route ->
                         if (index > 0) {
-                            MetadataDivider(topPadding = 0.dp)
+                            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                         }
                         ItineraryGroupRoute(route = route)
                     }
@@ -345,7 +334,7 @@ private fun ItinerarySummaryCard(
             }
 
             item.linkedTripTitle?.let { tripTitle ->
-                MetadataDivider()
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 14.dp).height(1.dp).background(AtlasOutline))
                 Row(
                     modifier = Modifier.padding(top = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -380,6 +369,10 @@ private fun ItinerarySummaryCard(
 private fun ItineraryGroupRoute(
     route: ItineraryGroupRouteUiState,
 ) {
+    val arrivalDayOffset = dayOffsetBetween(
+        departureDatetime = route.actualDepartureAt ?: route.scheduledDepartureAt,
+        arrivalDatetime = route.actualArrivalAt ?: route.scheduledArrivalAt,
+    )
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
@@ -388,17 +381,23 @@ private fun ItineraryGroupRoute(
         ItineraryEndpoint(
             airportCode = route.originCode,
             city = route.originCity,
-            dateTime = route.departureAt,
+            scheduledTime = route.scheduledDepartureAt,
+            actualTime = route.actualDepartureAt,
+            delayMinutes = route.departureDelayMinutes,
             modifier = Modifier.weight(1f),
         )
         ItineraryLayoverMiddle(
-            route = route,
+            groupDurationMinutes = route.groupDurationMinutes,
+            layoverCities = route.layoverCities,
             modifier = Modifier.weight(1.15f),
         )
         ItineraryEndpoint(
             airportCode = route.destinationCode,
             city = route.destinationCity,
-            dateTime = route.arrivalAt,
+            scheduledTime = route.scheduledArrivalAt,
+            actualTime = route.actualArrivalAt,
+            delayMinutes = route.arrivalDelayMinutes,
+            dayOffset = arrivalDayOffset,
             modifier = Modifier.weight(1f),
             alignEnd = true,
         )
@@ -409,10 +408,20 @@ private fun ItineraryGroupRoute(
 private fun ItineraryEndpoint(
     airportCode: String,
     city: String?,
-    dateTime: String?,
+    scheduledTime: String?,
+    actualTime: String?,
+    delayMinutes: Long?,
+    dayOffset: Int? = null,
     modifier: Modifier = Modifier,
     alignEnd: Boolean = false,
 ) {
+    val displayTime = actualTime ?: scheduledTime
+    val hasActual = actualTime != null
+    val actualColor = when {
+        delayMinutes == null || delayMinutes <= 0 -> AtlasVisited
+        delayMinutes < 45 -> AtlasDelay
+        else -> AtlasError
+    }
     Column(
         modifier = modifier,
         horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
@@ -436,24 +445,48 @@ private fun ItineraryEndpoint(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        dateTime?.timePart()?.let {
-            Text(
-                text = it,
+        displayTime?.timePart()?.let { time ->
+            Row(
                 modifier = Modifier.padding(top = 4.dp),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        }
-        dateTime?.let { value ->
-            flightListDateFormatter.formatIsoDate(value)?.let {
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
                 Text(
-                    text = it,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AtlasOnSurfaceMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    text = time,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
+                    fontWeight = FontWeight.ExtraBold,
+                    color = if (hasActual) actualColor else AtlasOnSurfaceStrong,
                 )
+                dayOffset?.let {
+                    Text(
+                        text = if (it > 0) "+$it" else "$it",
+                        modifier = Modifier.padding(top = 1.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
+        }
+        if (hasActual && scheduledTime != null) {
+            Text(
+                text = scheduledTime.timePart() ?: scheduledTime,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    textDecoration = TextDecoration.LineThrough,
+                ),
+                color = AtlasOnSurfaceMuted,
+            )
+        } else {
+            displayTime?.let { value ->
+                flightListDateFormatter.formatIsoDate(value)?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -461,23 +494,22 @@ private fun ItineraryEndpoint(
 
 @Composable
 private fun ItineraryLayoverMiddle(
-    route: ItineraryGroupRouteUiState,
+    groupDurationMinutes: Long?,
+    layoverCities: List<String>,
     modifier: Modifier = Modifier,
 ) {
-    val layover = route.layoverCities.joinToString(", ").ifBlank { "Directe" }
+    val layover = layoverCities.joinToString(", ").ifBlank { "Directe" }
     Column(
         modifier = modifier.padding(top = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        route.layoverDurationMinutes?.let {
-            Text(
-                text = it.toLayoverDurationText(),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-                maxLines = 1,
-            )
-        }
+        Text(
+            text = groupDurationMinutes?.toLayoverDurationText() ?: "",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -517,263 +549,6 @@ private fun ItineraryLayoverMiddle(
     }
 }
 
-@Composable
-private fun FlightCard(
-    item: FlightListItemUiState,
-    onClick: () -> Unit,
-) {
-    val flight = item.flight
-    val colors = flight.status.tripStatusColors()
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        color = AtlasSurface,
-        border = BorderStroke(1.dp, AtlasOutline),
-    ) {
-        Column(modifier = Modifier.padding(18.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                flight.airline?.let { iata ->
-                    AirlineLogo(
-                        iata = iata,
-                        modifier = Modifier
-                            .height(34.dp)
-                            .widthIn(max = 92.dp),
-                    )
-                } ?: AirlineFallbackLogo(colors.foreground, colors.container)
-                flight.flightNumber?.takeIf { it.isNotBlank() }?.let { flightNumber ->
-                    Text(
-                        text = flightNumber,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
-                        fontWeight = FontWeight.Bold,
-                        color = AtlasOnSurfaceMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                } ?: Box(modifier = Modifier.weight(1f))
-                AtlasPill(
-                    label = colors.label,
-                    colors = colors,
-                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 17.dp),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                AirportEndpoint(
-                    airportCode = item.originLabel,
-                    city = item.originCity,
-                    primaryTime = flight.actualDepartureAt?.timePart() ?: flight.scheduledDepartureAt?.timePart(),
-                    secondaryTime = flight.actualDepartureAt?.let { flight.scheduledDepartureAt?.timePart() },
-                    modifier = Modifier.weight(1f),
-                )
-                FlightRouteMiddle(
-                    distanceKm = flight.distanceKm,
-                    color = colors.foreground,
-                    modifier = Modifier.weight(1.15f),
-                )
-                AirportEndpoint(
-                    airportCode = item.destinationLabel,
-                    city = item.destinationCity,
-                    primaryTime = flight.actualArrivalAt?.timePart() ?: flight.scheduledArrivalAt?.timePart(),
-                    secondaryTime = flight.actualArrivalAt?.let { flight.scheduledArrivalAt?.timePart() },
-                    modifier = Modifier.weight(1f),
-                    alignEnd = true,
-                )
-            }
-
-            MetadataDivider()
-            Row(
-                modifier = Modifier.padding(top = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FlightMetadataItem(
-                    icon = Icons.Filled.DateRange,
-                    text = flight.dateText(),
-                    modifier = Modifier.weight(1.05f),
-                )
-                FlightMetadataItem(
-                    icon = Icons.Filled.Flight,
-                    text = flight.aircraft?.takeIf { it.isNotBlank() } ?: "Aeronau",
-                    modifier = Modifier.weight(1.15f),
-                )
-                FlightMetadataItem(
-                    icon = Icons.Filled.FlightTakeoff,
-                    text = flight.aircraftRegistration?.takeIf { it.isNotBlank() } ?: "Matricula",
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun AirlineFallbackLogo(
-    foreground: Color,
-    container: Color,
-) {
-    Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(container),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Flight,
-            contentDescription = null,
-            tint = foreground,
-            modifier = Modifier.size(20.dp),
-        )
-    }
-}
-
-@Composable
-private fun AirportEndpoint(
-    airportCode: String,
-    city: String?,
-    primaryTime: String?,
-    secondaryTime: String?,
-    modifier: Modifier = Modifier,
-    alignEnd: Boolean = false,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
-    ) {
-        Text(
-            text = airportCode,
-            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 31.sp),
-            fontWeight = FontWeight.SemiBold,
-            color = AtlasOnSurfaceStrong,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
-        )
-        city?.takeIf { it.isNotBlank() }?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = AtlasOnSurfaceStrong,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        primaryTime?.let {
-            Text(
-                text = it,
-                modifier = Modifier.padding(top = 4.dp),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        }
-        secondaryTime?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.labelSmall,
-                color = AtlasOnSurfaceMuted,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FlightRouteMiddle(
-    distanceKm: Double?,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.padding(top = 7.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = distanceKm?.let { "${kotlin.math.round(it).toLong()} km" } ?: "Ruta",
-            style = MaterialTheme.typography.labelMedium,
-            color = AtlasOnSurfaceMuted,
-            maxLines = 1,
-        )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 7.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(color.copy(alpha = 0.5f)),
-            )
-            Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .clip(CircleShape)
-                    .background(AtlasSurface),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Flight,
-                    contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FlightMetadataItem(
-    icon: ImageVector,
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = AtlasOnSurfaceMuted,
-            modifier = Modifier.size(16.dp),
-        )
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-            fontWeight = FontWeight.Bold,
-            color = AtlasOnSurfaceMuted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun MetadataDivider(topPadding: androidx.compose.ui.unit.Dp = 14.dp) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = topPadding)
-            .height(1.dp)
-            .background(AtlasOutline),
-    )
-}
 
 @Composable
 private fun EmptyFlightList(
@@ -845,11 +620,6 @@ private fun String.timePart(): String? =
     substringAfter('T', missingDelimiterValue = "")
         .take(5)
         .takeIf { it.length == 5 }
-
-private fun Flight.dateText(): String =
-    (actualDepartureAt ?: scheduledDepartureAt ?: actualArrivalAt ?: scheduledArrivalAt)
-        ?.let { flightListDateFormatter.formatIsoDate(it) }
-        ?: "Sense data"
 
 private fun Long.toLayoverDurationText(): String {
     val hours = this / 60

@@ -1,6 +1,7 @@
 package com.atlas.presentation.itinerary
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -15,21 +16,19 @@ fun ItineraryListRoute(onItineraryClick: (String) -> Unit) {
         factory = ItineraryListViewModel.Factory(
             itineraryRepository = app.container.itineraryRepository,
             createItineraryUseCase = app.container.createItineraryUseCase,
-            updateItineraryUseCase = app.container.updateItineraryUseCase,
             deleteItineraryUseCase = app.container.deleteItineraryUseCase,
         ),
     )
     val uiState by vm.uiState.collectAsStateWithLifecycle()
 
+    LaunchedEffect(vm) {
+        vm.navigationEvents.collect { itineraryId -> onItineraryClick(itineraryId) }
+    }
+
     ItineraryListScreen(
         uiState = uiState,
         onItineraryClick = onItineraryClick,
         onCreateItineraryClick = vm::onCreateItineraryClick,
-        onEditItineraryClick = vm::onEditItineraryClick,
         onDeleteItineraryClick = vm::onDeleteItinerary,
-        onDismissDraft = vm::onDismissDraft,
-        onTitleChanged = vm::onTitleChanged,
-        onNotesChanged = vm::onNotesChanged,
-        onSaveDraft = vm::onSaveDraft,
     )
 }

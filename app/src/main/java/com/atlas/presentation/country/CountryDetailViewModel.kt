@@ -24,6 +24,7 @@ import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.domain.util.utcAwareDepartureSortKey
 import com.atlas.domain.validation.FlexibleDateValidator
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.date.FlexibleDateRangeDraftUiState
@@ -193,7 +194,7 @@ class CountryDetailViewModel(
                 val derivation = groupDerivations[group.id] ?: return@mapNotNull null
                 val sortedFlights = group.flights.sortedWith(
                     compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-                        .thenBy { it.scheduledDepartureAt ?: "" },
+                        .thenBy { it.utcAwareDepartureSortKey() ?: "" },
                 )
                 val firstFlight = sortedFlights.firstOrNull() ?: return@mapNotNull null
                 val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null

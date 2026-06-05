@@ -1,5 +1,5 @@
 {
-    "version":  "2026.2",
+    "version":  "2026.3",
     "airports":  [
                      {
                          "id":  "AAA",
@@ -24,6 +24,7 @@
                          "timezone":  "Africa/Cairo"
                      },
                      {
+                         "id":  "AAE",
                          "id":  "AAE",
                          "iata":  "AAE",
                          "icao":  "DABB",
@@ -13364,7 +13365,7 @@
                          "country_iso2":  "QA",
                          "latitude":  25.273056,
                          "longitude":  51.608056,
-                         "timezone":  "UTC"
+                         "timezone":  "Asia/Qatar"
                      },
                      {
                          "id":  "DOK",

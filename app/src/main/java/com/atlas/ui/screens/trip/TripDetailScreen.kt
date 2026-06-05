@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Place
@@ -43,6 +46,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +68,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.Excursion
@@ -81,6 +87,11 @@ import com.atlas.presentation.trip.ExcursionDraftUiState
 import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
+import com.atlas.ui.components.geo.AtlasGeoCanvas
+import com.atlas.ui.components.geo.GeoCoordinate
+import com.atlas.ui.components.geo.GeoMarker
+import com.atlas.ui.components.geo.GeoRouteSegment
+import com.atlas.ui.components.geo.GeoViewport
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasBackground
@@ -169,26 +180,14 @@ fun TripDetailScreen(
     var pendingDeleteExcursion by remember { mutableStateOf<Excursion?>(null) }
     var pendingDeleteExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
+    var showMapModal by remember { mutableStateOf(false) }
 
     val trip = uiState.trip
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AtlasBackground),
-    ) {
-        TripDetailTopBar(
-            onBackClick = onBackClick,
-            onEditTripClick = onEditTripClick,
-            onDeleteTripClick = { isDeleteTripDialogOpen = true },
-            actionsEnabled = trip != null,
-        )
-
+    Box(modifier = Modifier.fillMaxSize().background(AtlasBackground)) {
         if (trip == null) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
+                modifier = Modifier.fillMaxSize().padding(24.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -203,6 +202,7 @@ fun TripDetailScreen(
                 trip = trip,
                 isReorderMode = isReorderMode,
                 onReorderModeChanged = { isReorderMode = it },
+                onExpandMap = { showMapModal = true },
                 onItineraryClick = onItineraryClick,
                 onOpenItineraryPicker = onOpenItineraryPicker,
                 onUnlinkItinerary = onUnlinkItinerary,
@@ -222,6 +222,49 @@ fun TripDetailScreen(
                 onMoveExcursionStopUp = onMoveExcursionStopUp,
                 onMoveExcursionStopDown = onMoveExcursionStopDown,
             )
+        }
+
+        // Fixed overlay: back + overflow, always on top regardless of scroll
+        TripDetailTopBar(
+            onBackClick = onBackClick,
+            onEditTripClick = onEditTripClick,
+            onDeleteTripClick = { isDeleteTripDialogOpen = true },
+            actionsEnabled = trip != null,
+        )
+    }
+
+    // ── Interactive map modal ──
+    if (showMapModal && trip != null) {
+        Dialog(
+            onDismissRequest = { showMapModal = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            ) {
+                TripMapPreview(
+                    stops = uiState.stops,
+                    excursions = uiState.excursions,
+                )
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 6.dp, end = 6.dp),
+                    onClick = { showMapModal = false },
+                    shape = CircleShape,
+                    color = AtlasSurface,
+                    border = BorderStroke(1.dp, AtlasOutline),
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Tanca",
+                        tint = AtlasOnSurfaceStrong,
+                        modifier = Modifier.padding(8.dp).size(16.dp),
+                    )
+                }
+            }
         }
     }
 
@@ -335,7 +378,7 @@ fun TripDetailScreen(
 }
 
 // ─────────────────────────────────────────────
-// Top bar
+// Fixed overlay top bar (floats above scroll)
 // ─────────────────────────────────────────────
 @Composable
 private fun TripDetailTopBar(
@@ -356,7 +399,7 @@ private fun TripDetailTopBar(
         Surface(
             modifier = Modifier.size(42.dp),
             shape = CircleShape,
-            color = AtlasSurface,
+            color = AtlasSurface.copy(alpha = 0.92f),
             border = BorderStroke(1.dp, AtlasOutline),
         ) {
             IconButton(onClick = onBackClick) {
@@ -376,7 +419,7 @@ private fun TripDetailTopBar(
                 Surface(
                     modifier = Modifier.size(42.dp),
                     shape = CircleShape,
-                    color = AtlasSurface,
+                    color = AtlasSurface.copy(alpha = 0.92f),
                     border = BorderStroke(1.dp, AtlasOutline),
                 ) {
                     IconButton(onClick = { actionsExpanded = true }) {
@@ -406,21 +449,11 @@ private fun TripDetailTopBar(
                                 )
                             },
                             leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Edit,
-                                    contentDescription = null,
-                                    tint = AtlasOnSurfaceStrong,
-                                    modifier = Modifier.size(16.dp),
-                                )
+                                Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(16.dp))
                             },
                             onClick = { actionsExpanded = false; onEditTripClick() },
                         )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(AtlasOutline),
-                        )
+                        Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                         DropdownMenuItem(
                             text = {
                                 Text(
@@ -431,12 +464,7 @@ private fun TripDetailTopBar(
                                 )
                             },
                             leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Delete,
-                                    contentDescription = null,
-                                    tint = AtlasError,
-                                    modifier = Modifier.size(16.dp),
-                                )
+                                Icon(Icons.Filled.Delete, null, tint = AtlasError, modifier = Modifier.size(16.dp))
                             },
                             onClick = { actionsExpanded = false; onDeleteTripClick() },
                         )
@@ -448,7 +476,7 @@ private fun TripDetailTopBar(
 }
 
 // ─────────────────────────────────────────────
-// Main content
+// Main scrollable content
 // ─────────────────────────────────────────────
 @Composable
 private fun TripDetailContent(
@@ -456,6 +484,7 @@ private fun TripDetailContent(
     trip: Trip,
     isReorderMode: Boolean,
     onReorderModeChanged: (Boolean) -> Unit,
+    onExpandMap: () -> Unit,
     onItineraryClick: (String) -> Unit,
     onOpenItineraryPicker: () -> Unit,
     onUnlinkItinerary: () -> Unit,
@@ -475,29 +504,34 @@ private fun TripDetailContent(
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
 ) {
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-        // Map hero — full width, no horizontal padding
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp),
-        ) {
-            TripMapPreview(
-                stops = uiState.stops,
-                excursions = uiState.excursions,
-            )
+    val tripCountries = uiState.stops
+        .mapNotNull { it.countryIso2?.takeIf { iso -> iso.isNotBlank() } }
+        .distinct()
+        .mapNotNull { iso2 ->
+            val name = uiState.countries.firstOrNull { it.iso2 == iso2 }?.nameCa ?: return@mapNotNull null
+            iso2 to name
         }
 
-        // Padded card stack
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        // Static geo canvas map hero
+        StaticTripMapHero(
+            stops = uiState.stops,
+            trip = trip,
+            onExpandMap = onExpandMap,
+        )
+
+        // Padded content below the map
         Column(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.height(4.dp))
 
-            TripIdentityCard(trip = trip)
-
-            TripStatStrip(trip = trip, stopCount = uiState.stops.size)
+            TripInfoCard(
+                trip = trip,
+                stopCount = uiState.stops.size,
+                tripCountries = tripCountries,
+            )
 
             LinkedItineraryPanel(
                 linkedItinerary = uiState.linkedItinerary,
@@ -536,20 +570,97 @@ private fun TripDetailContent(
 }
 
 // ─────────────────────────────────────────────
-// Identity card
+// Static geo canvas map hero
 // ─────────────────────────────────────────────
 @Composable
-private fun TripIdentityCard(trip: Trip) {
+private fun StaticTripMapHero(
+    stops: List<TripStop>,
+    trip: Trip,
+    onExpandMap: () -> Unit,
+) {
+    val routeColor = trip.status.tripStatusColors().foreground
+    val visibleStops = stops
+        .filter { it.isVisible && it.latitude != null && it.longitude != null }
+        .sortedBy { it.sortOrder }
+    val coordinates = visibleStops.map { GeoCoordinate(it.latitude!!, it.longitude!!) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(240.dp),
+    ) {
+        if (coordinates.isEmpty()) {
+            AtlasGeoCanvas(modifier = Modifier.fillMaxSize())
+        } else {
+            AtlasGeoCanvas(
+                modifier = Modifier.fillMaxSize(),
+                viewport = GeoViewport.FitPoints(
+                    points = coordinates,
+                    minLongitudeSpanDegrees = 5.0,
+                    minLatitudeSpanDegrees = 3.5,
+                ),
+                routeSegments = coordinates.zipWithNext { from, to ->
+                    GeoRouteSegment(from = from, to = to, color = routeColor, alpha = 0.85f)
+                },
+                markers = visibleStops.mapIndexed { index, stop ->
+                    val coord = GeoCoordinate(stop.latitude!!, stop.longitude!!)
+                    GeoMarker(
+                        coordinate = coord,
+                        color = routeColor,
+                        radiusMultiplier = if (index == 0 || index == visibleStops.lastIndex) 0.62f else 0.46f,
+                        isHollow = index == visibleStops.lastIndex && visibleStops.size > 1,
+                        label = stop.displayTitle?.split(",")?.firstOrNull()?.trim()
+                            ?: stop.locationName.split(",").firstOrNull()?.trim(),
+                    )
+                },
+            )
+        }
+
+        // Expand to interactive map button
+        Surface(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(12.dp),
+            onClick = onExpandMap,
+            shape = RoundedCornerShape(9.dp),
+            color = AtlasSurface.copy(alpha = 0.92f),
+            border = BorderStroke(1.dp, AtlasOutline),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(Icons.Filled.Map, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(13.dp))
+                Text(
+                    text = "Mapa interactiu",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AtlasOnSurfaceStrong,
+                )
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────
+// Combined info card: title + stats + countries
+// ─────────────────────────────────────────────
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TripInfoCard(
+    trip: Trip,
+    stopCount: Int,
+    tripCountries: List<Pair<String, String>>,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Title + status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top,
@@ -566,7 +677,10 @@ private fun TripIdentityCard(trip: Trip) {
                 )
                 TripStatusPill(status = trip.status)
             }
+
+            // Dates
             trip.dateRange?.let { range ->
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = dateRangeFormatter.format(range),
                     style = MaterialTheme.typography.bodySmall,
@@ -574,14 +688,84 @@ private fun TripIdentityCard(trip: Trip) {
                     color = AtlasOnSurfaceMuted,
                 )
             }
+
+            // Notes
             trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = notes,
                     style = MaterialTheme.typography.bodyMedium,
                     color = AtlasOnSurfaceMuted,
                 )
             }
+
+            Spacer(Modifier.height(14.dp))
+            HorizontalDivider(color = AtlasOutline)
+            Spacer(Modifier.height(14.dp))
+
+            // Stats row
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                TripStatItem(value = trip.dayCountText(), label = "DIES")
+                TripStatItem(value = stopCount.toString(), label = "PARADES")
+                TripStatItem(value = tripCountries.size.toString(), label = "PAÏSOS")
+            }
+
+            // Country pills
+            if (tripCountries.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    tripCountries.forEach { (iso2, name) ->
+                        TripCountryPill(iso2 = iso2, name = name)
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun TripStatItem(value: String, label: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
+            fontWeight = FontWeight.SemiBold,
+            color = AtlasOnSurfaceStrong,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = AtlasOnSurfaceMuted,
+        )
+    }
+}
+
+@Composable
+private fun TripCountryPill(iso2: String, name: String) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(AtlasBackground)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Text(
+            text = iso2.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = AtlasNavy,
+        )
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            color = AtlasOnSurfaceStrong,
+        )
     }
 }
 
@@ -600,62 +784,6 @@ private fun TripStatusPill(status: TravelStatus) {
             fontWeight = FontWeight.ExtraBold,
             color = colors.foreground,
             letterSpacing = 0.12.sp,
-        )
-    }
-}
-
-// ─────────────────────────────────────────────
-// Stat strip
-// ─────────────────────────────────────────────
-@Composable
-private fun TripStatStrip(trip: Trip, stopCount: Int) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = AtlasSurface,
-        border = BorderStroke(1.dp, AtlasOutline),
-    ) {
-        Row {
-            TripStatCell(
-                value = trip.dayCountText(),
-                label = "Dies",
-                modifier = Modifier.weight(1f),
-            )
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(52.dp)
-                    .align(Alignment.CenterVertically)
-                    .background(AtlasOutline),
-            )
-            TripStatCell(
-                value = stopCount.toString(),
-                label = "Parades",
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun TripStatCell(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.padding(horizontal = 14.dp, vertical = 13.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge.copy(fontSize = 23.sp),
-            fontWeight = FontWeight.Medium,
-            color = AtlasOnSurfaceStrong,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = AtlasOnSurfaceMuted,
-            maxLines = 1,
         )
     }
 }
@@ -685,12 +813,7 @@ private fun LinkedItineraryPanel(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Link,
-                    contentDescription = null,
-                    tint = AtlasOnSurfaceMuted,
-                    modifier = Modifier.size(19.dp),
-                )
+                Icon(Icons.Filled.Link, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(19.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Itinerari vinculat".uppercase(),
@@ -731,12 +854,7 @@ private fun LinkedItineraryPanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Link,
-                contentDescription = null,
-                tint = AtlasOnSurfaceMuted,
-                modifier = Modifier.size(19.dp),
-            )
+            Icon(Icons.Filled.Link, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(19.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "Itinerari vinculat".uppercase(),
@@ -886,7 +1004,7 @@ private fun TripStopsSection(
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(
                     onClick = onAddStopClick,
@@ -1065,7 +1183,6 @@ private fun TripStopRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Position + icon stacked
             Box(contentAlignment = Alignment.BottomEnd) {
                 Box(
                     modifier = Modifier
@@ -1081,7 +1198,6 @@ private fun TripStopRow(
                         tint = if (hasCoords) AtlasPrimary else AtlasOnSurfaceMuted,
                     )
                 }
-                // Position bubble
                 Box(
                     modifier = Modifier
                         .offset(x = 4.dp, y = 4.dp)
@@ -1100,7 +1216,6 @@ private fun TripStopRow(
                 }
             }
 
-            // Body
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(3.dp),
@@ -1150,7 +1265,6 @@ private fun TripStopRow(
                 )
             }
 
-            // Actions
             if (isReorderMode) {
                 Column {
                     IconButton(
@@ -1158,22 +1272,14 @@ private fun TripStopRow(
                         enabled = canMoveUp,
                         modifier = Modifier.size(32.dp),
                     ) {
-                        Icon(
-                            Icons.Filled.KeyboardArrowUp,
-                            "Mou amunt",
-                            tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline,
-                        )
+                        Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline)
                     }
                     IconButton(
                         onClick = { onMoveStopDown(stop) },
                         enabled = canMoveDown,
                         modifier = Modifier.size(32.dp),
                     ) {
-                        Icon(
-                            Icons.Filled.KeyboardArrowDown,
-                            "Mou avall",
-                            tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline,
-                        )
+                        Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline)
                     }
                 }
             } else {
@@ -1291,37 +1397,21 @@ private fun ExcursionCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        text = "${index + 1}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = AtlasPrimary,
-                    )
+                    Text("${index + 1}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stop.locationName, fontWeight = FontWeight.ExtraBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            text = listOfNotNull(
-                                countryName,
-                                stop.dateRange?.let { dateRangeFormatter.format(it) },
-                            ).joinToString(" · "),
+                            text = listOfNotNull(countryName, stop.dateRange?.let { dateRangeFormatter.format(it) }).joinToString(" · "),
                             color = AtlasOnSurfaceMuted,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
                     if (isReorderMode) {
-                        IconButton(
-                            onClick = { onMoveExcursionStopUp(excursion.id, stop) },
-                            enabled = index > 0,
-                            modifier = Modifier.size(28.dp),
-                        ) {
+                        IconButton(onClick = { onMoveExcursionStopUp(excursion.id, stop) }, enabled = index > 0, modifier = Modifier.size(28.dp)) {
                             Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (index > 0) AtlasOnSurfaceStrong else AtlasOutline)
                         }
-                        IconButton(
-                            onClick = { onMoveExcursionStopDown(excursion.id, stop) },
-                            enabled = index < excursion.stops.lastIndex,
-                            modifier = Modifier.size(28.dp),
-                        ) {
+                        IconButton(onClick = { onMoveExcursionStopDown(excursion.id, stop) }, enabled = index < excursion.stops.lastIndex, modifier = Modifier.size(28.dp)) {
                             Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (index < excursion.stops.lastIndex) AtlasOnSurfaceStrong else AtlasOutline)
                         }
                     } else {
@@ -1345,10 +1435,7 @@ private fun SmallActionButton(label: String, onClick: () -> Unit) {
     TextButton(
         onClick = onClick,
         shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.textButtonColors(
-            contentColor = AtlasOnSurfaceMuted,
-            containerColor = AtlasBackground,
-        ),
+        colors = ButtonDefaults.textButtonColors(contentColor = AtlasOnSurfaceMuted, containerColor = AtlasBackground),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
         modifier = Modifier.height(28.dp),
     ) {
@@ -1357,7 +1444,7 @@ private fun SmallActionButton(label: String, onClick: () -> Unit) {
 }
 
 // ─────────────────────────────────────────────
-// Stop dialog
+// Dialogs (unchanged from original)
 // ─────────────────────────────────────────────
 @Composable
 private fun ExcursionDialog(
@@ -1434,16 +1521,8 @@ private fun ExcursionDialog(
                 }
             }
         },
-        confirmButton = {
-            CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
-            }
-        },
-        dismissButton = {
-            CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
-            }
-        },
+        confirmButton = { CompactTripDialogActionButton(onClick = onSave) { Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary) } },
+        dismissButton = { CompactTripDialogActionButton(onClick = onDismiss) { Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
     )
 }
 
@@ -1481,11 +1560,7 @@ private fun ExcursionStopDialog(
             )
         },
         text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                // ── Location search ──
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = draft.locationSearchQuery,
                     onValueChange = onLocationSearchQueryChanged,
@@ -1494,136 +1569,43 @@ private fun ExcursionStopDialog(
                     label = { Text("Cerca un lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
                     placeholder = { Text("Nom o adreça...", color = AtlasOnSurfaceMuted) },
                     leadingIcon = {
-                        if (draft.isSearchingLocation) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
-                        } else {
-                            Icon(Icons.Filled.Search, contentDescription = null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
-                        }
+                        if (draft.isSearchingLocation) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
+                        else Icon(Icons.Filled.Search, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
                     },
                     shape = RoundedCornerShape(14.dp),
                 )
-
-                draft.locationSearchError?.let { error ->
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasError,
-                    )
-                }
-
+                draft.locationSearchError?.let { Text(it, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = AtlasError) }
                 if (draft.locationSearchResults.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AtlasBackground)
-                            .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp)),
-                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                    ) {
-                        draft.locationSearchResults.forEach { result ->
-                            LocationSearchResultRow(
-                                result = result,
-                                onClick = { onLocationSearchResultSelected(result) },
-                            )
-                        }
+                    Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AtlasBackground).border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))) {
+                        draft.locationSearchResults.forEach { result -> LocationSearchResultRow(result = result, onClick = { onLocationSearchResultSelected(result) }) }
                     }
                 }
-
                 if (draft.locationName.isNotBlank()) {
-                    SelectedLocationSummary(
-                        locationName = draft.locationName,
-                        countryName = selectedCountry?.nameCa ?: draft.countryIso2,
-                        hasCoordinates = hasCoordinates,
-                        showEditDetails = !showManualFields,
-                        onEditDetailsClick = onUseManualEntryClick,
-                    )
+                    SelectedLocationSummary(locationName = draft.locationName, countryName = selectedCountry?.nameCa ?: draft.countryIso2, hasCoordinates = hasCoordinates, showEditDetails = !showManualFields, onEditDetailsClick = onUseManualEntryClick)
                 }
-
                 if (!showManualFields && draft.locationName.isBlank()) {
-                    TextButton(
-                        onClick = onUseManualEntryClick,
-                        modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    ) {
+                    TextButton(onClick = onUseManualEntryClick, modifier = Modifier.height(32.dp), colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
                         Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
                     }
                 }
-
                 if (showManualFields) {
                     DialogSectionLabel("Detalls manuals")
-                    OutlinedTextField(
-                        value = draft.locationName,
-                        onValueChange = onLocationNameChanged,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(14.dp),
-                    )
-                    CountryDropdown(
-                        countries = countries,
-                        selectedIso2 = draft.countryIso2,
-                        onCountryChanged = onCountryChanged,
-                    )
+                    OutlinedTextField(value = draft.locationName, onValueChange = onLocationNameChanged, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, shape = RoundedCornerShape(14.dp))
+                    CountryDropdown(countries = countries, selectedIso2 = draft.countryIso2, onCountryChanged = onCountryChanged)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = draft.latitude,
-                            onValueChange = onLatitudeChanged,
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
-                            shape = RoundedCornerShape(14.dp),
-                        )
-                        OutlinedTextField(
-                            value = draft.longitude,
-                            onValueChange = onLongitudeChanged,
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
-                            shape = RoundedCornerShape(14.dp),
-                        )
+                        OutlinedTextField(value = draft.latitude, onValueChange = onLatitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
+                        OutlinedTextField(value = draft.longitude, onValueChange = onLongitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
                     }
                 }
-                Text(
-                    text = "Dades de cerca OpenStreetMap contributors",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AtlasOnSurfaceMuted,
-                )
-
+                Text("Dades de cerca OpenStreetMap contributors", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
                 DialogSectionLabel("Data")
-                FlexibleDateRangeField(
-                    draft = draft.dateRange,
-                    onPrecisionChanged = onDatePrecisionChanged,
-                    onFieldChanged = onDateFieldChanged,
-                    showHint = false,
-                )
-                OutlinedTextField(
-                    value = draft.notes,
-                    onValueChange = onNotesChanged,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Notes", fontWeight = FontWeight.Bold) },
-                    shape = RoundedCornerShape(14.dp),
-                    minLines = 1,
-                    maxLines = 3,
-                )
-                draft.validationError?.let { error ->
-                    Text(error, color = AtlasError, fontWeight = FontWeight.SemiBold)
-                }
+                FlexibleDateRangeField(draft = draft.dateRange, onPrecisionChanged = onDatePrecisionChanged, onFieldChanged = onDateFieldChanged, showHint = false)
+                OutlinedTextField(value = draft.notes, onValueChange = onNotesChanged, modifier = Modifier.fillMaxWidth(), label = { Text("Notes", fontWeight = FontWeight.Bold) }, shape = RoundedCornerShape(14.dp), minLines = 1, maxLines = 3)
+                draft.validationError?.let { Text(it, color = AtlasError, fontWeight = FontWeight.SemiBold) }
             }
         },
-        confirmButton = {
-            CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
-            }
-        },
-        dismissButton = {
-            CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
-            }
-        },
+        confirmButton = { CompactTripDialogActionButton(onClick = onSave) { Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary) } },
+        dismissButton = { CompactTripDialogActionButton(onClick = onDismiss) { Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
     )
 }
 
@@ -1661,11 +1643,7 @@ private fun TripStopDialog(
             )
         },
         text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                // ── Location search ──
+            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = draft.locationSearchQuery,
                     onValueChange = onLocationSearchQueryChanged,
@@ -1674,154 +1652,49 @@ private fun TripStopDialog(
                     label = { Text("Cerca un lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
                     placeholder = { Text("Nom o adreça...", color = AtlasOnSurfaceMuted) },
                     leadingIcon = {
-                        if (draft.isSearchingLocation) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
-                        } else {
-                            Icon(Icons.Filled.Search, contentDescription = null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
-                        }
+                        if (draft.isSearchingLocation) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
+                        else Icon(Icons.Filled.Search, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
                     },
                     shape = RoundedCornerShape(14.dp),
                 )
-
-                draft.locationSearchError?.let { error ->
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasError,
-                    )
-                }
-
+                draft.locationSearchError?.let { Text(it, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = AtlasError) }
                 if (draft.locationSearchResults.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AtlasBackground)
-                            .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp)),
-                        verticalArrangement = Arrangement.spacedBy(0.dp),
-                    ) {
-                        draft.locationSearchResults.forEach { result ->
-                            LocationSearchResultRow(
-                                result = result,
-                                onClick = { onLocationSearchResultSelected(result) },
-                            )
-                        }
+                    Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AtlasBackground).border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))) {
+                        draft.locationSearchResults.forEach { result -> LocationSearchResultRow(result = result, onClick = { onLocationSearchResultSelected(result) }) }
                     }
                 }
-
                 if (draft.locationName.isNotBlank()) {
-                    SelectedLocationSummary(
-                        locationName = draft.locationName,
-                        countryName = selectedCountry?.nameCa ?: draft.countryIso2,
-                        hasCoordinates = hasCoordinates,
-                        showEditDetails = !showManualFields,
-                        onEditDetailsClick = onUseManualEntryClick,
-                    )
+                    SelectedLocationSummary(locationName = draft.locationName, countryName = selectedCountry?.nameCa ?: draft.countryIso2, hasCoordinates = hasCoordinates, showEditDetails = !showManualFields, onEditDetailsClick = onUseManualEntryClick)
                 }
-
                 if (!showManualFields && draft.locationName.isBlank()) {
-                    TextButton(
-                        onClick = onUseManualEntryClick,
-                        modifier = Modifier.height(32.dp),
-                        colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    ) {
+                    TextButton(onClick = onUseManualEntryClick, modifier = Modifier.height(32.dp), colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
                         Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
                     }
                 }
-
                 if (showManualFields) {
-                    // ── Manual entry ──
                     DialogSectionLabel("Detalls manuals")
-                    OutlinedTextField(
-                        value = draft.locationName,
-                        onValueChange = onLocationNameChanged,
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                        shape = RoundedCornerShape(14.dp),
-                    )
-                    CountryDropdown(
-                        countries = countries,
-                        selectedIso2 = draft.countryIso2,
-                        onCountryChanged = onCountryChanged,
-                    )
+                    OutlinedTextField(value = draft.locationName, onValueChange = onLocationNameChanged, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, shape = RoundedCornerShape(14.dp))
+                    CountryDropdown(countries = countries, selectedIso2 = draft.countryIso2, onCountryChanged = onCountryChanged)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(
-                            value = draft.latitude,
-                            onValueChange = onLatitudeChanged,
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
-                            shape = RoundedCornerShape(14.dp),
-                        )
-                        OutlinedTextField(
-                            value = draft.longitude,
-                            onValueChange = onLongitudeChanged,
-                            modifier = Modifier.weight(1f),
-                            singleLine = true,
-                            label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                            placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) },
-                            shape = RoundedCornerShape(14.dp),
-                        )
+                        OutlinedTextField(value = draft.latitude, onValueChange = onLatitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
+                        OutlinedTextField(value = draft.longitude, onValueChange = onLongitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
                     }
                 }
-                Text(
-                    text = "Dades de cerca © OpenStreetMap contributors",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AtlasOnSurfaceMuted,
-                )
-
+                Text("Dades de cerca © OpenStreetMap contributors", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
                 DialogSectionLabel("Data")
-                FlexibleDateRangeField(
-                    draft = draft.dateRange,
-                    onPrecisionChanged = onDatePrecisionChanged,
-                    onFieldChanged = onDateFieldChanged,
-                    showHint = false,
-                )
-                OutlinedTextField(
-                    value = draft.notes,
-                    onValueChange = onNotesChanged,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Notes", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                    shape = RoundedCornerShape(14.dp),
-                    minLines = 1,
-                    maxLines = 3,
-                )
-                draft.validationError?.let { error ->
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasError,
-                    )
-                }
+                FlexibleDateRangeField(draft = draft.dateRange, onPrecisionChanged = onDatePrecisionChanged, onFieldChanged = onDateFieldChanged, showHint = false)
+                OutlinedTextField(value = draft.notes, onValueChange = onNotesChanged, modifier = Modifier.fillMaxWidth(), label = { Text("Notes", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, shape = RoundedCornerShape(14.dp), minLines = 1, maxLines = 3)
+                draft.validationError?.let { Text(it, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = AtlasError) }
             }
         },
-        confirmButton = {
-            CompactTripDialogActionButton(onClick = onSave) {
-                Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary)
-            }
-        },
-        dismissButton = {
-            CompactTripDialogActionButton(onClick = onDismiss) {
-                Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
-            }
-        },
+        confirmButton = { CompactTripDialogActionButton(onClick = onSave) { Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary) } },
+        dismissButton = { CompactTripDialogActionButton(onClick = onDismiss) { Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
     )
 }
 
 @Composable
 private fun DialogSectionLabel(text: String) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelMedium,
-        fontWeight = FontWeight.ExtraBold,
-        color = AtlasOnSurfaceMuted,
-        letterSpacing = 0.12.sp,
-    )
+    Text(text = text, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold, color = AtlasOnSurfaceMuted, letterSpacing = 0.12.sp)
 }
 
 @Composable
@@ -1842,32 +1715,11 @@ private fun SelectedLocationSummary(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(AtlasPrimary),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Place,
-                contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(18.dp),
-            )
+        Box(modifier = Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(AtlasPrimary), contentAlignment = Alignment.Center) {
+            Icon(Icons.Filled.Place, null, tint = Color.White, modifier = Modifier.size(18.dp))
         }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-        ) {
-            Text(
-                text = locationName,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+            Text(text = locationName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 text = buildString {
                     append(countryName.ifBlank { "País pendent" })
@@ -1882,141 +1734,52 @@ private fun SelectedLocationSummary(
             )
         }
         if (showEditDetails) {
-            TextButton(
-                onClick = onEditDetailsClick,
-                modifier = Modifier.height(30.dp),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary),
-            ) {
+            TextButton(onClick = onEditDetailsClick, modifier = Modifier.height(30.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp), colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary)) {
                 Text("Edita", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp)
             }
         }
     }
 }
 
-// ─────────────────────────────────────────────
-// Location search result row
-// ─────────────────────────────────────────────
 @Composable
-private fun LocationSearchResultRow(
-    result: LocationSearchResult,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp),
-        colors = ButtonDefaults.textButtonColors(contentColor = AtlasOnSurfaceStrong),
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            Text(
-                text = result.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.ExtraBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = result.displayName,
-                style = MaterialTheme.typography.bodySmall,
-                color = AtlasOnSurfaceMuted,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+private fun LocationSearchResultRow(result: LocationSearchResult, onClick: () -> Unit) {
+    TextButton(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(0.dp), colors = ButtonDefaults.textButtonColors(contentColor = AtlasOnSurfaceStrong), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(text = result.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.ExtraBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text = result.displayName, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
-// ─────────────────────────────────────────────
-// Country dropdown
-// ─────────────────────────────────────────────
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CountryDropdown(
-    countries: List<Country>,
-    selectedIso2: String,
-    onCountryChanged: (String) -> Unit,
-) {
+private fun CountryDropdown(countries: List<Country>, selectedIso2: String, onCountryChanged: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     val selectedCountry = countries.firstOrNull { it.iso2 == selectedIso2 }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded },
-    ) {
-        OutlinedTextField(
-            value = selectedCountry?.nameCa.orEmpty(),
-            onValueChange = {},
-            modifier = Modifier
-                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
-            readOnly = true,
-            label = { Text("País o territori", fontWeight = FontWeight.Bold) },
-            shape = RoundedCornerShape(14.dp),
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+        OutlinedTextField(value = selectedCountry?.nameCa.orEmpty(), onValueChange = {}, modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(), readOnly = true, label = { Text("País o territori", fontWeight = FontWeight.Bold) }, shape = RoundedCornerShape(14.dp), trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) })
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             countries.forEach { country ->
-                DropdownMenuItem(
-                    text = { Text(country.nameCa, fontWeight = FontWeight.SemiBold) },
-                    onClick = { onCountryChanged(country.iso2); expanded = false },
-                )
+                DropdownMenuItem(text = { Text(country.nameCa, fontWeight = FontWeight.SemiBold) }, onClick = { onCountryChanged(country.iso2); expanded = false })
             }
         }
     }
 }
 
-// ─────────────────────────────────────────────
-// Confirm delete dialog
-// ─────────────────────────────────────────────
 @Composable
-private fun ConfirmDeleteDialog(
-    title: String,
-    body: String,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-) {
+private fun ConfirmDeleteDialog(title: String, body: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(22.dp),
         containerColor = AtlasSurface,
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        },
-        text = {
-            Text(
-                text = body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = AtlasOnSurfaceMuted,
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Elimina", fontWeight = FontWeight.ExtraBold, color = AtlasError)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted)
-            }
-        },
+        title = { Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold, color = AtlasOnSurfaceStrong) },
+        text = { Text(text = body, style = MaterialTheme.typography.bodyMedium, color = AtlasOnSurfaceMuted) },
+        confirmButton = { TextButton(onClick = onConfirm) { Text("Elimina", fontWeight = FontWeight.ExtraBold, color = AtlasError) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel·la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
     )
 }
 
-private fun TripStop.hasCoordinates(): Boolean =
-    latitude != null && longitude != null
+private fun TripStop.hasCoordinates(): Boolean = latitude != null && longitude != null
 
 private fun buildStopMeta(stop: TripStop): String = buildString {
     append(stop.dateRange?.let { dateRangeFormatter.format(it) } ?: "Sense data")

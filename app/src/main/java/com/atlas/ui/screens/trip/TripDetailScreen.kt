@@ -1,7 +1,9 @@
 package com.atlas.ui.screens.trip
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,15 +25,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -78,6 +85,7 @@ import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasError
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
@@ -162,47 +170,20 @@ fun TripDetailScreen(
     var pendingDeleteExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
 
+    val trip = uiState.trip
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AtlasBackground),
     ) {
-        // ── Top bar ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                onClick = onBackClick,
-                shape = RoundedCornerShape(100.dp),
-                color = AtlasSurface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
-                shadowElevation = 0.dp,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Torna",
-                        modifier = Modifier.size(14.dp),
-                        tint = AtlasOnSurfaceStrong,
-                    )
-                    Text(
-                        text = "Enrere",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = AtlasOnSurfaceStrong,
-                    )
-                }
-            }
-        }
+        TripDetailTopBar(
+            onBackClick = onBackClick,
+            onEditTripClick = onEditTripClick,
+            onDeleteTripClick = { isDeleteTripDialogOpen = true },
+            actionsEnabled = trip != null,
+        )
 
-        val trip = uiState.trip
         if (trip == null) {
             Box(
                 modifier = Modifier
@@ -222,8 +203,6 @@ fun TripDetailScreen(
                 trip = trip,
                 isReorderMode = isReorderMode,
                 onReorderModeChanged = { isReorderMode = it },
-                onEditTripClick = onEditTripClick,
-                onDeleteTrip = { isDeleteTripDialogOpen = true },
                 onItineraryClick = onItineraryClick,
                 onOpenItineraryPicker = onOpenItineraryPicker,
                 onUnlinkItinerary = onUnlinkItinerary,
@@ -356,6 +335,119 @@ fun TripDetailScreen(
 }
 
 // ─────────────────────────────────────────────
+// Top bar
+// ─────────────────────────────────────────────
+@Composable
+private fun TripDetailTopBar(
+    onBackClick: () -> Unit,
+    onEditTripClick: () -> Unit,
+    onDeleteTripClick: () -> Unit,
+    actionsEnabled: Boolean,
+) {
+    var actionsExpanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Surface(
+            modifier = Modifier.size(42.dp),
+            shape = CircleShape,
+            color = AtlasSurface,
+            border = BorderStroke(1.dp, AtlasOutline),
+        ) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Enrere",
+                    tint = AtlasOnSurfaceStrong,
+                    modifier = Modifier.size(19.dp),
+                )
+            }
+        }
+
+        Box(modifier = Modifier.weight(1f))
+
+        if (actionsEnabled) {
+            Box {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = AtlasSurface,
+                    border = BorderStroke(1.dp, AtlasOutline),
+                ) {
+                    IconButton(onClick = { actionsExpanded = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Accions",
+                            tint = AtlasOnSurfaceStrong,
+                        )
+                    }
+                }
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
+                    shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
+                ) {
+                    DropdownMenu(
+                        expanded = actionsExpanded,
+                        onDismissRequest = { actionsExpanded = false },
+                        modifier = Modifier.width(190.dp),
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "Edita viatge",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AtlasOnSurfaceStrong,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Edit,
+                                    contentDescription = null,
+                                    tint = AtlasOnSurfaceStrong,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            },
+                            onClick = { actionsExpanded = false; onEditTripClick() },
+                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(AtlasOutline),
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    "Elimina viatge",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AtlasError,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Delete,
+                                    contentDescription = null,
+                                    tint = AtlasError,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            },
+                            onClick = { actionsExpanded = false; onDeleteTripClick() },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────
 // Main content
 // ─────────────────────────────────────────────
 @Composable
@@ -364,8 +456,6 @@ private fun TripDetailContent(
     trip: Trip,
     isReorderMode: Boolean,
     onReorderModeChanged: (Boolean) -> Unit,
-    onEditTripClick: () -> Unit,
-    onDeleteTrip: () -> Unit,
     onItineraryClick: (String) -> Unit,
     onOpenItineraryPicker: () -> Unit,
     onUnlinkItinerary: () -> Unit,
@@ -385,233 +475,294 @@ private fun TripDetailContent(
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 20.dp)
-            .verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Spacer(Modifier.height(4.dp))
+    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        // Map hero — full width, no horizontal padding
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp),
+        ) {
+            TripMapPreview(
+                stops = uiState.stops,
+                excursions = uiState.excursions,
+            )
+        }
 
-        // ── Trip header card ──
-        TripHeaderCard(
-            trip = trip,
-            stopCount = uiState.stops.size,
-            onEditTripClick = onEditTripClick,
-            onDeleteTrip = onDeleteTrip,
-        )
+        // Padded card stack
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Spacer(Modifier.height(4.dp))
 
-        // ── Map preview ──
-        TripMapPreview(
-            stops = uiState.stops,
-            excursions = uiState.excursions,
-        )
-        ItineraryLinkSection(
-            linkedItinerary = uiState.linkedItinerary,
-            availableCount = uiState.availableItineraries.size,
-            onItineraryClick = onItineraryClick,
-            onOpenItineraryPicker = onOpenItineraryPicker,
-            onUnlinkItinerary = onUnlinkItinerary,
-        )
+            TripIdentityCard(trip = trip)
 
-        // ── Stops section ──
-        TripStopsSection(
-            stops = uiState.stops,
-            excursions = uiState.excursions,
-            countries = uiState.countries,
-            isReorderMode = isReorderMode,
-            onReorderModeChanged = onReorderModeChanged,
-            onAddStopClick = onAddStopClick,
-            onEditStop = onEditStop,
-            onMoveStopUp = onMoveStopUp,
-            onMoveStopDown = onMoveStopDown,
-            onDeleteStop = onDeleteStop,
-            onAddExcursionClick = onAddExcursionClick,
-            onEditExcursion = onEditExcursion,
-            onDeleteExcursion = onDeleteExcursion,
-            onMoveExcursionUp = onMoveExcursionUp,
-            onMoveExcursionDown = onMoveExcursionDown,
-            onAddExcursionStopClick = onAddExcursionStopClick,
-            onEditExcursionStop = onEditExcursionStop,
-            onDeleteExcursionStop = onDeleteExcursionStop,
-            onMoveExcursionStopUp = onMoveExcursionStopUp,
-            onMoveExcursionStopDown = onMoveExcursionStopDown,
-        )
+            TripStatStrip(trip = trip, stopCount = uiState.stops.size)
 
-        Spacer(Modifier.height(24.dp))
+            LinkedItineraryPanel(
+                linkedItinerary = uiState.linkedItinerary,
+                availableCount = uiState.availableItineraries.size,
+                onItineraryClick = onItineraryClick,
+                onOpenItineraryPicker = onOpenItineraryPicker,
+                onUnlinkItinerary = onUnlinkItinerary,
+            )
+
+            TripStopsSection(
+                stops = uiState.stops,
+                excursions = uiState.excursions,
+                countries = uiState.countries,
+                isReorderMode = isReorderMode,
+                onReorderModeChanged = onReorderModeChanged,
+                onAddStopClick = onAddStopClick,
+                onEditStop = onEditStop,
+                onMoveStopUp = onMoveStopUp,
+                onMoveStopDown = onMoveStopDown,
+                onDeleteStop = onDeleteStop,
+                onAddExcursionClick = onAddExcursionClick,
+                onEditExcursion = onEditExcursion,
+                onDeleteExcursion = onDeleteExcursion,
+                onMoveExcursionUp = onMoveExcursionUp,
+                onMoveExcursionDown = onMoveExcursionDown,
+                onAddExcursionStopClick = onAddExcursionStopClick,
+                onEditExcursionStop = onEditExcursionStop,
+                onDeleteExcursionStop = onDeleteExcursionStop,
+                onMoveExcursionStopUp = onMoveExcursionStopUp,
+                onMoveExcursionStopDown = onMoveExcursionStopDown,
+            )
+
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
 
 // ─────────────────────────────────────────────
-// Trip header card
-// Title, status badge, dates, summary pills, actions
+// Identity card
 // ─────────────────────────────────────────────
 @Composable
-private fun TripHeaderCard(
-    trip: Trip,
-    stopCount: Int,
-    onEditTripClick: () -> Unit,
-    onDeleteTrip: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .background(AtlasSurface)
-            .border(1.dp, AtlasOutline, RoundedCornerShape(22.dp))
-            .padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+private fun TripIdentityCard(trip: Trip) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        // Title + status badge
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = trip.title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-                modifier = Modifier.weight(1f),
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.width(12.dp))
-            StatusBadge(status = trip.status)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(
+                    text = trip.title,
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                TripStatusPill(status = trip.status)
+            }
+            trip.dateRange?.let { range ->
+                Text(
+                    text = dateRangeFormatter.format(range),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
+            trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+                Text(
+                    text = notes,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
         }
+    }
+}
 
-        // Dates + notes
-        trip.dateRange?.let { range ->
-            LabeledValue(
-                label = "DATES",
-                value = dateRangeFormatter.format(range),
-            )
-        }
-        trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-            LabeledValue(label = "NOTES", value = notes)
-        }
+@Composable
+private fun TripStatusPill(status: TravelStatus) {
+    val colors = status.tripStatusColors()
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(colors.container)
+            .padding(horizontal = 11.dp, vertical = 4.dp),
+    ) {
+        Text(
+            text = status.toCatalanLabel().uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = colors.foreground,
+            letterSpacing = 0.12.sp,
+        )
+    }
+}
 
-        // Summary pills: days + stops
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            SummaryPill(
-                modifier = Modifier.weight(1f),
-                label = "DIES",
+// ─────────────────────────────────────────────
+// Stat strip
+// ─────────────────────────────────────────────
+@Composable
+private fun TripStatStrip(trip: Trip, stopCount: Int) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row {
+            TripStatCell(
                 value = trip.dayCountText(),
-            )
-            SummaryPill(
+                label = "Dies",
                 modifier = Modifier.weight(1f),
-                label = "PARADES",
-                value = stopCount.toString(),
             )
-        }
-
-        // Actions
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = onEditTripClick,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AtlasPrimary,
-                    contentColor = Color.White,
-                ),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-            ) {
-                Text("Edita viatge", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-            }
-            TextButton(
-                onClick = onDeleteTrip,
-                colors = ButtonDefaults.textButtonColors(contentColor = AtlasError),
-            ) {
-                Text("Elimina", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            }
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(52.dp)
+                    .align(Alignment.CenterVertically)
+                    .background(AtlasOutline),
+            )
+            TripStatCell(
+                value = stopCount.toString(),
+                label = "Parades",
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
 
 @Composable
-private fun ItineraryLinkSection(
+private fun TripStatCell(value: String, label: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge.copy(fontSize = 23.sp),
+            fontWeight = FontWeight.Medium,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = AtlasOnSurfaceMuted,
+            maxLines = 1,
+        )
+    }
+}
+
+// ─────────────────────────────────────────────
+// Linked itinerary panel
+// ─────────────────────────────────────────────
+@Composable
+private fun LinkedItineraryPanel(
     linkedItinerary: Itinerary?,
     availableCount: Int,
     onItineraryClick: (String) -> Unit,
     onOpenItineraryPicker: () -> Unit,
     onUnlinkItinerary: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(AtlasSurface)
-            .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            text = "Itinerari",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceStrong,
-        )
-        if (linkedItinerary == null) {
-            Text(
-                text = if (availableCount == 0) {
-                    "No hi ha itineraris disponibles per vincular."
-                } else {
-                    "Vincula un itinerari per connectar els vols amb aquest viatge."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = AtlasOnSurfaceMuted,
-            )
-            Button(
-                onClick = onOpenItineraryPicker,
-                enabled = availableCount > 0,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AtlasPrimary,
-                    contentColor = Color.White,
-                ),
+    if (linkedItinerary == null) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = availableCount > 0, onClick = onOpenItineraryPicker),
+            shape = RoundedCornerShape(18.dp),
+            color = AtlasSurface,
+            border = BorderStroke(1.dp, AtlasOutline),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text("Vincula itinerari", fontWeight = FontWeight.ExtraBold)
-            }
-        } else {
-            Surface(
-                onClick = { onItineraryClick(linkedItinerary.id) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                color = AtlasBackground,
-                border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                Icon(
+                    imageVector = Icons.Filled.Link,
+                    contentDescription = null,
+                    tint = AtlasOnSurfaceMuted,
+                    modifier = Modifier.size(19.dp),
+                )
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = linkedItinerary.title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = AtlasOnSurfaceStrong,
+                        text = "Itinerari vinculat".uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
                     )
-                    linkedItinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                        Text(
-                            text = notes,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = "Sense itinerari assignat",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+                if (availableCount > 0) {
+                    Text(
+                        text = "Assigna",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AtlasPrimary,
+                    )
                 }
             }
+        }
+        return
+    }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onItineraryClick(linkedItinerary.id) },
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Link,
+                contentDescription = null,
+                tint = AtlasOnSurfaceMuted,
+                modifier = Modifier.size(19.dp),
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Itinerari vinculat".uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Text(
+                    text = linkedItinerary.title.ifBlank { "Itinerari" },
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             TextButton(onClick = onUnlinkItinerary) {
-                Text("Desvincula", fontWeight = FontWeight.Bold, color = AtlasError)
+                Text("Desvincula", color = AtlasPrimary)
             }
         }
     }
 }
 
+// ─────────────────────────────────────────────
+// Itinerary picker dialog
+// ─────────────────────────────────────────────
 @Composable
 private fun ItineraryPickerDialog(
     itineraries: List<Itinerary>,
@@ -645,24 +796,15 @@ private fun ItineraryPickerDialog(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             color = AtlasBackground,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
+                            border = BorderStroke(1.dp, AtlasOutline),
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = itinerary.title,
+                                    text = itinerary.title.ifBlank { "Itinerari" },
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = AtlasOnSurfaceStrong,
                                 )
-                                itinerary.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                                    Text(
-                                        text = notes,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = AtlasOnSurfaceMuted,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
                             }
                         }
                     }
@@ -676,74 +818,6 @@ private fun ItineraryPickerDialog(
             }
         },
     )
-}
-
-@Composable
-private fun StatusBadge(status: TravelStatus) {
-    val colors = status.tripStatusColors()
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(colors.container)
-            .padding(horizontal = 11.dp, vertical = 4.dp),
-    ) {
-        Text(
-            text = status.toCatalanLabel().uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = colors.foreground,
-            letterSpacing = 0.12.sp,
-        )
-    }
-}
-
-@Composable
-private fun LabeledValue(label: String, value: String) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceMuted,
-            letterSpacing = 0.14.sp,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = AtlasOnSurfaceStrong,
-        )
-    }
-}
-
-@Composable
-private fun SummaryPill(
-    modifier: Modifier = Modifier,
-    label: String,
-    value: String,
-) {
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(AtlasBackground)
-            .border(1.dp, AtlasOutline, RoundedCornerShape(14.dp))
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceMuted,
-            letterSpacing = 0.12.sp,
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceStrong,
-        )
-    }
 }
 
 // ─────────────────────────────────────────────
@@ -818,7 +892,7 @@ private fun TripStopsSection(
                     onClick = onAddStopClick,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = AtlasOnSurfaceStrong,
+                        containerColor = AtlasNavy,
                         contentColor = Color.White,
                     ),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
@@ -983,7 +1057,7 @@ private fun TripStopRow(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = AtlasSurface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, AtlasOutline),
+        border = BorderStroke(1.dp, AtlasOutline),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -1131,92 +1205,6 @@ private fun TypeBadge(label: String, color: Color, background: Color) {
             fontWeight = FontWeight.ExtraBold,
             color = color,
         )
-    }
-}
-
-@Composable
-private fun ExcursionsSection(
-    excursions: List<Excursion>,
-    stops: List<TripStop>,
-    countries: List<Country>,
-    onAddExcursionClick: () -> Unit,
-    onEditExcursion: (Excursion) -> Unit,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = "Excursions",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-            Button(
-                onClick = onAddExcursionClick,
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AtlasOnSurfaceStrong, contentColor = Color.White),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
-            ) {
-                Icon(Icons.Filled.Add, null, Modifier.size(14.dp))
-                Spacer(Modifier.width(5.dp))
-                Text("Afegeix", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-            }
-        }
-
-        if (excursions.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(AtlasSurface)
-                    .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Text(
-                    text = "Sense excursions.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = AtlasOnSurfaceStrong,
-                )
-                Text(
-                    text = "Afegeix rutes secundaries dins del viatge.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AtlasOnSurfaceMuted,
-                )
-            }
-        } else {
-            excursions.forEachIndexed { index, excursion ->
-                ExcursionCard(
-                    excursion = excursion,
-                    anchorName = stops.firstOrNull { it.id == excursion.anchorTripStopId }?.locationName,
-                    countries = countries,
-                    canMoveUp = index > 0,
-                    canMoveDown = index < excursions.lastIndex,
-                    isReorderMode = false,
-                    onEditExcursion = onEditExcursion,
-                    onDeleteExcursion = onDeleteExcursion,
-                    onMoveExcursionUp = onMoveExcursionUp,
-                    onMoveExcursionDown = onMoveExcursionDown,
-                    onAddExcursionStopClick = onAddExcursionStopClick,
-                    onEditExcursionStop = onEditExcursionStop,
-                    onDeleteExcursionStop = onDeleteExcursionStop,
-                    onMoveExcursionStopUp = onMoveExcursionStopUp,
-                    onMoveExcursionStopDown = onMoveExcursionStopDown,
-                )
-            }
-        }
     }
 }
 

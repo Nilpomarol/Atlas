@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (TripDetail redesign in progress — stops timeline done, visual polish ongoing; CountryList polished)
+* **Last updated:** 2026-06-05 (TripDetail redesign committed; CountryList polished with SVG flags)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -295,17 +295,17 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces with moderated display weights; FlightDetail Horari rows show large display-font time, date as supporting text, crossed scheduled values when actual exists, and `+N` day offset on arrival.
 9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row; the large city route title now gets its own full-width row.
 10. ✅ **TripList redesign** — status filter pills, coordinate-backed `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right, dark title, opaque footer. 110m polygons for scroll performance.
-11. 🚧 **TripDetail redesign** — in progress, not yet accepted/committed as final. What is done:
-    - Back + ⋮ top bar (edit/delete in overflow) floating fixed over scroll.
-    - Combined info card: Fraunces title + status pill + dates + notes + DIES/PARADES/PAÏSOS inline stat row + `FlowRow` country pills derived from stop `countryIso2` values.
-    - Static MapLibre map card (gestures disabled, `gesturesEnabled=false`) with compact footer and `Fullscreen` icon button; "Obrir mapa interactiu" opens a `Dialog` at ~72% screen height with full interactive MapLibre. `TripMapPreview` extended with `mapHeight`, `gesturesEnabled`, `showFooter`, `onExpandClick` params; camera padding 60→36 for tighter zoom; numbered `SymbolLayer` on main stop markers.
+11. ✅ **TripDetail redesign** — committed. Layout (top to bottom):
+    - Floating top bar: back + ⋮ overflow (edit/delete).
+    - Info card: Fraunces title + status pill + dates + notes + DIES/PARADES/PAÏSOS inline stat row + `FlowRow` country pills derived from stop `countryIso2` values.
+    - Map card: static MapLibre (`gesturesEnabled=false`) with `Fullscreen` icon button; tapping opens a `Dialog` at ~72% screen height with full interactive map. `TripMapPreview` extended with `mapHeight`, `gesturesEnabled`, `showFooter`, `onExpandClick` params; camera padding 60→36; numbered `SymbolLayer` on main stop markers.
     - Linked itinerary panel matching `LinkedTripPanel` shape from ItineraryDetail.
-    - **Timeline stops section:** numbered circles (AtlasNavy, 30dp) + vertical connecting line (`IntrinsicSize.Min` + `fillMaxHeight`). Each stop is a `TripStopCard`: 52dp `StopIcon` (location pin, `AtlasPrimary` on `AtlasAccentContainer`), title + VOL badge (for ITINERARY_GROUP only), `Country · date · lat,lng` meta, ⋮ overflow (edit/delete). Excursions appear inline below their anchor stop as `ExcursionTimelineCard`: EXCURSIÓ header row + individual `ExcursionStopCard`s matching main stop structure but with excursion purple icon (`ExcursionColor` #7C3AED on `ExcursionContainerColor` #F5F3FF). Reorder mode preserved with up/down arrows.
-    - Still needs: device QA, any remaining visual tweaks, then commit acceptance.
+    - **Timeline:** numbered circles (AtlasNavy, 30dp) + vertical connecting line. `TripStopCard`: location pin icon, title + VOL badge (ITINERARY_GROUP), `Country · date · lat,lng` meta, ⋮ overflow. Excursions inline as `ExcursionTimelineCard` with purple icon. Reorder mode preserved.
+    - New files: `AtlasPreferencesDataStore`, `TripMapPreferencesDataSource`, `TripMapPreferencesRepository` for map preference persistence.
 
 ### Next: v3.1 remaining screens
-- **TripDetail QA/commit** — finish device review of current uncommitted work, accept or iterate
-- **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, flag images via FlagCDN (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
+- **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, SVG flag images via FlagCDN + `coil-svg` (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
+- **TripDetail** ✅ — committed (see above)
 - **CountryDetail** — state-colored map hero, identity card, info spec-sheet, toggles, derivation timeline
 
 - **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent

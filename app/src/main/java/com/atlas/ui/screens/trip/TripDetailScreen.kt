@@ -1026,6 +1026,7 @@ private fun TripStopsTimeline(
                         ExcursionTimelineCard(
                             excursion = excursion,
                             countries = countries,
+                            parentStopLabel = stop.displayTitle ?: stop.locationName,
                             isReorderMode = isReorderMode,
                             canMoveUp = excursionIndex > 0,
                             canMoveDown = excursionIndex < excursions.lastIndex,
@@ -1054,6 +1055,7 @@ private fun TripStopsTimeline(
                     modifier = Modifier.weight(1f),
                     excursion = excursion,
                     countries = countries,
+                    parentStopLabel = null,
                     isReorderMode = isReorderMode,
                     canMoveUp = excursionIndex > 0,
                     canMoveDown = excursionIndex < excursions.lastIndex,
@@ -1143,11 +1145,9 @@ private fun TripStopCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    TypeBadge(
-                        label = when { isItinerary -> "ITINERARI"; hasCoords -> "MAPA"; else -> "MANUAL" },
-                        color = if (isItinerary || hasCoords) AtlasPrimary else AtlasPlanned,
-                        background = if (isItinerary || hasCoords) AtlasAccentContainer else AtlasPlannedContainer,
-                    )
+                    if (isItinerary) {
+                        TypeBadge(label = "VOL", color = AtlasPrimary, background = AtlasAccentContainer)
+                    }
                 }
                 Text(
                     text = buildStopMetaLine(stop, countryName),
@@ -1219,6 +1219,7 @@ private fun TypeBadge(label: String, color: Color, background: Color) {
 private fun ExcursionTimelineCard(
     excursion: Excursion,
     countries: List<Country>,
+    parentStopLabel: String?,
     isReorderMode: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -1280,6 +1281,7 @@ private fun ExcursionTimelineCard(
             ExcursionStopCard(
                 stop = stop,
                 countryName = countryName,
+                parentStopLabel = parentStopLabel,
                 isReorderMode = isReorderMode,
                 canMoveUp = i > 0,
                 canMoveDown = i < sortedStops.lastIndex,
@@ -1302,6 +1304,7 @@ private fun ExcursionTimelineCard(
 private fun ExcursionStopCard(
     stop: ExcursionStop,
     countryName: String,
+    parentStopLabel: String?,
     isReorderMode: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -1310,29 +1313,27 @@ private fun ExcursionStopCard(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
 ) {
-    val hasCoords = stop.latitude != null && stop.longitude != null
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = ExcursionContainerColor,
-        border = BorderStroke(1.dp, ExcursionColor.copy(alpha = 0.25f)),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
     ) {
         Row(
             modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Photo placeholder (excursion-tinted)
+            // Photo placeholder (same as main stop)
             Box(
                 modifier = Modifier
                     .size(52.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(ExcursionColor.copy(alpha = 0.08f))
-                    .border(1.dp, ExcursionColor.copy(alpha = 0.22f), RoundedCornerShape(10.dp)),
+                    .background(AtlasSurfaceSubtle)
+                    .border(1.dp, AtlasOutline, RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.CameraAlt, null, tint = ExcursionColor.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
+                Icon(Icons.Filled.CameraAlt, null, tint = AtlasOutline, modifier = Modifier.size(20.dp))
             }
 
             // Content
@@ -1347,19 +1348,23 @@ private fun ExcursionStopCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    // Type badge in excursion color
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(100.dp))
-                            .background(ExcursionColor.copy(alpha = 0.12f))
-                            .padding(horizontal = 8.dp, vertical = 2.dp),
-                    ) {
-                        Text(
-                            text = if (hasCoords) "MAPA" else "MANUAL",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = ExcursionColor,
-                        )
+                    // Parent stop badge instead of type badge
+                    if (parentStopLabel != null) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(100.dp))
+                                .background(AtlasBackground)
+                                .border(1.dp, AtlasOutline, RoundedCornerShape(100.dp))
+                                .padding(horizontal = 8.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = parentStopLabel.split(",").firstOrNull()?.trim() ?: parentStopLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = AtlasOnSurfaceMuted,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
                 Text(

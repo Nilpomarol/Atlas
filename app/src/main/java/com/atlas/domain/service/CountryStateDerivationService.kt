@@ -10,6 +10,7 @@ import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.util.utcAwareDepartureSortKey
 
 class CountryStateDerivationService {
     fun derive(
@@ -136,7 +137,7 @@ class CountryStateDerivationService {
     ): Flight? {
         val sortedFlights = flights.sortedWith(
             compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-                .thenBy { it.scheduledDepartureAt ?: "" },
+                .thenBy { it.utcAwareDepartureSortKey() ?: "" },
         )
         return if (isOnlyGroup || !isLastGroup) {
             sortedFlights.lastOrNull()

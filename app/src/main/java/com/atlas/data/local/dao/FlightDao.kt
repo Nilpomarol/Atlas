@@ -9,10 +9,38 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FlightDao {
-    @Query("SELECT * FROM flights ORDER BY scheduled_departure_at DESC, created_at DESC")
+    @Query(
+        """
+        SELECT * FROM flights
+        ORDER BY COALESCE(
+            actual_departure_utc,
+            scheduled_departure_utc,
+            actual_departure_at,
+            scheduled_departure_at,
+            actual_arrival_utc,
+            scheduled_arrival_utc,
+            actual_arrival_at,
+            scheduled_arrival_at
+        ) DESC, created_at DESC
+        """,
+    )
     fun observeAll(): Flow<List<FlightEntity>>
 
-    @Query("SELECT * FROM flights ORDER BY scheduled_departure_at ASC, created_at ASC")
+    @Query(
+        """
+        SELECT * FROM flights
+        ORDER BY COALESCE(
+            actual_departure_utc,
+            scheduled_departure_utc,
+            actual_departure_at,
+            scheduled_departure_at,
+            actual_arrival_utc,
+            scheduled_arrival_utc,
+            actual_arrival_at,
+            scheduled_arrival_at
+        ) ASC, created_at ASC
+        """,
+    )
     suspend fun getAll(): List<FlightEntity>
 
     @Query("DELETE FROM flights")

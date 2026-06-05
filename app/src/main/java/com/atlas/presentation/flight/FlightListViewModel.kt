@@ -23,15 +23,21 @@ import com.atlas.domain.usecase.flight.DeleteFlightUseCase
 import com.atlas.domain.usecase.flight.LookupFlightUseCase
 import com.atlas.domain.usecase.flight.UpdateFlightUseCase
 import com.atlas.domain.usecase.itinerary.CreateItineraryUseCase
-import com.atlas.domain.usecase.itinerary.DeleteItineraryUseCase
-import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
+import com.atlas.domain.util.groupDurationMinutes
+import com.atlas.domain.util.utcAwareArrivalDelayMinutes
+import com.atlas.domain.util.utcAwareDepartureSortKey
+import com.atlas.domain.util.utcAwareDepartureDelayMinutes
+import com.atlas.domain.util.utcAwareLayoverDurationMinutesTo
+import com.atlas.domain.util.utcAwareSortKey
 import com.atlas.domain.util.inferFlightStatus
-import com.atlas.presentation.itinerary.ItineraryEditorDraft
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
@@ -40,8 +46,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Duration
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 class FlightListViewModel(
@@ -58,12 +62,12 @@ class FlightListViewModel(
     private val lookupFlightUseCase: LookupFlightUseCase,
     private val lookupAircraftUseCase: LookupAircraftUseCase,
     private val createItineraryUseCase: CreateItineraryUseCase,
-    private val updateItineraryUseCase: UpdateItineraryUseCase,
-    private val deleteItineraryUseCase: DeleteItineraryUseCase,
 ) : ViewModel() {
 
+    private val _navigationEvents = MutableSharedFlow<String>()
+    val navigationEvents: SharedFlow<String> = _navigationEvents.asSharedFlow()
+
     private val draft = MutableStateFlow(FlightEditorDraftUiState())
-    private val itineraryDraft = MutableStateFlow(ItineraryEditorDraft())
     private val originQuery = MutableStateFlow("")
     private val destinationQuery = MutableStateFlow("")
     private val airlineQuery = MutableStateFlow("")
@@ -131,13 +135,11 @@ class FlightListViewModel(
         flightItems,
         itineraryItems,
         draft,
-        itineraryDraft,
-    ) { flightItems, itineraryItems, draft, itineraryDraft ->
+    ) { flightItems, itineraryItems, draft ->
         FlightListUiState(
             flightItems = flightItems,
             itineraryItems = itineraryItems,
             draft = draft,
-            itineraryDraft = itineraryDraft,
         )
     }
 
@@ -242,6 +244,9 @@ class FlightListViewModel(
     fun onAircraftRegistrationChanged(value: String) { draft.update { it.copy(aircraftRegistration = value) } }
     fun onNotesChanged(value: String) { draft.update { it.copy(notes = value) } }
 
+    fun onManualEntryClick() { draft.update { it.copy(showForm = true) } }
+    fun onBackToSearch() { draft.update { it.copy(showForm = false, apiSearchState = FlightApiSearchState.Idle) } }
+
     // ── API search ───────────────────────────────────────────────────────────
 
     fun onApiFlightNumberChanged(value: String) {
@@ -298,6 +303,7 @@ class FlightListViewModel(
                     externalProvider = "aerodatabox",
                     externalId = "${prefill.flightNumber}/${current.apiSearchDate}",
                     apiSearchState = FlightApiSearchState.Idle,
+                    showForm = true,
                 )
             }
             airlineQuery.value = ""
@@ -373,61 +379,10 @@ class FlightListViewModel(
     }
 
     fun onCreateItineraryClick() {
-        itineraryDraft.update { ItineraryEditorDraft(isOpen = true) }
-    }
-
-    fun onEditItineraryClick(itinerary: Itinerary) {
-        itineraryDraft.update {
-            ItineraryEditorDraft(
-                isOpen = true,
-                itineraryId = itinerary.id,
-                title = itinerary.title,
-                notes = itinerary.notes ?: "",
-            )
-        }
-    }
-
-    fun onDismissItineraryDraft() {
-        itineraryDraft.update { ItineraryEditorDraft() }
-    }
-
-    fun onItineraryTitleChanged(title: String) {
-        itineraryDraft.update { it.copy(title = title, validationError = null) }
-    }
-
-    fun onItineraryNotesChanged(notes: String) {
-        itineraryDraft.update { it.copy(notes = notes) }
-    }
-
-    fun onSaveItineraryDraft() {
-        val d = itineraryDraft.value
-        val title = d.title.trim()
-        if (title.isBlank()) {
-            itineraryDraft.update { it.copy(validationError = "El títol és obligatori.") }
-            return
-        }
         viewModelScope.launch {
-            if (d.itineraryId == null) {
-                createItineraryUseCase(title = title, notes = d.notes.trim().ifBlank { null })
-            } else {
-                val existingItinerary = uiState.value.itineraryItems
-                    .firstOrNull { it.itinerary.id == d.itineraryId }
-                    ?.itinerary
-                updateItineraryUseCase(
-                    Itinerary(
-                        id = d.itineraryId,
-                        title = title,
-                        tripId = existingItinerary?.tripId,
-                        notes = d.notes.trim().ifBlank { null },
-                    ),
-                )
-            }
-            onDismissItineraryDraft()
+            val newId = createItineraryUseCase(title = "", notes = null)
+            _navigationEvents.emit(newId)
         }
-    }
-
-    fun onDeleteItinerary(itinerary: Itinerary) {
-        viewModelScope.launch { deleteItineraryUseCase(itinerary) }
     }
 
     private suspend fun buildItineraryGroupRoutes(groups: List<ItineraryGroup>): List<ItineraryGroupRouteUiState> =
@@ -448,10 +403,14 @@ class FlightListViewModel(
                     originCity = originAirport?.city,
                     destinationCode = destinationAirport?.shortLabel() ?: lastFlight.destinationAirportId.uppercase(),
                     destinationCity = destinationAirport?.city,
-                    departureAt = firstFlight.actualDepartureAt ?: firstFlight.scheduledDepartureAt,
-                    arrivalAt = lastFlight.actualArrivalAt ?: lastFlight.scheduledArrivalAt,
+                    scheduledDepartureAt = firstFlight.scheduledDepartureAt,
+                    actualDepartureAt = firstFlight.actualDepartureAt,
+                    scheduledArrivalAt = lastFlight.scheduledArrivalAt,
+                    actualArrivalAt = lastFlight.actualArrivalAt,
+                    departureDelayMinutes = firstFlight.utcAwareDepartureDelayMinutes(),
+                    arrivalDelayMinutes = lastFlight.utcAwareArrivalDelayMinutes(),
+                    groupDurationMinutes = groupDurationMinutes(firstFlight, lastFlight),
                     layoverCities = layoverAirports.map { it.city }.distinct(),
-                    layoverDurationMinutes = sortedFlights.layoverDurationMinutes(),
                 )
             }
 
@@ -486,7 +445,7 @@ class FlightListViewModel(
             .mapNotNull { group ->
                 val sortedFlights = group.flights.sortedWith(
                     compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-                        .thenBy { it.scheduledDepartureAt ?: "" },
+                        .thenBy { it.utcAwareDepartureSortKey() ?: "" },
                 )
                 val firstFlight = sortedFlights.firstOrNull()
                 val lastFlight = sortedFlights.lastOrNull()
@@ -517,8 +476,6 @@ class FlightListViewModel(
         private val lookupFlightUseCase: LookupFlightUseCase,
         private val lookupAircraftUseCase: LookupAircraftUseCase,
         private val createItineraryUseCase: CreateItineraryUseCase,
-        private val updateItineraryUseCase: UpdateItineraryUseCase,
-        private val deleteItineraryUseCase: DeleteItineraryUseCase,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T = FlightListViewModel(
@@ -535,8 +492,6 @@ class FlightListViewModel(
             lookupFlightUseCase = lookupFlightUseCase,
             lookupAircraftUseCase = lookupAircraftUseCase,
             createItineraryUseCase = createItineraryUseCase,
-            updateItineraryUseCase = updateItineraryUseCase,
-            deleteItineraryUseCase = deleteItineraryUseCase,
         ) as T
     }
 }
@@ -545,7 +500,6 @@ data class FlightListUiState(
     val flightItems: List<FlightListItemUiState> = emptyList(),
     val itineraryItems: List<ItinerarySummaryUiState> = emptyList(),
     val draft: FlightEditorDraftUiState = FlightEditorDraftUiState(),
-    val itineraryDraft: ItineraryEditorDraft = ItineraryEditorDraft(),
     val originSearchResults: List<Airport> = emptyList(),
     val destinationSearchResults: List<Airport> = emptyList(),
     val airlineSearchResults: List<Airline> = emptyList(),
@@ -577,10 +531,14 @@ data class ItineraryGroupRouteUiState(
     val originCity: String? = null,
     val destinationCode: String,
     val destinationCity: String? = null,
-    val departureAt: String? = null,
-    val arrivalAt: String? = null,
+    val scheduledDepartureAt: String? = null,
+    val actualDepartureAt: String? = null,
+    val scheduledArrivalAt: String? = null,
+    val actualArrivalAt: String? = null,
+    val departureDelayMinutes: Long? = null,
+    val arrivalDelayMinutes: Long? = null,
+    val groupDurationMinutes: Long? = null,
     val layoverCities: List<String> = emptyList(),
-    val layoverDurationMinutes: Long? = null,
 )
 
 data class FlightEditorDraftUiState(
@@ -618,6 +576,8 @@ data class FlightEditorDraftUiState(
     val apiFlightNumber: String = "",
     val apiSearchDate: String = "",
     val apiSearchState: FlightApiSearchState = FlightApiSearchState.Idle,
+    // Two-step modal: false = search step (new flights only), true = form step
+    val showForm: Boolean = false,
 ) {
     companion object {
         fun fromFlight(
@@ -650,6 +610,7 @@ data class FlightEditorDraftUiState(
             externalId = flight.externalId,
             destinationCountsForCountryTracking = flight.destinationCountsForCountryTracking,
             originCountsForCountryTracking = flight.originCountsForCountryTracking,
+            showForm = true,
         )
     }
 }
@@ -662,24 +623,13 @@ fun Airport.displayLabel(): String {
 private fun Airport.shortLabel(): String = iata ?: icao ?: city
 
 private fun Flight.sortKey(): String? =
-    actualDepartureAt ?: scheduledDepartureAt ?: actualArrivalAt ?: scheduledArrivalAt
+    utcAwareSortKey()
 
 private fun ItineraryGroup.sortedFlights(): List<Flight> =
     flights.sortedWith(
         compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-            .thenBy { it.scheduledDepartureAt ?: "" },
+            .thenBy { it.utcAwareDepartureSortKey() ?: "" },
     )
-
-private fun List<Flight>.layoverDurationMinutes(): Long? {
-    val durations = zipWithNext().mapNotNull { (previous, next) ->
-        val arrival = previous.actualArrivalAt ?: previous.scheduledArrivalAt ?: return@mapNotNull null
-        val departure = next.actualDepartureAt ?: next.scheduledDepartureAt ?: return@mapNotNull null
-        val arrivalTime = runCatching { LocalDateTime.parse(arrival) }.getOrNull() ?: return@mapNotNull null
-        val departureTime = runCatching { LocalDateTime.parse(departure) }.getOrNull() ?: return@mapNotNull null
-        Duration.between(arrivalTime, departureTime).toMinutes().takeIf { it >= 0 }
-    }
-    return durations.takeIf { it.isNotEmpty() }?.sum()
-}
 
 private fun List<ItineraryGroup>.displayStatus(): TravelStatus {
     val statuses = flatMap { group ->

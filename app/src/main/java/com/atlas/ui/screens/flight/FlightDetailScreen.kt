@@ -57,6 +57,9 @@ import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.domain.util.dayOffsetBetween
+import com.atlas.domain.util.utcAwareDelayMinutes
+import com.atlas.domain.util.utcAwareDurationMinutes
 import com.atlas.presentation.flight.FlightDetailUiState
 import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
@@ -233,6 +236,13 @@ fun FlightDetailScreen(
             onAircraftChanged = onAircraftChanged,
             onAircraftRegistrationChanged = onAircraftRegistrationChanged,
             onNotesChanged = onNotesChanged,
+            // Edit always starts in form step; search callbacks are never triggered
+            onApiFlightNumberChanged = {},
+            onApiSearchDateChanged = {},
+            onSearchByFlightNumber = {},
+            onApplyApiResult = {},
+            onManualEntryClick = {},
+            onBackToSearch = {},
             onSave = onSaveDraft,
         )
     }
@@ -304,6 +314,10 @@ private fun FlightIdentityCard(
     val destCode = destinationAirport?.iata ?: destinationAirport?.icao ?: flight.destinationAirportId.uppercase()
     val originCity = originAirport?.city
     val destCity = destinationAirport?.city
+    val arrivalDayOffset = dayOffsetBetween(
+        departureDatetime = flight.actualDepartureAt ?: flight.scheduledDepartureAt,
+        arrivalDatetime = flight.actualArrivalAt ?: flight.scheduledArrivalAt,
+    )
 
     AtlasCard {
         Column(verticalArrangement = Arrangement.spacedBy(17.dp)) {
@@ -358,6 +372,7 @@ private fun FlightIdentityCard(
                     city = destCity,
                     primaryTime = flight.actualArrivalAt?.timePart() ?: flight.scheduledArrivalAt?.timePart(),
                     secondaryTime = flight.actualArrivalAt?.let { flight.scheduledArrivalAt?.timePart() },
+                    dayOffset = arrivalDayOffset,
                     modifier = Modifier.weight(1f),
                     alignEnd = true,
                 )
@@ -603,6 +618,7 @@ private fun DetailAirportEndpoint(
     city: String?,
     primaryTime: String?,
     secondaryTime: String?,
+    dayOffset: Int? = null,
     modifier: Modifier = Modifier,
     alignEnd: Boolean = false,
 ) {
@@ -629,14 +645,28 @@ private fun DetailAirportEndpoint(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        primaryTime?.let {
-            Text(
-                text = it,
+        primaryTime?.let { time ->
+            Row(
                 modifier = Modifier.padding(top = 4.dp),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+            ) {
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AtlasOnSurfaceStrong,
+                )
+                dayOffset?.let {
+                    Text(
+                        text = if (it > 0) "+$it" else "$it",
+                        modifier = Modifier.padding(top = 1.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
         }
         secondaryTime?.let {
             Text(
@@ -1131,14 +1161,11 @@ private fun formatDistanceKm(value: Double): String =
     "%,d km".format(value.roundToInt()).replace(",", ".")
 
 private fun Flight.durationMinutes(): Long? {
-    val departure = actualDepartureAt ?: scheduledDepartureAt
-    val arrival = actualArrivalAt ?: scheduledArrivalAt
-    return minutesBetween(departure, arrival)
+    return utcAwareDurationMinutes()
 }
 
 private fun Flight.delayMinutes(): Long? =
-    minutesBetween(scheduledArrivalAt, actualArrivalAt)
-        ?: minutesBetween(scheduledDepartureAt, actualDepartureAt)
+    utcAwareDelayMinutes()
 
 private fun String?.delayAgainst(scheduled: String?): Long? =
     minutesBetween(scheduled, this)
@@ -1160,12 +1187,21 @@ private fun Long.toDurationText(): String {
     }
 }
 
-private fun Long.toDelayText(): String =
-    when {
-        this > 0 -> "+${this} min"
-        this < 0 -> "${this} min"
-        else -> "0 min"
+private fun Long.toDelayText(): String {
+    val abs = kotlin.math.abs(this)
+    val hours = abs / 60
+    val minutes = abs % 60
+    val body = when {
+        hours > 0 && minutes > 0 -> "${hours}h ${minutes}min"
+        hours > 0 -> "${hours}h"
+        else -> "${minutes}min"
     }
+    return when {
+        this > 0 -> "+$body"
+        this < 0 -> "-$body"
+        else -> "0min"
+    }
+}
 
 private fun Long?.delayColor(): Color =
     when {

@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -30,8 +31,8 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -60,7 +61,6 @@ import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.screens.trip.toCatalanLabel
 import com.atlas.ui.theme.AtlasAccent
 import com.atlas.ui.theme.AtlasAccentContainer
-import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -71,14 +71,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-/** Callbacks for the API flight search section. Pass null to hide the section entirely. */
-data class FlightApiSearchCallbacks(
-    val onApiFlightNumberChanged: (String) -> Unit,
-    val onApiSearchDateChanged: (String) -> Unit,
-    val onSearchByFlightNumber: () -> Unit,
-    val onApplyApiResult: () -> Unit,
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FlightEditorDialog(
     draft: FlightEditorDraftUiState,
@@ -101,155 +94,93 @@ fun FlightEditorDialog(
     onAircraftChanged: (String) -> Unit,
     onAircraftRegistrationChanged: (String) -> Unit,
     onNotesChanged: (String) -> Unit,
-    /** Null = hide the API search section (e.g. when opened from itinerary detail) */
-    apiSearchCallbacks: FlightApiSearchCallbacks? = null,
+    onApiFlightNumberChanged: (String) -> Unit,
+    onApiSearchDateChanged: (String) -> Unit,
+    onSearchByFlightNumber: () -> Unit,
+    onApplyApiResult: () -> Unit,
+    onManualEntryClick: () -> Unit,
+    onBackToSearch: () -> Unit,
     onSave: () -> Unit,
 ) {
+    val showSearchStep = draft.flightId == null && !draft.showForm
+
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(20.dp),
         containerColor = AtlasSurface,
         title = {
-            Text(
-                text = if (draft.flightId == null) "Nou vol" else "Edita vol",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                // ── API search section (new flights only) ──────────────────────
-                if (apiSearchCallbacks != null && draft.flightId == null) {
-                    ApiSearchSection(
-                        flightNumber = draft.apiFlightNumber,
-                        searchDate = draft.apiSearchDate,
-                        searchState = draft.apiSearchState,
-                        callbacks = apiSearchCallbacks,
-                    )
-                    HorizontalDivider(color = AtlasOutline)
-                }
-
-                // ── Manual / pre-filled fields ─────────────────────────────────
-                AirportSearchField(
-                    label = "Origen",
-                    query = draft.originQuery,
-                    results = originResults,
-                    onQueryChanged = onOriginQueryChanged,
-                    onAirportSelected = onOriginSelected,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                AirportSearchField(
-                    label = "Destí",
-                    query = draft.destinationQuery,
-                    results = destinationResults,
-                    onQueryChanged = onDestinationQueryChanged,
-                    onAirportSelected = onDestinationSelected,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
+            if (showSearchStep) {
                 Text(
-                    text = "Estat",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = AtlasOnSurfaceMuted,
+                    text = "Cerca un vol",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = AtlasOnSurfaceStrong,
                 )
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(TravelStatus.entries) { status ->
-                        val colors = status.tripStatusColors()
-                        FilterChip(
-                            selected = draft.status == status,
-                            onClick = { onStatusChanged(status) },
-                            label = { Text(status.toCatalanLabel()) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = colors.container,
-                                selectedLabelColor = colors.foreground,
-                            ),
-                        )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (draft.flightId == null) {
+                        IconButton(
+                            onClick = onBackToSearch,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Enrere",
+                                tint = AtlasOnSurfaceMuted,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Spacer(Modifier.width(8.dp))
                     }
-                }
-
-                DateTimePickerField(
-                    label = "Sortida programada",
-                    value = draft.scheduledDepartureAt,
-                    onValueChanged = onScheduledDepartureAtChanged,
-                )
-
-                DateTimePickerField(
-                    label = "Arribada programada",
-                    value = draft.scheduledArrivalAt,
-                    onValueChanged = onScheduledArrivalAtChanged,
-                    prefillValue = draft.scheduledDepartureAt.takeIf { it.length >= 10 }?.take(10),
-                )
-
-                DateTimePickerField(
-                    label = "Sortida real",
-                    value = draft.actualDepartureAt,
-                    onValueChanged = onActualDepartureAtChanged,
-                    prefillValue = draft.scheduledDepartureAt.takeIf { it.isNotBlank() },
-                )
-
-                DateTimePickerField(
-                    label = "Arribada real",
-                    value = draft.actualArrivalAt,
-                    onValueChanged = onActualArrivalAtChanged,
-                    prefillValue = draft.scheduledArrivalAt.takeIf { it.isNotBlank() },
-                )
-
-                AirlineSearchField(
-                    query = draft.airlineQuery,
-                    results = airlineResults,
-                    onQueryChanged = onAirlineQueryChanged,
-                    onAirlineSelected = onAirlineSelected,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                OutlinedTextField(
-                    value = draft.flightNumber,
-                    onValueChange = onFlightNumberChanged,
-                    label = { Text("Número de vol (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
-                OutlinedTextField(
-                    value = draft.aircraft,
-                    onValueChange = onAircraftChanged,
-                    label = { Text("Aeronau (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
-                OutlinedTextField(
-                    value = draft.aircraftRegistration,
-                    onValueChange = onAircraftRegistrationChanged,
-                    label = { Text("Matrícula (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
-                OutlinedTextField(
-                    value = draft.notes,
-                    onValueChange = onNotesChanged,
-                    label = { Text("Notes (opcional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                )
-
-                if (draft.validationError != null) {
                     Text(
-                        text = draft.validationError,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        text = if (draft.flightId == null) "Nou vol" else "Edita vol",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AtlasOnSurfaceStrong,
                     )
                 }
             }
         },
+        text = {
+            if (showSearchStep) {
+                SearchStepContent(
+                    flightNumber = draft.apiFlightNumber,
+                    searchDate = draft.apiSearchDate,
+                    searchState = draft.apiSearchState,
+                    onApiFlightNumberChanged = onApiFlightNumberChanged,
+                    onApiSearchDateChanged = onApiSearchDateChanged,
+                    onSearchByFlightNumber = onSearchByFlightNumber,
+                    onApplyApiResult = onApplyApiResult,
+                    onManualEntryClick = onManualEntryClick,
+                )
+            } else {
+                FormStepContent(
+                    draft = draft,
+                    originResults = originResults,
+                    destinationResults = destinationResults,
+                    airlineResults = airlineResults,
+                    onOriginQueryChanged = onOriginQueryChanged,
+                    onOriginSelected = onOriginSelected,
+                    onDestinationQueryChanged = onDestinationQueryChanged,
+                    onDestinationSelected = onDestinationSelected,
+                    onStatusChanged = onStatusChanged,
+                    onScheduledDepartureAtChanged = onScheduledDepartureAtChanged,
+                    onScheduledArrivalAtChanged = onScheduledArrivalAtChanged,
+                    onActualDepartureAtChanged = onActualDepartureAtChanged,
+                    onActualArrivalAtChanged = onActualArrivalAtChanged,
+                    onAirlineQueryChanged = onAirlineQueryChanged,
+                    onAirlineSelected = onAirlineSelected,
+                    onFlightNumberChanged = onFlightNumberChanged,
+                    onAircraftChanged = onAircraftChanged,
+                    onAircraftRegistrationChanged = onAircraftRegistrationChanged,
+                    onNotesChanged = onNotesChanged,
+                )
+            }
+        },
         confirmButton = {
-            TextButton(onClick = onSave) { Text("Desa") }
+            if (!showSearchStep) {
+                TextButton(onClick = onSave) { Text("Desa") }
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel·la") }
@@ -258,47 +189,32 @@ fun FlightEditorDialog(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// API search section
+// Step 1 — Search
 // ─────────────────────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ApiSearchSection(
+private fun SearchStepContent(
     flightNumber: String,
     searchDate: String,
     searchState: FlightApiSearchState,
-    callbacks: FlightApiSearchCallbacks,
+    onApiFlightNumberChanged: (String) -> Unit,
+    onApiSearchDateChanged: (String) -> Unit,
+    onSearchByFlightNumber: () -> Unit,
+    onApplyApiResult: () -> Unit,
+    onManualEntryClick: () -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.FlightTakeoff,
-                contentDescription = null,
-                tint = AtlasPrimary,
-                modifier = Modifier.size(14.dp),
-            )
-            Text(
-                text = "Cerca per número de vol",
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceMuted,
-                letterSpacing = 0.10.sp,
-            )
-        }
-
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
                 value = flightNumber,
-                onValueChange = callbacks.onApiFlightNumberChanged,
+                onValueChange = onApiFlightNumberChanged,
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 label = { Text("Vol (p.ex. LH401)", fontSize = 11.sp) },
@@ -309,7 +225,7 @@ private fun ApiSearchSection(
                 onClick = { showDatePicker = true },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (searchDate.isBlank()) AtlasOnSurfaceMuted else AtlasAccent,
+                    contentColor = if (searchDate.isBlank()) AtlasOnSurfaceMuted else AtlasPrimary,
                 ),
                 modifier = Modifier.height(56.dp),
             ) {
@@ -322,7 +238,7 @@ private fun ApiSearchSection(
         }
 
         Button(
-            onClick = callbacks.onSearchByFlightNumber,
+            onClick = onSearchByFlightNumber,
             enabled = flightNumber.isNotBlank() && searchDate.isNotBlank() &&
                 searchState !is FlightApiSearchState.Searching,
             shape = RoundedCornerShape(12.dp),
@@ -336,7 +252,6 @@ private fun ApiSearchSection(
             Text("Cerca vol", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
         }
 
-        // State-driven feedback
         when (searchState) {
             is FlightApiSearchState.Searching -> {
                 Row(
@@ -348,21 +263,34 @@ private fun ApiSearchSection(
                 }
             }
             is FlightApiSearchState.Found -> {
-                ApiResultCard(prefillSummary = searchState.prefill.toDisplayString(), onApply = callbacks.onApplyApiResult)
+                ApiResultCard(prefillSummary = searchState.prefill.toDisplayString(), onApply = onApplyApiResult)
             }
             is FlightApiSearchState.NotFound -> {
-                ApiMessageText("No s'ha trobat el vol.", isError = false)
+                SearchMessageText("No s'ha trobat el vol.", isError = false)
             }
             is FlightApiSearchState.NoApiKey -> {
-                ApiMessageText("Configura una clau API a Configuració per cercar vols.", isError = false)
+                SearchMessageText("Configura una clau API a Configuració per cercar vols.", isError = false)
             }
             is FlightApiSearchState.RateLimited -> {
-                ApiMessageText("Has assolit el límit de l'API. Prova demà o introdueix manualment.", isError = false)
+                SearchMessageText("Has assolit el límit de l'API. Prova demà o introdueix manualment.", isError = false)
             }
             is FlightApiSearchState.Error -> {
-                ApiMessageText(searchState.message, isError = true)
+                SearchMessageText(searchState.message, isError = true)
             }
             FlightApiSearchState.Idle -> Unit
+        }
+
+        TextButton(
+            onClick = onManualEntryClick,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(vertical = 4.dp),
+        ) {
+            Text(
+                text = "Entrada manual",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = AtlasOnSurfaceMuted,
+            )
         }
     }
 
@@ -376,7 +304,7 @@ private fun ApiSearchSection(
                     val millis = datePickerState.selectedDateMillis
                     if (millis != null) {
                         val date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-                        callbacks.onApiSearchDateChanged(
+                        onApiSearchDateChanged(
                             "%04d-%02d-%02d".format(date.year, date.monthValue, date.dayOfMonth),
                         )
                     }
@@ -435,13 +363,158 @@ private fun ApiResultCard(prefillSummary: String, onApply: () -> Unit) {
 }
 
 @Composable
-private fun ApiMessageText(message: String, isError: Boolean) {
+private fun SearchMessageText(message: String, isError: Boolean) {
     Text(
         text = message,
         style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.SemiBold,
         color = if (isError) AtlasError else AtlasOnSurfaceMuted,
     )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Step 2 — Form
+// ─────────────────────────────────────────────────────────────────────────────
+
+@Composable
+private fun FormStepContent(
+    draft: FlightEditorDraftUiState,
+    originResults: List<Airport>,
+    destinationResults: List<Airport>,
+    airlineResults: List<Airline>,
+    onOriginQueryChanged: (String) -> Unit,
+    onOriginSelected: (Airport) -> Unit,
+    onDestinationQueryChanged: (String) -> Unit,
+    onDestinationSelected: (Airport) -> Unit,
+    onStatusChanged: (TravelStatus) -> Unit,
+    onScheduledDepartureAtChanged: (String) -> Unit,
+    onScheduledArrivalAtChanged: (String) -> Unit,
+    onActualDepartureAtChanged: (String) -> Unit,
+    onActualArrivalAtChanged: (String) -> Unit,
+    onAirlineQueryChanged: (String) -> Unit,
+    onAirlineSelected: (Airline) -> Unit,
+    onFlightNumberChanged: (String) -> Unit,
+    onAircraftChanged: (String) -> Unit,
+    onAircraftRegistrationChanged: (String) -> Unit,
+    onNotesChanged: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        AirportSearchField(
+            label = "Origen",
+            query = draft.originQuery,
+            results = originResults,
+            onQueryChanged = onOriginQueryChanged,
+            onAirportSelected = onOriginSelected,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        AirportSearchField(
+            label = "Destí",
+            query = draft.destinationQuery,
+            results = destinationResults,
+            onQueryChanged = onDestinationQueryChanged,
+            onAirportSelected = onDestinationSelected,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(
+            text = "Estat",
+            style = MaterialTheme.typography.labelMedium,
+            color = AtlasOnSurfaceMuted,
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(TravelStatus.entries) { status ->
+                val colors = status.tripStatusColors()
+                FilterChip(
+                    selected = draft.status == status,
+                    onClick = { onStatusChanged(status) },
+                    label = { Text(status.toCatalanLabel()) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = colors.container,
+                        selectedLabelColor = colors.foreground,
+                    ),
+                )
+            }
+        }
+
+        DateTimePickerField(
+            label = "Sortida programada",
+            value = draft.scheduledDepartureAt,
+            onValueChanged = onScheduledDepartureAtChanged,
+        )
+
+        DateTimePickerField(
+            label = "Arribada programada",
+            value = draft.scheduledArrivalAt,
+            onValueChanged = onScheduledArrivalAtChanged,
+            prefillValue = draft.scheduledDepartureAt.takeIf { it.length >= 10 }?.take(10),
+        )
+
+        DateTimePickerField(
+            label = "Sortida real",
+            value = draft.actualDepartureAt,
+            onValueChanged = onActualDepartureAtChanged,
+            prefillValue = draft.scheduledDepartureAt.takeIf { it.isNotBlank() },
+        )
+
+        DateTimePickerField(
+            label = "Arribada real",
+            value = draft.actualArrivalAt,
+            onValueChanged = onActualArrivalAtChanged,
+            prefillValue = draft.scheduledArrivalAt.takeIf { it.isNotBlank() },
+        )
+
+        AirlineSearchField(
+            query = draft.airlineQuery,
+            results = airlineResults,
+            onQueryChanged = onAirlineQueryChanged,
+            onAirlineSelected = onAirlineSelected,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        OutlinedTextField(
+            value = draft.flightNumber,
+            onValueChange = onFlightNumberChanged,
+            label = { Text("Número de vol (opcional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        OutlinedTextField(
+            value = draft.aircraft,
+            onValueChange = onAircraftChanged,
+            label = { Text("Aeronau (opcional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        OutlinedTextField(
+            value = draft.aircraftRegistration,
+            onValueChange = onAircraftRegistrationChanged,
+            label = { Text("Matrícula (opcional)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+        )
+
+        OutlinedTextField(
+            value = draft.notes,
+            onValueChange = onNotesChanged,
+            label = { Text("Notes (opcional)") },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 2,
+        )
+
+        if (draft.validationError != null) {
+            Text(
+                text = draft.validationError,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

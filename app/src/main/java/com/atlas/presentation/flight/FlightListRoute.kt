@@ -1,6 +1,7 @@
 package com.atlas.presentation.flight
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,11 +30,13 @@ fun FlightListRoute(
             lookupFlightUseCase = app.container.lookupFlightUseCase,
             lookupAircraftUseCase = app.container.lookupAircraftUseCase,
             createItineraryUseCase = app.container.createItineraryUseCase,
-            updateItineraryUseCase = app.container.updateItineraryUseCase,
-            deleteItineraryUseCase = app.container.deleteItineraryUseCase,
         ),
     )
     val uiState by vm.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(vm) {
+        vm.navigationEvents.collect { itineraryId -> onItineraryClick(itineraryId) }
+    }
 
     FlightListScreen(
         uiState = uiState,
@@ -43,10 +46,7 @@ fun FlightListRoute(
         onCreateItineraryClick = vm::onCreateItineraryClick,
         onEditFlightClick = vm::onEditFlightClick,
         onDeleteFlightClick = vm::onDeleteFlight,
-        onEditItineraryClick = vm::onEditItineraryClick,
-        onDeleteItineraryClick = vm::onDeleteItinerary,
         onDismissDraft = vm::onDismissDraft,
-        onDismissItineraryDraft = vm::onDismissItineraryDraft,
         onOriginQueryChanged = vm::onOriginQueryChanged,
         onOriginSelected = vm::onOriginSelected,
         onDestinationQueryChanged = vm::onDestinationQueryChanged,
@@ -66,9 +66,8 @@ fun FlightListRoute(
         onApiSearchDateChanged = vm::onApiSearchDateChanged,
         onSearchByFlightNumber = vm::onSearchByFlightNumber,
         onApplyApiResult = vm::onApplyApiResult,
+        onManualEntryClick = vm::onManualEntryClick,
+        onBackToSearch = vm::onBackToSearch,
         onSaveDraft = vm::onSaveDraft,
-        onItineraryTitleChanged = vm::onItineraryTitleChanged,
-        onItineraryNotesChanged = vm::onItineraryNotesChanged,
-        onSaveItineraryDraft = vm::onSaveItineraryDraft,
     )
 }

@@ -163,6 +163,12 @@ data class TripListItemUiState(
     val stopCount: Int,
     val firstStopName: String?,
     val lastStopName: String?,
+    val mapPoints: List<TripStopMapPoint> = emptyList(),
+)
+
+data class TripStopMapPoint(
+    val latitude: Double,
+    val longitude: Double,
 )
 
 private fun Trip.toListItem(stops: List<TripStop>): TripListItemUiState {
@@ -172,5 +178,12 @@ private fun Trip.toListItem(stops: List<TripStop>): TripListItemUiState {
         stopCount = orderedStops.size,
         firstStopName = orderedStops.firstOrNull()?.locationName,
         lastStopName = orderedStops.lastOrNull()?.locationName,
+        mapPoints = orderedStops
+            .filter { it.isVisible }
+            .mapNotNull { stop ->
+                val latitude = stop.latitude ?: return@mapNotNull null
+                val longitude = stop.longitude ?: return@mapNotNull null
+                TripStopMapPoint(latitude = latitude, longitude = longitude)
+            },
     )
 }

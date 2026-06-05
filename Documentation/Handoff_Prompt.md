@@ -2,14 +2,14 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (Fraunces display font trial, FlightDetail Horari polish, Itinerary group-card header polish)
+* **Last updated:** 2026-06-05 (TripList redesign in progress/review; 110m polygon cards restored for performance)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
 * **Geo canvas extended (uncommitted):** `CountryMapHero` and dashboard world map now use `AtlasGeoCanvas` (offline Canvas renderer) instead of MapLibre / `AtlasDottedCanvas`. Country detail highlights the target country polygon in its state color. Dashboard world map colors all tracked countries by state. **Both maps still need visual polish** — the country hero viewport framing, highlight contrast, and marker sizing need tuning; the dashboard world map highlight alpha and overall composition need refinement before they look production-ready.
-* **Current phase:** v3.1 — Visual redesign (one screen at a time). FlightList, FlightDetail, and ItineraryDetail are complete. Modal layer simplified (see §Modal layer). Next: remaining v3.1 screens.
+* **Current phase:** v3.1 — Visual redesign (one screen at a time). FlightList, FlightDetail, and ItineraryDetail are complete. TripList redesign is implemented but still uncommitted and under visual/performance review. Modal layer simplified (see §Modal layer). Next: finish TripList QA, then TripDetail.
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -121,6 +121,7 @@
   * **Actual times** are color-coded by delay: `AtlasVisited` green (≤ 0 min), `AtlasDelay` amber (1–44 min), `AtlasError` red (≥ 45 min). Scheduled time shown below with strikethrough when actual exists.
   * **+N day offset** shown as a small muted label to the right of the arrival time when landing is on a later calendar day than departure (e.g. `02:15 +1`). Computed from the displayed datetime pair via `dayOffsetBetween()`.
 * **`ItinerarySummaryCard`** (flight list, per-group route rows) follows the same display rules: delay color on actual times, strikethrough on scheduled, +N day offset on arrival. Middle section shows **total group duration** (first departure → last arrival via `groupDurationMinutes()`); layover city names shown below the arrow as context.
+* **TripList redesign (uncommitted, in review):** `TripListScreen` now uses dense status filter pills, route-led trip cards, and an opaque footer. `TripListViewModel` exposes ordered visible stop coordinates via `TripStopMapPoint`; cards render coordinate-backed routes with `AtlasGeoCanvas` and fall back to a schematic graticule route when no coordinates exist. MapLibre was tested for list cards but caused scroll lag, so list cards use the offline polygon canvas. The 50m Natural Earth asset was tested and removed; `GeoAssetLoader` is back to the 110m asset for performance. Dates sit in a small top-left pill, state pill is top-right, title is dark ink near the footer. Current user feedback: keep checking visual balance/performance on device before committing.
 
 ### Modal layer
 
@@ -292,9 +293,10 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 
 8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces with moderated display weights; FlightDetail Horari rows show large display-font time, date as supporting text, crossed scheduled values when actual exists, and `+N` day offset on arrival.
 9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row; the large city route title now gets its own full-width row.
+10. 🚧 **TripList redesign** — implemented but not committed. Uses status filter pills, route-led trip cards, coordinate-backed offline `AtlasGeoCanvas` map heroes, schematic fallback for no-coordinate trips, top-left date pill, top-right state pill, dark title, and opaque footer. MapLibre list cards and 50m polygons were tried and backed out for performance; current build uses 110m polygons. Needs final device visual/performance acceptance before commit.
 
 ### Next: v3.1 remaining screens
-- **TripList** — status filter chips, route trip cards (similar style to flight list)
+- **TripList QA/commit** — finish device review of the current uncommitted redesign, then commit if accepted
 - **TripDetail** — map preview, linked itinerary panel, stops timeline, excursions inline
 - **CountryList** — search, state filters, continent groups, compact ticked rows
 - **CountryDetail** — state-colored map hero, identity card, info spec-sheet, toggles, derivation timeline

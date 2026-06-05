@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (TripDetail redesign in progress — stops timeline done, visual polish ongoing)
+* **Last updated:** 2026-06-05 (TripDetail redesign in progress — stops timeline done, visual polish ongoing; country visit history migrated from old app)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -309,6 +309,9 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 
 - **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent
 - **Settings** — backup, API key, dataset health panels
+
+### One-time data tooling
+* `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
 ### Beyond v3.1
 - **v3.2** Per-stop photos (trip stops + excursion stops)

@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (TripList redesign in progress/review; 110m polygon cards restored for performance)
+* **Last updated:** 2026-06-05 (TripDetail redesign complete and committed)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -293,11 +293,11 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 
 8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces with moderated display weights; FlightDetail Horari rows show large display-font time, date as supporting text, crossed scheduled values when actual exists, and `+N` day offset on arrival.
 9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row; the large city route title now gets its own full-width row.
-10. 🚧 **TripList redesign** — implemented but not committed. Uses status filter pills, route-led trip cards, coordinate-backed offline `AtlasGeoCanvas` map heroes, schematic fallback for no-coordinate trips, top-left date pill, top-right state pill, dark title, and opaque footer. MapLibre list cards and 50m polygons were tried and backed out for performance; current build uses 110m polygons. Needs final device visual/performance acceptance before commit.
+10. ✅ **TripList redesign** — status filter pills, coordinate-backed `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right, dark title, opaque footer. 110m polygons for scroll performance.
+11. ✅ **TripDetail redesign** — back + ⋮ top bar (edit/delete in overflow), full-width MapLibre hero 220dp, identity card (Fraunces title + status pill + dates + notes), DIES/PARADES stat strip, linked itinerary panel matching `LinkedTripPanel` from ItineraryDetail, stops/excursions section preserved.
 
 ### Next: v3.1 remaining screens
-- **TripList QA/commit** — finish device review of the current uncommitted redesign, then commit if accepted
-- **TripDetail** — map preview, linked itinerary panel, stops timeline, excursions inline
+- **CountryList** — search, state filters, continent groups, compact ticked rows
 - **CountryList** — search, state filters, continent groups, compact ticked rows
 - **CountryDetail** — state-colored map hero, identity card, info spec-sheet, toggles, derivation timeline
 - **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent

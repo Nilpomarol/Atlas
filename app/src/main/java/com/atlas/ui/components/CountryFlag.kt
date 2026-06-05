@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
+import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 
@@ -23,7 +24,8 @@ fun CountryFlag(
 ) {
     SubcomposeAsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
-            .data("https://flagcdn.com/w40/${iso2.lowercase()}.png")
+            .data("https://flagcdn.com/${iso2.lowercase()}.svg")
+            .decoderFactory(SvgDecoder.Factory())
             .crossfade(true)
             .build(),
         contentDescription = null,

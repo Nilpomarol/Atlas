@@ -1165,17 +1165,21 @@ private fun TripStopCard(
 }
 
 @Composable
-private fun StopIcon(modifier: Modifier = Modifier) {
+private fun StopIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = AtlasPrimary,
+    background: Color = AtlasAccentContainer,
+) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(10.dp))
-            .background(AtlasAccentContainer),
+            .background(background),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = Icons.Filled.Place,
             contentDescription = null,
-            tint = AtlasPrimary,
+            tint = tint,
             modifier = Modifier.size(26.dp),
         )
     }
@@ -1330,7 +1334,11 @@ private fun ExcursionStopCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            StopIcon(modifier = Modifier.size(52.dp))
+            StopIcon(
+                modifier = Modifier.size(52.dp),
+                tint = ExcursionColor,
+                background = ExcursionContainerColor,
+            )
 
             // Content
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

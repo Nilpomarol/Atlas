@@ -1,6 +1,7 @@
 package com.atlas.ui.screens.trip
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,7 +35,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
@@ -66,7 +66,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -1121,17 +1123,7 @@ private fun TripStopCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Photo placeholder
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(AtlasSurfaceSubtle)
-                    .border(1.dp, AtlasOutline, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.CameraAlt, null, tint = AtlasOutline, modifier = Modifier.size(20.dp))
-            }
+            StopPhotoPlaceholder(modifier = Modifier.size(52.dp))
 
             // Content
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -1171,6 +1163,41 @@ private fun TripStopCard(
             } else if (!isReorderMode && isManual) {
                 StopOverflowMenu(onEdit = { onEditStop(stop) }, onDelete = { onDeleteStop(stop) })
             }
+        }
+    }
+}
+
+@Composable
+private fun StopPhotoPlaceholder(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(AtlasSurfaceSubtle)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(10.dp)),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val ink = Color(0xFFC2BAA8) // warm muted parchment ink
+            val pad = size.minDimension * 0.14f
+
+            // Sun
+            drawCircle(
+                color = ink,
+                radius = size.minDimension * 0.13f,
+                center = Offset(size.width - pad - size.minDimension * 0.13f, pad + size.minDimension * 0.13f),
+            )
+
+            // Mountain silhouette
+            val path = Path().apply {
+                moveTo(0f, size.height * 0.80f)
+                lineTo(size.width * 0.28f, size.height * 0.46f)
+                lineTo(size.width * 0.46f, size.height * 0.60f)
+                lineTo(size.width * 0.65f, size.height * 0.44f)
+                lineTo(size.width, size.height * 0.66f)
+                lineTo(size.width, size.height)
+                lineTo(0f, size.height)
+                close()
+            }
+            drawPath(path = path, color = ink)
         }
     }
 }
@@ -1324,17 +1351,7 @@ private fun ExcursionStopCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            // Photo placeholder (same as main stop)
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(AtlasSurfaceSubtle)
-                    .border(1.dp, AtlasOutline, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.CameraAlt, null, tint = AtlasOutline, modifier = Modifier.size(20.dp))
-            }
+            StopPhotoPlaceholder(modifier = Modifier.size(52.dp))
 
             // Content
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {

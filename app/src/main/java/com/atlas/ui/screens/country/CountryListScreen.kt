@@ -1,6 +1,7 @@
 package com.atlas.ui.screens.country
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,15 +16,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,15 +39,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.CountryType
 import com.atlas.presentation.country.CountryListFilter
 import com.atlas.presentation.country.CountryListItemUiState
 import com.atlas.presentation.country.CountryListUiState
-import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasFilterPill
+import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSemanticColors
+import com.atlas.ui.components.CountryFlag
 import com.atlas.ui.components.primaryStateColors
 import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasLived
@@ -107,12 +105,18 @@ fun CountryListScreen(
                 ) {
                     uiState.countries
                         .groupBy { it.country.continent }
+                        .entries
+                        .sortedByDescending { (_, countries) ->
+                            countries.count { it.trackingState.visited }
+                        }
                         .forEach { (continent, countries) ->
                             val isExpanded = continent !in collapsedContinents
+                            val visitedCount = countries.count { it.trackingState.visited }
                             item(key = "section-$continent") {
                                 ContinentHeader(
                                     continent = continent.toCatalanContinent(),
-                                    count = countries.size,
+                                    visitedCount = visitedCount,
+                                    totalCount = countries.size,
                                     expanded = isExpanded,
                                     onClick = {
                                         collapsedContinents = if (isExpanded) {
@@ -243,7 +247,8 @@ private fun EmptyCountryList(
 @Composable
 private fun ContinentHeader(
     continent: String,
-    count: Int,
+    visitedCount: Int,
+    totalCount: Int,
     expanded: Boolean,
     onClick: () -> Unit,
 ) {
@@ -251,12 +256,18 @@ private fun ContinentHeader(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(top = 18.dp, bottom = 8.dp),
+            .padding(top = 22.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = "$continent  -  $count",
+            text = continent.uppercase(),
             modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            color = AtlasOnSurfaceMuted,
+        )
+        Text(
+            text = if (visitedCount > 0) "$visitedCount / $totalCount" else "$totalCount",
             style = MaterialTheme.typography.labelSmall,
             color = AtlasOnSurfaceFaint,
         )
@@ -264,7 +275,7 @@ private fun ContinentHeader(
             imageVector = if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
             contentDescription = null,
             tint = AtlasOnSurfaceFaint,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(16.dp),
         )
     }
 }
@@ -294,21 +305,15 @@ private fun CountryRow(
                     .clip(RoundedCornerShape(3.dp))
                     .background(stateColors.foreground),
             )
-            Box(
+            CountryFlag(
+                iso2 = country.iso2,
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(AtlasSurfaceRaised),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = country.flagEmoji?.takeIf { it.isNotBlank() } ?: country.iso2,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasOnSurfaceStrong,
-                )
-            }
+                    .width(44.dp)
+                    .height(28.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(AtlasSurfaceRaised)
+                    .border(1.dp, AtlasOutline, RoundedCornerShape(3.dp)),
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = country.nameCa,

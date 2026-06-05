@@ -1025,6 +1025,7 @@ private fun TripStopsTimeline(
                         val excursionIndex = excursions.indexOf(excursion)
                         ExcursionTimelineCard(
                             excursion = excursion,
+                            countries = countries,
                             isReorderMode = isReorderMode,
                             canMoveUp = excursionIndex > 0,
                             canMoveDown = excursionIndex < excursions.lastIndex,
@@ -1052,6 +1053,7 @@ private fun TripStopsTimeline(
                 ExcursionTimelineCard(
                     modifier = Modifier.weight(1f),
                     excursion = excursion,
+                    countries = countries,
                     isReorderMode = isReorderMode,
                     canMoveUp = excursionIndex > 0,
                     canMoveDown = excursionIndex < excursions.lastIndex,
@@ -1213,10 +1215,10 @@ private fun TypeBadge(label: String, color: Color, background: Color) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExcursionTimelineCard(
     excursion: Excursion,
+    countries: List<Country>,
     isReorderMode: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -1231,78 +1233,156 @@ private fun ExcursionTimelineCard(
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val sortedStops = excursion.stops.sortedBy { it.sortOrder }
+
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // Header row: EXCURSIÓ badge + title + overflow/reorder
+        Row(
+            modifier = Modifier.padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(ExcursionColor.copy(alpha = 0.12f))
+                    .border(1.dp, ExcursionColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                Text("EXCURSIÓ", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
+            }
+            Text(
+                text = excursion.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = AtlasOnSurfaceStrong,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (isReorderMode) {
+                Row {
+                    IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline)
+                    }
+                    IconButton(onClick = { onMoveExcursionDown(excursion) }, enabled = canMoveDown, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline)
+                    }
+                }
+            } else {
+                ExcursionOverflowMenu(onEdit = { onEditExcursion(excursion) }, onDelete = { onDeleteExcursion(excursion) })
+            }
+        }
+
+        // Excursion stops as full cards (same structure as main stop cards)
+        sortedStops.forEachIndexed { i, stop ->
+            val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
+            ExcursionStopCard(
+                stop = stop,
+                countryName = countryName,
+                isReorderMode = isReorderMode,
+                canMoveUp = i > 0,
+                canMoveDown = i < sortedStops.lastIndex,
+                onEdit = { onEditExcursionStop(stop) },
+                onDelete = { onDeleteExcursionStop(stop) },
+                onMoveUp = { onMoveExcursionStopUp(excursion.id, stop) },
+                onMoveDown = { onMoveExcursionStopDown(excursion.id, stop) },
+            )
+        }
+
+        if (!isReorderMode) {
+            TextButton(onClick = { onAddExcursionStopClick(excursion.id) }, contentPadding = PaddingValues(start = 4.dp, top = 0.dp, end = 0.dp, bottom = 0.dp)) {
+                Text("+ Afegeix parada", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExcursionStopCard(
+    stop: ExcursionStop,
+    countryName: String,
+    isReorderMode: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+) {
+    val hasCoords = stop.latitude != null && stop.longitude != null
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = ExcursionContainerColor,
         border = BorderStroke(1.dp, ExcursionColor.copy(alpha = 0.25f)),
     ) {
-        Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Header: EXCURSIÓ badge + title + overflow/reorder
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(ExcursionColor.copy(alpha = 0.12f))
-                        .border(1.dp, ExcursionColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                ) {
-                    Text("EXCURSIÓ", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
+        Row(
+            modifier = Modifier.padding(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            // Photo placeholder (excursion-tinted)
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(ExcursionColor.copy(alpha = 0.08f))
+                    .border(1.dp, ExcursionColor.copy(alpha = 0.22f), RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.CameraAlt, null, tint = ExcursionColor.copy(alpha = 0.45f), modifier = Modifier.size(20.dp))
+            }
+
+            // Content
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = stop.locationName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    // Type badge in excursion color
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(100.dp))
+                            .background(ExcursionColor.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            text = if (hasCoords) "MAPA" else "MANUAL",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = ExcursionColor,
+                        )
+                    }
                 }
                 Text(
-                    text = excursion.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AtlasOnSurfaceStrong,
+                    text = buildExcursionStopMetaLine(stop, countryName),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
                 )
-                if (isReorderMode) {
-                    Row {
-                        IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
-                            Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline)
-                        }
-                        IconButton(onClick = { onMoveExcursionDown(excursion) }, enabled = canMoveDown, modifier = Modifier.size(28.dp)) {
-                            Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline)
-                        }
-                    }
-                } else {
-                    ExcursionOverflowMenu(onEdit = { onEditExcursion(excursion) }, onDelete = { onDeleteExcursion(excursion) })
-                }
             }
 
-            // Excursion stops
-            if (excursion.stops.isNotEmpty()) {
-                if (isReorderMode) {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        excursion.stops.sortedBy { it.sortOrder }.forEachIndexed { i, stop ->
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("${i + 1}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
-                                Text(stop.locationName, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                IconButton(onClick = { onMoveExcursionStopUp(excursion.id, stop) }, enabled = i > 0, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (i > 0) AtlasOnSurfaceStrong else AtlasOutline)
-                                }
-                                IconButton(onClick = { onMoveExcursionStopDown(excursion.id, stop) }, enabled = i < excursion.stops.lastIndex, modifier = Modifier.size(24.dp)) {
-                                    Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (i < excursion.stops.lastIndex) AtlasOnSurfaceStrong else AtlasOutline)
-                                }
-                            }
-                        }
+            // Actions
+            if (isReorderMode) {
+                Column {
+                    IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(18.dp))
                     }
-                } else {
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        excursion.stops.sortedBy { it.sortOrder }.forEachIndexed { i, stop ->
-                            ExcursionStopPill(number = i + 1, name = stop.locationName.split(",").firstOrNull()?.trim() ?: stop.locationName)
-                        }
+                    IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(18.dp))
                     }
                 }
-            }
-
-            // Add stop button
-            if (!isReorderMode) {
-                TextButton(onClick = { onAddExcursionStopClick(excursion.id) }, contentPadding = PaddingValues(0.dp)) {
-                    Text("+ Afegeix parada", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
-                }
+            } else {
+                ExcursionStopOverflowMenu(onEdit = onEdit, onDelete = onDelete)
             }
         }
     }
@@ -1313,7 +1393,7 @@ private fun ExcursionOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Filled.MoreVert, "Accions", tint = ExcursionColor.copy(alpha = 0.7f), modifier = Modifier.size(16.dp))
+            Icon(Icons.Filled.MoreVert, "Accions", tint = AtlasOnSurfaceMuted, modifier = Modifier.size(16.dp))
         }
         MaterialTheme(
             colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
@@ -1337,18 +1417,30 @@ private fun ExcursionOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
 }
 
 @Composable
-private fun ExcursionStopPill(number: Int, name: String) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(ExcursionColor.copy(alpha = 0.10f))
-            .border(1.dp, ExcursionColor.copy(alpha = 0.30f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Text(number.toString(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
-        Text(name, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong, maxLines = 1)
+private fun ExcursionStopOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
+            Icon(Icons.Filled.MoreVert, "Accions", tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
+        }
+        MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
+            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
+        ) {
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(160.dp)) {
+                DropdownMenuItem(
+                    text = { Text("Edita", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
+                    leadingIcon = { Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
+                    onClick = { expanded = false; onEdit() },
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
+                DropdownMenuItem(
+                    text = { Text("Elimina", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasError) },
+                    leadingIcon = { Icon(Icons.Filled.Delete, null, tint = AtlasError, modifier = Modifier.size(15.dp)) },
+                    onClick = { expanded = false; onDelete() },
+                )
+            }
+        }
     }
 }
 
@@ -1704,6 +1796,18 @@ private fun ConfirmDeleteDialog(title: String, body: String, onDismiss: () -> Un
 }
 
 private fun TripStop.hasCoordinates(): Boolean = latitude != null && longitude != null
+
+private fun buildExcursionStopMetaLine(stop: ExcursionStop, countryName: String): String = buildString {
+    if (countryName.isNotBlank()) append(countryName)
+    stop.dateRange?.let { range ->
+        if (isNotEmpty()) append(" · ")
+        append(dateRangeFormatter.format(range))
+    }
+    if (stop.latitude != null && stop.longitude != null) {
+        if (isNotEmpty()) append(" · ")
+        append("%.2f, %.2f".format(stop.latitude, stop.longitude))
+    }
+}
 
 private fun buildStopMetaLine(stop: TripStop, countryName: String): String = buildString {
     if (countryName.isNotBlank()) append(countryName)

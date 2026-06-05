@@ -35,7 +35,7 @@ fun AirlineSearchField(
         OutlinedTextField(
             value = query,
             onValueChange = onQueryChanged,
-            label = { Text("Companyia (opcional)") },
+            label = { Text("Companyia") },
             placeholder = { Text("Nom o codi IATA", color = AtlasOnSurfaceMuted) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),

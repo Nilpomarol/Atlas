@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.maplibre.android)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
 
     testImplementation(libs.junit)
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -129,10 +130,10 @@ private fun DateTimeDisplayCard(
         ),
     ) {
         Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Spacer(Modifier.size(14.dp))
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -171,8 +172,6 @@ private fun DateTimeDisplayCard(
                         tint = AtlasOnSurfaceMuted,
                     )
                 }
-            } else {
-                Spacer(Modifier.size(40.dp))
             }
         }
     }

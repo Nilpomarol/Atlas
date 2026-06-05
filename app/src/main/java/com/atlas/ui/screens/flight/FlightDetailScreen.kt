@@ -69,6 +69,10 @@ import com.atlas.ui.components.geo.FlightRouteGeoMap
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.screens.country.BackPill
 import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasCompleted
+import com.atlas.ui.theme.AtlasDelay
+import com.atlas.ui.theme.AtlasError
+import com.atlas.ui.theme.AtlasGold
 import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -1206,8 +1210,9 @@ private fun Long.toDelayText(): String {
 private fun Long?.delayColor(): Color =
     when {
         this == null -> AtlasOnSurfaceStrong
-        this > 15 -> AtlasPrimary
-        this < 0 -> AtlasOnSurfaceMuted
+        this > 45 -> AtlasError
+        this >  0 -> AtlasDelay
+        this <= 0 -> AtlasCompleted
         else -> AtlasOnSurfaceStrong
     }
 

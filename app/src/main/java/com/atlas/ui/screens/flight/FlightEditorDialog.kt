@@ -6,8 +6,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,8 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -53,6 +53,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -132,11 +133,7 @@ fun FlightEditorDialog(
                         draft.flightId == null -> "Nou vol"
                         else -> "Edita vol"
                     },
-                    subtitle = if (showSearchStep) {
-                        "Importa dades del vol o continua amb entrada manual."
-                    } else {
-                        "Revisa ruta, horaris i dades de la companyia."
-                    },
+                    subtitle = if (showSearchStep) null else "Revisa ruta, horaris i dades de la companyia.",
                     showBack = draft.flightId == null && !showSearchStep,
                     onBack = onBackToSearch,
                 )
@@ -150,8 +147,8 @@ fun FlightEditorDialog(
 
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 18.dp, vertical = 14.dp)
-                        .heightIn(max = 620.dp),
+                        .padding(horizontal = 18.dp, vertical = 12.dp)
+                        .heightIn(max = 580.dp),
                 ) {
                     if (showSearchStep) {
                         SearchStepContent(
@@ -162,7 +159,6 @@ fun FlightEditorDialog(
                             onApiSearchDateChanged = onApiSearchDateChanged,
                             onSearchByFlightNumber = onSearchByFlightNumber,
                             onApplyApiResult = onApplyApiResult,
-                            onManualEntryClick = onManualEntryClick,
                         )
                     } else {
                         FormStepContent(
@@ -191,7 +187,9 @@ fun FlightEditorDialog(
 
                 FlightEditorActions(
                     showSave = !showSearchStep,
+                    showManualEntry = showSearchStep,
                     onDismiss = onDismiss,
+                    onManualEntryClick = onManualEntryClick,
                     onSave = onSave,
                 )
             }
@@ -202,7 +200,7 @@ fun FlightEditorDialog(
 @Composable
 private fun FlightEditorHeader(
     title: String,
-    subtitle: String,
+    subtitle: String?,
     showBack: Boolean,
     onBack: () -> Unit,
 ) {
@@ -210,14 +208,14 @@ private fun FlightEditorHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(AtlasSurfaceRaised)
-            .padding(horizontal = 18.dp, vertical = 16.dp),
+            .padding(horizontal = 18.dp, vertical = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (showBack) {
             IconButton(
                 onClick = onBack,
-                modifier = Modifier.size(36.dp),
+                modifier = Modifier.size(34.dp),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -229,8 +227,8 @@ private fun FlightEditorHeader(
         }
         Box(
             modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .size(40.dp)
+                .clip(RoundedCornerShape(13.dp))
                 .background(AtlasPrimary),
             contentAlignment = Alignment.Center,
         ) {
@@ -238,7 +236,7 @@ private fun FlightEditorHeader(
                 imageVector = Icons.Filled.FlightTakeoff,
                 contentDescription = null,
                 tint = AtlasSurface,
-                modifier = Modifier.size(21.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
         Column(modifier = Modifier.weight(1f)) {
@@ -248,12 +246,14 @@ private fun FlightEditorHeader(
                 fontWeight = FontWeight.ExtraBold,
                 color = AtlasOnSurfaceStrong,
             )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                fontWeight = FontWeight.Medium,
-                color = AtlasOnSurfaceMuted,
-            )
+            subtitle?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
         }
     }
 }
@@ -266,7 +266,7 @@ private fun FlightEditorStepIndicator(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 14.dp),
+            .padding(top = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         StepPill(
@@ -297,7 +297,7 @@ private fun StepPill(
                 color = if (selected) AtlasAccent.copy(alpha = 0.32f) else AtlasOutline,
                 shape = RoundedCornerShape(999.dp),
             )
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -312,19 +312,38 @@ private fun StepPill(
 @Composable
 private fun FlightEditorActions(
     showSave: Boolean,
+    showManualEntry: Boolean,
     onDismiss: () -> Unit,
+    onManualEntryClick: () -> Unit,
     onSave: () -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, AtlasOutline.copy(alpha = 0.55f))
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = onDismiss) {
+        TextButton(
+            onClick = onDismiss,
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+        ) {
             Text("Cancel·la", fontWeight = FontWeight.Bold)
+        }
+        if (showManualEntry) {
+            Spacer(Modifier.width(8.dp))
+            Button(
+                onClick = onManualEntryClick,
+                shape = RoundedCornerShape(13.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AtlasPrimary,
+                    contentColor = AtlasSurface,
+                ),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 9.dp),
+            ) {
+                Text("Introdueix manualment", fontWeight = FontWeight.ExtraBold)
+            }
         }
         if (showSave) {
             Spacer(Modifier.width(8.dp))
@@ -352,12 +371,11 @@ private fun SearchStepContent(
     onApiSearchDateChanged: (String) -> Unit,
     onSearchByFlightNumber: () -> Unit,
     onApplyApiResult: () -> Unit,
-    onManualEntryClick: () -> Unit,
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -365,8 +383,8 @@ private fun SearchStepContent(
             border = BorderStroke(1.dp, AtlasOutline),
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(9.dp),
@@ -377,7 +395,7 @@ private fun SearchStepContent(
                         onValueChange = onApiFlightNumberChanged,
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        label = { Text("Vol") },
+                        label = { Text("Núm. vol") },
                         placeholder = { Text("LH401") },
                         leadingIcon = {
                             Icon(
@@ -422,7 +440,7 @@ private fun SearchStepContent(
                         containerColor = AtlasPrimary,
                         contentColor = AtlasSurface,
                     ),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 11.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                 ) {
                     Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(17.dp))
                     Spacer(Modifier.width(6.dp))
@@ -435,19 +453,6 @@ private fun SearchStepContent(
             searchState = searchState,
             onApplyApiResult = onApplyApiResult,
         )
-
-        TextButton(
-            onClick = onManualEntryClick,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(vertical = 7.dp),
-        ) {
-            Text(
-                text = "Entrada manual",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 13.sp,
-                color = AtlasOnSurfaceMuted,
-            )
-        }
     }
 
     if (showDatePicker) {
@@ -513,16 +518,12 @@ private fun SearchStatePanel(
                 SearchMessageText(searchState.message, isError = true)
             }
         }
-        FlightApiSearchState.Idle -> {
-            SearchMessageCard {
-                SearchMessageText("Cerca per número i data per omplir el formulari automàticament.", isError = false)
-            }
-        }
+        FlightApiSearchState.Idle -> Unit
     }
 }
 
 @Composable
-private fun SearchMessageCard(content: @Composable RowScopeContent.() -> Unit) {
+private fun SearchMessageCard(content: @Composable RowScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(15.dp),
@@ -533,13 +534,10 @@ private fun SearchMessageCard(content: @Composable RowScopeContent.() -> Unit) {
             modifier = Modifier.padding(horizontal = 13.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            RowScopeContent.content()
-        }
+            content = content,
+        )
     }
 }
-
-private object RowScopeContent
 
 @Composable
 private fun ApiResultCard(prefillSummary: String, onApply: () -> Unit) {
@@ -619,7 +617,7 @@ private fun FormStepContent(
 ) {
     Column(
         modifier = Modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         FormSection(title = "Ruta") {
             AirportSearchField(
@@ -642,13 +640,23 @@ private fun FormStepContent(
         }
 
         FormSection(title = "Estat") {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(TravelStatus.entries) { status ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                listOf(TravelStatus.PLANNED, TravelStatus.IN_PROGRESS, TravelStatus.COMPLETED).forEach { status ->
                     val colors = status.tripStatusColors()
                     FilterChip(
                         selected = draft.status == status,
                         onClick = { onStatusChanged(status) },
-                        label = { Text(status.toCatalanLabel()) },
+                        modifier = Modifier.weight(1f),
+                        label = {
+                            Text(
+                                text = status.toCatalanLabel(),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                            )
+                        },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = colors.container,
                             selectedLabelColor = colors.foreground,
@@ -658,36 +666,42 @@ private fun FormStepContent(
             }
         }
 
-        FormSection(title = "Horaris") {
-            DateTimePickerField(
-                label = "Sortida programada",
-                value = draft.scheduledDepartureAt,
-                onValueChanged = onScheduledDepartureAtChanged,
-            )
+        FormSection(title = "Horaris (opcional)") {
+            TimePairCard(title = "Programat") {
+                DateTimePickerField(
+                    label = "Sortida programada",
+                    value = draft.scheduledDepartureAt,
+                    onValueChanged = onScheduledDepartureAtChanged,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                DateTimePickerField(
+                    label = "Arribada programada",
+                    value = draft.scheduledArrivalAt,
+                    onValueChanged = onScheduledArrivalAtChanged,
+                    prefillValue = draft.scheduledDepartureAt.takeIf { it.length >= 10 }?.take(10),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
-            DateTimePickerField(
-                label = "Arribada programada",
-                value = draft.scheduledArrivalAt,
-                onValueChanged = onScheduledArrivalAtChanged,
-                prefillValue = draft.scheduledDepartureAt.takeIf { it.length >= 10 }?.take(10),
-            )
-
-            DateTimePickerField(
-                label = "Sortida real",
-                value = draft.actualDepartureAt,
-                onValueChanged = onActualDepartureAtChanged,
-                prefillValue = draft.scheduledDepartureAt.takeIf { it.isNotBlank() },
-            )
-
-            DateTimePickerField(
-                label = "Arribada real",
-                value = draft.actualArrivalAt,
-                onValueChanged = onActualArrivalAtChanged,
-                prefillValue = draft.scheduledArrivalAt.takeIf { it.isNotBlank() },
-            )
+            TimePairCard(title = "Real") {
+                DateTimePickerField(
+                    label = "Sortida real",
+                    value = draft.actualDepartureAt,
+                    onValueChanged = onActualDepartureAtChanged,
+                    prefillValue = draft.scheduledDepartureAt.takeIf { it.isNotBlank() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                DateTimePickerField(
+                    label = "Arribada real",
+                    value = draft.actualArrivalAt,
+                    onValueChanged = onActualArrivalAtChanged,
+                    prefillValue = draft.scheduledArrivalAt.takeIf { it.isNotBlank() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
 
-        FormSection(title = "Vol") {
+        FormSection(title = "Vol (opcional)") {
             AirlineSearchField(
                 query = draft.airlineQuery,
                 results = airlineResults,
@@ -699,7 +713,7 @@ private fun FormStepContent(
             OutlinedTextField(
                 value = draft.flightNumber,
                 onValueChange = onFlightNumberChanged,
-                label = { Text("Número de vol (opcional)") },
+                label = { Text("Núm. vol") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(13.dp),
@@ -708,7 +722,7 @@ private fun FormStepContent(
             OutlinedTextField(
                 value = draft.aircraft,
                 onValueChange = onAircraftChanged,
-                label = { Text("Aeronau (opcional)") },
+                label = { Text("Aeronau") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(13.dp),
@@ -717,7 +731,7 @@ private fun FormStepContent(
             OutlinedTextField(
                 value = draft.aircraftRegistration,
                 onValueChange = onAircraftRegistrationChanged,
-                label = { Text("Matrícula (opcional)") },
+                label = { Text("Matrícula") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(13.dp),
@@ -726,7 +740,7 @@ private fun FormStepContent(
             OutlinedTextField(
                 value = draft.notes,
                 onValueChange = onNotesChanged,
-                label = { Text("Notes (opcional)") },
+                label = { Text("Notes") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 shape = RoundedCornerShape(13.dp),
@@ -745,19 +759,43 @@ private fun FormStepContent(
 }
 
 @Composable
+private fun TimePairCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(AtlasSurface.copy(alpha = 0.55f))
+            .border(1.dp, AtlasOutline.copy(alpha = 0.38f), RoundedCornerShape(14.dp))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.ExtraBold,
+            color = AtlasOnSurfaceStrong,
+        )
+        content()
+    }
+}
+
+@Composable
 private fun FormSection(
     title: String,
-    content: @Composable ColumnScopeContent.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(17.dp),
         color = AtlasSurfaceRaised,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = title.uppercase(),
@@ -765,12 +803,10 @@ private fun FormSection(
                 fontWeight = FontWeight.ExtraBold,
                 color = AtlasOnSurfaceMuted,
             )
-            ColumnScopeContent.content()
+            content()
         }
     }
 }
-
-private object ColumnScopeContent
 
 private fun formatSearchDate(date: String): String {
     return try {

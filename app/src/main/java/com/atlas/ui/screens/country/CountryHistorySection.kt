@@ -156,7 +156,16 @@ fun CountryHistorySection(
                         log.dateRange?.toHistoryDateText() ?: "Sense data"
                     },
                     title = log.notes?.takeIf { it.isNotBlank() } ?: if (isCurrentResidence) "Vivint" else log.type.toCatalanLabel(),
-                    meta = if (isCurrentResidence) "" else log.historyMeta(),
+                    meta = if (isCurrentResidence) {
+                        log.dateRange?.start?.let { start ->
+                            val years = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) - start.year
+                            when {
+                                years <= 0 -> "Menys d'un any"
+                                years == 1 -> "1 any"
+                                else -> "$years anys"
+                            }
+                        } ?: ""
+                    } else log.historyMeta(),
                     pillLabel = if (isCurrentResidence) "VIVINT" else if (isLived) "RESIDÈNCIA" else "VISITA",
                     pillForeground = if (isCurrentResidence) AtlasLiving else if (isLived) AtlasLived else AtlasVisit,
                     pillBackground = if (isCurrentResidence) AtlasLivingContainer else if (isLived) AtlasLivedContainer else AtlasVisitContainer,

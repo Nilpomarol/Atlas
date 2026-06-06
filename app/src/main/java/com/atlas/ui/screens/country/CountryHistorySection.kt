@@ -84,8 +84,11 @@ fun CountryHistorySection(
 ) {
     var pendingDeleteLog by remember { mutableStateOf<CountryLog?>(null) }
 
+    val hasOpenLivedLog = logs.any { it.type == CountryLogType.LIVED && it.dateRange?.end == null }
+
     val rows = buildList {
-        if (trackingState.currentlyLiving) {
+        // Synthetic VIVINT row — only when currently living but no open-ended LIVED log exists yet
+        if (trackingState.currentlyLiving && !hasOpenLivedLog) {
             add(
                 HistoryRow(
                     sortKey = "9999-12-31",
@@ -141,17 +144,18 @@ fun CountryHistorySection(
         }
         for (log in logs) {
             val isLived = log.type == CountryLogType.LIVED
+            val isCurrentResidence = isLived && log.dateRange?.end == null
             add(
                 HistoryRow(
-                    sortKey = log.dateRange?.start?.toSortKey() ?: "0000-01-01",
-                    color = if (isLived) AtlasLived else AtlasVisit,
+                    sortKey = if (isCurrentResidence) "9999-12-31" else log.dateRange?.start?.toSortKey() ?: "0000-01-01",
+                    color = if (isCurrentResidence) AtlasLiving else if (isLived) AtlasLived else AtlasVisit,
                     icon = if (isLived) Icons.Filled.Home else Icons.Filled.Place,
-                    dateText = log.dateRange?.toHistoryDateText() ?: "Sense data",
+                    dateText = log.dateRange?.start?.let { "Des de ${it.toHistoryDateText()}" } ?: if (isCurrentResidence) "Ara" else "Sense data",
                     title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
-                    meta = log.historyMeta(),
-                    pillLabel = if (isLived) "RESIDÈNCIA" else "VISITA",
-                    pillForeground = if (isLived) AtlasLived else AtlasVisit,
-                    pillBackground = if (isLived) AtlasLivedContainer else AtlasVisitContainer,
+                    meta = if (isCurrentResidence) "" else log.historyMeta(),
+                    pillLabel = if (isCurrentResidence) "VIVINT" else if (isLived) "RESIDÈNCIA" else "VISITA",
+                    pillForeground = if (isCurrentResidence) AtlasLiving else if (isLived) AtlasLived else AtlasVisit,
+                    pillBackground = if (isCurrentResidence) AtlasLivingContainer else if (isLived) AtlasLivedContainer else AtlasVisitContainer,
                     onEdit = { onEditLog(log) },
                     onDelete = { pendingDeleteLog = log },
                 ),

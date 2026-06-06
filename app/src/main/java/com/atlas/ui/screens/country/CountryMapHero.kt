@@ -28,7 +28,6 @@ import com.atlas.ui.components.geo.AtlasGeoCanvas
 import com.atlas.ui.components.geo.GeoCoordinate
 import com.atlas.ui.components.geo.GeoMarker
 import com.atlas.ui.components.geo.GeoViewport
-import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
 
@@ -41,10 +40,16 @@ fun CountryMapHero(
 ) {
     val lat = country.latitude
     val lng = country.longitude
+    val capLat = country.capitalLatitude
+    val capLng = country.capitalLongitude
 
-    val viewport = if (lat != null && lng != null) {
+    // Single marker at capital; fall back to country centre when no capital coords
+    val markerLat = capLat ?: lat
+    val markerLng = capLng ?: lng
+
+    val viewport = if (markerLat != null && markerLng != null) {
         GeoViewport.FitPoints(
-            points = listOf(GeoCoordinate(lat, lng)),
+            points = listOf(GeoCoordinate(markerLat, markerLng)),
             minLongitudeSpanDegrees = 22.0,
             minLatitudeSpanDegrees = 16.0,
         )
@@ -58,15 +63,16 @@ fun CountryMapHero(
         emptyMap()
     }
 
-    val markers = buildList {
-        if (lat != null && lng != null) {
-            add(GeoMarker(GeoCoordinate(lat, lng), style.primary, radiusMultiplier = 1.1f))
-            val capLat = country.capitalLatitude
-            val capLng = country.capitalLongitude
-            if (capLat != null && capLng != null && (capLat != lat || capLng != lng)) {
-                add(GeoMarker(GeoCoordinate(capLat, capLng), style.primary, radiusMultiplier = 0.72f, isHollow = true))
-            }
-        }
+    val markers = if (markerLat != null && markerLng != null) {
+        listOf(
+            GeoMarker(
+                coordinate = GeoCoordinate(markerLat, markerLng),
+                color = style.primary,
+                label = country.capitalNameCa,
+            )
+        )
+    } else {
+        emptyList()
     }
 
     Box(
@@ -90,17 +96,6 @@ fun CountryMapHero(
                 .align(Alignment.TopStart)
                 .padding(start = 20.dp, top = 16.dp),
         )
-
-        country.capitalNameCa?.let { capital ->
-            Text(
-                text = capital,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(14.dp),
-                style = MaterialTheme.typography.labelMedium,
-                color = AtlasOnSurfaceMuted,
-            )
-        }
     }
 }
 

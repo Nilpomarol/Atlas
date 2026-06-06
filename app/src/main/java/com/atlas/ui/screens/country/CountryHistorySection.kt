@@ -2,13 +2,14 @@ package com.atlas.ui.screens.country
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -36,7 +37,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -47,14 +47,14 @@ import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.country.CountryAirTravelSummaryUiState
 import com.atlas.presentation.country.CountryTripSummaryUiState
-import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasSectionTitle
-import com.atlas.ui.components.tripStatusColors
+import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasLived
 import com.atlas.ui.theme.AtlasLivedContainer
-import com.atlas.ui.theme.AtlasError
+import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
@@ -63,6 +63,8 @@ import com.atlas.ui.theme.AtlasTrip
 import com.atlas.ui.theme.AtlasTripContainer
 import com.atlas.ui.theme.AtlasVisit
 import com.atlas.ui.theme.AtlasVisitContainer
+import com.atlas.ui.theme.AtlasVisited
+import com.atlas.ui.theme.AtlasVisitedContainer
 
 @Composable
 fun CountryHistorySection(
@@ -82,7 +84,17 @@ fun CountryHistorySection(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        AtlasSectionTitle(title = "Historial")
+        AtlasSectionTitle(
+            title = "Historial",
+            action = {
+                Text(
+                    text = "PER QUÈ",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
+            },
+        )
 
         if (totalCount == 0) {
             Box(
@@ -101,44 +113,38 @@ fun CountryHistorySection(
         } else {
             Column {
                 tripSummaries.forEachIndexed { index, trip ->
+                    val meta = listOfNotNull(
+                        trip.routeText?.takeIf { it.isNotBlank() },
+                        trip.status.toHistoryStatus(),
+                    ).joinToString(" · ")
                     TimelineItem(
                         isLast = index == tripSummaries.lastIndex && airTravelSummaries.isEmpty() && logs.isEmpty(),
                         color = AtlasTrip,
-                        container = AtlasTripContainer,
                         icon = Icons.Filled.Route,
-                        title = trip.title,
-                        label = trip.label,
                         dateText = trip.dateRangeText?.toHistoryDateText() ?: "Sense data",
-                        meta = trip.routeText ?: "Sense ruta",
-                        statusPill = {
-                            AtlasPill(
-                                label = trip.status.tripStatusColors().label,
-                                colors = trip.status.tripStatusColors(),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                fontWeight = FontWeight.ExtraBold,
-                            )
-                        },
+                        title = trip.title,
+                        meta = meta,
+                        pillLabel = trip.label.uppercase(),
+                        pillForeground = AtlasTrip,
+                        pillBackground = AtlasTripContainer,
                         onClick = { onTripClick(trip.tripId) },
                     )
                 }
                 airTravelSummaries.forEachIndexed { index, airTravel ->
+                    val meta = listOfNotNull(
+                        airTravel.meta.takeIf { it.isNotBlank() },
+                        airTravel.status.toHistoryStatus(),
+                    ).joinToString(" · ")
                     TimelineItem(
                         isLast = index == airTravelSummaries.lastIndex && logs.isEmpty(),
-                        color = AtlasTrip,
-                        container = AtlasTripContainer,
+                        color = AtlasVisited,
                         icon = Icons.Filled.Flight,
-                        title = airTravel.title,
-                        label = airTravel.label,
                         dateText = airTravel.dateText?.toHistoryDateText() ?: "Sense data",
-                        meta = airTravel.meta,
-                        statusPill = {
-                            AtlasPill(
-                                label = airTravel.status.tripStatusColors().label,
-                                colors = airTravel.status.tripStatusColors(),
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                fontWeight = FontWeight.ExtraBold,
-                            )
-                        },
+                        title = airTravel.title,
+                        meta = meta,
+                        pillLabel = airTravel.label.uppercase(),
+                        pillForeground = AtlasVisited,
+                        pillBackground = AtlasVisitedContainer,
                     )
                 }
                 logs.forEachIndexed { index, log ->
@@ -146,12 +152,13 @@ fun CountryHistorySection(
                     TimelineItem(
                         isLast = index == logs.lastIndex,
                         color = if (isLived) AtlasLived else AtlasVisit,
-                        container = if (isLived) AtlasLivedContainer else AtlasVisitContainer,
                         icon = if (isLived) Icons.Filled.Home else Icons.Filled.Place,
-                        title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
-                        label = log.type.toCatalanLabel(),
                         dateText = log.dateRange?.toHistoryDateText() ?: "Sense data",
+                        title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
                         meta = log.historyMeta(),
+                        pillLabel = if (isLived) "RESIDÈNCIA" else "VISITA",
+                        pillForeground = if (isLived) AtlasLived else AtlasVisit,
+                        pillBackground = if (isLived) AtlasLivedContainer else AtlasVisitContainer,
                         onEdit = { onEditLog(log) },
                         onDelete = { pendingDeleteLog = log },
                     )
@@ -176,158 +183,152 @@ fun CountryHistorySection(
 private fun TimelineItem(
     isLast: Boolean,
     color: Color,
-    container: Color,
     icon: ImageVector,
-    title: String,
-    label: String,
     dateText: String,
+    title: String,
     meta: String,
-    statusPill: (@Composable () -> Unit)? = null,
+    pillLabel: String,
+    pillForeground: Color,
+    pillBackground: Color,
     onClick: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
     ) {
+        // Timeline left column: circle icon + vertical connecting line
         Column(
-            modifier = Modifier.width(44.dp),
+            modifier = Modifier
+                .width(44.dp)
+                .fillMaxHeight(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Spacer(modifier = Modifier.height(14.dp))
             Box(
                 modifier = Modifier
-                    .padding(top = 26.dp)
-                    .size(40.dp)
-                    .background(container, CircleShape),
+                    .size(38.dp)
+                    .background(color, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(21.dp),
-                    tint = color,
+                    modifier = Modifier.size(18.dp),
+                    tint = Color.White,
                 )
             }
             if (!isLast) {
                 Box(
-                modifier = Modifier
-                        .width(1.dp)
-                        .height(34.dp)
+                    modifier = Modifier
+                        .width(2.dp)
+                        .weight(1f)
+                        .padding(vertical = 4.dp)
                         .background(AtlasOutline),
                 )
             }
         }
+
+        // Content card
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(bottom = 6.dp)
+                .padding(bottom = if (isLast) 0.dp else 12.dp)
                 .background(AtlasSurface, RoundedCornerShape(14.dp))
                 .border(1.dp, AtlasOutline, RoundedCornerShape(14.dp))
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            // Date + type pill
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                // RouteThumb(container = container)
-                Column(modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = dateText,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .background(pillBackground, RoundedCornerShape(6.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                ) {
                     Text(
-                        text = dateText,
-                        modifier = Modifier.padding(top = 3.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasOnSurfaceMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        text = pillLabel,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = AtlasOnSurfaceStrong,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+                        color = pillForeground,
                     )
-                    if (meta.isNotBlank()) {
-                        Text(
-                            text = meta,
-                            modifier = Modifier.padding(top = 2.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
                 }
-                if (onEdit != null || onDelete != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        onEdit?.let {
-                            IconActionButton(
-                                icon = Icons.Filled.Edit,
+            }
+            // Title
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = AtlasOnSurfaceStrong,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            // Meta
+            if (meta.isNotBlank()) {
+                Text(
+                    text = meta,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            // Edit / delete — log items only
+            if (onEdit != null || onDelete != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    onEdit?.let {
+                        IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.Edit,
                                 contentDescription = "Edita",
-                                onClick = it,
-                            )
-                        }
-                        onDelete?.let {
-                            IconActionButton(
-                                icon = Icons.Filled.Delete,
-                                contentDescription = "Elimina",
-                                onClick = it,
+                                modifier = Modifier.size(14.dp),
+                                tint = AtlasOnSurfaceFaint,
                             )
                         }
                     }
-                } else {
-                    statusPill?.invoke()
+                    onDelete?.let {
+                        IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Elimina",
+                                modifier = Modifier.size(14.dp),
+                                tint = AtlasOnSurfaceFaint,
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun RouteThumb(
-    container: Color,
-) {
-    Box(
-        modifier = Modifier
-            .size(48.dp)
-            .background(container, RoundedCornerShape(12.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(modifier = Modifier.matchParentSize()) {
-            val p1 = Offset(size.width * 0.18f, size.height * 0.22f)
-            val p2 = Offset(size.width * 0.54f, size.height * 0.42f)
-            val p3 = Offset(size.width * 0.82f, size.height * 0.20f)
-            drawLine(Color.White.copy(alpha = 0.74f), p1, p2, strokeWidth = 1.4.dp.toPx())
-            drawLine(Color.White.copy(alpha = 0.74f), p2, p3, strokeWidth = 1.4.dp.toPx())
-            listOf(p1, p2, p3).forEach { point ->
-                drawCircle(Color.White, radius = 2.8.dp.toPx(), center = point)
-            }
-        }
-    }
-}
+// ─── Date helpers ────────────────────────────────────────────────────────────
 
-@Composable
-private fun IconActionButton(
-    icon: ImageVector,
-    contentDescription: String,
-    onClick: () -> Unit,
-) {
-    IconButton(
-        onClick = onClick,
-        modifier = Modifier.size(30.dp),
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(16.dp),
-            tint = AtlasOnSurfaceMuted,
-        )
-    }
+private fun TravelStatus.toHistoryStatus(): String? = when (this) {
+    TravelStatus.PLANNED -> "planificat"
+    TravelStatus.IN_PROGRESS -> "en curs"
+    TravelStatus.COMPLETED -> "completat"
+    TravelStatus.UNKNOWN -> null
 }
 
 private fun CountryLog.historyMeta(): String {
@@ -343,7 +344,7 @@ private fun FlexibleDateRange.toHistoryDateText(): String = when {
     start != null && end != null -> {
         val startText = start.toHistoryDateText()
         val endText = end.toHistoryDateText()
-        if (startText == endText) startText else "$startText - $endText"
+        if (startText == endText) startText else "$startText – $endText"
     }
     start != null -> start.toHistoryDateText()
     end != null -> "Fins ${end.toHistoryDateText()}"
@@ -354,7 +355,7 @@ private fun FlexibleDateRange.yearDurationText(): String? {
     val startYear = start?.year ?: return null
     val endYear = end?.year ?: return null
     val years = (endYear - startYear).coerceAtLeast(1)
-    return "${years.toCatalanCount()} ${if (years == 1) "any" else "anys"}"
+    return "${years.toCatalanCount()} ${if (years == 1) "any" else "anys"} de residència"
 }
 
 private fun FlexibleDate.toHistoryDateText(): String = when (precision) {
@@ -368,7 +369,7 @@ private fun String.toHistoryDateText(): String {
     if (parts.size == 2) {
         val start = parts[0].singleDateToHistoryText()
         val end = parts[1].singleDateToHistoryText()
-        return if (start == end) start else "$start - $end"
+        return if (start == end) start else "$start – $end"
     }
     return singleDateToHistoryText()
 }
@@ -413,6 +414,8 @@ private fun Int.toCatalanCount(): String = when (this) {
     10 -> "Deu"
     else -> toString()
 }
+
+// ─── Dialogs ─────────────────────────────────────────────────────────────────
 
 @Composable
 private fun ConfirmDeleteLogDialog(

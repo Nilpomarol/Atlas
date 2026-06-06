@@ -88,7 +88,7 @@ fun DashboardScreen(
             FeaturedTripCard(trip = uiState.featuredTrip)
             CountryKpis(uiState = uiState)
             TravelKpis(uiState = uiState)
-            NextUpCard(trip = uiState.nextUpTrip)
+            NextUpCard(trip = uiState.upcomingTrips.firstOrNull())
             RecentCompletedSection(trips = uiState.recentCompletedTrips)
         }
     }

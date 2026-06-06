@@ -3,11 +3,14 @@ package com.atlas.presentation.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airport
+import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.util.utcAwareDepartureSortKey
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
@@ -87,14 +90,50 @@ class DashboardViewModel(
 
         val currentlyLivingIso2 = userStates.firstOrNull { it.currentlyLiving }?.countryIso2
         val currentTrip = trips.firstOrNull { it.status == TravelStatus.IN_PROGRESS }
-        val nextPlannedTrip = trips.firstOrNull { it.status == TravelStatus.PLANNED }
-        val featuredTrip = currentTrip ?: nextPlannedTrip
 
         val livingIso2s = countryStates.filter { it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
         val livedIso2s = countryStates.filter { it.second.lived && !it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
         val visitedIso2s = countryStates.filter { it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
         val plannedIso2s = countryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
         val wishedIso2s = countryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
+
+        // Flight dashboard items
+        val airportsById = airports.associateBy { it.id }
+        val soloFlightItems = flights
+            .filter { it.itineraryGroupId == null }
+            .map { flight ->
+                val origin = airportsById[flight.originAirportId]?.shortLabel() ?: flight.originAirportId.uppercase()
+                val destination = airportsById[flight.destinationAirportId]?.shortLabel() ?: flight.destinationAirportId.uppercase()
+                DashboardFlightUiState(
+                    title = "$origin → $destination",
+                    label = "Vol",
+                    dateText = flight.scheduledDepartureAt?.toFlightDateText(),
+                    sortKey = flight.scheduledDepartureAt,
+                    status = flight.status,
+                    meta = listOfNotNull(flight.airline, flight.flightNumber).joinToString(" ").ifBlank { null },
+                )
+            }
+        val groupItems = itineraryGroups.mapNotNull { group ->
+            val sortedFlights = group.flights
+                .sortedWith(compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }.thenBy { it.utcAwareDepartureSortKey() ?: "" })
+            val firstFlight = sortedFlights.firstOrNull() ?: return@mapNotNull null
+            val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null
+            val origin = airportsById[firstFlight.originAirportId]?.shortLabel() ?: firstFlight.originAirportId.uppercase()
+            val destination = airportsById[lastFlight.destinationAirportId]?.shortLabel() ?: lastFlight.destinationAirportId.uppercase()
+            val groupStatus = group.flights.map { it.status }.deriveGroupStatus()
+            val flightCount = group.flights.size
+            DashboardFlightUiState(
+                title = "$origin → $destination",
+                label = "Itinerari",
+                dateText = firstFlight.scheduledDepartureAt?.toFlightDateText(),
+                sortKey = firstFlight.scheduledDepartureAt,
+                status = groupStatus,
+                meta = if (flightCount == 1) "1 vol" else "$flightCount vols",
+            )
+        }
+        val allFlightItems = soloFlightItems + groupItems
+        val distancesKm = flights.mapNotNull { it.distanceKm }
+        val avgFlightDistanceKm = if (distancesKm.isEmpty()) null else distancesKm.average()
 
         DashboardUiState(
             visitedCount = countryStates.count { it.second.visited },
@@ -114,23 +153,29 @@ class DashboardViewModel(
             tripCount = trips.size,
             flightCount = flights.size,
             flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 },
+            avgFlightDistanceKm = avgFlightDistanceKm,
             stopCount = tripStops.size,
             trackableCountryCount = countries.size,
             currentlyLivingCountryName = currentlyLivingIso2?.let { countryNamesByIso2[it] },
-            featuredTrip = featuredTrip?.toDashboardTrip(
+            featuredTrip = currentTrip?.toDashboardTrip(
                 allStops = tripStops,
                 countryNamesByIso2 = countryNamesByIso2,
                 countryFlagsByIso2 = countryFlagsByIso2,
             ),
-            nextUpTrip = trips
-                .firstOrNull { trip ->
-                    trip.status == TravelStatus.PLANNED && trip.id != featuredTrip?.id
-                }
-                ?.toDashboardTrip(
-                    allStops = tripStops,
-                    countryNamesByIso2 = countryNamesByIso2,
-                    countryFlagsByIso2 = countryFlagsByIso2,
-                ),
+            upcomingTrips = trips
+                .filter { it.status == TravelStatus.PLANNED }
+                .take(3)
+                .map {
+                    it.toDashboardTrip(
+                        allStops = tripStops,
+                        countryNamesByIso2 = countryNamesByIso2,
+                        countryFlagsByIso2 = countryFlagsByIso2,
+                    )
+                },
+            upcomingFlights = allFlightItems
+                .filter { it.status == TravelStatus.PLANNED || it.status == TravelStatus.IN_PROGRESS }
+                .sortedBy { it.sortKey ?: "" }
+                .take(3),
             recentCompletedTrips = trips
                 .filter { it.status == TravelStatus.COMPLETED }
                 .take(4)
@@ -141,6 +186,10 @@ class DashboardViewModel(
                         countryFlagsByIso2 = countryFlagsByIso2,
                     )
                 },
+            recentFlights = allFlightItems
+                .filter { it.status == TravelStatus.COMPLETED }
+                .sortedByDescending { it.sortKey ?: "" }
+                .take(4),
         )
     }
         .stateIn(
@@ -173,11 +222,12 @@ class DashboardViewModel(
             routeText = when {
                 first == null -> null
                 last == null || first == last -> first
-                else -> "$first -> $last"
+                else -> "$first → $last"
             },
             countryText = countryText,
             flagText = firstCountryIso2?.let { countryFlagsByIso2[it] }?.takeIf { it.isNotBlank() }
                 ?: firstCountryIso2,
+            countryIso2s = stops.mapNotNull { it.countryIso2 }.distinct(),
         )
     }
 
@@ -220,12 +270,15 @@ data class DashboardUiState(
     val tripCount: Int = 0,
     val flightCount: Int = 0,
     val flownDistanceKm: Double = 0.0,
+    val avgFlightDistanceKm: Double? = null,
     val stopCount: Int = 0,
     val trackableCountryCount: Int = 0,
     val currentlyLivingCountryName: String? = null,
     val featuredTrip: DashboardTripUiState? = null,
-    val nextUpTrip: DashboardTripUiState? = null,
+    val upcomingTrips: List<DashboardTripUiState> = emptyList(),
+    val upcomingFlights: List<DashboardFlightUiState> = emptyList(),
     val recentCompletedTrips: List<DashboardTripUiState> = emptyList(),
+    val recentFlights: List<DashboardFlightUiState> = emptyList(),
 )
 
 data class DashboardTripUiState(
@@ -238,6 +291,16 @@ data class DashboardTripUiState(
     val routeText: String?,
     val countryText: String?,
     val flagText: String?,
+    val countryIso2s: List<String> = emptyList(),
+)
+
+data class DashboardFlightUiState(
+    val title: String,
+    val label: String,
+    val dateText: String?,
+    val sortKey: String?,
+    val status: TravelStatus,
+    val meta: String?,
 )
 
 private fun Trip.dayCount(): Int? {
@@ -266,6 +329,18 @@ private fun FlexibleDateRange.toMemoryMonthRange(): String? {
 
 private fun FlexibleDate.toMonthYearText(): String =
     month?.let { "${it.shortCatalanMonth()} $year" } ?: year.toString()
+
+private fun Airport.shortLabel(): String = iata ?: icao ?: city
+
+private fun List<TravelStatus>.deriveGroupStatus(): TravelStatus = when {
+    contains(TravelStatus.IN_PROGRESS) -> TravelStatus.IN_PROGRESS
+    contains(TravelStatus.COMPLETED) -> TravelStatus.COMPLETED
+    contains(TravelStatus.PLANNED) -> TravelStatus.PLANNED
+    else -> TravelStatus.UNKNOWN
+}
+
+private val dashboardFlightDateFormatter = FlexibleDateFormatter()
+private fun String.toFlightDateText(): String? = dashboardFlightDateFormatter.formatIsoDate(this)
 
 private fun Int.shortCatalanMonth(): String = when (this) {
     1 -> "GEN."

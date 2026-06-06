@@ -315,8 +315,26 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, SVG flag images via FlagCDN + `coil-svg` (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
 - **TripDetail** ✅ — committed (see above)
 - **CountryDetail** ✅ — committed (see item 12 above)
-- **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent
+- **Dashboard** — redesign agreed, not yet implemented. See plan below.
 - **Settings** — backup, API key, dataset health panels
+
+#### Dashboard redesign plan (v3.1, not yet implemented)
+
+Agreed layout top-to-bottom:
+
+1. **Hero** — full-width `AtlasGeoCanvas` world map (fix fill/clipping issue so map fills its container edge-to-edge). Below the map: visited count + continent count + state legend. Country state KPI row (Visitats / Viscuts / Plans / Desitjats counts) folded directly into the hero section — no separate `CountryKpis` card.
+2. **In-progress trip card** — shown only when a trip has `status == IN_PROGRESS`. Uses the same `AtlasGeoCanvas`-backed card style as TripList (not the current colored block). Hidden entirely when no trip is in progress.
+3. **World stats card** — single card (not one card per KPI) with a compact grid of travel stats. Proposed metrics: Viatges · Vols · Km volats · Distància mitjana per vol · Països visitats/total. Open to additions.
+4. **Upcoming trips** — section title + 2–3 next `PLANNED` trips as a vertical list (excluding the featured in-progress trip). Simple card rows, not a carousel.
+5. **Upcoming flights / itineraries** — section title + 2–3 next planned flights/itineraries as a vertical list. Separate from trips.
+6. **Recent trips** — horizontal scroll row of recent `COMPLETED` trips (same card style as current `RecentMemoryCard` but aligned with v3.1 aesthetics).
+7. **Recent flights / itineraries** — horizontal scroll row of recent completed flights/itineraries.
+
+**Key decisions:**
+- No carousel / pager — horizontal scroll rows and vertical lists are used instead (simpler, no hidden state).
+- `FeaturedTripCard` is removed; in-progress trip takes that role with a proper TripList-style card.
+- `CountryKpis` and `TravelKpis` sections are removed and replaced by the consolidated hero + single stats card.
+- `RouteLineCanvas` (decorative painted lines) is removed from trip cards; replaced by real `AtlasGeoCanvas` content.
 
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).

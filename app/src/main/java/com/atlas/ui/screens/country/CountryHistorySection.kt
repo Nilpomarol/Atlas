@@ -18,13 +18,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -142,7 +143,7 @@ fun CountryHistorySection(
                         dateText = airTravel.dateText?.toHistoryDateText() ?: "Sense data",
                         title = airTravel.title,
                         meta = meta,
-                        pillLabel = airTravel.label.uppercase(),
+                        pillLabel = "VOL",
                         pillForeground = AtlasVisited,
                         pillBackground = AtlasVisitedContainer,
                     )
@@ -194,6 +195,9 @@ private fun TimelineItem(
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+    val hasMenu = onEdit != null || onDelete != null
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -209,14 +213,14 @@ private fun TimelineItem(
             Spacer(modifier = Modifier.height(14.dp))
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(30.dp)
                     .background(color, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier.size(18.dp),
+                    modifier = Modifier.size(15.dp),
                     tint = Color.White,
                 )
             }
@@ -242,7 +246,7 @@ private fun TimelineItem(
                 .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            // Date + type pill
+            // Date + type pill + optional overflow menu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -255,7 +259,7 @@ private fun TimelineItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Box(
                     modifier = Modifier
                         .background(pillBackground, RoundedCornerShape(6.dp))
@@ -268,12 +272,70 @@ private fun TimelineItem(
                         color = pillForeground,
                     )
                 }
+                if (hasMenu) {
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "Més opcions",
+                                modifier = Modifier.size(14.dp),
+                                tint = AtlasOnSurfaceFaint,
+                            )
+                        }
+                        MaterialTheme(
+                            colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
+                            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
+                        ) {
+                            DropdownMenu(
+                                expanded = showMenu,
+                                onDismissRequest = { showMenu = false },
+                                modifier = Modifier.width(160.dp),
+                            ) {
+                                onEdit?.let { edit ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Edita",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                            )
+                                        },
+                                        onClick = { showMenu = false; edit() },
+                                    )
+                                }
+                                if (onEdit != null && onDelete != null) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(1.dp)
+                                            .background(AtlasOutline),
+                                    )
+                                }
+                                onDelete?.let { delete ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = "Elimina",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = AtlasError,
+                                            )
+                                        },
+                                        onClick = { showMenu = false; delete() },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
             // Title
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.ExtraBold,
+                style = MaterialTheme.typography.headlineSmall,
                 color = AtlasOnSurfaceStrong,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -287,36 +349,6 @@ private fun TimelineItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-            }
-            // Edit / delete — log items only
-            if (onEdit != null || onDelete != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 2.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    onEdit?.let {
-                        IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
-                            Icon(
-                                imageVector = Icons.Filled.Edit,
-                                contentDescription = "Edita",
-                                modifier = Modifier.size(14.dp),
-                                tint = AtlasOnSurfaceFaint,
-                            )
-                        }
-                    }
-                    onDelete?.let {
-                        IconButton(onClick = it, modifier = Modifier.size(28.dp)) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = "Elimina",
-                                modifier = Modifier.size(14.dp),
-                                tint = AtlasOnSurfaceFaint,
-                            )
-                        }
-                    }
-                }
             }
         }
     }

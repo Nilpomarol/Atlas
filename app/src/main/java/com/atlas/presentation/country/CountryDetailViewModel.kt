@@ -9,6 +9,7 @@ import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.Itinerary
@@ -131,10 +132,6 @@ class CountryDetailViewModel(
                     allStops = allStops,
                 )
             }
-            .sortedWith(
-                compareBy<CountryTripSummaryUiState> { it.status == TravelStatus.UNKNOWN }
-                    .thenBy { it.title },
-            )
         val excursionSummaries = excursions.flatMap { excursion ->
             val trip = tripsById[excursion.tripId] ?: return@flatMap emptyList()
             excursion.stops
@@ -145,7 +142,8 @@ class CountryDetailViewModel(
                         title = excursion.title,
                         status = trip.status,
                         dateRangeText = stop.dateRange?.let { FlexibleDateFormatter().format(it) },
-                        routeText = excursion.stops.sortedBy { it.sortOrder }.joinToString(" -> ") { it.locationName },
+                        sortKey = stop.dateRange?.start?.toSortKey(),
+                        routeText = excursion.stops.sortedBy { it.sortOrder }.joinToString(" → ") { it.locationName },
                         stopCount = 1,
                         label = "Excursio",
                     )
@@ -156,7 +154,6 @@ class CountryDetailViewModel(
 
     private val countryAirTravelSummaries = flightTrackingData.map { flightData ->
         val airportsById = flightData.airports.associateBy { it.id }
-        val itinerariesById = flightData.itineraries.associateBy { it.id }
         val unlinkedItineraryIds = flightData.itineraries
             .filter { it.tripId == null }
             .map { it.id }
@@ -171,10 +168,11 @@ class CountryDetailViewModel(
                 val origin = airportsById[flight.originAirportId]?.shortLabel() ?: flight.originAirportId.uppercase()
                 val destination = airportsById[flight.destinationAirportId]?.shortLabel() ?: flight.destinationAirportId.uppercase()
                 CountryAirTravelSummaryUiState(
-                    title = "$origin -> $destination",
+                    title = "$origin → $destination",
                     label = "Vol",
                     status = flight.status,
                     dateText = flight.scheduledDepartureAt?.toCompactDateText(),
+                    sortKey = flight.scheduledDepartureAt,
                     meta = listOfNotNull(flight.airline, flight.flightNumber).joinToString(" ").ifBlank { "Vol individual" },
                 )
             }
@@ -200,20 +198,18 @@ class CountryDetailViewModel(
                 val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null
                 val origin = airportsById[firstFlight.originAirportId]?.shortLabel() ?: firstFlight.originAirportId.uppercase()
                 val destination = airportsById[lastFlight.destinationAirportId]?.shortLabel() ?: lastFlight.destinationAirportId.uppercase()
-                val itineraryTitle = itinerariesById[group.itineraryId]?.title ?: "Itinerari"
+                val flightCount = group.flights.size
                 CountryAirTravelSummaryUiState(
-                    title = itineraryTitle,
+                    title = "$origin → $destination",
                     label = "Itinerari",
                     status = derivation.status,
                     dateText = firstFlight.scheduledDepartureAt?.toCompactDateText(),
-                    meta = "${group.title?.takeIf { it.isNotBlank() } ?: "Grup"} · $origin -> $destination",
+                    sortKey = firstFlight.scheduledDepartureAt,
+                    meta = if (flightCount == 1) "1 vol" else "$flightCount vols",
                 )
             }
 
-        (itinerarySummaries + soloFlightSummaries).sortedWith(
-            compareBy<CountryAirTravelSummaryUiState> { it.status == TravelStatus.PLANNED }
-                .thenBy { it.title },
-        )
+        itinerarySummaries + soloFlightSummaries
     }
 
     private val historySummaries = combine(
@@ -449,6 +445,7 @@ data class CountryTripSummaryUiState(
     val title: String,
     val status: TravelStatus,
     val dateRangeText: String?,
+    val sortKey: String?,
     val routeText: String?,
     val stopCount: Int,
     val label: String = "Viatge",
@@ -459,6 +456,7 @@ data class CountryAirTravelSummaryUiState(
     val label: String,
     val status: TravelStatus,
     val dateText: String?,
+    val sortKey: String?,
     val meta: String,
 )
 
@@ -494,6 +492,7 @@ private fun Trip.toCountryTripSummary(
         title = title,
         status = status,
         dateRangeText = dateRange?.let { FlexibleDateFormatter().format(it) },
+        sortKey = dateRange?.start?.toSortKey(),
         routeText = when {
             first == null -> null
             last == null || first == last -> first
@@ -504,6 +503,13 @@ private fun Trip.toCountryTripSummary(
 }
 
 private fun Airport.shortLabel(): String = iata ?: icao ?: city
+
+private fun FlexibleDate.toSortKey(): String {
+    val y = year.toString().padStart(4, '0')
+    val m = (month ?: 1).toString().padStart(2, '0')
+    val d = (day ?: 1).toString().padStart(2, '0')
+    return "$y-$m-$d"
+}
 
 private fun String.toCompactDateText(): String? =
     countryDetailDateFormatter.formatIsoDate(this)

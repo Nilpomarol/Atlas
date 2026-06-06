@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
+import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
@@ -55,6 +56,8 @@ import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasLived
 import com.atlas.ui.theme.AtlasLivedContainer
+import com.atlas.ui.theme.AtlasLiving
+import com.atlas.ui.theme.AtlasLivingContainer
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -72,14 +75,89 @@ fun CountryHistorySection(
     logs: List<CountryLog>,
     tripSummaries: List<CountryTripSummaryUiState>,
     airTravelSummaries: List<CountryAirTravelSummaryUiState>,
+    trackingState: CountryTrackingState,
     style: CountryDetailStyle,
     onTripClick: (String) -> Unit,
     onEditLog: (CountryLog) -> Unit,
     onDeleteLog: (CountryLog) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val totalCount = logs.size + tripSummaries.size + airTravelSummaries.size
     var pendingDeleteLog by remember { mutableStateOf<CountryLog?>(null) }
+
+    val rows = buildList {
+        if (trackingState.currentlyLiving) {
+            add(
+                HistoryRow(
+                    sortKey = "9999-12-31",
+                    color = AtlasLiving,
+                    icon = Icons.Filled.Home,
+                    dateText = "Ara",
+                    title = "Residència actual",
+                    meta = "",
+                    pillLabel = "VIVINT",
+                    pillForeground = AtlasLiving,
+                    pillBackground = AtlasLivingContainer,
+                ),
+            )
+        }
+        for (trip in tripSummaries) {
+            val meta = listOfNotNull(
+                trip.routeText?.takeIf { it.isNotBlank() },
+                trip.status.toHistoryStatus(),
+            ).joinToString(" · ")
+            add(
+                HistoryRow(
+                    sortKey = trip.sortKey ?: "0000-01-01",
+                    color = AtlasTrip,
+                    icon = Icons.Filled.Route,
+                    dateText = trip.dateRangeText?.toHistoryDateText() ?: "Sense data",
+                    title = trip.title,
+                    meta = meta,
+                    pillLabel = trip.label.uppercase(),
+                    pillForeground = AtlasTrip,
+                    pillBackground = AtlasTripContainer,
+                    onClick = { onTripClick(trip.tripId) },
+                ),
+            )
+        }
+        for (airTravel in airTravelSummaries) {
+            val meta = listOfNotNull(
+                airTravel.meta.takeIf { it.isNotBlank() },
+                airTravel.status.toHistoryStatus(),
+            ).joinToString(" · ")
+            add(
+                HistoryRow(
+                    sortKey = airTravel.sortKey ?: "0000-01-01",
+                    color = AtlasVisited,
+                    icon = Icons.Filled.Flight,
+                    dateText = airTravel.dateText?.toHistoryDateText() ?: "Sense data",
+                    title = airTravel.title,
+                    meta = meta,
+                    pillLabel = "VOL",
+                    pillForeground = AtlasVisited,
+                    pillBackground = AtlasVisitedContainer,
+                ),
+            )
+        }
+        for (log in logs) {
+            val isLived = log.type == CountryLogType.LIVED
+            add(
+                HistoryRow(
+                    sortKey = log.dateRange?.start?.toSortKey() ?: "0000-01-01",
+                    color = if (isLived) AtlasLived else AtlasVisit,
+                    icon = if (isLived) Icons.Filled.Home else Icons.Filled.Place,
+                    dateText = log.dateRange?.toHistoryDateText() ?: "Sense data",
+                    title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
+                    meta = log.historyMeta(),
+                    pillLabel = if (isLived) "RESIDÈNCIA" else "VISITA",
+                    pillForeground = if (isLived) AtlasLived else AtlasVisit,
+                    pillBackground = if (isLived) AtlasLivedContainer else AtlasVisitContainer,
+                    onEdit = { onEditLog(log) },
+                    onDelete = { pendingDeleteLog = log },
+                ),
+            )
+        }
+    }.sortedByDescending { it.sortKey }
 
     Column(
         modifier = modifier,
@@ -97,7 +175,7 @@ fun CountryHistorySection(
             },
         )
 
-        if (totalCount == 0) {
+        if (rows.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -113,55 +191,20 @@ fun CountryHistorySection(
             }
         } else {
             Column {
-                tripSummaries.forEachIndexed { index, trip ->
-                    val meta = listOfNotNull(
-                        trip.routeText?.takeIf { it.isNotBlank() },
-                        trip.status.toHistoryStatus(),
-                    ).joinToString(" · ")
+                rows.forEachIndexed { index, row ->
                     TimelineItem(
-                        isLast = index == tripSummaries.lastIndex && airTravelSummaries.isEmpty() && logs.isEmpty(),
-                        color = AtlasTrip,
-                        icon = Icons.Filled.Route,
-                        dateText = trip.dateRangeText?.toHistoryDateText() ?: "Sense data",
-                        title = trip.title,
-                        meta = meta,
-                        pillLabel = trip.label.uppercase(),
-                        pillForeground = AtlasTrip,
-                        pillBackground = AtlasTripContainer,
-                        onClick = { onTripClick(trip.tripId) },
-                    )
-                }
-                airTravelSummaries.forEachIndexed { index, airTravel ->
-                    val meta = listOfNotNull(
-                        airTravel.meta.takeIf { it.isNotBlank() },
-                        airTravel.status.toHistoryStatus(),
-                    ).joinToString(" · ")
-                    TimelineItem(
-                        isLast = index == airTravelSummaries.lastIndex && logs.isEmpty(),
-                        color = AtlasVisited,
-                        icon = Icons.Filled.Flight,
-                        dateText = airTravel.dateText?.toHistoryDateText() ?: "Sense data",
-                        title = airTravel.title,
-                        meta = meta,
-                        pillLabel = "VOL",
-                        pillForeground = AtlasVisited,
-                        pillBackground = AtlasVisitedContainer,
-                    )
-                }
-                logs.forEachIndexed { index, log ->
-                    val isLived = log.type == CountryLogType.LIVED
-                    TimelineItem(
-                        isLast = index == logs.lastIndex,
-                        color = if (isLived) AtlasLived else AtlasVisit,
-                        icon = if (isLived) Icons.Filled.Home else Icons.Filled.Place,
-                        dateText = log.dateRange?.toHistoryDateText() ?: "Sense data",
-                        title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
-                        meta = log.historyMeta(),
-                        pillLabel = if (isLived) "RESIDÈNCIA" else "VISITA",
-                        pillForeground = if (isLived) AtlasLived else AtlasVisit,
-                        pillBackground = if (isLived) AtlasLivedContainer else AtlasVisitContainer,
-                        onEdit = { onEditLog(log) },
-                        onDelete = { pendingDeleteLog = log },
+                        isLast = index == rows.lastIndex,
+                        color = row.color,
+                        icon = row.icon,
+                        dateText = row.dateText,
+                        title = row.title,
+                        meta = row.meta,
+                        pillLabel = row.pillLabel,
+                        pillForeground = row.pillForeground,
+                        pillBackground = row.pillBackground,
+                        onClick = row.onClick,
+                        onEdit = row.onEdit,
+                        onDelete = row.onDelete,
                     )
                 }
             }
@@ -354,6 +397,23 @@ private fun TimelineItem(
     }
 }
 
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+private data class HistoryRow(
+    val sortKey: String,
+    val color: Color,
+    val icon: ImageVector,
+    val dateText: String,
+    val title: String,
+    val meta: String,
+    val pillLabel: String,
+    val pillForeground: Color,
+    val pillBackground: Color,
+    val onClick: (() -> Unit)? = null,
+    val onEdit: (() -> Unit)? = null,
+    val onDelete: (() -> Unit)? = null,
+)
+
 // ─── Date helpers ────────────────────────────────────────────────────────────
 
 private fun TravelStatus.toHistoryStatus(): String? = when (this) {
@@ -388,6 +448,13 @@ private fun FlexibleDateRange.yearDurationText(): String? {
     val endYear = end?.year ?: return null
     val years = (endYear - startYear).coerceAtLeast(1)
     return "${years.toCatalanCount()} ${if (years == 1) "any" else "anys"} de residència"
+}
+
+private fun FlexibleDate.toSortKey(): String {
+    val y = year.toString().padStart(4, '0')
+    val m = (month ?: 1).toString().padStart(2, '0')
+    val d = (day ?: 1).toString().padStart(2, '0')
+    return "$y-$m-$d"
 }
 
 private fun FlexibleDate.toHistoryDateText(): String = when (precision) {

@@ -257,9 +257,12 @@ class CountryDetailViewModel(
     }
 
     fun onSetCurrentlyLiving() {
-        val countryIso2 = uiState.value.country?.iso2 ?: return
-        viewModelScope.launch {
-            setCurrentlyLivingCountryUseCase(countryIso2)
+        logDraft.update {
+            CountryLogDraftUiState(
+                isOpen = true,
+                type = CountryLogType.LIVED,
+                isLivingFlow = true,
+            )
         }
     }
 
@@ -364,6 +367,9 @@ class CountryDetailViewModel(
                     ),
                 )
             }
+            if (draft.isLivingFlow) {
+                setCurrentlyLivingCountryUseCase(countryIso2)
+            }
             onDismissLogDraft()
         }
     }
@@ -467,6 +473,7 @@ data class CountryLogDraftUiState(
     val dateRange: FlexibleDateRangeDraftUiState = FlexibleDateRangeDraftUiState(),
     val notes: String = "",
     val validationError: String? = null,
+    val isLivingFlow: Boolean = false,
 ) {
     companion object {
         fun fromLog(log: CountryLog): CountryLogDraftUiState {

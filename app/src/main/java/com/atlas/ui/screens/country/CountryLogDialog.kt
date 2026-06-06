@@ -57,7 +57,11 @@ fun CountryLogDialog(
         containerColor = AtlasSurface,
         title = {
             Text(
-                text = if (draft.logId == null) "Afegeix registre" else "Edita registre",
+                text = when {
+                    draft.isLivingFlow -> "Des de quan vius aquí?"
+                    draft.logId == null -> "Afegeix registre"
+                    else -> "Edita registre"
+                },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.ExtraBold,
                 color = AtlasOnSurfaceStrong,
@@ -66,11 +70,13 @@ fun CountryLogDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                // Type selector — uses per-type accent colours
-                LogTypeSelector(
-                    selectedType = draft.type,
-                    onTypeChanged = onTypeChanged,
-                )
+                // Type selector — hidden in living flow (type is fixed to LIVED)
+                if (!draft.isLivingFlow) {
+                    LogTypeSelector(
+                        selectedType = draft.type,
+                        onTypeChanged = onTypeChanged,
+                    )
+                }
 
                 // Title field
                 OutlinedTextField(

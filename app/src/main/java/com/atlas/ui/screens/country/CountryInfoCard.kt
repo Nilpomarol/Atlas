@@ -22,7 +22,6 @@ import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
-import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasSurface
@@ -34,17 +33,7 @@ fun CountryInfoCard(
     style: CountryDetailStyle,
 ) {
     Column {
-        AtlasSectionTitle(
-            title = "Informació",
-            action = {
-                Text(
-                    text = "Informació completa >",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasPrimary,
-                )
-            },
-        )
+        AtlasSectionTitle(title = "Informació")
         Box(
             modifier = Modifier
                 .padding(top = 10.dp)

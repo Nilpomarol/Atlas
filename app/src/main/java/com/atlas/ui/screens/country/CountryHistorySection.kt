@@ -150,8 +150,12 @@ fun CountryHistorySection(
                     sortKey = if (isCurrentResidence) "9999-12-31" else log.dateRange?.start?.toSortKey() ?: "0000-01-01",
                     color = if (isCurrentResidence) AtlasLiving else if (isLived) AtlasLived else AtlasVisit,
                     icon = if (isLived) Icons.Filled.Home else Icons.Filled.Place,
-                    dateText = log.dateRange?.start?.let { "Des de ${it.toHistoryDateText()}" } ?: if (isCurrentResidence) "Ara" else "Sense data",
-                    title = log.notes?.takeIf { it.isNotBlank() } ?: log.type.toCatalanLabel(),
+                    dateText = if (isCurrentResidence) {
+                        log.dateRange?.start?.let { "Des de ${it.toHistoryDateText()}" } ?: "Ara"
+                    } else {
+                        log.dateRange?.toHistoryDateText() ?: "Sense data"
+                    },
+                    title = log.notes?.takeIf { it.isNotBlank() } ?: if (isCurrentResidence) "Vivint" else log.type.toCatalanLabel(),
                     meta = if (isCurrentResidence) "" else log.historyMeta(),
                     pillLabel = if (isCurrentResidence) "VIVINT" else if (isLived) "RESIDÈNCIA" else "VISITA",
                     pillForeground = if (isCurrentResidence) AtlasLiving else if (isLived) AtlasLived else AtlasVisit,

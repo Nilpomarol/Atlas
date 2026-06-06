@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-05 (TripDetail redesign committed; CountryList polished with SVG flags)
+* **Last updated:** 2026-06-06 (CountryDetail v3.1 redesign committed)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -93,12 +93,12 @@
 ### Maps
 * `AtlasMapView` composable (`ui/components/map/AtlasMapView.kt`) — lifecycle-aware MapLibre wrapper, reused across all map surfaces.
 * `TripMapPreview` — MapLibre map; blue main-stop markers, amber generated itinerary-stop markers, purple excursion markers; separate LineLayer for main and excursion routes; camera fits all points.
-* `CountryFlag` (`ui/components/CountryFlag.kt`) — loads flag PNG from `https://flagcdn.com/w40/{iso2_lower}.png` via Coil; falls back to ISO2 text. Used in `CountryListScreen`; reusable elsewhere.
+* `CountryFlag` (`ui/components/CountryFlag.kt`) — loads flag SVG from `https://flagcdn.com/{iso2_lower}.svg` via Coil + `SvgDecoder.Factory()`; falls back to `FlagIso2Fallback` (ISO2 text). Used in `CountryListScreen` and `CountryIdentityHeader`.
 * `ui/components/geo/*` — reusable offline vector geo foundation. Loads bundled Natural Earth 1:110m admin-0 country polygons (`assets/geo/ne_110m_admin_0_countries.geojson`), fits a Mercator-like projection to route or world viewports, draws graticules, country polygons, great-circle arcs, and markers with Compose Canvas.
   * `AtlasGeoCanvas` — core composable. Key params: `viewport`, `routeSegments`, `markers`, `highlightColorByIso2: Map<String, Color>`. Highlighted countries get a tinted fill + accent stroke in their specified color.
   * `GeoMarker` has `isHollow: Boolean` — hollow markers (white fill + colored stroke ring) are used for capital cities.
   * `FlightRouteGeoMap` — wraps `AtlasGeoCanvas` for the flight detail hero; fits viewport to route, draws solid + dashed context arcs.
-* `CountryMapHero` — **uses `AtlasGeoCanvas`** (MapLibre removed). Viewport fits to country center (22°×16° minimum span). Target country highlighted in `style.primary`. Solid marker at country center, hollow marker at capital (when coordinates differ).
+* `CountryMapHero` — **uses `AtlasGeoCanvas`** (MapLibre removed). Viewport centers on capital (falls back to country center). Target country highlighted in `style.primary`. Single solid marker at capital position with `label = country.capitalNameCa` (rendered as a rounded-rect tag above the dot by `AtlasGeoCanvas`).
 * `TripMapPreview` — still uses MapLibre; blue main-stop markers, amber itinerary-stop markers, purple excursion markers.
 * `DashboardScreen` world map — **uses `AtlasGeoCanvas`** in world viewport. Countries colored by tracking state (living > lived > visited > planned > wished, mutually exclusive). `DashboardUiState` carries five disjoint iso2 sets; `highlightColorByIso2` is `remember`-keyed on them.
 * Natural Earth source: `https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson` (public domain dataset).
@@ -303,11 +303,18 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
     - **Timeline:** numbered circles (AtlasNavy, 30dp) + vertical connecting line. `TripStopCard`: location pin icon, title + VOL badge (ITINERARY_GROUP), `Country · date · lat,lng` meta, ⋮ overflow. Excursions inline as `ExcursionTimelineCard` with purple icon. Reorder mode preserved.
     - New files: `AtlasPreferencesDataStore`, `TripMapPreferencesDataSource`, `TripMapPreferencesRepository` for map preference persistence.
 
+12. ✅ **CountryDetail redesign** — committed. Key changes:
+    - **Map hero** (`CountryMapHero`): single capital marker with name label; viewport centered on capital. Target country highlighted in state color.
+    - **Identity header** (`CountryIdentityHeader`): SVG flag via `CountryFlag` composable (same as CountryList), vertically centered in header row.
+    - **Quick actions** (`CountryQuickActions`): rounded-square (10dp) icon containers, `AtlasNavy` CTA button for "Afegeix registre".
+    - **Historial** (`CountryHistorySection`): full timeline revamp. Single unified `HistoryRow` list built from trips + air travel + logs, sorted newest-first by `sortKey`. Air travel always tagged "VOL". Log cards have a ⋮ overflow menu (Edita / divider / Elimina). Open-ended LIVED log (no end date) renders as VIVINT with `AtlasLiving` colour and years-of-residence count in meta. Closed LIVED log shows full start–end date range. Synthetic VIVINT row shown only when `currentlyLiving == true` but no open-ended LIVED log exists yet (backward-compat).
+    - **Living flow**: tapping "Visc aquí" toggle now opens `CountryLogDialog` with title "Des de quan vius aquí?", type fixed to LIVED, type selector hidden. On confirm: LIVED log saved + `setCurrentlyLivingCountryUseCase` called. Cancel leaves state unchanged (safe for accidental taps).
+    - **ViewModel** (`CountryDetailViewModel`): `sortKey: String?` added to both `CountryTripSummaryUiState` and `CountryAirTravelSummaryUiState`; itinerary titles computed from first→last airport route (title field is always null); `FlexibleDate.toSortKey()` private extension; `isLivingFlow: Boolean` flag on `CountryLogDraftUiState`.
+
 ### Next: v3.1 remaining screens
 - **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, SVG flag images via FlagCDN + `coil-svg` (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
 - **TripDetail** ✅ — committed (see above)
-- **CountryDetail** — state-colored map hero, identity card, info spec-sheet, toggles, derivation timeline
-
+- **CountryDetail** ✅ — committed (see item 12 above)
 - **Dashboard** — polygon map hero, stat ledger, featured trip card, domain stats, upcoming/recent
 - **Settings** — backup, API key, dataset health panels
 

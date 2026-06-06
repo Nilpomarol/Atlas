@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.ui.theme.AtlasLiving
 import com.atlas.ui.theme.AtlasLivingContainer
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
@@ -84,7 +84,7 @@ fun CountryQuickActions(
                 .fillMaxWidth()
                 .padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AtlasOnSurfaceStrong),
+            colors = ButtonDefaults.buttonColors(containerColor = AtlasNavy),
             elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp, 0.dp),
             contentPadding = PaddingValues(vertical = 10.dp),
         ) {
@@ -119,7 +119,7 @@ private fun ActionToggleRow(
         Box(
             modifier = Modifier
                 .size(36.dp)
-                .background(container, CircleShape),
+                .background(container, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

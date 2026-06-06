@@ -57,7 +57,7 @@ fun CountryIdentityHeader(
             .background(AtlasSurface, RoundedCornerShape(18.dp))
             .border(1.dp, AtlasOutline, RoundedCornerShape(18.dp))
             .padding(14.dp),
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         CountryFlag(

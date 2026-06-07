@@ -9,7 +9,11 @@ import com.atlas.app.AtlasApplication
 import com.atlas.ui.screens.dashboard.DashboardScreen
 
 @Composable
-fun DashboardRoute() {
+fun DashboardRoute(
+    onStatsClick: () -> Unit = {},
+    onTripsClick: () -> Unit = {},
+    onFlightsClick: () -> Unit = {},
+) {
     val app = LocalContext.current.applicationContext as AtlasApplication
     val viewModel: DashboardViewModel = viewModel(
         factory = DashboardViewModel.Factory(
@@ -25,5 +29,10 @@ fun DashboardRoute() {
     )
     val uiState by viewModel.uiState.collectAsState()
 
-    DashboardScreen(uiState = uiState)
+    DashboardScreen(
+        uiState = uiState,
+        onStatsClick = onStatsClick,
+        onTripsClick = onTripsClick,
+        onFlightsClick = onFlightsClick,
+    )
 }

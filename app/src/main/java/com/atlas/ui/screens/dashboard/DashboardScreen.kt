@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -81,6 +82,9 @@ private val WorldNoAntarctica = GeoViewport.World(minLatitudeDeg = -57.0, maxLat
 @Composable
 fun DashboardScreen(
     uiState: DashboardUiState,
+    onStatsClick: () -> Unit = {},
+    onTripsClick: () -> Unit = {},
+    onFlightsClick: () -> Unit = {},
 ) {
     AtlasPage(contentPadding = PaddingValues(0.dp)) {
         Column(
@@ -97,13 +101,13 @@ fun DashboardScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 uiState.featuredTrip?.let { InProgressTripCard(it) }
-                WorldStatsCard(uiState = uiState)
+                WorldStatsCard(uiState = uiState, onStatsClick = onStatsClick)
 
                 if (uiState.upcomingTrips.isNotEmpty()) {
-                    UpcomingTripsSection(trips = uiState.upcomingTrips)
+                    UpcomingTripsSection(trips = uiState.upcomingTrips, onSeeAll = onTripsClick)
                 }
                 if (uiState.upcomingFlights.isNotEmpty()) {
-                    UpcomingFlightsSection(flights = uiState.upcomingFlights)
+                    UpcomingFlightsSection(flights = uiState.upcomingFlights, onSeeAll = onFlightsClick)
                 }
                 if (uiState.recentCompletedTrips.isNotEmpty()) {
                     RecentTripsSection(trips = uiState.recentCompletedTrips)
@@ -334,11 +338,16 @@ private fun InProgressTripCard(trip: DashboardTripUiState) {
 // ── Stats card ────────────────────────────────────────────────────────────────
 
 @Composable
-private fun WorldStatsCard(uiState: DashboardUiState) {
-    AtlasCard(
+private fun WorldStatsCard(uiState: DashboardUiState, onStatsClick: () -> Unit) {
+    Column(
         modifier = Modifier.padding(horizontal = 20.dp),
-        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        AtlasSectionTitle(
+            title = "Estadístiques",
+            action = { SeeAllLink("Veure tot", onStatsClick) },
+        )
+        AtlasCard(contentPadding = PaddingValues(16.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
             StatsRow(
                 left = StatItem(uiState.tripCount.toString(), "Viatges"),
@@ -359,6 +368,7 @@ private fun WorldStatsCard(uiState: DashboardUiState) {
                 left = StatItem(uiState.daysTraveled.toString(), "Dies viatjats"),
                 right = StatItem(uiState.avgTripLengthDays?.let { "%.1f".format(it) } ?: "—", "Durada mitj."),
             )
+        }
         }
     }
 }
@@ -392,12 +402,15 @@ private fun StatRowDivider() {
 // ── Upcoming trips ────────────────────────────────────────────────────────────
 
 @Composable
-private fun UpcomingTripsSection(trips: List<DashboardTripUiState>) {
+private fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: () -> Unit) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AtlasSectionTitle(if (trips.size == 1) "Proper viatge" else "Propers viatges")
+        AtlasSectionTitle(
+            title = if (trips.size == 1) "Proper viatge" else "Propers viatges",
+            action = { SeeAllLink("Tots els viatges", onSeeAll) },
+        )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             trips.forEach { UpcomingTripCard(it) }
         }
@@ -466,12 +479,15 @@ private fun UpcomingTripCard(trip: DashboardTripUiState) {
 // ── Upcoming flights ──────────────────────────────────────────────────────────
 
 @Composable
-private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>) {
+private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>, onSeeAll: () -> Unit) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AtlasSectionTitle(if (flights.size == 1) "Proper vol" else "Propers vols")
+        AtlasSectionTitle(
+            title = if (flights.size == 1) "Proper vol" else "Propers vols",
+            action = { SeeAllLink("Tots els vols", onSeeAll) },
+        )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             flights.forEach { UpcomingFlightCard(it) }
         }
@@ -744,6 +760,17 @@ private fun TripStatePill(label: String, color: Color, modifier: Modifier = Modi
         Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
         Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
     }
+}
+
+@Composable
+private fun SeeAllLink(label: String, onClick: () -> Unit) {
+    Text(
+        text = "$label →",
+        modifier = Modifier.clickable(onClick = onClick),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.Medium,
+        color = AtlasPrimary,
+    )
 }
 
 private fun Double.toCompactKm(): String {

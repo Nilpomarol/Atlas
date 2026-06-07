@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.atlas.presentation.dashboard.DashboardRoute
+import com.atlas.presentation.stats.StatsRoute
 import com.atlas.presentation.country.CountryDetailRoute
 import com.atlas.presentation.country.CountryListRoute
 import com.atlas.presentation.flight.FlightDetailRoute
@@ -92,7 +93,26 @@ fun AtlasNavHost() {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(AtlasDestination.Dashboard.route) {
-                DashboardRoute()
+                DashboardRoute(
+                    onStatsClick = { navController.navigate("stats") },
+                    onTripsClick = {
+                        navController.navigate(AtlasDestination.Trips.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onFlightsClick = {
+                        navController.navigate(AtlasDestination.Flights.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                )
+            }
+            composable("stats") {
+                StatsRoute()
             }
             composable(AtlasDestination.Countries.route) {
                 CountryListRoute(

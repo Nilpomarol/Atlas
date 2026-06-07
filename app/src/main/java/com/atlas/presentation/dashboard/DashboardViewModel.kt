@@ -132,6 +132,10 @@ class DashboardViewModel(
                     sortKey = flight.scheduledDepartureAt,
                     status = flight.status,
                     meta = listOfNotNull(flight.airline, flight.flightNumber).joinToString(" ").ifBlank { null },
+                    originCode = origin,
+                    destinationCode = destination,
+                    airlineIata = flight.airline?.takeIf { it.length in 2..3 },
+                    flightNumber = flight.flightNumber?.takeIf { it.isNotBlank() },
                 )
             }
         val groupItems = itineraryGroups.mapNotNull { group ->
@@ -150,6 +154,10 @@ class DashboardViewModel(
                 sortKey = firstFlight.scheduledDepartureAt,
                 status = groupStatus,
                 meta = if (flightCount == 1) "1 vol" else "$flightCount vols",
+                originCode = origin,
+                destinationCode = destination,
+                airlineIata = firstFlight.airline?.takeIf { it.length in 2..3 },
+                flightNumber = firstFlight.flightNumber?.takeIf { it.isNotBlank() },
             )
         }
         val allFlightItems = soloFlightItems + groupItems
@@ -373,6 +381,10 @@ data class DashboardFlightUiState(
     val sortKey: String?,
     val status: TravelStatus,
     val meta: String?,
+    val originCode: String = "",
+    val destinationCode: String = "",
+    val airlineIata: String? = null,
+    val flightNumber: String? = null,
 )
 
 data class DashboardCountryMarker(

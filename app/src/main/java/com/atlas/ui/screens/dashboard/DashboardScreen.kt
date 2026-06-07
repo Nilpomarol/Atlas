@@ -21,12 +21,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AirplanemodeActive
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +57,9 @@ import com.atlas.presentation.dashboard.DashboardFlightUiState
 import com.atlas.presentation.dashboard.DashboardTripUiState
 import com.atlas.presentation.dashboard.DashboardUiState
 import com.atlas.presentation.trip.TripStopMapPoint
+import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
+import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.components.geo.AtlasGeoCanvas
@@ -356,12 +361,7 @@ private fun WorldStatsCard(uiState: DashboardUiState, onStatsClick: () -> Unit) 
             StatRowDivider()
             StatsRow(
                 left = StatItem(uiState.flownDistanceKm.toCompactKm(), "Km volats"),
-                right = StatItem(uiState.hoursFlown.toHoursText(), "Hores vol."),
-            )
-            StatRowDivider()
-            StatsRow(
-                left = StatItem(uiState.uniqueAirportCount.toString(), "Aeroports"),
-                right = StatItem(uiState.uniqueAirlineCount.toString(), "Aerolínies"),
+                right = StatItem(uiState.uniqueAirportCount.toString(), "Aeroports"),
             )
             StatRowDivider()
             StatsRow(
@@ -499,47 +499,110 @@ private fun UpcomingFlightCard(flight: DashboardFlightUiState) {
     val colors = flight.status.tripStatusColors()
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(22.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            Box(
-                modifier = Modifier
-                    .width(4.dp)
-                    .fillMaxHeight()
-                    .background(colors.foreground),
-            )
-            Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+        Column(modifier = Modifier.padding(18.dp)) {
+            // Header: airline logo | flight number / label | status pill
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = flight.label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = colors.foreground,
+                if (flight.airlineIata != null) {
+                    AirlineLogo(
+                        iata = flight.airlineIata,
+                        modifier = Modifier.height(34.dp).widthIn(max = 92.dp),
                     )
-                    flight.dateText?.let { date ->
-                        Text(date, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
-                    }
+                } else {
+                    FlightFallbackIcon(colors.foreground, colors.container)
                 }
                 Text(
-                    text = flight.title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AtlasOnSurfaceStrong,
+                    text = flight.flightNumber ?: flight.label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                AtlasPill(
+                    label = colors.label,
+                    colors = colors,
+                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                )
+            }
+
+            // Route: origin IATA | line + plane | destination IATA
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = flight.originCode.takeIf { it.isNotBlank() } ?: "—",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                )
+                FlightRouteArrow(color = colors.foreground, modifier = Modifier.weight(1.1f))
+                Text(
+                    text = flight.destinationCode.takeIf { it.isNotBlank() } ?: "—",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp),
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                )
+            }
+
+            // Footer: date
+            Box(modifier = Modifier.fillMaxWidth().padding(top = 13.dp).height(1.dp).background(AtlasOutline))
+            Row(
+                modifier = Modifier.padding(top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(Icons.Filled.DateRange, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(15.dp))
+                Text(
+                    text = flight.dateText ?: "Sense data",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
                 flight.meta?.let { meta ->
-                    Text(meta, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1)
+                    Text("·", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+                    Text(meta, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FlightFallbackIcon(foreground: Color, container: Color) {
+    Box(
+        modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(container),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.Flight, null, tint = foreground, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun FlightRouteArrow(color: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(color.copy(alpha = 0.45f)))
+            Box(
+                modifier = Modifier.size(26.dp).clip(CircleShape).background(AtlasSurface),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Flight, null, tint = color, modifier = Modifier.size(17.dp))
             }
         }
     }

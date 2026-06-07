@@ -110,6 +110,14 @@ class BackupValidatorTest {
     }
 
     @Test
+    fun acceptsItineraryWithoutTitle() {
+        validator.validate(
+            backup = validBackup(itineraries = listOf(validItinerary().copy(title = null))),
+            validCountryIso2 = validCountries,
+        )
+    }
+
+    @Test
     fun rejectsFlightWithMissingGroup() {
         assertThrows(BackupValidationException::class.java) {
             validator.validate(

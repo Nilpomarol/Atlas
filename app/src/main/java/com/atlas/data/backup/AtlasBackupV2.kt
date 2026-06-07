@@ -90,7 +90,7 @@ data class BackupFlightV2(
 @Serializable
 data class BackupItineraryV2(
     val id: String,
-    val title: String,
+    val title: String? = null,
     val tripId: String? = null,
     val notes: String? = null,
     val createdAt: String,

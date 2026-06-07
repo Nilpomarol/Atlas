@@ -198,7 +198,7 @@ fun ItineraryEntity.toBackupV2(): BackupItineraryV2 =
 
 fun BackupItineraryV2.toEntity(): ItineraryEntity =
     ItineraryEntity(
-        id = id, title = title, tripId = tripId, notes = notes,
+        id = id, title = title.orEmpty(), tripId = tripId, notes = notes,
         createdAt = createdAt, updatedAt = updatedAt,
     )
 

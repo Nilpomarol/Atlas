@@ -17,13 +17,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SettingsRoute() {
+fun SettingsRoute(onBackClick: () -> Unit = {}) {
     val context = LocalContext.current
     val app = context.applicationContext as AtlasApplication
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModel.Factory(
             backupRepository = app.container.backupRepository,
             apiKeyRepository = app.container.apiKeyRepository,
+            datasetMetadataDao = app.container.database.datasetMetadataDao(),
         ),
     )
     val uiState by viewModel.uiState.collectAsState()
@@ -70,6 +71,7 @@ fun SettingsRoute() {
     SettingsScreen(
         uiState = uiState,
         rapidApiKey = rapidApiKey,
+        onBackClick = onBackClick,
         onExportClick = {
             exportLauncher.launch("atlas-backup-${LocalDate.now()}.json")
         },

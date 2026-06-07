@@ -71,7 +71,6 @@ class BackupValidator(
             }
         }
         data.itineraries.forEach {
-            requireBackup(it.title.isNotBlank()) { "Hi ha un itinerari sense títol." }
             it.tripId?.let { tripId ->
                 requireBackup(tripId in tripIds) { "Hi ha un itinerari vinculat a un viatge inexistent." }
             }

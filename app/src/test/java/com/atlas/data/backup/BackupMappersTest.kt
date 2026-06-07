@@ -6,6 +6,7 @@ import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
 import com.atlas.data.local.entity.TripStopEntity
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -61,6 +62,28 @@ class BackupMappersTest {
     }
 
     @Test
+    fun itineraryBackupWithMissingTitleMapsToEmptyTitle() {
+        val backup = json.decodeFromString(
+            BackupItineraryV2.serializer(),
+            """{"id":"itin-1","createdAt":"2026-05-30T00:00:00Z","updatedAt":"2026-05-30T00:00:00Z"}""",
+        )
+
+        assertEquals("", backup.toEntity().title)
+    }
+
+    @Test
+    fun itineraryBackupWithNullTitleMapsToEmptyTitle() {
+        val backup = BackupItineraryV2(
+            id = "itin-1",
+            title = null,
+            createdAt = "2026-05-30T00:00:00Z",
+            updatedAt = "2026-05-30T00:00:00Z",
+        )
+
+        assertEquals("", backup.toEntity().title)
+    }
+
+    @Test
     fun itineraryGroupRoundTripPreservesAllFields() {
         val entity = ItineraryGroupEntity(
             id = "group-1", itineraryId = "itin-1", title = "Anada", status = "COMPLETED", sortOrder = 0,
@@ -90,5 +113,9 @@ class BackupMappersTest {
             createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z",
         )
         assertEquals(entity, entity.toBackupV2().toEntity())
+    }
+
+    private companion object {
+        val json = Json { ignoreUnknownKeys = false }
     }
 }

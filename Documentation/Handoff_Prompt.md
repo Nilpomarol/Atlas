@@ -2,13 +2,13 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-07 (Dashboard v3.1 redesign complete)
+* **Last updated:** 2026-06-07 (v3.1 fully complete — all screens redesigned)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
-* **Current phase:** v3.1 — Visual redesign. **Dashboard is complete.** All redesigned screens are done except Settings.
+* **Current phase:** v3.1 **complete.** All screens redesigned. Next phase is v3.2 (per-stop photos).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -271,7 +271,7 @@ dataset.countries
 
 ## DIRECTION FOR NEXT AI AGENT
 
-v3.0 is fully done. v3.1 modal layer is done. All screens redesigned except Settings.
+v3.0 and v3.1 are fully done. All screens redesigned.
 
 ### Completed in v3.0
 Note: UTC flight fields now drive duration, delay, layover duration, and flight ordering via `FlightTimeCalculations.kt`; local datetime strings are fallback only.
@@ -297,6 +297,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 11. ✅ **TripDetail redesign** — floating top bar, info card, MapLibre preview with fullscreen expand, linked itinerary panel, numbered timeline with excursions inline.
 12. ✅ **CountryDetail redesign** — `AtlasGeoCanvas` map hero with capital marker + label, SVG flag header, unified history timeline (trips + flights + logs), living flow with start-date prompt.
 13. ✅ **Dashboard redesign** — final map/hero, upcoming cards, recent trips, and recent flights polish is complete.
+14. ✅ **Settings redesign** — back-arrow header, `AtlasSectionLabel` dividers, editorial card headers (dark icon square + title + subtitle), backup/API key/dataset health cards. Settings moved from bottom nav to push-nav via dashboard logo tap. Stats tab replaces Settings in bottom nav (`BarChart` icon, route `"stats"`). `DatasetMetadataDao.getAll()` added; `SettingsViewModel` loads installed dataset versions into `SettingsUiState.datasetVersions`. `DashboardScreen.kt` split into 6 files: `DashboardScreen`, `DashboardMapHero`, `DashboardStatsCard`, `DashboardTripCards`, `DashboardFlightCards`, `DashboardShared`.
 
 ### Dashboard design (✅ complete)
 
@@ -319,16 +320,27 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-**Stats placeholder:** `StatsRoute` / `StatsScreen` at route `"stats"` — "Pròximament" message. Ready to be built into a full stats screen.
+**Stats placeholder:** `StatsRoute` / `StatsScreen` at route `"stats"` — "Pròximament" message. Now a bottom nav tab (replaced Settings tab). Ready to be built into a full stats screen.
 
-### Remaining v3.1
-- **Settings** — backup, API key, dataset health panels (not yet redesigned)
+### Settings design (✅ complete)
+
+Settings is now **push-nav only** — reached by tapping the atlas logo in the dashboard header. System back returns to dashboard. No back button was added to Settings; Android back gesture handles it (the Settings redesign task added a back arrow `IconButton` in the page header).
+
+**Layout top-to-bottom:**
+1. **Page header** — `IconButton(ArrowBack)` + "Configuració" `headlineSmall`.
+2. **Còpia de seguretat** section — `AtlasSectionLabel` + card: `Backup` icon header, subtitle "Format JSON · v2", description, Exporta/Importa buttons.
+3. **Integracions** section — `AtlasSectionLabel` + card: `VpnKey` icon header, subtitle "AeroDataBox · RapidAPI", description, key field with show/hide toggle, Desa/Elimina buttons, "Clau configurada ✓" indicator.
+4. **Estat de les dades** section — `AtlasSectionLabel` + `DatasetVersionsCard`: `Layers` icon header, "VERSIONS INSTAL·LADES" subtitle, green-dot rows (name + version). Hidden until `datasetVersions` loads. Versions read from `dataset_metadata` table via `DatasetMetadataDao.getAll()`.
+
+**Card header pattern (`CardHeader` composable):** 40dp rounded-square (10dp) with `AtlasNavy` background + white icon (22dp) · bold `titleMedium` title · `labelSmall` muted uppercase subtitle.
 
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
-### Beyond v3.1
-- **v3.2** Per-stop photos (trip stops + excursion stops)
+### Next: v3.2
+- **Per-stop photos** — trip stops + excursion stops
+
+### Beyond v3.2
 - **v4.0** Country depth (stats dataset, full stats page, country polygon detail map — `AtlasGeoCanvas` already supports polygon highlight; just needs zoom/pan and a tighter viewport). Stats placeholder screen already exists at route `"stats"`.
 
 Full roadmap: `Documentation/Atlas_Post_v2.0_Roadmap.md`

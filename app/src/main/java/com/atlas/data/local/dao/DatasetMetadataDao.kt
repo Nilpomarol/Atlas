@@ -10,6 +10,9 @@ interface DatasetMetadataDao {
     @Query("SELECT * FROM dataset_metadata WHERE `key` = :key")
     suspend fun getByKey(key: String): DatasetMetadataEntity?
 
+    @Query("SELECT * FROM dataset_metadata")
+    suspend fun getAll(): List<DatasetMetadataEntity>
+
     @Upsert
     suspend fun upsert(metadata: DatasetMetadataEntity)
 }

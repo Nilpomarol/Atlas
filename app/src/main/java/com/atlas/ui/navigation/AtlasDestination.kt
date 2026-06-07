@@ -8,5 +8,5 @@ enum class AtlasDestination(
     Countries("countries", "Països"),
     Trips("trips", "Viatges"),
     Flights("flights", "Vols"),
-    Settings("settings", "Configuració"),
+    Stats("stats", "Stats"),
 }

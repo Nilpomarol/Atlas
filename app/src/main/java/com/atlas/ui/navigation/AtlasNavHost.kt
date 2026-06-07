@@ -94,7 +94,14 @@ fun AtlasNavHost() {
         ) {
             composable(AtlasDestination.Dashboard.route) {
                 DashboardRoute(
-                    onStatsClick = { navController.navigate("stats") },
+                    onSettingsClick = { navController.navigate("settings") },
+                    onStatsClick = {
+                        navController.navigate(AtlasDestination.Stats.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onTripsClick = {
                         navController.navigate(AtlasDestination.Trips.route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }
@@ -114,8 +121,11 @@ fun AtlasNavHost() {
                     onItineraryClick = { itineraryId -> navController.navigate("itineraries/$itineraryId") },
                 )
             }
-            composable("stats") {
+            composable(AtlasDestination.Stats.route) {
                 StatsRoute()
+            }
+            composable("settings") {
+                SettingsRoute(onBackClick = navController::popBackStack)
             }
             composable(AtlasDestination.Countries.route) {
                 CountryListRoute(
@@ -214,9 +224,6 @@ fun AtlasNavHost() {
                         },
                     )
                 }
-            }
-            composable(AtlasDestination.Settings.route) {
-                SettingsRoute()
             }
         }
     }

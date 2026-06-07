@@ -1,10 +1,10 @@
 package com.atlas.ui.navigation
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -14,5 +14,5 @@ val AtlasDestination.icon: ImageVector
         AtlasDestination.Countries -> Icons.Filled.Public
         AtlasDestination.Trips -> Icons.Filled.Work
         AtlasDestination.Flights -> Icons.Filled.Flight
-        AtlasDestination.Settings -> Icons.Filled.Settings
+        AtlasDestination.Stats -> Icons.Filled.BarChart
     }

@@ -29,7 +29,7 @@ fun FlightRouteGeoMap(
             minLatitudeSpanDegrees = 9.0,
         )
     } else {
-        GeoViewport.World
+        GeoViewport.World()
     }
 
     val routeSegments = buildList {

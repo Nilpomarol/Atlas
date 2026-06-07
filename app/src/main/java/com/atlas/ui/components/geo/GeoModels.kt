@@ -28,7 +28,10 @@ data class GeoFeatureCollection(
 )
 
 sealed interface GeoViewport {
-    data object World : GeoViewport
+    data class World(
+        val minLatitudeDeg: Double = -85.05,
+        val maxLatitudeDeg: Double = 85.05,
+    ) : GeoViewport
 
     data class FitPoints(
         val points: List<GeoCoordinate>,

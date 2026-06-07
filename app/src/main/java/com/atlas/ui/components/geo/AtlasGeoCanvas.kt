@@ -32,10 +32,11 @@ import com.atlas.ui.theme.AtlasSurfaceSubtle
 @Composable
 fun AtlasGeoCanvas(
     modifier: Modifier = Modifier,
-    viewport: GeoViewport = GeoViewport.World,
+    viewport: GeoViewport = GeoViewport.World(),
     routeSegments: List<GeoRouteSegment> = emptyList(),
     markers: List<GeoMarker> = emptyList(),
     highlightColorByIso2: Map<String, Color> = emptyMap(),
+    mapPaddingDp: Float = 18f,
 ) {
     val context = LocalContext.current
     var features by remember { mutableStateOf<GeoFeatureCollection?>(null) }
@@ -52,7 +53,7 @@ fun AtlasGeoCanvas(
             val collection = features
             drawRect(AtlasSurfaceSubtle.copy(alpha = 0.72f))
 
-            val paddingPx = 18.dp.toPx()
+            val paddingPx = mapPaddingDp.dp.toPx()
             val projection = buildProjection(viewport, size, paddingPx)
 
             drawGraticule(

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.Airport
+import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
@@ -11,6 +12,7 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.util.utcAwareDepartureSortKey
+import com.atlas.domain.util.utcAwareSortKey
 import com.atlas.presentation.trip.TripStopMapPoint
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
@@ -120,23 +122,27 @@ class DashboardViewModel(
 
         // Flight dashboard items
         val airportsById = airports.associateBy { it.id }
+        val itineraryIdByGroupId = itineraryGroups.associate { it.id to it.itineraryId }
         val soloFlightItems = flights
-            .filter { it.itineraryGroupId == null }
             .map { flight ->
                 val origin = airportsById[flight.originAirportId]?.shortLabel() ?: flight.originAirportId.uppercase()
                 val destination = airportsById[flight.destinationAirportId]?.shortLabel() ?: flight.destinationAirportId.uppercase()
                 DashboardFlightUiState(
+                    flight = flight,
                     title = "$origin → $destination",
                     label = "Vol",
                     dateText = flight.scheduledDepartureAt?.toFlightDateText(),
-                    sortKey = flight.scheduledDepartureAt,
+                    sortKey = flight.utcAwareSortKey(),
                     status = flight.status,
                     meta = listOfNotNull(flight.airline, flight.flightNumber).joinToString(" ").ifBlank { null },
                     originCode = origin,
                     destinationCode = destination,
+                    originCity = airportsById[flight.originAirportId]?.city,
+                    destinationCity = airportsById[flight.destinationAirportId]?.city,
                     airlineIata = flight.airline?.takeIf { it.length in 2..3 },
                     flightNumber = flight.flightNumber?.takeIf { it.isNotBlank() },
-                    flightId = flight.id,
+                    flightId = if (flight.itineraryGroupId == null) flight.id else null,
+                    itineraryId = flight.itineraryGroupId?.let { itineraryIdByGroupId[it] },
                 )
             }
         val groupItems = itineraryGroups.mapNotNull { group ->
@@ -149,20 +155,23 @@ class DashboardViewModel(
             val groupStatus = group.flights.map { it.status }.deriveGroupStatus()
             val flightCount = group.flights.size
             DashboardFlightUiState(
+                flight = firstFlight,
                 title = "$origin → $destination",
                 label = "Itinerari",
                 dateText = firstFlight.scheduledDepartureAt?.toFlightDateText(),
-                sortKey = firstFlight.scheduledDepartureAt,
+                sortKey = firstFlight.utcAwareSortKey(),
                 status = groupStatus,
                 meta = if (flightCount == 1) "1 vol" else "$flightCount vols",
                 originCode = origin,
                 destinationCode = destination,
+                originCity = airportsById[firstFlight.originAirportId]?.city,
+                destinationCity = airportsById[lastFlight.destinationAirportId]?.city,
                 airlineIata = firstFlight.airline?.takeIf { it.length in 2..3 },
                 flightNumber = firstFlight.flightNumber?.takeIf { it.isNotBlank() },
                 itineraryId = group.itineraryId,
             )
         }
-        val allFlightItems = soloFlightItems + groupItems
+        val allFlightItems = soloFlightItems
         val distancesKm = flights.mapNotNull { it.distanceKm }
         val avgFlightDistanceKm = if (distancesKm.isEmpty()) null else distancesKm.average()
 
@@ -285,7 +294,7 @@ class DashboardViewModel(
             status = status,
             dateText = dateRange?.let(flexibleDateFormatter::format),
             dayCount = dayCount(),
-            memoryDateText = dateRange?.toMemoryMonthRange(),
+            memoryDateText = dateRange?.toRecentTripPillDateText(),
             stopCount = stops.size,
             routeText = when {
                 first == null -> null
@@ -379,6 +388,7 @@ data class DashboardTripUiState(
 )
 
 data class DashboardFlightUiState(
+    val flight: Flight? = null,
     val title: String,
     val label: String,
     val dateText: String?,
@@ -387,6 +397,8 @@ data class DashboardFlightUiState(
     val meta: String?,
     val originCode: String = "",
     val destinationCode: String = "",
+    val originCity: String? = null,
+    val destinationCity: String? = null,
     val airlineIata: String? = null,
     val flightNumber: String? = null,
     val flightId: String? = null,       // non-null for solo flights
@@ -422,16 +434,25 @@ private fun FlexibleDate.toLocalDateOrNull(): LocalDate? {
     return runCatching { LocalDate.of(year, month, day) }.getOrNull()
 }
 
-private fun FlexibleDateRange.toMemoryMonthRange(): String? {
-    val startText = start?.toMonthYearText()
-    val endText = end?.toMonthYearText()
+private fun FlexibleDateRange.toRecentTripPillDateText(): String? {
+    val startDate = start
+    val endDate = end
     return when {
-        startText != null && endText != null && startText != endText -> "$startText - $endText"
-        startText != null -> startText
-        endText != null -> endText
-        else -> null
+        startDate == null -> endDate?.toMonthYearText()
+        endDate == null -> startDate.toMonthYearText()
+        startDate.sameMonthAndYear(endDate) -> endDate.toMonthYearText()
+        startDate.isYearPrecision() && endDate.isYearPrecision() -> "${startDate.year} - ${endDate.year}"
+        else -> "${startDate.toMonthOnlyText()} - ${endDate.toMonthYearText()}"
     }
 }
+
+private fun FlexibleDate.isYearPrecision(): Boolean = precision == DatePrecision.YEAR
+
+private fun FlexibleDate.sameMonthAndYear(other: FlexibleDate): Boolean =
+    year == other.year && month == other.month
+
+private fun FlexibleDate.toMonthOnlyText(): String =
+    month?.shortCatalanMonth() ?: year.toString()
 
 private fun FlexibleDate.toMonthYearText(): String =
     month?.let { "${it.shortCatalanMonth()} $year" } ?: year.toString()

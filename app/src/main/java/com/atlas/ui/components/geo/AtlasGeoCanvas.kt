@@ -11,6 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -36,6 +37,8 @@ fun AtlasGeoCanvas(
     routeSegments: List<GeoRouteSegment> = emptyList(),
     markers: List<GeoMarker> = emptyList(),
     highlightColorByIso2: Map<String, Color> = emptyMap(),
+    highlightFillAlpha: Float = 0.22f,
+    highlightStrokeAlpha: Float = 0.70f,
     mapPaddingDp: Float = 18f,
 ) {
     val context = LocalContext.current
@@ -47,6 +50,7 @@ fun AtlasGeoCanvas(
 
     Box(
         modifier = modifier
+            .clipToBounds()
             .background(AtlasSurface),
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -66,14 +70,21 @@ fun AtlasGeoCanvas(
                 collection.countries.forEach { country ->
                     val highlightColor = country.iso2?.let { highlightColorByIso2[it] }
                     val fill = if (highlightColor != null) {
-                        highlightColor.copy(alpha = 0.22f)
+                        highlightColor.copy(alpha = highlightFillAlpha)
                     } else {
                         AtlasSurface.copy(alpha = 0.76f)
                     }
-                    val stroke = if (highlightColor != null) {
-                        highlightColor.copy(alpha = 0.70f)
-                    } else {
-                        AtlasOutline.copy(alpha = 0.45f)
+                    val stroke = when {
+                        highlightColor != null && highlightFillAlpha >= 0.95f -> {
+                            AtlasOutlineStrong.copy(alpha = 0.78f)
+                        }
+                        highlightColor != null -> highlightColor.copy(alpha = highlightStrokeAlpha)
+                        else -> AtlasOutline.copy(alpha = 0.45f)
+                    }
+                    val strokeWidth = when {
+                        highlightColor != null && highlightFillAlpha >= 0.95f -> 0.9.dp.toPx()
+                        highlightColor != null -> 1.2.dp.toPx()
+                        else -> 0.65.dp.toPx()
                     }
                     country.polygons.forEach { polygon ->
                         val path = polygon.toPath(projection)
@@ -81,7 +92,7 @@ fun AtlasGeoCanvas(
                         drawPath(
                             path = path,
                             color = stroke,
-                            style = Stroke(width = if (highlightColor != null) 1.2.dp.toPx() else 0.65.dp.toPx()),
+                            style = Stroke(width = strokeWidth),
                         )
                     }
                 }

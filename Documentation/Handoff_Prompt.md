@@ -8,7 +8,7 @@
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
-* **Current phase:** v3.1 — Visual redesign. **🔧 WIP: Dashboard** — actively being iterated on (visual polish, layout, cards). See §Dashboard design below. All other screens done except Settings.
+* **Current phase:** v3.1 — Visual redesign. **Dashboard is complete.** All redesigned screens are done except Settings.
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -100,7 +100,7 @@
   * `FlightRouteGeoMap` — wraps `AtlasGeoCanvas` for the flight detail hero; fits viewport to route, draws solid + dashed context arcs.
 * `CountryMapHero` — **uses `AtlasGeoCanvas`** (MapLibre removed). Viewport centers on capital (falls back to country center). Target country highlighted in `style.primary`. Single solid marker at capital position with `label = country.capitalNameCa`.
 * `TripMapPreview` — still uses MapLibre; blue main-stop markers, amber itinerary-stop markers, purple excursion markers.
-* `DashboardScreen` world map — **uses `AtlasGeoCanvas`** full-width (no card), `aspectRatio(1.78f)`, `WorldNoAntarctica` viewport, `mapPaddingDp = 4f`. Countries colored by tracking state. Living/lived countries get labeled markers (country name bubble). `DashboardUiState` carries five disjoint iso2 sets + `highlightedCountryMarkers`.
+* `DashboardScreen` world map — **uses `AtlasGeoCanvas`** full-width inside `DashboardMapHero`, `aspectRatio(2.05f)`, viewport `GeoViewport.World(minLatitudeDeg = -45.0, maxLatitudeDeg = 72.0)`, `mapPaddingDp = 6f`. Countries are solid-filled by tracking state, markers/labels are hidden, and solid highlights use a stronger neutral border so country boundaries remain visible.
 * Natural Earth source: `https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson` (public domain dataset).
 
 ### Trips & stops
@@ -296,26 +296,26 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 10. ✅ **TripList redesign** — status filter pills, `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right.
 11. ✅ **TripDetail redesign** — floating top bar, info card, MapLibre preview with fullscreen expand, linked itinerary panel, numbered timeline with excursions inline.
 12. ✅ **CountryDetail redesign** — `AtlasGeoCanvas` map hero with capital marker + label, SVG flag header, unified history timeline (trips + flights + logs), living flow with start-date prompt.
-13. 🔧 **Dashboard redesign** — see §Dashboard design below. Layout and core cards done; visual polish still in progress.
+13. ✅ **Dashboard redesign** — final map/hero, upcoming cards, recent trips, and recent flights polish is complete.
 
-### Dashboard design (🔧 WIP)
+### Dashboard design (✅ complete)
 
 **Layout top-to-bottom:**
 1. **Page header** — "El teu atlas" in `headlineSmall` (Fraunces) + atlas logo icon (top-right, 34dp circle).
-2. **World map** — full-width `AtlasGeoCanvas`, `aspectRatio(1.78f)`, no card/border. Viewport: `GeoViewport.World(minLatitudeDeg = -57.0, maxLatitudeDeg = 76.0)` (Antarctica hidden). Countries colored by tracking state; living/lived countries get labeled markers with the country name. `mapPaddingDp = 4f`.
-3. **Hero stats** — padded column below map (no card): visited count + /total + "XX% del món" + continent count on one row; then a 4-column KPI row with colored numbers (Fraunces `headlineSmall`) for Visitats/Viscuts/Plans/Desitjats.
+2. **World map** — full-width `AtlasGeoCanvas`, `aspectRatio(2.05f)`, no card/border. Viewport: `GeoViewport.World(minLatitudeDeg = -45.0, maxLatitudeDeg = 72.0)`, `mapPaddingDp = 6f`. Countries are solid-filled by tracking state; no country dots or labels on the dashboard map. Solid country fills use visible neutral borders.
+3. **Hero stats** — `AtlasCard` below the map: visited count `/total` and world percentage as equal primary metrics, plus a compact 4-column KPI row for Visitats/Viscuts/Plans/Desitjats.
 4. **In-progress trip card** — `Surface(onClick)` using TripList card style: `AtlasGeoCanvas` map area (124dp, trip coordinates) with date pill + state pill overlaid, Fraunces title at bottom, route + stop count in footer. Section title "En curs". Hidden when no IN_PROGRESS trip.
 5. **Stats card** — `AtlasCard` with "Estadístiques" section title + "Veure tot →" link navigating to `"stats"` route. 3 rows × 2 stats (Fraunces `headlineSmall` for values): Viatges/Vols · Km volats/Aeroports · Dies viatjats/Durada mitj. — no title on the card itself.
-6. **Upcoming trips** — "Propers viatges" section title + "Tots els viatges →" (switches to Trips tab). Vertical list of 2–3 PLANNED trips: `Surface(onClick)` with status-color left stripe (4dp), `titleLarge` Fraunces title, route text, day count right column.
-7. **Upcoming flights** — "Propers vols" section title + "Tots els vols →" (switches to Flights tab). Vertical list of 2–3 PLANNED/IN_PROGRESS flights: card mirrors `FlightCard` structure — airline logo/fallback, flight number + status pill, big IATA codes with route line + plane icon, footer with date + meta.
-8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (200dp cards): `Surface(onClick)`, `AtlasGeoCanvas` top (110dp), date pill overlay, `titleMedium Bold` title and country text in footer.
-9. **Recent flights** — "Vols recents" section title. Horizontal scroll (170dp cards): `Surface(onClick)`, status-colored header band (52dp) with airplane icon, title + meta + date in footer.
+6. **Upcoming trips** — "Propers viatges" section title + "Tots els viatges →" (switches to Trips tab). Vertical list of 2–3 PLANNED trips: left map preview, state pill, Fraunces title, date below title, route text, compact day count.
+7. **Upcoming flights** — "Propers vols" section title + "Tots els vols →" (switches to Flights tab). Vertical list of 2–3 PLANNED/IN_PROGRESS flights; real flight rows render through the shared `FlightCard`.
+8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (224dp cards): state-colored map preview top (122dp), compact date pill top-left, state pill top-right, Fraunces `headlineSmall` title and country/route text in footer. Multi-month date pills omit the start year (`ABR. - FEBR. 2025`, `DES. - GEN. 2025`); year precision keeps both years (`2025 - 2026`).
+9. **Recent flights** — "Vols recents" section title. Horizontal scroll (196dp compact cards): airline logo/fallback + state pill, Fraunces IATA route row, flight number/airline line, date line.
 
 **Navigation:** All cards are clickable — trip cards → `trips/{tripId}`, solo flight cards → `flights/{flightId}`, itinerary group cards → `itineraries/{itineraryId}`. Section links switch tabs using `popUpTo + restoreState`.
 
 **Key UiState additions in `DashboardUiState`:**
 - `worldPercentage: Float`, `hoursFlown: Double`, `uniqueAirportCount: Int`, `uniqueAirlineCount: Int`, `daysTraveled: Int`, `avgTripLengthDays: Double?`
-- `highlightedCountryMarkers: List<DashboardCountryMarker>` — living/lived countries with lat/lng + label for map markers
+- `highlightedCountryMarkers: List<DashboardCountryMarker>` — still carried in state, but dashboard map currently hides markers/labels.
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 

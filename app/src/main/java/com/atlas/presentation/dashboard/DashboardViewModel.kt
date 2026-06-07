@@ -11,6 +11,7 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.util.utcAwareDepartureSortKey
+import com.atlas.presentation.trip.TripStopMapPoint
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
@@ -228,6 +229,13 @@ class DashboardViewModel(
             flagText = firstCountryIso2?.let { countryFlagsByIso2[it] }?.takeIf { it.isNotBlank() }
                 ?: firstCountryIso2,
             countryIso2s = stops.mapNotNull { it.countryIso2 }.distinct(),
+            mapPoints = stops
+                .filter { it.isVisible }
+                .mapNotNull { stop ->
+                    val lat = stop.latitude ?: return@mapNotNull null
+                    val lng = stop.longitude ?: return@mapNotNull null
+                    TripStopMapPoint(latitude = lat, longitude = lng)
+                },
         )
     }
 
@@ -292,6 +300,7 @@ data class DashboardTripUiState(
     val countryText: String?,
     val flagText: String?,
     val countryIso2s: List<String> = emptyList(),
+    val mapPoints: List<TripStopMapPoint> = emptyList(),
 )
 
 data class DashboardFlightUiState(

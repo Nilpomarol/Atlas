@@ -8,10 +8,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.R
 import com.atlas.domain.model.TravelStatus
+import com.atlas.presentation.dashboard.DashboardCountryMarker
 import com.atlas.presentation.dashboard.DashboardFlightUiState
 import com.atlas.presentation.dashboard.DashboardTripUiState
 import com.atlas.presentation.dashboard.DashboardUiState
@@ -62,6 +65,7 @@ import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasLiving
 import com.atlas.ui.theme.AtlasLived
 import com.atlas.ui.theme.AtlasNavy
+import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
@@ -72,7 +76,6 @@ import com.atlas.ui.theme.AtlasSurfaceSubtle
 import com.atlas.ui.theme.AtlasVisited
 import com.atlas.ui.theme.AtlasWished
 
-// Cropped world viewport: omits Antarctica, keeps inhabited latitudes
 private val WorldNoAntarctica = GeoViewport.World(minLatitudeDeg = -57.0, maxLatitudeDeg = 76.0)
 
 @Composable
@@ -85,32 +88,29 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             DashboardPageHeader()
+            DashboardWorldMap(uiState = uiState)
+            DashboardHeroStats(uiState = uiState)
+            Spacer(modifier = Modifier.height(18.dp))
 
-            DashboardHeroCard(uiState = uiState)
+            Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+                uiState.featuredTrip?.let { InProgressTripCard(it) }
+                WorldStatsCard(uiState = uiState)
 
-            uiState.featuredTrip?.let { trip ->
-                InProgressTripCard(trip = trip)
-            }
-
-            WorldStatsCard(uiState = uiState)
-
-            if (uiState.upcomingTrips.isNotEmpty()) {
-                UpcomingTripsSection(trips = uiState.upcomingTrips)
-            }
-
-            if (uiState.upcomingFlights.isNotEmpty()) {
-                UpcomingFlightsSection(flights = uiState.upcomingFlights)
-            }
-
-            if (uiState.recentCompletedTrips.isNotEmpty()) {
-                RecentTripsSection(trips = uiState.recentCompletedTrips)
-            }
-
-            if (uiState.recentFlights.isNotEmpty()) {
-                RecentFlightsSection(flights = uiState.recentFlights)
+                if (uiState.upcomingTrips.isNotEmpty()) {
+                    UpcomingTripsSection(trips = uiState.upcomingTrips)
+                }
+                if (uiState.upcomingFlights.isNotEmpty()) {
+                    UpcomingFlightsSection(flights = uiState.upcomingFlights)
+                }
+                if (uiState.recentCompletedTrips.isNotEmpty()) {
+                    RecentTripsSection(trips = uiState.recentCompletedTrips)
+                }
+                if (uiState.recentFlights.isNotEmpty()) {
+                    RecentFlightsSection(flights = uiState.recentFlights)
+                }
             }
         }
     }
@@ -133,9 +133,7 @@ private fun DashboardPageHeader() {
             color = AtlasOnSurfaceStrong,
         )
         Box(
-            modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape),
+            modifier = Modifier.size(34.dp).clip(CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Image(
@@ -147,10 +145,10 @@ private fun DashboardPageHeader() {
     }
 }
 
-// ── Hero card ─────────────────────────────────────────────────────────────────
+// ── World map (full-width, no card) ──────────────────────────────────────────
 
 @Composable
-private fun DashboardHeroCard(uiState: DashboardUiState) {
+private fun DashboardWorldMap(uiState: DashboardUiState) {
     val highlightColorByIso2 = remember(
         uiState.livingIso2s, uiState.livedIso2s, uiState.visitedIso2s,
         uiState.plannedIso2s, uiState.wishedIso2s,
@@ -163,82 +161,81 @@ private fun DashboardHeroCard(uiState: DashboardUiState) {
             uiState.livingIso2s.forEach { put(it, AtlasLiving) }
         }
     }
-
-    AtlasCard(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        contentPadding = PaddingValues(0.dp),
-    ) {
-        Column {
-            AtlasGeoCanvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(2.2f),
-                viewport = WorldNoAntarctica,
-                highlightColorByIso2 = highlightColorByIso2,
-                mapPaddingDp = 6f,
+    val markers = remember(uiState.highlightedCountryMarkers, highlightColorByIso2) {
+        uiState.highlightedCountryMarkers.map { m ->
+            GeoMarker(
+                coordinate = GeoCoordinate(m.latitude, m.longitude),
+                color = highlightColorByIso2[m.iso2] ?: AtlasVisited,
+                radiusMultiplier = 0.55f,
+                label = m.label,
             )
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                HeroCountRow(uiState = uiState)
-                HeroKpiRow(uiState = uiState)
-            }
         }
     }
+    AtlasGeoCanvas(
+        modifier = Modifier.fillMaxWidth().aspectRatio(1.78f),
+        viewport = WorldNoAntarctica,
+        highlightColorByIso2 = highlightColorByIso2,
+        markers = markers,
+        mapPaddingDp = 4f,
+    )
 }
 
+// ── Hero stats (below map, no card) ──────────────────────────────────────────
+
 @Composable
-private fun HeroCountRow(uiState: DashboardUiState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.Bottom,
+private fun DashboardHeroStats(uiState: DashboardUiState) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 14.dp),
     ) {
-        Text(
-            text = uiState.visitedCount.toString(),
-            style = MaterialTheme.typography.headlineLarge,
-            color = AtlasOnSurfaceStrong,
-        )
-        Text(
-            text = "/${uiState.trackableCountryCount}",
-            modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
-            style = MaterialTheme.typography.titleMedium,
-            color = AtlasOnSurfaceMuted,
-        )
-        Text(
-            text = "${uiState.visitedContinentCount}/7 continents",
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 10.dp, bottom = 6.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = AtlasOnSurfaceMuted,
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                text = uiState.visitedCount.toString(),
+                style = MaterialTheme.typography.headlineLarge,
+                color = AtlasOnSurfaceStrong,
+            )
+            Text(
+                text = "/${uiState.trackableCountryCount}",
+                modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = AtlasOnSurfaceMuted,
+            )
+            Text(
+                text = "· ${"%.0f".format(uiState.worldPercentage)}% del món · ${uiState.visitedContinentCount}/7 continents",
+                modifier = Modifier.weight(1f).padding(start = 8.dp, bottom = 7.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        HeroKpiRow(uiState = uiState)
     }
 }
 
 @Composable
 private fun HeroKpiRow(uiState: DashboardUiState) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 10.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(0.dp),
     ) {
-        HeroKpiItem(modifier = Modifier.weight(1f), value = uiState.visitedCount, label = "Visitats", color = AtlasVisited)
-        HeroKpiItem(modifier = Modifier.weight(1f), value = uiState.livedCount, label = "Viscuts", color = AtlasLived)
-        HeroKpiItem(modifier = Modifier.weight(1f), value = uiState.plannedCount, label = "Plans", color = AtlasPlanned)
-        HeroKpiItem(modifier = Modifier.weight(1f), value = uiState.wishedCount, label = "Desitjats", color = AtlasWished)
+        HeroKpiItem(Modifier.weight(1f), uiState.visitedCount, "Visitats", AtlasVisited)
+        HeroKpiItem(Modifier.weight(1f), uiState.livedCount, "Viscuts", AtlasLived)
+        HeroKpiItem(Modifier.weight(1f), uiState.plannedCount, "Plans", AtlasPlanned)
+        HeroKpiItem(Modifier.weight(1f), uiState.wishedCount, "Desitjats", AtlasWished)
     }
 }
 
 @Composable
-private fun HeroKpiItem(
-    value: Int,
-    label: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
+private fun HeroKpiItem(modifier: Modifier, value: Int, label: String, color: Color) {
     Column(modifier = modifier) {
         Text(
             text = value.toString(),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = color,
         )
@@ -257,9 +254,6 @@ private fun HeroKpiItem(
 @Composable
 private fun InProgressTripCard(trip: DashboardTripUiState) {
     val colors = trip.status.tripStatusColors()
-    val dateText = trip.dateText ?: "Sense data"
-    val routeText = trip.routeText ?: "Sense parades"
-
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
         AtlasSectionTitle(title = "En curs")
         Spacer(modifier = Modifier.height(10.dp))
@@ -277,20 +271,14 @@ private fun InProgressTripCard(trip: DashboardTripUiState) {
                         .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                         .background(AtlasSurfaceSubtle),
                 ) {
-                    TripCardMap(
-                        mapPoints = trip.mapPoints,
-                        stopCount = trip.stopCount,
-                        routeColor = colors.foreground,
-                    )
+                    TripCardMap(trip.mapPoints, trip.stopCount, colors.foreground)
                     TripStatePill(
                         label = colors.label,
                         color = colors.foreground,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(14.dp),
+                        modifier = Modifier.align(Alignment.TopEnd).padding(14.dp),
                     )
                     Text(
-                        text = dateText.uppercase(),
+                        text = (trip.dateText ?: "Sense data").uppercase(),
                         modifier = Modifier
                             .align(Alignment.TopStart)
                             .padding(start = 14.dp, top = 14.dp, end = 110.dp)
@@ -302,98 +290,106 @@ private fun InProgressTripCard(trip: DashboardTripUiState) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Column(
+                    Text(
+                        text = trip.title,
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .padding(start = 18.dp, end = 18.dp, bottom = 3.dp),
-                    ) {
-                        Text(
-                            text = trip.title,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 27.sp),
-                            fontWeight = FontWeight.SemiBold,
-                            color = AtlasOnSurfaceStrong,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 27.sp),
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
-                Surface(modifier = Modifier.fillMaxWidth(), color = AtlasSurface) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Icon(Icons.Filled.Map, contentDescription = null, tint = AtlasPrimary, modifier = Modifier.size(16.dp))
-                        Text(
-                            text = routeText,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AtlasOnSurfaceStrong,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(modifier = Modifier.height(18.dp).width(1.dp).background(AtlasOutline))
-                        Text(
-                            text = "${trip.stopCount} ${if (trip.stopCount == 1) "parada" else "parades"}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = AtlasOnSurfaceMuted,
-                        )
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth().background(AtlasSurface)
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.Filled.Map, null, tint = AtlasPrimary, modifier = Modifier.size(16.dp))
+                    Text(
+                        text = trip.routeText ?: "Sense parades",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(modifier = Modifier.height(18.dp).width(1.dp).background(AtlasOutline))
+                    Text(
+                        text = "${trip.stopCount} ${if (trip.stopCount == 1) "parada" else "parades"}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
                 }
             }
         }
     }
 }
 
-// ── World stats card ─────────────────────────────────────────────────────────
+// ── Stats card ────────────────────────────────────────────────────────────────
 
 @Composable
 private fun WorldStatsCard(uiState: DashboardUiState) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-        AtlasSectionTitle(title = "Estadístiques")
-        Spacer(modifier = Modifier.height(10.dp))
-        AtlasCard(contentPadding = PaddingValues(16.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    StatGridItem(modifier = Modifier.weight(1f), value = uiState.tripCount.toString(), label = "Viatges")
-                    StatDivider()
-                    StatGridItem(modifier = Modifier.weight(1f), value = uiState.flightCount.toString(), label = "Vols")
-                }
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    StatGridItem(modifier = Modifier.weight(1f), value = uiState.flownDistanceKm.toCompactKm(), label = "Km volats")
-                    StatDivider()
-                    StatGridItem(modifier = Modifier.weight(1f), value = uiState.avgFlightDistanceKm?.toCompactKm() ?: "—", label = "Distàncà mitj. vol")
-                }
-            }
+    AtlasCard(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(16.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            StatsRow(
+                left = StatItem(uiState.tripCount.toString(), "Viatges"),
+                right = StatItem(uiState.flightCount.toString(), "Vols"),
+            )
+            StatRowDivider()
+            StatsRow(
+                left = StatItem(uiState.flownDistanceKm.toCompactKm(), "Km volats"),
+                right = StatItem(uiState.hoursFlown.toHoursText(), "Hores vol."),
+            )
+            StatRowDivider()
+            StatsRow(
+                left = StatItem(uiState.uniqueAirportCount.toString(), "Aeroports"),
+                right = StatItem(uiState.uniqueAirlineCount.toString(), "Aerolínies"),
+            )
+            StatRowDivider()
+            StatsRow(
+                left = StatItem(uiState.daysTraveled.toString(), "Dies viatjats"),
+                right = StatItem(uiState.avgTripLengthDays?.let { "%.1f".format(it) } ?: "—", "Durada mitj."),
+            )
+        }
+    }
+}
+
+private data class StatItem(val value: String, val label: String)
+
+@Composable
+private fun StatsRow(left: StatItem, right: StatItem) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(left.value, style = MaterialTheme.typography.headlineSmall, color = AtlasOnSurfaceStrong)
+            Text(left.label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+        }
+        Box(modifier = Modifier.width(1.dp).height(40.dp).background(AtlasOutline))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(right.value, style = MaterialTheme.typography.headlineSmall, color = AtlasOnSurfaceStrong)
+            Text(right.label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
         }
     }
 }
 
 @Composable
-private fun StatGridItem(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(text = value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = AtlasOnSurfaceStrong)
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
-    }
+private fun StatRowDivider() {
+    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
 }
 
-@Composable
-private fun StatDivider() {
-    Box(modifier = Modifier.width(1.dp).height(36.dp).background(AtlasOutline))
-}
-
-// ── Upcoming trips ───────────────────────────────────────────────────────────
+// ── Upcoming trips ────────────────────────────────────────────────────────────
 
 @Composable
 private fun UpcomingTripsSection(trips: List<DashboardTripUiState>) {
@@ -401,43 +397,73 @@ private fun UpcomingTripsSection(trips: List<DashboardTripUiState>) {
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AtlasSectionTitle(title = if (trips.size == 1) "Proper viatge" else "Propers viatges")
+        AtlasSectionTitle(if (trips.size == 1) "Proper viatge" else "Propers viatges")
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            trips.forEach { UpcomingTripRow(it) }
+            trips.forEach { UpcomingTripCard(it) }
         }
     }
 }
 
 @Composable
-private fun UpcomingTripRow(trip: DashboardTripUiState) {
+private fun UpcomingTripCard(trip: DashboardTripUiState) {
     val colors = trip.status.tripStatusColors()
-    AtlasCard(contentPadding = PaddingValues(12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             Box(
-                modifier = Modifier.size(40.dp).background(colors.container, RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(colors.foreground),
+            )
+            Column(
+                modifier = Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Icon(Icons.Filled.Map, contentDescription = null, tint = colors.foreground, modifier = Modifier.size(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TripStatePill(
+                        label = colors.label,
+                        color = colors.foreground,
+                    )
+                    trip.dateText?.let { date ->
+                        Text(date, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+                    }
+                }
+                Text(
+                    text = trip.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                trip.routeText?.let { route ->
+                    Text(route, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(trip.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(trip.routeText ?: trip.dateText ?: "Sense data", style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Column(horizontalAlignment = Alignment.End) {
-                Text(trip.dateText ?: "—", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted, maxLines = 1)
-                trip.dayCount?.let { days ->
-                    Text("$days dies", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = AtlasPrimary)
+            trip.dayCount?.let { days ->
+                Column(
+                    modifier = Modifier.fillMaxHeight().padding(end = 14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(days.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = AtlasPrimary)
+                    Text("dies", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
                 }
             }
         }
     }
 }
 
-// ── Upcoming flights ─────────────────────────────────────────────────────────
+// ── Upcoming flights ──────────────────────────────────────────────────────────
 
 @Composable
 private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>) {
@@ -445,32 +471,60 @@ private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>) {
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        AtlasSectionTitle(title = if (flights.size == 1) "Proper vol" else "Propers vols")
+        AtlasSectionTitle(if (flights.size == 1) "Proper vol" else "Propers vols")
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            flights.forEach { UpcomingFlightRow(it) }
+            flights.forEach { UpcomingFlightCard(it) }
         }
     }
 }
 
 @Composable
-private fun UpcomingFlightRow(flight: DashboardFlightUiState) {
-    AtlasCard(contentPadding = PaddingValues(12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
+private fun UpcomingFlightCard(flight: DashboardFlightUiState) {
+    val colors = flight.status.tripStatusColors()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             Box(
-                modifier = Modifier.size(40.dp).background(AtlasNavy.copy(alpha = 0.08f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(colors.foreground),
+            )
+            Column(
+                modifier = Modifier.weight(1f).padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Icon(Icons.Filled.AirplanemodeActive, contentDescription = null, tint = AtlasNavy, modifier = Modifier.size(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = flight.label.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colors.foreground,
+                    )
+                    flight.dateText?.let { date ->
+                        Text(date, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+                    }
+                }
+                Text(
+                    text = flight.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                flight.meta?.let { meta ->
+                    Text(meta, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1)
+                }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(flight.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(flight.meta ?: flight.label, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-            Text(flight.dateText ?: "—", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted, maxLines = 1)
         }
     }
 }
@@ -480,7 +534,7 @@ private fun UpcomingFlightRow(flight: DashboardFlightUiState) {
 @Composable
 private fun RecentTripsSection(trips: List<DashboardTripUiState>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        AtlasSectionTitle(title = "Viatges recents", modifier = Modifier.padding(horizontal = 20.dp))
+        AtlasSectionTitle("Viatges recents", modifier = Modifier.padding(horizontal = 20.dp))
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -494,7 +548,7 @@ private fun RecentTripsSection(trips: List<DashboardTripUiState>) {
 private fun RecentTripCard(trip: DashboardTripUiState) {
     val colors = trip.status.tripStatusColors()
     Surface(
-        modifier = Modifier.width(190.dp),
+        modifier = Modifier.width(200.dp),
         shape = RoundedCornerShape(16.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
@@ -503,11 +557,11 @@ private fun RecentTripCard(trip: DashboardTripUiState) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(104.dp)
+                    .height(110.dp)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(AtlasSurfaceSubtle),
             ) {
-                TripCardMap(mapPoints = trip.mapPoints, stopCount = trip.stopCount, routeColor = colors.foreground)
+                TripCardMap(trip.mapPoints, trip.stopCount, colors.foreground)
                 Text(
                     text = trip.memoryDateText?.uppercase() ?: trip.dateText?.uppercase() ?: "",
                     modifier = Modifier
@@ -520,22 +574,16 @@ private fun RecentTripCard(trip: DashboardTripUiState) {
                     color = AtlasOnSurfaceStrong,
                     maxLines = 1,
                 )
+            }
+            Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Text(
                     text = trip.title,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, end = 12.dp, bottom = 5.dp),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceStrong,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-            ) {
-                Icon(Icons.Filled.Map, contentDescription = null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(13.dp))
                 Text(
                     text = trip.countryText ?: trip.routeText ?: "Sense país",
                     style = MaterialTheme.typography.bodySmall,
@@ -548,12 +596,12 @@ private fun RecentTripCard(trip: DashboardTripUiState) {
     }
 }
 
-// ── Recent flights ───────────────────────────────────────────────────────────
+// ── Recent flights ────────────────────────────────────────────────────────────
 
 @Composable
 private fun RecentFlightsSection(flights: List<DashboardFlightUiState>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        AtlasSectionTitle(title = "Vols recents", modifier = Modifier.padding(horizontal = 20.dp))
+        AtlasSectionTitle("Vols recents", modifier = Modifier.padding(horizontal = 20.dp))
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -565,12 +613,51 @@ private fun RecentFlightsSection(flights: List<DashboardFlightUiState>) {
 
 @Composable
 private fun RecentFlightCard(flight: DashboardFlightUiState) {
-    AtlasCard(modifier = Modifier.width(170.dp), contentPadding = PaddingValues(12.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Filled.AirplanemodeActive, contentDescription = null, tint = AtlasNavy, modifier = Modifier.size(18.dp))
-            Text(flight.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = AtlasOnSurfaceStrong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(flight.meta ?: flight.label, style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(flight.dateText ?: "—", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+    val colors = flight.status.tripStatusColors()
+    Surface(
+        modifier = Modifier.width(170.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .background(colors.container),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Filled.AirplanemodeActive,
+                    contentDescription = null,
+                    tint = colors.foreground,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp)) {
+                Text(
+                    text = flight.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = flight.meta ?: flight.label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = flight.dateText ?: "—",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
         }
     }
 }
@@ -579,10 +666,10 @@ private fun RecentFlightCard(flight: DashboardFlightUiState) {
 
 @Composable
 private fun TripCardMap(mapPoints: List<TripStopMapPoint>, stopCount: Int, routeColor: Color) {
-    val coordinates = mapPoints.map { GeoCoordinate(latitude = it.latitude, longitude = it.longitude) }
+    val coordinates = mapPoints.map { GeoCoordinate(it.latitude, it.longitude) }
     if (coordinates.isEmpty()) {
         TripMapTexture()
-        SchematicRouteCanvas(stopCount = stopCount)
+        SchematicRouteCanvas(stopCount)
         return
     }
     AtlasGeoCanvas(
@@ -595,9 +682,9 @@ private fun TripCardMap(mapPoints: List<TripStopMapPoint>, stopCount: Int, route
         routeSegments = coordinates.zipWithNext { from, to ->
             GeoRouteSegment(from = from, to = to, color = routeColor, alpha = 0.9f)
         },
-        markers = coordinates.mapIndexed { index, coordinate ->
+        markers = coordinates.mapIndexed { index, coord ->
             GeoMarker(
-                coordinate = coordinate,
+                coordinate = coord,
                 color = routeColor,
                 radiusMultiplier = if (index == 0 || index == coordinates.lastIndex) 0.58f else 0.46f,
                 isHollow = index == coordinates.lastIndex && coordinates.size > 1,
@@ -612,12 +699,12 @@ private fun TripMapTexture() {
         val spacing = 24.dp.toPx()
         var x = 0f
         while (x <= size.width) {
-            drawLine(AtlasNavy.copy(alpha = 0.08f), Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx())
+            drawLine(AtlasNavy.copy(alpha = 0.08f), Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
             x += spacing
         }
         var y = 0f
         while (y <= size.height) {
-            drawLine(AtlasNavy.copy(alpha = 0.08f), Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
+            drawLine(AtlasNavy.copy(alpha = 0.08f), Offset(0f, y), Offset(size.width, y), 1.dp.toPx())
             y += spacing
         }
     }
@@ -626,26 +713,21 @@ private fun TripMapTexture() {
 @Composable
 private fun SchematicRouteCanvas(stopCount: Int) {
     Canvas(modifier = Modifier.fillMaxSize()) {
-        val visibleStops = stopCount.coerceIn(2, 5)
-        val basePoints = listOf(
+        val pts = listOf(
             Offset(size.width * 0.10f, size.height * 0.62f),
             Offset(size.width * 0.32f, size.height * 0.36f),
             Offset(size.width * 0.55f, size.height * 0.48f),
             Offset(size.width * 0.74f, size.height * 0.30f),
             Offset(size.width * 0.92f, size.height * 0.52f),
-        )
-        val points = basePoints.take(visibleStops)
+        ).take(stopCount.coerceIn(2, 5))
         val path = Path().apply {
-            points.firstOrNull()?.let { moveTo(it.x, it.y) }
-            points.drop(1).forEach { lineTo(it.x, it.y) }
+            pts.firstOrNull()?.let { moveTo(it.x, it.y) }
+            pts.drop(1).forEach { lineTo(it.x, it.y) }
         }
-        drawPath(path, Color.White.copy(alpha = 0.82f), style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
-        points.forEachIndexed { index, point ->
-            if (index == points.lastIndex) {
-                drawCircle(Color.White, radius = 5.dp.toPx(), center = point, style = Stroke(width = 2.dp.toPx()))
-            } else {
-                drawCircle(Color.White, radius = 5.dp.toPx(), center = point)
-            }
+        drawPath(path, Color.White.copy(alpha = 0.82f), style = Stroke(2.dp.toPx(), cap = StrokeCap.Round))
+        pts.forEachIndexed { i, pt ->
+            if (i == pts.lastIndex) drawCircle(Color.White, 5.dp.toPx(), pt, style = Stroke(2.dp.toPx()))
+            else drawCircle(Color.White, 5.dp.toPx(), pt)
         }
     }
 }
@@ -655,16 +737,21 @@ private fun TripStatePill(label: String, color: Color, modifier: Modifier = Modi
     Row(
         modifier = modifier
             .background(color, RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+            .padding(horizontal = 9.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
-        Box(modifier = Modifier.size(6.dp).background(Color.White, RoundedCornerShape(999.dp)))
-        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+        Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
+        Text(label.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = Color.White)
     }
 }
 
 private fun Double.toCompactKm(): String {
     val rounded = kotlin.math.round(this).toLong()
     return if (rounded >= 10_000) "${rounded / 1_000} k" else rounded.toString()
+}
+
+private fun Double.toHoursText(): String {
+    val hours = kotlin.math.round(this).toInt()
+    return if (hours >= 1000) "${hours / 1000} k h" else "$hours h"
 }

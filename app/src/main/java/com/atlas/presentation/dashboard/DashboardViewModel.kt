@@ -21,11 +21,15 @@ import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+
+private val isoDateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
 
 class DashboardViewModel(
     countryRepository: CountryRepository,
@@ -98,6 +102,22 @@ class DashboardViewModel(
         val plannedIso2s = countryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
         val wishedIso2s = countryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
 
+        val visitedCount = countryStates.count { it.second.visited }
+
+        // Country markers for the world map: labeled for living/lived, plain for visited
+        val highlightedCountryMarkers = buildList {
+            for (country in countries) {
+                val iso2 = country.iso2 ?: continue
+                val lat = country.latitude ?: continue
+                val lng = country.longitude ?: continue
+                when {
+                    iso2 in livingIso2s -> add(DashboardCountryMarker(iso2, lat, lng, label = country.nameCa))
+                    iso2 in livedIso2s -> add(DashboardCountryMarker(iso2, lat, lng, label = country.nameCa))
+                    else -> continue
+                }
+            }
+        }
+
         // Flight dashboard items
         val airportsById = airports.associateBy { it.id }
         val soloFlightItems = flights
@@ -136,8 +156,37 @@ class DashboardViewModel(
         val distancesKm = flights.mapNotNull { it.distanceKm }
         val avgFlightDistanceKm = if (distancesKm.isEmpty()) null else distancesKm.average()
 
+        // Aggregate stats
+        val completedFlights = flights.filter { it.status == TravelStatus.COMPLETED }
+        val totalFlightMinutes = completedFlights.sumOf { flight ->
+            val dep = flight.actualDepartureUtc ?: flight.scheduledDepartureUtc
+                ?: flight.actualDepartureAt ?: flight.scheduledDepartureAt
+            val arr = flight.actualArrivalUtc ?: flight.scheduledArrivalUtc
+                ?: flight.actualArrivalAt ?: flight.scheduledArrivalAt
+            parseDurationMinutes(dep, arr)
+        }
+        val hoursFlown = totalFlightMinutes / 60.0
+
+        val uniqueAirportCount = flights
+            .flatMap { listOfNotNull(it.originAirportId, it.destinationAirportId) }
+            .distinct().size
+
+        val uniqueAirlineCount = flights
+            .mapNotNull { it.airline?.takeIf { a -> a.isNotBlank() } }
+            .distinct().size
+
+        val completedTripDays = trips
+            .filter { it.status == TravelStatus.COMPLETED }
+            .mapNotNull { it.dayCount() }
+        val daysTraveled = completedTripDays.sum()
+        val avgTripLengthDays = completedTripDays.takeIf { it.isNotEmpty() }?.average()
+
+        val worldPercentage = if (countries.isNotEmpty()) {
+            visitedCount.toFloat() / countries.size.toFloat() * 100f
+        } else 0f
+
         DashboardUiState(
-            visitedCount = countryStates.count { it.second.visited },
+            visitedCount = visitedCount,
             wishedCount = countryStates.count { it.second.wished },
             plannedCount = countryStates.count { it.second.planned },
             livedCount = countryStates.count { it.second.lived },
@@ -151,13 +200,20 @@ class DashboardViewModel(
                 .map { it.first.continent }
                 .distinct()
                 .size,
+            trackableCountryCount = countries.size,
+            worldPercentage = worldPercentage,
             tripCount = trips.size,
             flightCount = flights.size,
             flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 },
             avgFlightDistanceKm = avgFlightDistanceKm,
+            hoursFlown = hoursFlown,
+            uniqueAirportCount = uniqueAirportCount,
+            uniqueAirlineCount = uniqueAirlineCount,
+            daysTraveled = daysTraveled,
+            avgTripLengthDays = avgTripLengthDays,
             stopCount = tripStops.size,
-            trackableCountryCount = countries.size,
             currentlyLivingCountryName = currentlyLivingIso2?.let { countryNamesByIso2[it] },
+            highlightedCountryMarkers = highlightedCountryMarkers,
             featuredTrip = currentTrip?.toDashboardTrip(
                 allStops = tripStops,
                 countryNamesByIso2 = countryNamesByIso2,
@@ -275,13 +331,20 @@ data class DashboardUiState(
     val plannedIso2s: Set<String> = emptySet(),
     val wishedIso2s: Set<String> = emptySet(),
     val visitedContinentCount: Int = 0,
+    val trackableCountryCount: Int = 0,
+    val worldPercentage: Float = 0f,
     val tripCount: Int = 0,
     val flightCount: Int = 0,
     val flownDistanceKm: Double = 0.0,
     val avgFlightDistanceKm: Double? = null,
+    val hoursFlown: Double = 0.0,
+    val uniqueAirportCount: Int = 0,
+    val uniqueAirlineCount: Int = 0,
+    val daysTraveled: Int = 0,
+    val avgTripLengthDays: Double? = null,
     val stopCount: Int = 0,
-    val trackableCountryCount: Int = 0,
     val currentlyLivingCountryName: String? = null,
+    val highlightedCountryMarkers: List<DashboardCountryMarker> = emptyList(),
     val featuredTrip: DashboardTripUiState? = null,
     val upcomingTrips: List<DashboardTripUiState> = emptyList(),
     val upcomingFlights: List<DashboardFlightUiState> = emptyList(),
@@ -312,11 +375,27 @@ data class DashboardFlightUiState(
     val meta: String?,
 )
 
+data class DashboardCountryMarker(
+    val iso2: String,
+    val latitude: Double,
+    val longitude: Double,
+    val label: String?,
+)
+
 private fun Trip.dayCount(): Int? {
     val range = dateRange ?: return null
     val start = range.start?.toLocalDateOrNull() ?: return null
     val end = range.end?.toLocalDateOrNull() ?: start
     return ChronoUnit.DAYS.between(start, end).coerceAtLeast(0).toInt() + 1
+}
+
+private fun parseDurationMinutes(depStr: String?, arrStr: String?): Long {
+    if (depStr == null || arrStr == null) return 0L
+    return try {
+        val dep = LocalDateTime.parse(depStr, isoDateTimeFormatter)
+        val arr = LocalDateTime.parse(arrStr, isoDateTimeFormatter)
+        ChronoUnit.MINUTES.between(dep, arr).coerceAtLeast(0)
+    } catch (e: Exception) { 0L }
 }
 
 private fun FlexibleDate.toLocalDateOrNull(): LocalDate? {

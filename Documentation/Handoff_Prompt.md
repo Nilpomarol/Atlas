@@ -2,14 +2,13 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-06 (CountryDetail v3.1 redesign committed)
+* **Last updated:** 2026-06-07 (Dashboard v3.1 redesign complete)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
-* **Geo canvas extended (uncommitted):** `CountryMapHero` and dashboard world map now use `AtlasGeoCanvas` (offline Canvas renderer) instead of MapLibre / `AtlasDottedCanvas`. Country detail highlights the target country polygon in its state color. Dashboard world map colors all tracked countries by state. **Both maps still need visual polish** — the country hero viewport framing, highlight contrast, and marker sizing need tuning; the dashboard world map highlight alpha and overall composition need refinement before they look production-ready.
-* **Current phase:** v3.1 — Visual redesign (one screen at a time). FlightList, FlightDetail, and ItineraryDetail are complete. TripList redesign is implemented but still uncommitted and under visual/performance review. Modal layer simplified (see §Modal layer). Next: finish TripList QA, then TripDetail.
+* **Current phase:** v3.1 — Visual redesign. All screens done except Settings. **Dashboard is the most recently worked screen** — iterating on visual polish (see §Dashboard design below).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -95,12 +94,13 @@
 * `TripMapPreview` — MapLibre map; blue main-stop markers, amber generated itinerary-stop markers, purple excursion markers; separate LineLayer for main and excursion routes; camera fits all points.
 * `CountryFlag` (`ui/components/CountryFlag.kt`) — loads flag SVG from `https://flagcdn.com/{iso2_lower}.svg` via Coil + `SvgDecoder.Factory()`; falls back to `FlagIso2Fallback` (ISO2 text). Used in `CountryListScreen` and `CountryIdentityHeader`.
 * `ui/components/geo/*` — reusable offline vector geo foundation. Loads bundled Natural Earth 1:110m admin-0 country polygons (`assets/geo/ne_110m_admin_0_countries.geojson`), fits a Mercator-like projection to route or world viewports, draws graticules, country polygons, great-circle arcs, and markers with Compose Canvas.
-  * `AtlasGeoCanvas` — core composable. Key params: `viewport`, `routeSegments`, `markers`, `highlightColorByIso2: Map<String, Color>`. Highlighted countries get a tinted fill + accent stroke in their specified color.
-  * `GeoMarker` has `isHollow: Boolean` — hollow markers (white fill + colored stroke ring) are used for capital cities.
+  * `AtlasGeoCanvas` — core composable. Key params: `viewport`, `routeSegments`, `markers`, `highlightColorByIso2: Map<String, Color>`, `mapPaddingDp: Float = 18f`. Highlighted countries get a tinted fill + accent stroke in their specified color.
+  * `GeoViewport.World(minLatitudeDeg, maxLatitudeDeg)` — data class (not object); defaults to full Mercator world. Dashboard uses `World(minLatitudeDeg = -57.0, maxLatitudeDeg = 76.0)` to hide Antarctica.
+  * `GeoMarker` has `isHollow: Boolean` and `label: String?` — hollow markers (white fill + colored stroke ring) used for capital cities; labeled markers show a rounded-rect tag above the dot.
   * `FlightRouteGeoMap` — wraps `AtlasGeoCanvas` for the flight detail hero; fits viewport to route, draws solid + dashed context arcs.
-* `CountryMapHero` — **uses `AtlasGeoCanvas`** (MapLibre removed). Viewport centers on capital (falls back to country center). Target country highlighted in `style.primary`. Single solid marker at capital position with `label = country.capitalNameCa` (rendered as a rounded-rect tag above the dot by `AtlasGeoCanvas`).
+* `CountryMapHero` — **uses `AtlasGeoCanvas`** (MapLibre removed). Viewport centers on capital (falls back to country center). Target country highlighted in `style.primary`. Single solid marker at capital position with `label = country.capitalNameCa`.
 * `TripMapPreview` — still uses MapLibre; blue main-stop markers, amber itinerary-stop markers, purple excursion markers.
-* `DashboardScreen` world map — **uses `AtlasGeoCanvas`** in world viewport. Countries colored by tracking state (living > lived > visited > planned > wished, mutually exclusive). `DashboardUiState` carries five disjoint iso2 sets; `highlightColorByIso2` is `remember`-keyed on them.
+* `DashboardScreen` world map — **uses `AtlasGeoCanvas`** full-width (no card), `aspectRatio(1.78f)`, `WorldNoAntarctica` viewport, `mapPaddingDp = 4f`. Countries colored by tracking state. Living/lived countries get labeled markers (country name bubble). `DashboardUiState` carries five disjoint iso2 sets + `highlightedCountryMarkers`.
 * Natural Earth source: `https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson` (public domain dataset).
 
 ### Trips & stops
@@ -122,7 +122,7 @@
   * **Actual times** are color-coded by delay: `AtlasVisited` green (≤ 0 min), `AtlasDelay` amber (1–44 min), `AtlasError` red (≥ 45 min). Scheduled time shown below with strikethrough when actual exists.
   * **+N day offset** shown as a small muted label to the right of the arrival time when landing is on a later calendar day than departure (e.g. `02:15 +1`). Computed from the displayed datetime pair via `dayOffsetBetween()`.
 * **`ItinerarySummaryCard`** (flight list, per-group route rows) follows the same display rules: delay color on actual times, strikethrough on scheduled, +N day offset on arrival. Middle section shows **total group duration** (first departure → last arrival via `groupDurationMinutes()`); layover city names shown below the arrow as context.
-* **TripList redesign (uncommitted, in review):** `TripListScreen` now uses dense status filter pills, route-led trip cards, and an opaque footer. `TripListViewModel` exposes ordered visible stop coordinates via `TripStopMapPoint`; cards render coordinate-backed routes with `AtlasGeoCanvas` and fall back to a schematic graticule route when no coordinates exist. MapLibre was tested for list cards but caused scroll lag, so list cards use the offline polygon canvas. The 50m Natural Earth asset was tested and removed; `GeoAssetLoader` is back to the 110m asset for performance. Dates sit in a small top-left pill, state pill is top-right, title is dark ink near the footer. Current user feedback: keep checking visual balance/performance on device before committing.
+* **TripList redesign:** `TripListScreen` uses dense status filter pills, route-led trip cards, and an opaque footer. `TripListViewModel` exposes ordered visible stop coordinates via `TripStopMapPoint`; cards render coordinate-backed routes with `AtlasGeoCanvas` and fall back to a schematic graticule route when no coordinates exist. The 50m Natural Earth asset was tested and removed; `GeoAssetLoader` is back to the 110m asset for performance.
 
 ### Modal layer
 
@@ -177,8 +177,9 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 * **Trips:** list (status filter chips, route cards), detail (map preview, linked itinerary, stops timeline, excursions inline), stop dialog (search + manual), excursion dialog, excursion stop dialog
 * **Flights:** redesigned list (status filter chips, solo-flight cards, itinerary cards, airline logos, unified ordering), redesigned detail (hero map, identity/stat/horari/aircraft/dades cards, edit/delete), two-step flight editor dialog
 * **Itineraries:** list (create navigates immediately to detail, delete only), detail (groups with ⋮ overflow on both group and flight cards, group/flight reorder, trip linking)
-* **Dashboard:** real-data world map (Canvas, state-colored country polygons), stat cards, currently living card, upcoming trip card, recent activity
+* **Dashboard:** ✅ v3.1 redesign complete — see §Dashboard design below
 * **Settings:** backup export/import, API key ("Integracions")
+* **Stats:** placeholder screen at route `"stats"` — shows "Estadístiques / Pròximament"
 
 ### Key services & use cases
 * `CountryStateDerivationService` — centralizes all country state derivation
@@ -270,7 +271,7 @@ dataset.countries
 
 ## DIRECTION FOR NEXT AI AGENT
 
-v3.0 is fully done. v3.1 modal layer is done. Continue with **v3.1 — Visual redesign of remaining screens**.
+v3.0 is fully done. v3.1 modal layer is done. All screens redesigned except Settings.
 
 ### Completed in v3.0
 Note: UTC flight fields now drive duration, delay, layover duration, and flight ordering via `FlightTimeCalculations.kt`; local datetime strings are fallback only.
@@ -282,66 +283,53 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 6. ✅ **Auto-suggest location search** — replaced explicit search-button flow in trip stop and excursion stop dialogs with debounced live suggestions (min 3 chars, 400 ms). Leading icon shows spinner while searching.
 7. ✅ **Country tracking flags** — `destination_counts_for_country_tracking` (default true) + `origin_counts_for_country_tracking` (default false) on `FlightEntity` (DB v19). `CountryStateDerivationService` respects both flags for solo flights and itinerary group derived flights.
 
-### Completed in v3.1 (so far)
+### Completed in v3.1
 1. ✅ **FlightList redesign** — status filter chips, solo-flight cards with airline logos, itinerary summary cards with per-group routes, unified date-sorted ordering.
 2. ✅ **FlightDetail redesign** — Canvas geo hero, identity/stat/horari/aircraft/dades card stack, Local/UTC toggle, AeroDataBox aircraft image.
 3. ✅ **ItineraryDetail redesign** — route hero, stat strip, group cards with derived status, group/flight reorder, linked-trip panel with assign flow.
 4. ✅ **Modal layer simplification** — itinerary/group create is immediate (no modal), itinerary/group edit removed, two-step flight editor (search → form) wired in both FlightList and ItineraryDetail.
-5. ✅ **Shared FlightCard + visual polish** — `FlightCard` extracted to `ui/components/FlightCard.kt` and reused in both `FlightListScreen` (solo flights) and `ItineraryDetailScreen` (group flights). Card shows duration (not distance) in the middle. Actual times are color-coded by delay (green/amber/red). Scheduled times show with strikethrough when actual exists. Arrival time shows a `+N` day-offset label when landing crosses midnight. `ItinerarySummaryCard` per-group rows follow the same time display rules and show total group duration (not layover wait time). FlightDetail stat strip delay formatted as compact `+1h 44min`.
-6. ✅ **Itinerary flight management** — Add existing solo flights to a group (`+ Vol existent` → `SoloFlightPickerDialog`). In reorder mode each flight card shows `Treu` (remove from itinerary, with confirmation) and `Mou →` (move to another group in the same itinerary, via `MoveFlightToGroupDialog`). `ItineraryDetailViewModel` now depends on `FlightRepository` to observe solo flights reactively.
+5. ✅ **Shared FlightCard + visual polish** — `FlightCard` extracted to `ui/components/FlightCard.kt` and reused in both `FlightListScreen` and `ItineraryDetailScreen`. Delay color-coding, strikethrough scheduled times, +N day-offset label.
+6. ✅ **Itinerary flight management** — Add existing solo flights to a group (`+ Vol existent` → `SoloFlightPickerDialog`). Reorder mode: `Treu` (remove from itinerary) + `Mou →` (move to another group).
+7. ✅ **Flight creation modal redesign** — custom Atlas-styled dialog container, clearer search/detail step indicator, richer API search/result states, cleaned-up Horaris section.
+8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces; FlightDetail Horari rows show large display-font time with +N day offset.
+9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row.
+10. ✅ **TripList redesign** — status filter pills, `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right.
+11. ✅ **TripDetail redesign** — floating top bar, info card, MapLibre preview with fullscreen expand, linked itinerary panel, numbered timeline with excursions inline.
+12. ✅ **CountryDetail redesign** — `AtlasGeoCanvas` map hero with capital marker + label, SVG flag header, unified history timeline (trips + flights + logs), living flow with start-date prompt.
+13. ✅ **Dashboard redesign** — see §Dashboard design below (current focus).
 
-7. ✅ **Flight creation modal redesign** — custom Atlas-styled dialog container, clearer search/detail step indicator, richer API search/result states, compact full-width status chips without UNKNOWN, section-level optional labels, and a cleaned-up Horaris section with full-width date/time rows. Existing two-step behavior and all ViewModel callbacks are preserved.
+### Dashboard design (✅ complete, may still be iterating on polish)
 
-8. ✅ **Display typography + FlightDetail Horari polish** — `AtlasSerif` now uses Fraunces with moderated display weights; FlightDetail Horari rows show large display-font time, date as supporting text, crossed scheduled values when actual exists, and `+N` day offset on arrival.
-9. ✅ **Itinerary group-card header polish** — group route label, derived status pill, and overflow/reorder controls share the top row; the large city route title now gets its own full-width row.
-10. ✅ **TripList redesign** — status filter pills, coordinate-backed `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right, dark title, opaque footer. 110m polygons for scroll performance.
-11. ✅ **TripDetail redesign** — committed. Layout (top to bottom):
-    - Floating top bar: back + ⋮ overflow (edit/delete).
-    - Info card: Fraunces title + status pill + dates + notes + DIES/PARADES/PAÏSOS inline stat row + `FlowRow` country pills derived from stop `countryIso2` values.
-    - Map card: static MapLibre (`gesturesEnabled=false`) with `Fullscreen` icon button; tapping opens a `Dialog` at ~72% screen height with full interactive map. `TripMapPreview` extended with `mapHeight`, `gesturesEnabled`, `showFooter`, `onExpandClick` params; camera padding 60→36; numbered `SymbolLayer` on main stop markers.
-    - Linked itinerary panel matching `LinkedTripPanel` shape from ItineraryDetail.
-    - **Timeline:** numbered circles (AtlasNavy, 30dp) + vertical connecting line. `TripStopCard`: location pin icon, title + VOL badge (ITINERARY_GROUP), `Country · date · lat,lng` meta, ⋮ overflow. Excursions inline as `ExcursionTimelineCard` with purple icon. Reorder mode preserved.
-    - New files: `AtlasPreferencesDataStore`, `TripMapPreferencesDataSource`, `TripMapPreferencesRepository` for map preference persistence.
+**Layout top-to-bottom:**
+1. **Page header** — "El teu atlas" in `headlineSmall` (Fraunces) + atlas logo icon (top-right, 34dp circle).
+2. **World map** — full-width `AtlasGeoCanvas`, `aspectRatio(1.78f)`, no card/border. Viewport: `GeoViewport.World(minLatitudeDeg = -57.0, maxLatitudeDeg = 76.0)` (Antarctica hidden). Countries colored by tracking state; living/lived countries get labeled markers with the country name. `mapPaddingDp = 4f`.
+3. **Hero stats** — padded column below map (no card): visited count + /total + "XX% del món" + continent count on one row; then a 4-column KPI row with colored numbers (Fraunces `headlineSmall`) for Visitats/Viscuts/Plans/Desitjats.
+4. **In-progress trip card** — `Surface(onClick)` using TripList card style: `AtlasGeoCanvas` map area (124dp, trip coordinates) with date pill + state pill overlaid, Fraunces title at bottom, route + stop count in footer. Section title "En curs". Hidden when no IN_PROGRESS trip.
+5. **Stats card** — `AtlasCard` with "Estadístiques" section title + "Veure tot →" link navigating to `"stats"` route. 3 rows × 2 stats (Fraunces `headlineSmall` for values): Viatges/Vols · Km volats/Aeroports · Dies viatjats/Durada mitj. — no title on the card itself.
+6. **Upcoming trips** — "Propers viatges" section title + "Tots els viatges →" (switches to Trips tab). Vertical list of 2–3 PLANNED trips: `Surface(onClick)` with status-color left stripe (4dp), `titleLarge` Fraunces title, route text, day count right column.
+7. **Upcoming flights** — "Propers vols" section title + "Tots els vols →" (switches to Flights tab). Vertical list of 2–3 PLANNED/IN_PROGRESS flights: card mirrors `FlightCard` structure — airline logo/fallback, flight number + status pill, big IATA codes with route line + plane icon, footer with date + meta.
+8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (200dp cards): `Surface(onClick)`, `AtlasGeoCanvas` top (110dp), date pill overlay, `titleMedium Bold` title and country text in footer.
+9. **Recent flights** — "Vols recents" section title. Horizontal scroll (170dp cards): `Surface(onClick)`, status-colored header band (52dp) with airplane icon, title + meta + date in footer.
 
-12. ✅ **CountryDetail redesign** — committed. Key changes:
-    - **Map hero** (`CountryMapHero`): single capital marker with name label; viewport centered on capital. Target country highlighted in state color.
-    - **Identity header** (`CountryIdentityHeader`): SVG flag via `CountryFlag` composable (same as CountryList), vertically centered in header row.
-    - **Quick actions** (`CountryQuickActions`): rounded-square (10dp) icon containers, `AtlasNavy` CTA button for "Afegeix registre".
-    - **Historial** (`CountryHistorySection`): full timeline revamp. Single unified `HistoryRow` list built from trips + air travel + logs, sorted newest-first by `sortKey`. Air travel always tagged "VOL". Log cards have a ⋮ overflow menu (Edita / divider / Elimina). Open-ended LIVED log (no end date) renders as VIVINT with `AtlasLiving` colour and years-of-residence count in meta. Closed LIVED log shows full start–end date range. Synthetic VIVINT row shown only when `currentlyLiving == true` but no open-ended LIVED log exists yet (backward-compat).
-    - **Living flow**: tapping "Visc aquí" toggle now opens `CountryLogDialog` with title "Des de quan vius aquí?", type fixed to LIVED, type selector hidden. On confirm: LIVED log saved + `setCurrentlyLivingCountryUseCase` called. Cancel leaves state unchanged (safe for accidental taps).
-    - **ViewModel** (`CountryDetailViewModel`): `sortKey: String?` added to both `CountryTripSummaryUiState` and `CountryAirTravelSummaryUiState`; itinerary titles computed from first→last airport route (title field is always null); `FlexibleDate.toSortKey()` private extension; `isLivingFlow: Boolean` flag on `CountryLogDraftUiState`.
+**Navigation:** All cards are clickable — trip cards → `trips/{tripId}`, solo flight cards → `flights/{flightId}`, itinerary group cards → `itineraries/{itineraryId}`. Section links switch tabs using `popUpTo + restoreState`.
 
-### Next: v3.1 remaining screens
-- **CountryList** ✅ — search, filter pills, continent groups ordered by visited count, SVG flag images via FlagCDN + `coil-svg` (`CountryFlag` composable in `ui/components/`), Atlas aesthetic
-- **TripDetail** ✅ — committed (see above)
-- **CountryDetail** ✅ — committed (see item 12 above)
-- **Dashboard** — redesign agreed, not yet implemented. See plan below.
-- **Settings** — backup, API key, dataset health panels
+**Key UiState additions in `DashboardUiState`:**
+- `worldPercentage: Float`, `hoursFlown: Double`, `uniqueAirportCount: Int`, `uniqueAirlineCount: Int`, `daysTraveled: Int`, `avgTripLengthDays: Double?`
+- `highlightedCountryMarkers: List<DashboardCountryMarker>` — living/lived countries with lat/lng + label for map markers
+- `DashboardTripUiState.tripId: String` — for navigation
+- `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-#### Dashboard redesign plan (v3.1, not yet implemented)
+**Stats placeholder:** `StatsRoute` / `StatsScreen` at route `"stats"` — "Pròximament" message. Ready to be built into a full stats screen.
 
-Agreed layout top-to-bottom:
-
-1. **Hero** — full-width `AtlasGeoCanvas` world map (fix fill/clipping issue so map fills its container edge-to-edge). Below the map: visited count + continent count + state legend. Country state KPI row (Visitats / Viscuts / Plans / Desitjats counts) folded directly into the hero section — no separate `CountryKpis` card.
-2. **In-progress trip card** — shown only when a trip has `status == IN_PROGRESS`. Uses the same `AtlasGeoCanvas`-backed card style as TripList (not the current colored block). Hidden entirely when no trip is in progress.
-3. **World stats card** — single card (not one card per KPI) with a compact grid of travel stats. Proposed metrics: Viatges · Vols · Km volats · Distància mitjana per vol · Països visitats/total. Open to additions.
-4. **Upcoming trips** — section title + 2–3 next `PLANNED` trips as a vertical list (excluding the featured in-progress trip). Simple card rows, not a carousel.
-5. **Upcoming flights / itineraries** — section title + 2–3 next planned flights/itineraries as a vertical list. Separate from trips.
-6. **Recent trips** — horizontal scroll row of recent `COMPLETED` trips (same card style as current `RecentMemoryCard` but aligned with v3.1 aesthetics).
-7. **Recent flights / itineraries** — horizontal scroll row of recent completed flights/itineraries.
-
-**Key decisions:**
-- No carousel / pager — horizontal scroll rows and vertical lists are used instead (simpler, no hidden state).
-- `FeaturedTripCard` is removed; in-progress trip takes that role with a proper TripList-style card.
-- `CountryKpis` and `TravelKpis` sections are removed and replaced by the consolidated hero + single stats card.
-- `RouteLineCanvas` (decorative painted lines) is removed from trip cards; replaced by real `AtlasGeoCanvas` content.
+### Remaining v3.1
+- **Settings** — backup, API key, dataset health panels (not yet redesigned)
 
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
 ### Beyond v3.1
 - **v3.2** Per-stop photos (trip stops + excursion stops)
-- **v4.0** Country depth (stats dataset, stats page, country polygon detail map — `AtlasGeoCanvas` already supports polygon highlight; just needs zoom/pan and a tighter viewport)
+- **v4.0** Country depth (stats dataset, full stats page, country polygon detail map — `AtlasGeoCanvas` already supports polygon highlight; just needs zoom/pan and a tighter viewport). Stats placeholder screen already exists at route `"stats"`.
 
 Full roadmap: `Documentation/Atlas_Post_v2.0_Roadmap.md`
 

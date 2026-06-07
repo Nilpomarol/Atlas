@@ -54,7 +54,7 @@ fun CountryMapHero(
             minLatitudeSpanDegrees = 16.0,
         )
     } else {
-        GeoViewport.World
+        GeoViewport.World()
     }
 
     val highlightColorByIso2 = if (country.iso2 != null) {

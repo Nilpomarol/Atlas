@@ -42,11 +42,11 @@ internal fun buildProjection(
     paddingPx: Float,
 ): GeoProjection {
     val projectedBounds = when (viewport) {
-        GeoViewport.World -> ProjectedBounds(
+        is GeoViewport.World -> ProjectedBounds(
             minX = -PI,
             maxX = PI,
-            minY = mercatorY(-MaxMercatorLatitude),
-            maxY = mercatorY(MaxMercatorLatitude),
+            minY = mercatorY(viewport.minLatitudeDeg.coerceIn(-MaxMercatorLatitude, MaxMercatorLatitude)),
+            maxY = mercatorY(viewport.maxLatitudeDeg.coerceIn(-MaxMercatorLatitude, MaxMercatorLatitude)),
             centerLongitude = 0.0,
         )
 

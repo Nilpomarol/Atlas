@@ -90,6 +90,9 @@ fun DashboardScreen(
     onStatsClick: () -> Unit = {},
     onTripsClick: () -> Unit = {},
     onFlightsClick: () -> Unit = {},
+    onTripClick: (String) -> Unit = {},
+    onFlightClick: (String) -> Unit = {},
+    onItineraryClick: (String) -> Unit = {},
 ) {
     AtlasPage(contentPadding = PaddingValues(0.dp)) {
         Column(
@@ -105,20 +108,20 @@ fun DashboardScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                uiState.featuredTrip?.let { InProgressTripCard(it) }
+                uiState.featuredTrip?.let { InProgressTripCard(it, onTripClick) }
                 WorldStatsCard(uiState = uiState, onStatsClick = onStatsClick)
 
                 if (uiState.upcomingTrips.isNotEmpty()) {
-                    UpcomingTripsSection(trips = uiState.upcomingTrips, onSeeAll = onTripsClick)
+                    UpcomingTripsSection(trips = uiState.upcomingTrips, onSeeAll = onTripsClick, onTripClick = onTripClick)
                 }
                 if (uiState.upcomingFlights.isNotEmpty()) {
-                    UpcomingFlightsSection(flights = uiState.upcomingFlights, onSeeAll = onFlightsClick)
+                    UpcomingFlightsSection(flights = uiState.upcomingFlights, onSeeAll = onFlightsClick, onFlightClick = onFlightClick, onItineraryClick = onItineraryClick)
                 }
                 if (uiState.recentCompletedTrips.isNotEmpty()) {
-                    RecentTripsSection(trips = uiState.recentCompletedTrips)
+                    RecentTripsSection(trips = uiState.recentCompletedTrips, onTripClick = onTripClick)
                 }
                 if (uiState.recentFlights.isNotEmpty()) {
-                    RecentFlightsSection(flights = uiState.recentFlights)
+                    RecentFlightsSection(flights = uiState.recentFlights, onFlightClick = onFlightClick, onItineraryClick = onItineraryClick)
                 }
             }
         }
@@ -261,12 +264,13 @@ private fun HeroKpiItem(modifier: Modifier, value: Int, label: String, color: Co
 // ── In-progress trip card ────────────────────────────────────────────────────
 
 @Composable
-private fun InProgressTripCard(trip: DashboardTripUiState) {
+private fun InProgressTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
     val colors = trip.status.tripStatusColors()
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
         AtlasSectionTitle(title = "En curs")
         Spacer(modifier = Modifier.height(10.dp))
         Surface(
+            onClick = { onTripClick(trip.tripId) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
             color = AtlasSurface,
@@ -402,7 +406,7 @@ private fun StatRowDivider() {
 // ── Upcoming trips ────────────────────────────────────────────────────────────
 
 @Composable
-private fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: () -> Unit) {
+private fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: () -> Unit, onTripClick: (String) -> Unit) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -412,15 +416,16 @@ private fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: ()
             action = { SeeAllLink("Tots els viatges", onSeeAll) },
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            trips.forEach { UpcomingTripCard(it) }
+            trips.forEach { UpcomingTripCard(it, onTripClick) }
         }
     }
 }
 
 @Composable
-private fun UpcomingTripCard(trip: DashboardTripUiState) {
+private fun UpcomingTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
     val colors = trip.status.tripStatusColors()
     Surface(
+        onClick = { onTripClick(trip.tripId) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = AtlasSurface,
@@ -479,7 +484,12 @@ private fun UpcomingTripCard(trip: DashboardTripUiState) {
 // ── Upcoming flights ──────────────────────────────────────────────────────────
 
 @Composable
-private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>, onSeeAll: () -> Unit) {
+private fun UpcomingFlightsSection(
+    flights: List<DashboardFlightUiState>,
+    onSeeAll: () -> Unit,
+    onFlightClick: (String) -> Unit,
+    onItineraryClick: (String) -> Unit,
+) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -489,15 +499,25 @@ private fun UpcomingFlightsSection(flights: List<DashboardFlightUiState>, onSeeA
             action = { SeeAllLink("Tots els vols", onSeeAll) },
         )
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            flights.forEach { UpcomingFlightCard(it) }
+            flights.forEach { UpcomingFlightCard(it, onFlightClick, onItineraryClick) }
         }
     }
 }
 
 @Composable
-private fun UpcomingFlightCard(flight: DashboardFlightUiState) {
+private fun UpcomingFlightCard(
+    flight: DashboardFlightUiState,
+    onFlightClick: (String) -> Unit,
+    onItineraryClick: (String) -> Unit,
+) {
     val colors = flight.status.tripStatusColors()
+    val onClick = when {
+        flight.flightId != null -> { { onFlightClick(flight.flightId) } }
+        flight.itineraryId != null -> { { onItineraryClick(flight.itineraryId) } }
+        else -> { {} }
+    }
     Surface(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         color = AtlasSurface,
@@ -611,22 +631,23 @@ private fun FlightRouteArrow(color: Color, modifier: Modifier = Modifier) {
 // ── Recent trips ─────────────────────────────────────────────────────────────
 
 @Composable
-private fun RecentTripsSection(trips: List<DashboardTripUiState>) {
+private fun RecentTripsSection(trips: List<DashboardTripUiState>, onTripClick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AtlasSectionTitle("Viatges recents", modifier = Modifier.padding(horizontal = 20.dp))
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            trips.forEach { RecentTripCard(it) }
+            trips.forEach { RecentTripCard(it, onTripClick) }
         }
     }
 }
 
 @Composable
-private fun RecentTripCard(trip: DashboardTripUiState) {
+private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
     val colors = trip.status.tripStatusColors()
     Surface(
+        onClick = { onTripClick(trip.tripId) },
         modifier = Modifier.width(200.dp),
         shape = RoundedCornerShape(16.dp),
         color = AtlasSurface,
@@ -678,22 +699,36 @@ private fun RecentTripCard(trip: DashboardTripUiState) {
 // ── Recent flights ────────────────────────────────────────────────────────────
 
 @Composable
-private fun RecentFlightsSection(flights: List<DashboardFlightUiState>) {
+private fun RecentFlightsSection(
+    flights: List<DashboardFlightUiState>,
+    onFlightClick: (String) -> Unit,
+    onItineraryClick: (String) -> Unit,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         AtlasSectionTitle("Vols recents", modifier = Modifier.padding(horizontal = 20.dp))
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            flights.forEach { RecentFlightCard(it) }
+            flights.forEach { RecentFlightCard(it, onFlightClick, onItineraryClick) }
         }
     }
 }
 
 @Composable
-private fun RecentFlightCard(flight: DashboardFlightUiState) {
+private fun RecentFlightCard(
+    flight: DashboardFlightUiState,
+    onFlightClick: (String) -> Unit,
+    onItineraryClick: (String) -> Unit,
+) {
     val colors = flight.status.tripStatusColors()
+    val onClick = when {
+        flight.flightId != null -> { { onFlightClick(flight.flightId) } }
+        flight.itineraryId != null -> { { onItineraryClick(flight.itineraryId) } }
+        else -> { {} }
+    }
     Surface(
+        onClick = onClick,
         modifier = Modifier.width(170.dp),
         shape = RoundedCornerShape(16.dp),
         color = AtlasSurface,

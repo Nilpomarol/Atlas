@@ -109,6 +109,9 @@ fun AtlasNavHost() {
                             restoreState = true
                         }
                     },
+                    onTripClick = { tripId -> navController.navigate("trips/$tripId") },
+                    onFlightClick = { flightId -> navController.navigate("flights/$flightId") },
+                    onItineraryClick = { itineraryId -> navController.navigate("itineraries/$itineraryId") },
                 )
             }
             composable("stats") {

@@ -8,7 +8,7 @@
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
-* **Current phase:** v3.1 — Visual redesign. All screens done except Settings. **Dashboard is the most recently worked screen** — iterating on visual polish (see §Dashboard design below).
+* **Current phase:** v3.1 — Visual redesign. **🔧 WIP: Dashboard** — actively being iterated on (visual polish, layout, cards). See §Dashboard design below. All other screens done except Settings.
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -296,9 +296,9 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 10. ✅ **TripList redesign** — status filter pills, `AtlasGeoCanvas` trip card heroes, schematic fallback, date pill top-left, state pill top-right.
 11. ✅ **TripDetail redesign** — floating top bar, info card, MapLibre preview with fullscreen expand, linked itinerary panel, numbered timeline with excursions inline.
 12. ✅ **CountryDetail redesign** — `AtlasGeoCanvas` map hero with capital marker + label, SVG flag header, unified history timeline (trips + flights + logs), living flow with start-date prompt.
-13. ✅ **Dashboard redesign** — see §Dashboard design below (current focus).
+13. 🔧 **Dashboard redesign** — see §Dashboard design below. Layout and core cards done; visual polish still in progress.
 
-### Dashboard design (✅ complete, may still be iterating on polish)
+### Dashboard design (🔧 WIP)
 
 **Layout top-to-bottom:**
 1. **Page header** — "El teu atlas" in `headlineSmall` (Fraunces) + atlas logo icon (top-right, 34dp circle).

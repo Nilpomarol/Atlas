@@ -13,6 +13,9 @@ fun DashboardRoute(
     onStatsClick: () -> Unit = {},
     onTripsClick: () -> Unit = {},
     onFlightsClick: () -> Unit = {},
+    onTripClick: (String) -> Unit = {},
+    onFlightClick: (String) -> Unit = {},
+    onItineraryClick: (String) -> Unit = {},
 ) {
     val app = LocalContext.current.applicationContext as AtlasApplication
     val viewModel: DashboardViewModel = viewModel(
@@ -34,5 +37,8 @@ fun DashboardRoute(
         onStatsClick = onStatsClick,
         onTripsClick = onTripsClick,
         onFlightsClick = onFlightsClick,
+        onTripClick = onTripClick,
+        onFlightClick = onFlightClick,
+        onItineraryClick = onItineraryClick,
     )
 }

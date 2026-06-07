@@ -136,6 +136,7 @@ class DashboardViewModel(
                     destinationCode = destination,
                     airlineIata = flight.airline?.takeIf { it.length in 2..3 },
                     flightNumber = flight.flightNumber?.takeIf { it.isNotBlank() },
+                    flightId = flight.id,
                 )
             }
         val groupItems = itineraryGroups.mapNotNull { group ->
@@ -158,6 +159,7 @@ class DashboardViewModel(
                 destinationCode = destination,
                 airlineIata = firstFlight.airline?.takeIf { it.length in 2..3 },
                 flightNumber = firstFlight.flightNumber?.takeIf { it.isNotBlank() },
+                itineraryId = group.itineraryId,
             )
         }
         val allFlightItems = soloFlightItems + groupItems
@@ -278,6 +280,7 @@ class DashboardViewModel(
             .joinToString(", ")
             .ifBlank { null }
         return DashboardTripUiState(
+            tripId = id,
             title = title,
             status = status,
             dateText = dateRange?.let(flexibleDateFormatter::format),
@@ -361,6 +364,7 @@ data class DashboardUiState(
 )
 
 data class DashboardTripUiState(
+    val tripId: String,
     val title: String,
     val status: TravelStatus,
     val dateText: String?,
@@ -385,6 +389,8 @@ data class DashboardFlightUiState(
     val destinationCode: String = "",
     val airlineIata: String? = null,
     val flightNumber: String? = null,
+    val flightId: String? = null,       // non-null for solo flights
+    val itineraryId: String? = null,    // non-null for itinerary groups
 )
 
 data class DashboardCountryMarker(

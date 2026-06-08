@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -39,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -316,18 +314,6 @@ private fun TripCard(
                         routeColor = colors.foreground,
                     )
                 }
-                // Gradient scrim so title is always legible
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(0.55f)
-                        .align(Alignment.BottomStart)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.62f)),
-                            ),
-                        ),
-                )
                 TripStatePill(
                     label = colors.label,
                     color = colors.foreground,
@@ -358,7 +344,7 @@ private fun TripCard(
                         text = trip.title,
                         style = MaterialTheme.typography.headlineSmall.copy(fontSize = 27.sp),
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
+                        color = if (item.coverPhotoFilename != null) Color.White else AtlasOnSurfaceStrong,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

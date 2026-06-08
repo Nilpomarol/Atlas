@@ -12,6 +12,7 @@ data class TripEditorDraftUiState(
     val dateRange: FlexibleDateRangeDraftUiState = FlexibleDateRangeDraftUiState(),
     val notes: String = "",
     val validationError: String? = null,
+    val coverPhotoFilename: String? = null,
 ) {
     companion object {
         fun fromTrip(trip: Trip): TripEditorDraftUiState = TripEditorDraftUiState(
@@ -21,6 +22,7 @@ data class TripEditorDraftUiState(
             status = trip.status,
             dateRange = FlexibleDateRangeDraftUiState.fromDateRange(trip.dateRange),
             notes = trip.notes.orEmpty(),
+            coverPhotoFilename = trip.coverPhotoFilename,
         )
     }
 }

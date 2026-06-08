@@ -53,6 +53,7 @@ import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
+import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
 import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
@@ -115,6 +116,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_17_18)
         .addMigrations(AtlasDatabase.MIGRATION_18_19)
         .addMigrations(AtlasDatabase.MIGRATION_19_20)
+        .addMigrations(AtlasDatabase.MIGRATION_20_21)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -180,6 +182,7 @@ class AtlasAppContainer(context: Context) {
     val stopPhotoRepository: StopPhotoRepository = StopPhotoRepositoryImpl(
         context = applicationContext,
         dao = database.stopPhotoDao(),
+        tripDao = database.tripDao(),
     )
 
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
@@ -363,6 +366,10 @@ class AtlasAppContainer(context: Context) {
 
     val deleteStopPhotoUseCase = DeleteStopPhotoUseCase(
         stopPhotoRepository = stopPhotoRepository,
+    )
+
+    val setTripCoverPhotoUseCase = SetTripCoverPhotoUseCase(
+        tripRepository = tripRepository,
     )
 
     fun importInitialData() {

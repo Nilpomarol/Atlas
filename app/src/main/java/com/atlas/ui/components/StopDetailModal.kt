@@ -33,6 +33,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -73,6 +75,7 @@ import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasSurfaceSubtle
 import kotlinx.coroutines.launch
@@ -88,11 +91,13 @@ fun StopDetailModal(
     photos: List<StopPhoto>,
     stopId: String,
     stopType: StopType,
+    coverPhotoFilename: String?,
     onDismiss: () -> Unit,
     onEditStop: () -> Unit,
     onDeleteStop: () -> Unit,
     onAddPhotos: (stopId: String, stopType: StopType, uris: List<Uri>) -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
+    onSetCoverPhoto: (StopPhoto?) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var viewerInitialIndex by remember { mutableIntStateOf(0) }
@@ -183,6 +188,7 @@ fun StopDetailModal(
                 itemsIndexed(photos) { index, photo ->
                     PhotoGridCell(
                         photo = photo,
+                        isCover = photo.filename == coverPhotoFilename,
                         onClick = {
                             viewerInitialIndex = index
                             showViewer = true
@@ -231,11 +237,13 @@ fun StopDetailModal(
         StopPhotoViewer(
             photos = photos,
             initialIndex = viewerInitialIndex.coerceAtMost(photos.lastIndex),
+            coverPhotoFilename = coverPhotoFilename,
             onDismiss = { showViewer = false },
             onDeletePhoto = { photo ->
                 pendingDeletePhoto = photo
                 showViewer = false
             },
+            onSetCoverPhoto = onSetCoverPhoto,
         )
     }
 }
@@ -243,6 +251,7 @@ fun StopDetailModal(
 @Composable
 private fun PhotoGridCell(
     photo: StopPhoto,
+    isCover: Boolean,
     onClick: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -259,6 +268,17 @@ private fun PhotoGridCell(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
         )
+        if (isCover) {
+            Icon(
+                imageVector = Icons.Filled.Star,
+                contentDescription = "Portada",
+                tint = AtlasPrimary,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(4.dp)
+                    .size(16.dp),
+            )
+        }
     }
 }
 
@@ -285,8 +305,10 @@ private fun AddPhotoCell(onClick: () -> Unit) {
 fun StopPhotoViewer(
     photos: List<StopPhoto>,
     initialIndex: Int,
+    coverPhotoFilename: String?,
     onDismiss: () -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
+    onSetCoverPhoto: (StopPhoto?) -> Unit,
 ) {
     val pagerState = rememberPagerState(initialPage = initialIndex) { photos.size }
     val context = LocalContext.current
@@ -346,17 +368,34 @@ fun StopPhotoViewer(
 
                 val currentPhoto = photos.getOrNull(pagerState.currentPage)
                 if (currentPhoto != null) {
-                    Surface(
-                        onClick = { onDeletePhoto(currentPhoto) },
-                        shape = CircleShape,
-                        color = Color.Black.copy(alpha = 0.5f),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Delete,
-                            contentDescription = "Elimina foto",
-                            tint = Color.White,
-                            modifier = Modifier.padding(10.dp).size(20.dp),
-                        )
+                    val isCover = currentPhoto.filename == coverPhotoFilename
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            onClick = {
+                                onSetCoverPhoto(if (isCover) null else currentPhoto)
+                            },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f),
+                        ) {
+                            Icon(
+                                imageVector = if (isCover) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                contentDescription = if (isCover) "Treu portada" else "Fes portada",
+                                tint = if (isCover) AtlasPrimary else Color.White,
+                                modifier = Modifier.padding(10.dp).size(20.dp),
+                            )
+                        }
+                        Surface(
+                            onClick = { onDeletePhoto(currentPhoto) },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.5f),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Elimina foto",
+                                tint = Color.White,
+                                modifier = Modifier.padding(10.dp).size(20.dp),
+                            )
+                        }
                     }
                 }
             }

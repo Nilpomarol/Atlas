@@ -29,4 +29,10 @@ interface TripDao {
 
     @Query("DELETE FROM trips")
     suspend fun deleteAll()
+
+    @Query("UPDATE trips SET cover_photo_filename = :filename WHERE id = :tripId")
+    suspend fun setCoverPhoto(tripId: String, filename: String?)
+
+    @Query("UPDATE trips SET cover_photo_filename = NULL WHERE cover_photo_filename = :filename")
+    suspend fun clearCoverPhotoByFilename(filename: String)
 }

@@ -3,8 +3,11 @@ package com.atlas.data.repository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import com.atlas.data.local.dao.StopPhotoDao
+import com.atlas.data.local.dao.TripDao
 import com.atlas.data.local.entity.StopPhotoEntity
 import com.atlas.data.local.mapper.toDomain
 import com.atlas.domain.model.StopPhoto
@@ -23,6 +26,7 @@ import java.util.UUID
 class StopPhotoRepositoryImpl(
     private val context: Context,
     private val dao: StopPhotoDao,
+    private val tripDao: TripDao,
 ) : StopPhotoRepository {
 
     override fun observeByStop(stopId: String, stopType: StopType): Flow<List<StopPhoto>> =
@@ -59,6 +63,7 @@ class StopPhotoRepositoryImpl(
 
     override suspend fun deletePhoto(photo: StopPhoto) = withContext(Dispatchers.IO) {
         File(context.filesDir, "photos/${photo.filename}").delete()
+        tripDao.clearCoverPhotoByFilename(photo.filename)
         dao.delete(
             StopPhotoEntity(
                 id = photo.id,
@@ -74,7 +79,10 @@ class StopPhotoRepositoryImpl(
     override suspend fun deleteAllForStop(stopId: String, stopType: StopType) = withContext(Dispatchers.IO) {
         val rows = dao.getByStop(stopId, stopType.name)
         val photosDir = File(context.filesDir, "photos")
-        rows.forEach { File(photosDir, it.filename).delete() }
+        rows.forEach { row ->
+            File(photosDir, row.filename).delete()
+            tripDao.clearCoverPhotoByFilename(row.filename)
+        }
         dao.deleteAllForStop(stopId, stopType.name)
     }
 
@@ -83,22 +91,31 @@ class StopPhotoRepositoryImpl(
 
     private fun compressAndSave(uri: Uri, outputFile: File): Boolean {
         return try {
-            val inputStream = context.contentResolver.openInputStream(uri) ?: return false
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
+            // Read EXIF orientation from a dedicated stream before decoding
+            val orientation = context.contentResolver.openInputStream(uri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
 
-            if (bitmap == null) return false
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return false
+            val raw = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            if (raw == null) return false
+
+            val oriented = applyExifOrientation(raw, orientation)
 
             val maxSize = 1920
-            val scaled = if (bitmap.width > maxSize || bitmap.height > maxSize) {
-                val ratio = minOf(maxSize.toFloat() / bitmap.width, maxSize.toFloat() / bitmap.height)
-                val w = (bitmap.width * ratio).toInt().coerceAtLeast(1)
-                val h = (bitmap.height * ratio).toInt().coerceAtLeast(1)
-                val s = Bitmap.createScaledBitmap(bitmap, w, h, true)
-                bitmap.recycle()
+            val scaled = if (oriented.width > maxSize || oriented.height > maxSize) {
+                val ratio = minOf(maxSize.toFloat() / oriented.width, maxSize.toFloat() / oriented.height)
+                val w = (oriented.width * ratio).toInt().coerceAtLeast(1)
+                val h = (oriented.height * ratio).toInt().coerceAtLeast(1)
+                val s = Bitmap.createScaledBitmap(oriented, w, h, true)
+                oriented.recycle()
                 s
             } else {
-                bitmap
+                oriented
             }
 
             FileOutputStream(outputFile).use { out ->
@@ -109,5 +126,22 @@ class StopPhotoRepositoryImpl(
         } catch (_: Exception) {
             false
         }
+    }
+
+    private fun applyExifOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+            ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
+            else -> return bitmap
+        }
+        val result = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        if (result !== bitmap) bitmap.recycle()
+        return result
     }
 }

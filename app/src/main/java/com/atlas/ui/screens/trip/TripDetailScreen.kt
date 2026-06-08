@@ -187,6 +187,7 @@ fun TripDetailScreen(
     onSaveExcursionStopDraft: () -> Unit,
     onAddPhotos: (String, StopType, List<Uri>) -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
+    onSetCoverPhoto: (StopPhoto?) -> Unit,
 ) {
     var isDeleteTripDialogOpen by remember { mutableStateOf(false) }
     var pendingDeleteStop by remember { mutableStateOf<TripStop?>(null) }
@@ -400,6 +401,7 @@ fun TripDetailScreen(
             photos = photos,
             stopId = stop.id,
             stopType = StopType.TRIP_STOP,
+            coverPhotoFilename = uiState.trip?.coverPhotoFilename,
             onDismiss = { selectedStop = null },
             onEditStop = {
                 if (isManual) {
@@ -410,6 +412,7 @@ fun TripDetailScreen(
             onDeleteStop = { selectedStop = null; pendingDeleteStop = stop },
             onAddPhotos = onAddPhotos,
             onDeletePhoto = onDeletePhoto,
+            onSetCoverPhoto = onSetCoverPhoto,
         )
     }
 
@@ -424,11 +427,13 @@ fun TripDetailScreen(
             photos = photos,
             stopId = stop.id,
             stopType = StopType.EXCURSION_STOP,
+            coverPhotoFilename = uiState.trip?.coverPhotoFilename,
             onDismiss = { selectedExcursionStop = null },
             onEditStop = { selectedExcursionStop = null; onEditExcursionStop(stop) },
             onDeleteStop = { selectedExcursionStop = null; pendingDeleteExcursionStop = stop },
             onAddPhotos = onAddPhotos,
             onDeletePhoto = onDeletePhoto,
+            onSetCoverPhoto = onSetCoverPhoto,
         )
     }
 }

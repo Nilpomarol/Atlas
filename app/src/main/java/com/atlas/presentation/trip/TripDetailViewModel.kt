@@ -3,6 +3,7 @@ package com.atlas.presentation.trip
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import android.net.Uri
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.Excursion
@@ -10,14 +11,19 @@ import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
+import com.atlas.domain.model.StopPhoto
+import com.atlas.domain.model.StopType
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.TripMapPreferencesRepository
 import com.atlas.domain.repository.TripRepository
+import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
+import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
 import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseCase
@@ -43,6 +49,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -73,6 +82,9 @@ class TripDetailViewModel(
     private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
     private val flexibleDateValidator: FlexibleDateValidator,
     private val tripMapPreferencesRepository: TripMapPreferencesRepository,
+    private val stopPhotoRepository: StopPhotoRepository,
+    private val addStopPhotosUseCase: AddStopPhotosUseCase,
+    private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
     private val tripId: String,
 ) : ViewModel() {
     private val stopDraft = MutableStateFlow(TripStopDraftUiState())
@@ -100,12 +112,38 @@ class TripDetailViewModel(
         TripDraftData(stopDraft, tripDraft, excursionStopDraft, isItineraryPickerOpen)
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private val tripStopPhotosFlow = tripRepository.observeTripStops(tripId)
+        .flatMapLatest { stops ->
+            val ids = stops.map { it.id }
+            if (ids.isEmpty()) flowOf(emptyMap())
+            else stopPhotoRepository.observeByStopIds(ids, StopType.TRIP_STOP)
+                .map { photos -> photos.groupBy { it.stopId } }
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    private val excursionStopPhotosFlow = excursionRepository.observeExcursions(tripId)
+        .flatMapLatest { excursions ->
+            val ids = excursions.flatMap { it.stops }.map { it.id }
+            if (ids.isEmpty()) flowOf(emptyMap())
+            else stopPhotoRepository.observeByStopIds(ids, StopType.EXCURSION_STOP)
+                .map { photos -> photos.groupBy { it.stopId } }
+        }
+
+    private val photosData = combine(
+        tripStopPhotosFlow,
+        excursionStopPhotosFlow,
+    ) { tripStopPhotos, excursionStopPhotos ->
+        PhotosData(tripStopPhotos, excursionStopPhotos)
+    }
+
     val uiState: StateFlow<TripDetailUiState> = combine(
         tripContentData,
         itineraryRepository.observeItineraries(),
         draftData,
         tripMapPreferencesRepository.observeGeneratedStopsVisible(tripId),
-    ) { content, itineraries, drafts, generatedStopsVisibleOnMap ->
+        photosData,
+    ) { content, itineraries, drafts, generatedStopsVisibleOnMap, photos ->
         val linkedItinerary = itineraries.firstOrNull { it.tripId == tripId }
         TripDetailUiState(
             trip = content.trip,
@@ -119,6 +157,8 @@ class TripDetailViewModel(
             excursionStopDraft = drafts.excursionStopDraft,
             isItineraryPickerOpen = drafts.isItineraryPickerOpen,
             generatedStopsVisibleOnMap = generatedStopsVisibleOnMap,
+            tripStopPhotoMap = photos.tripStopPhotos,
+            excursionStopPhotoMap = photos.excursionStopPhotos,
         )
     }
         .stateIn(
@@ -711,6 +751,18 @@ class TripDetailViewModel(
         }
     }
 
+    fun onAddPhotos(stopId: String, stopType: StopType, uris: List<Uri>) {
+        viewModelScope.launch {
+            addStopPhotosUseCase(stopId, stopType, uris)
+        }
+    }
+
+    fun onDeletePhoto(photo: StopPhoto) {
+        viewModelScope.launch {
+            deleteStopPhotoUseCase(photo)
+        }
+    }
+
     fun onGeneratedStopsVisibleOnMapChanged(isVisible: Boolean) {
         viewModelScope.launch {
             tripMapPreferencesRepository.setGeneratedStopsVisible(
@@ -801,6 +853,9 @@ class TripDetailViewModel(
         private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
         private val flexibleDateValidator: FlexibleDateValidator,
         private val tripMapPreferencesRepository: TripMapPreferencesRepository,
+        private val stopPhotoRepository: StopPhotoRepository,
+        private val addStopPhotosUseCase: AddStopPhotosUseCase,
+        private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
         private val tripId: String,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -829,6 +884,9 @@ class TripDetailViewModel(
                 reorderExcursionStopsUseCase = reorderExcursionStopsUseCase,
                 flexibleDateValidator = flexibleDateValidator,
                 tripMapPreferencesRepository = tripMapPreferencesRepository,
+                stopPhotoRepository = stopPhotoRepository,
+                addStopPhotosUseCase = addStopPhotosUseCase,
+                deleteStopPhotoUseCase = deleteStopPhotoUseCase,
                 tripId = tripId,
             ) as T
         }
@@ -851,6 +909,8 @@ data class TripDetailUiState(
     val excursionStopDraft: ExcursionStopDraftUiState = ExcursionStopDraftUiState(),
     val isItineraryPickerOpen: Boolean = false,
     val generatedStopsVisibleOnMap: Boolean = true,
+    val tripStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
+    val excursionStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
 )
 
 private data class TripContentData(
@@ -858,6 +918,11 @@ private data class TripContentData(
     val stops: List<TripStop>,
     val countries: List<Country>,
     val excursions: List<Excursion>,
+)
+
+private data class PhotosData(
+    val tripStopPhotos: Map<String, List<StopPhoto>>,
+    val excursionStopPhotos: Map<String, List<StopPhoto>>,
 )
 
 private data class TripDraftData(

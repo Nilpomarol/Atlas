@@ -1,5 +1,6 @@
 package com.atlas.ui.screens.trip
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -84,10 +85,14 @@ import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
+import com.atlas.domain.model.StopPhoto
+import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.model.TripStopSource
+import com.atlas.ui.components.StopDetailModal
+import com.atlas.ui.components.StopPhotoThumbnails
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
@@ -180,6 +185,8 @@ fun TripDetailScreen(
     onExcursionStopDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
     onExcursionStopNotesChanged: (String) -> Unit,
     onSaveExcursionStopDraft: () -> Unit,
+    onAddPhotos: (String, StopType, List<Uri>) -> Unit,
+    onDeletePhoto: (StopPhoto) -> Unit,
 ) {
     var isDeleteTripDialogOpen by remember { mutableStateOf(false) }
     var pendingDeleteStop by remember { mutableStateOf<TripStop?>(null) }
@@ -187,6 +194,8 @@ fun TripDetailScreen(
     var pendingDeleteExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
     var showMapModal by remember { mutableStateOf(false) }
+    var selectedStop by remember { mutableStateOf<TripStop?>(null) }
+    var selectedExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
 
     val trip = uiState.trip
 
@@ -228,6 +237,10 @@ fun TripDetailScreen(
                 onDeleteExcursionStop = { pendingDeleteExcursionStop = it },
                 onMoveExcursionStopUp = onMoveExcursionStopUp,
                 onMoveExcursionStopDown = onMoveExcursionStopDown,
+                tripStopPhotoMap = uiState.tripStopPhotoMap,
+                excursionStopPhotoMap = uiState.excursionStopPhotoMap,
+                onStopClick = { selectedStop = it },
+                onExcursionStopClick = { selectedExcursionStop = it },
             )
         }
 
@@ -374,6 +387,50 @@ fun TripDetailScreen(
             onConfirm = { pendingDeleteExcursionStop = null; onDeleteExcursionStop(stop) },
         )
     }
+
+    selectedStop?.let { stop ->
+        val countryName = uiState.countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
+        val photos = uiState.tripStopPhotoMap[stop.id] ?: emptyList()
+        val isManual = stop.source == TripStopSource.MANUAL
+        StopDetailModal(
+            title = stop.displayTitle ?: stop.locationName,
+            locationName = stop.locationName,
+            metaLine = buildStopMetaLine(stop, countryName),
+            notes = stop.notes,
+            photos = photos,
+            stopId = stop.id,
+            stopType = StopType.TRIP_STOP,
+            onDismiss = { selectedStop = null },
+            onEditStop = {
+                if (isManual) {
+                    selectedStop = null
+                    onEditStop(stop)
+                }
+            },
+            onDeleteStop = { selectedStop = null; pendingDeleteStop = stop },
+            onAddPhotos = onAddPhotos,
+            onDeletePhoto = onDeletePhoto,
+        )
+    }
+
+    selectedExcursionStop?.let { stop ->
+        val countryName = uiState.countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
+        val photos = uiState.excursionStopPhotoMap[stop.id] ?: emptyList()
+        StopDetailModal(
+            title = stop.locationName,
+            locationName = stop.locationName,
+            metaLine = buildExcursionStopMetaLine(stop, countryName),
+            notes = stop.notes,
+            photos = photos,
+            stopId = stop.id,
+            stopType = StopType.EXCURSION_STOP,
+            onDismiss = { selectedExcursionStop = null },
+            onEditStop = { selectedExcursionStop = null; onEditExcursionStop(stop) },
+            onDeleteStop = { selectedExcursionStop = null; pendingDeleteExcursionStop = stop },
+            onAddPhotos = onAddPhotos,
+            onDeletePhoto = onDeletePhoto,
+        )
+    }
 }
 
 // ─────────────────────────────────────────────
@@ -503,6 +560,10 @@ private fun TripDetailContent(
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+    tripStopPhotoMap: Map<String, List<StopPhoto>>,
+    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    onStopClick: (TripStop) -> Unit,
+    onExcursionStopClick: (ExcursionStop) -> Unit,
 ) {
     val tripCountries = uiState.stops
         .mapNotNull { it.countryIso2?.takeIf { iso -> iso.isNotBlank() } }
@@ -571,6 +632,10 @@ private fun TripDetailContent(
             onDeleteExcursionStop = onDeleteExcursionStop,
             onMoveExcursionStopUp = onMoveExcursionStopUp,
             onMoveExcursionStopDown = onMoveExcursionStopDown,
+            tripStopPhotoMap = tripStopPhotoMap,
+            excursionStopPhotoMap = excursionStopPhotoMap,
+            onStopClick = onStopClick,
+            onExcursionStopClick = onExcursionStopClick,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -952,6 +1017,10 @@ private fun TripStopsSection(
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+    tripStopPhotoMap: Map<String, List<StopPhoto>>,
+    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    onStopClick: (TripStop) -> Unit,
+    onExcursionStopClick: (ExcursionStop) -> Unit,
 ) {
     val totalTimelineItems = stops.size + excursions.size
 
@@ -1015,6 +1084,10 @@ private fun TripStopsSection(
                 onDeleteExcursionStop = onDeleteExcursionStop,
                 onMoveExcursionStopUp = onMoveExcursionStopUp,
                 onMoveExcursionStopDown = onMoveExcursionStopDown,
+                tripStopPhotoMap = tripStopPhotoMap,
+                excursionStopPhotoMap = excursionStopPhotoMap,
+                onStopClick = onStopClick,
+                onExcursionStopClick = onExcursionStopClick,
             )
         }
     }
@@ -1039,6 +1112,10 @@ private fun TripStopsTimeline(
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+    tripStopPhotoMap: Map<String, List<StopPhoto>>,
+    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    onStopClick: (TripStop) -> Unit,
+    onExcursionStopClick: (ExcursionStop) -> Unit,
 ) {
     val excursionsByAnchor = excursions.groupBy { it.anchorTripStopId }
 
@@ -1066,6 +1143,7 @@ private fun TripStopsTimeline(
                 // Right side: stop card + anchored excursions
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Spacer(Modifier.height(3.dp))
+                    val stopPhotos = tripStopPhotoMap[stop.id] ?: emptyList()
                     TripStopCard(
                         stop = stop,
                         countryName = countryName,
@@ -1077,6 +1155,9 @@ private fun TripStopsTimeline(
                         onMoveStopDown = onMoveStopDown,
                         onDeleteStop = onDeleteStop,
                         onAddExcursionClick = { onAddExcursionClick(stop.id) },
+                        previewPhotos = stopPhotos.take(4),
+                        photoCount = stopPhotos.size,
+                        onStopClick = { onStopClick(stop) },
                     )
                     anchored.forEach { excursion ->
                         val excursionIndex = excursions.indexOf(excursion)
@@ -1094,6 +1175,8 @@ private fun TripStopsTimeline(
                             onDeleteExcursionStop = onDeleteExcursionStop,
                             onMoveExcursionStopUp = onMoveExcursionStopUp,
                             onMoveExcursionStopDown = onMoveExcursionStopDown,
+                            excursionStopPhotoMap = excursionStopPhotoMap,
+                            onExcursionStopClick = onExcursionStopClick,
                         )
                     }
                     Spacer(Modifier.height(1.dp))
@@ -1121,6 +1204,8 @@ private fun TripStopsTimeline(
                     onDeleteExcursionStop = onDeleteExcursionStop,
                     onMoveExcursionStopUp = onMoveExcursionStopUp,
                     onMoveExcursionStopDown = onMoveExcursionStopDown,
+                    excursionStopPhotoMap = excursionStopPhotoMap,
+                    onExcursionStopClick = onExcursionStopClick,
                 )
             }
             Spacer(Modifier.height(4.dp))
@@ -1159,12 +1244,16 @@ private fun TripStopCard(
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
     onAddExcursionClick: () -> Unit,
+    previewPhotos: List<StopPhoto> = emptyList(),
+    photoCount: Int = 0,
+    onStopClick: () -> Unit = {},
 ) {
-    val hasCoords = stop.hasCoordinates()
     val isManual = stop.source == TripStopSource.MANUAL
     val isItinerary = stop.source == TripStopSource.ITINERARY_GROUP
+    val hasPhotos = previewPhotos.isNotEmpty()
 
     Surface(
+        onClick = onStopClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(13.dp),
         color = AtlasSurface,
@@ -1175,10 +1264,18 @@ private fun TripStopCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
-            StopThumbnail(
-                modifier = Modifier.size(46.dp),
-                accent = if (isItinerary) AtlasPrimary else AtlasOnSurfaceMuted,
-            )
+            if (hasPhotos) {
+                StopPhotoThumbnails(
+                    photos = previewPhotos,
+                    photoCount = photoCount,
+                    size = 46.dp,
+                )
+            } else {
+                StopThumbnail(
+                    modifier = Modifier.size(46.dp),
+                    accent = if (isItinerary) AtlasPrimary else AtlasOnSurfaceMuted,
+                )
+            }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1360,6 +1457,8 @@ private fun ExcursionTimelineCard(
     onDeleteExcursionStop: (ExcursionStop) -> Unit,
     onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
     onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
+    excursionStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
+    onExcursionStopClick: (ExcursionStop) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val sortedStops = excursion.stops.sortedBy { it.sortOrder }
@@ -1414,6 +1513,7 @@ private fun ExcursionTimelineCard(
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 sortedStops.forEachIndexed { index, stop ->
                     val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
+                    val stopPhotos = excursionStopPhotoMap[stop.id] ?: emptyList()
                     ExcursionStopCard(
                         stop = stop,
                         countryName = countryName,
@@ -1424,6 +1524,9 @@ private fun ExcursionTimelineCard(
                         onDelete = { onDeleteExcursionStop(stop) },
                         onMoveUp = { onMoveExcursionStopUp(excursion.id, stop) },
                         onMoveDown = { onMoveExcursionStopDown(excursion.id, stop) },
+                        previewPhotos = stopPhotos.take(4),
+                        photoCount = stopPhotos.size,
+                        onStopClick = { onExcursionStopClick(stop) },
                     )
                 }
             }
@@ -1497,8 +1600,14 @@ private fun ExcursionStopCard(
     onDelete: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    previewPhotos: List<StopPhoto> = emptyList(),
+    photoCount: Int = 0,
+    onStopClick: () -> Unit = {},
 ) {
+    val hasPhotos = previewPhotos.isNotEmpty()
+
     Surface(
+        onClick = onStopClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(13.dp),
         color = AtlasSurface,
@@ -1509,10 +1618,18 @@ private fun ExcursionStopCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
-            StopThumbnail(
-                modifier = Modifier.size(46.dp),
-                accent = ExcursionColor,
-            )
+            if (hasPhotos) {
+                StopPhotoThumbnails(
+                    photos = previewPhotos,
+                    photoCount = photoCount,
+                    size = 46.dp,
+                )
+            } else {
+                StopThumbnail(
+                    modifier = Modifier.size(46.dp),
+                    accent = ExcursionColor,
+                )
+            }
 
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

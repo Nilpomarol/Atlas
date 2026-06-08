@@ -2,13 +2,14 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-07 (v3.1 fully complete — all screens redesigned)
+* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos, DB v20)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
-* **Current phase:** v3.1 **complete.** All screens redesigned. Next phase is v3.2 (per-stop photos).
+* **v3.1 is complete and committed.** All screens redesigned.
+* **Current phase:** v3.2 **complete** (per-stop photos, DB v20). Next phase is v4.0 (Country depth / Stats).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -37,7 +38,7 @@
 ## KEY DECISIONS & GROUND TRUTHS
 
 ### Data model
-* **Room DB version: 19.** Migration chain: 1→2→…→18→19. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries). Migration 15→16 creates the `aircraft_types` table. Migration 16→17 adds aircraft engine metadata, `aircraft_registration`, and the tail-number `aircraft` cache table. Migration 17→18 adds nullable UTC datetime columns and `distance_km` to `flights`. Migration 18→19 adds `destination_counts_for_country_tracking` (default 1) and `origin_counts_for_country_tracking` (default 0) to `flights`.
+* **Room DB version: 20.** Migration chain: 1→2→…→19→20. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries). Migration 15→16 creates the `aircraft_types` table. Migration 16→17 adds aircraft engine metadata, `aircraft_registration`, and the tail-number `aircraft` cache table. Migration 17→18 adds nullable UTC datetime columns and `distance_km` to `flights`. Migration 18→19 adds `destination_counts_for_country_tracking` (default 1) and `origin_counts_for_country_tracking` (default 0) to `flights`. Migration 19→20 creates `stop_photos` table with indices on `(stop_id, stop_type)` and `sort_order`.
 * **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults. The three new flight provenance columns (`fetched_from`, `external_provider`, `external_id`) are not yet included in the backup — they are operational metadata.
 * **Country dataset:** 244 entries, version `2026.1`. Importer inserts `parent_iso2 = null` entries first to satisfy the self-referencing FK.
 * **Airport dataset:** 5,931 airports, version `2026.3`. 141 entries skipped (null id / unknown country / null city).
@@ -169,8 +170,8 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 
 ## WHAT EXISTS IN THE CODEBASE
 
-### Domain entities (Room DB v19)
-`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity`, `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `AircraftTypeEntity`, `AircraftEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`
+### Domain entities (Room DB v20)
+`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity`, `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `AircraftTypeEntity`, `AircraftEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`, `StopPhotoEntity`
 
 ### Screens and routes
 * **Countries:** list, detail (state-colored hero, timeline, map hero), log editor
@@ -214,6 +215,31 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 * `FlightListViewModel`, `FlightDetailViewModel`, `ItineraryDetailViewModel`: airline search flow, `onAirlineQueryChanged` / `onAirlineSelected`, edit-mode resolution, API-fill resolution
 * `FlightCard`: airline logo + resolved name row (separate from date/number)
 * `FlightMetaCard`: Companyia row shows logo + name inline
+
+### New in v3.2
+* `domain/model/StopType.kt` — `enum class StopType { TRIP_STOP, EXCURSION_STOP }`
+* `domain/model/StopPhoto.kt` — domain model: `id, stopId, stopType, filename, sortOrder, createdAt`
+* `data/local/entity/StopPhotoEntity.kt` — Room `@Entity(tableName = "stop_photos")`, indices on `(stop_id, stop_type)` and `sort_order`; no FK constraints (cross-table cascade handled manually)
+* `data/local/dao/StopPhotoDao.kt` — `observeByStop`, `observeByStopIds`, `insert`, `delete`, `getByStop`, `deleteAllForStop`, `countByStop`, `getMaxSortOrder`
+* `data/local/mapper/StopPhotoMapper.kt` — `StopPhotoEntity.toDomain()` / `StopPhoto.toEntity()`
+* `domain/repository/StopPhotoRepository.kt` — interface: `observeByStop`, `observeByStopIds`, `addPhotos`, `deletePhoto`, `deleteAllForStop`, `countByStop`
+* `data/repository/StopPhotoRepositoryImpl.kt` — copies URI → `filesDir/photos/<uuid>.jpg`, max 1920px / JPEG 80%; cascade delete deletes files then DB rows; all disk I/O on `Dispatchers.IO`
+* `domain/usecase/photo/AddStopPhotosUseCase.kt` — enforces 25-photo cap (`MAX_PHOTOS = 25`)
+* `domain/usecase/photo/DeleteStopPhotoUseCase.kt` — thin wrapper; deletes file + DB row
+* `ui/components/StopPhotoThumbnails.kt` — 46dp thumbnail widget: 1 photo fills area; 2+ shows 2×2 grid; overflow `+N` on 4th cell
+* `ui/components/StopDetailModal.kt` — `ModalBottomSheet` with header, info section, 3-column `LazyVerticalGrid` photo grid, `AddPhotoCell`, delete confirmation `AlertDialog`; internally shows `StopPhotoViewer`
+* `StopPhotoViewer` (inside `StopDetailModal.kt`) — full-screen `Dialog` + `HorizontalPager`, back + delete controls, auto-dismiss when all photos deleted
+* Updated `DeleteTripStopUseCase` + `DeleteExcursionStopUseCase` — call `stopPhotoRepository.deleteAllForStop()` before deleting the stop row
+* Updated `AtlasDatabase` — DB v20, `MIGRATION_19_20`, `stopPhotoDao()`
+* Updated `AtlasAppContainer` — wires `StopPhotoRepositoryImpl`, `AddStopPhotosUseCase`, `DeleteStopPhotoUseCase`
+* Updated `TripDetailViewModel` — `tripStopPhotosFlow` + `excursionStopPhotosFlow` via `flatMapLatest`; `photosData` intermediate combine; `onAddPhotos` / `onDeletePhoto` actions; `tripStopPhotoMap` + `excursionStopPhotoMap` in `TripDetailUiState`
+* Updated `TripDetailScreen` — tappable stop cards (`Surface(onClick)`), `StopPhotoThumbnails` replacing `StopThumbnail` when photos exist, `StopDetailModal` for both stop types
+
+**Photo file storage:** `context.filesDir/photos/<uuid>.jpg` — app-private. **Excluded from JSON backup.**
+
+**Cascade delete:** `StopPhotoRepository.deleteAllForStop()` called by both delete-stop use cases before removing the stop row.
+
+**`observeByStopIds` empty-list guard:** repository returns `flowOf(emptyList())` when `stopIds.isEmpty()` (DAO IN query fails on empty list).
 
 ### Tests
 Flexible date validator/formatter, country state derivation (including layover cases), UTC-first flight time calculations, backup validator/mappers, Nominatim mapper, airport search use case.
@@ -337,13 +363,22 @@ Settings is now **push-nav only** — reached by tapping the atlas logo in the d
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
-### Next: v3.2 — Per-stop photos
+### ✅ Completed in v3.2 — Per-stop photos (DB v20, build verified 2026-06-08)
 
-Both trip stops and excursion stops get multiple photos. Design is fully specced below.
+Both trip stops and excursion stops now have full photo support. See §New in v3.2 for the complete file list.
+
+Key implementation notes:
+- No `StopDetailViewModel` was created; photo state is folded into `TripDetailViewModel` to stay consistent with the manual DI architecture (no Hilt).
+- `combine` hit the 5-flow typed overload limit — resolved by first combining the two photo flows into a `photosData` intermediate, then combining that with the 4 existing flows.
+- `observeByStopIds` with an empty list is guarded in the repository layer.
+
+### Next: v4.0 — Country depth / Stats
+
+Stats placeholder (`"stats"` route, "Pròximament" message) already exists. Full stats page with dataset, country polygon detail, and map zoom/pan to be built here. `AtlasGeoCanvas` already supports polygon highlights; just needs a richer viewport and stats data layer.
 
 ---
 
-## v3.2 SPEC — Per-stop photos
+## v3.2 SPEC — Per-stop photos (✅ IMPLEMENTED)
 
 ### User experience
 
@@ -423,7 +458,7 @@ No FK to stop tables (Room can't enforce cross-table FKs with different stop typ
 ### Open questions before starting
 - None. Design is fully agreed. Start with DB migration + entity/DAO, then repository, then ViewModel, then UI bottom-up.
 
-### Beyond v3.2
+### Beyond v3.2 → v4.0+
 - **v4.0** Country depth (stats dataset, full stats page, country polygon detail map — `AtlasGeoCanvas` already supports polygon highlight; just needs zoom/pan and a tighter viewport). Stats placeholder screen already exists at route `"stats"`.
 - **Future:** Cloud photo sync (Cloudflare R2 or similar) to enable cross-device photo access without bundling photos into the JSON backup.
 

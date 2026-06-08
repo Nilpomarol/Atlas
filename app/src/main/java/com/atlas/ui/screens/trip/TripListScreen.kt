@@ -54,7 +54,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.TravelStatus
-import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripListItemUiState
 import com.atlas.presentation.trip.TripListUiState
@@ -283,7 +282,7 @@ private fun TripCard(
     val trip = item.trip
     val colors = trip.status.tripStatusColors()
     val routeText = item.routeText() ?: "Sense parades"
-    val dateText = trip.dateRange?.let { dateRangeFormatter.format(it) } ?: "Sense data"
+    val dateText = item.datePillText ?: "Sense data"
 
     Surface(
         modifier = Modifier
@@ -551,4 +550,3 @@ fun TravelStatus.toCatalanLabel(): String = when (this) {
     TravelStatus.UNKNOWN -> "Desconegut"
 }
 
-private val dateRangeFormatter = FlexibleDateFormatter()

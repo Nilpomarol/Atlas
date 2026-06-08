@@ -8,6 +8,7 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.repository.TripRepository
+import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.domain.usecase.trip.CreateTripUseCase
 import com.atlas.domain.usecase.trip.UpdateTripUseCase
 import com.atlas.domain.validation.FlexibleDateValidator
@@ -26,6 +27,7 @@ class TripListViewModel(
     private val createTripUseCase: CreateTripUseCase,
     private val updateTripUseCase: UpdateTripUseCase,
     private val flexibleDateValidator: FlexibleDateValidator,
+    private val flexibleDateFormatter: FlexibleDateFormatter,
 ) : ViewModel() {
     private val draft = MutableStateFlow(TripEditorDraftUiState())
 
@@ -36,7 +38,7 @@ class TripListViewModel(
     ) { trips, stops, draft ->
         TripListUiState(
             tripItems = trips.map { trip ->
-                trip.toListItem(stops.filter { it.tripId == trip.id })
+                trip.toListItem(stops.filter { it.tripId == trip.id }, flexibleDateFormatter)
             },
             draft = draft,
         )
@@ -141,6 +143,7 @@ class TripListViewModel(
         private val createTripUseCase: CreateTripUseCase,
         private val updateTripUseCase: UpdateTripUseCase,
         private val flexibleDateValidator: FlexibleDateValidator,
+        private val flexibleDateFormatter: FlexibleDateFormatter,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -149,6 +152,7 @@ class TripListViewModel(
                 createTripUseCase = createTripUseCase,
                 updateTripUseCase = updateTripUseCase,
                 flexibleDateValidator = flexibleDateValidator,
+                flexibleDateFormatter = flexibleDateFormatter,
             ) as T
         }
     }
@@ -166,6 +170,7 @@ data class TripListItemUiState(
     val lastStopName: String?,
     val mapPoints: List<TripStopMapPoint> = emptyList(),
     val coverPhotoFilename: String? = null,
+    val datePillText: String? = null,
 )
 
 data class TripStopMapPoint(
@@ -173,7 +178,7 @@ data class TripStopMapPoint(
     val longitude: Double,
 )
 
-private fun Trip.toListItem(stops: List<TripStop>): TripListItemUiState {
+private fun Trip.toListItem(stops: List<TripStop>, formatter: FlexibleDateFormatter): TripListItemUiState {
     val orderedStops = stops.sortedBy { it.sortOrder }
     return TripListItemUiState(
         trip = this,
@@ -188,5 +193,6 @@ private fun Trip.toListItem(stops: List<TripStop>): TripListItemUiState {
                 TripStopMapPoint(latitude = latitude, longitude = longitude)
             },
         coverPhotoFilename = coverPhotoFilename,
+        datePillText = formatter.formatTripPill(dateRange),
     )
 }

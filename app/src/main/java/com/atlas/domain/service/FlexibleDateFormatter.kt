@@ -26,6 +26,19 @@ class FlexibleDateFormatter {
     fun format(dateTime: LocalDateTime): String =
         "${format(dateTime.toLocalDate())} · ${dateTime.hour.twoDigits()}:${dateTime.minute.twoDigits()}"
 
+    fun formatTripPill(range: FlexibleDateRange?): String? {
+        if (range == null) return null
+        val start = range.start
+        val end = range.end
+        return when {
+            start == null -> end?.toMonthYearText()
+            end == null -> start.toMonthYearText()
+            start.sameMonthAndYear(end) -> end.toMonthYearText()
+            start.precision == DatePrecision.YEAR && end.precision == DatePrecision.YEAR -> "${start.year} - ${end.year}"
+            else -> "${start.toMonthOnlyText()} - ${end.toMonthYearText()}"
+        }
+    }
+
     fun formatIsoDate(value: String): String? =
         runCatching { format(LocalDate.parse(value.take(10))) }.getOrNull()
 
@@ -53,4 +66,13 @@ class FlexibleDateFormatter {
     }
 
     private fun Int.twoDigits(): String = toString().padStart(2, '0')
+
+    private fun FlexibleDate.toMonthYearText(): String =
+        month?.let { "${it.monthAbbreviation()} $year" } ?: year.toString()
+
+    private fun FlexibleDate.toMonthOnlyText(): String =
+        month?.monthAbbreviation() ?: year.toString()
+
+    private fun FlexibleDate.sameMonthAndYear(other: FlexibleDate): Boolean =
+        year == other.year && month == other.month
 }

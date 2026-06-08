@@ -312,6 +312,7 @@ class DashboardViewModel(
                     val lng = stop.longitude ?: return@mapNotNull null
                     TripStopMapPoint(latitude = lat, longitude = lng)
                 },
+            coverPhotoFilename = coverPhotoFilename,
         )
     }
 
@@ -385,6 +386,7 @@ data class DashboardTripUiState(
     val flagText: String?,
     val countryIso2s: List<String> = emptyList(),
     val mapPoints: List<TripStopMapPoint> = emptyList(),
+    val coverPhotoFilename: String? = null,
 )
 
 data class DashboardFlightUiState(

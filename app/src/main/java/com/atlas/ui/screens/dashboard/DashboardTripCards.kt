@@ -6,7 +6,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -28,12 +27,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.atlas.presentation.dashboard.DashboardTripUiState
-import com.atlas.ui.components.AtlasPill
+import java.io.File
 import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
@@ -234,6 +236,7 @@ internal fun RecentTripsSection(trips: List<DashboardTripUiState>, onTripClick: 
 private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
     val colors = trip.status.tripStatusColors()
     val datePillText = (trip.memoryDateText ?: trip.dateText)?.uppercase()
+    val context = LocalContext.current
     Surface(
         onClick = { onTripClick(trip.tripId) },
         modifier = Modifier.width(224.dp),
@@ -249,7 +252,16 @@ private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> 
                     .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                     .background(colors.container),
             ) {
-                TripCardMap(trip.mapPoints, trip.stopCount, colors.foreground)
+                if (trip.coverPhotoFilename != null) {
+                    AsyncImage(
+                        model = File(context.filesDir, "photos/${trip.coverPhotoFilename}"),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                } else {
+                    TripCardMap(trip.mapPoints, trip.stopCount, colors.foreground)
+                }
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -275,11 +287,7 @@ private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> 
                             )
                         }
                     }
-                    AtlasPill(
-                        label = colors.label,
-                        colors = colors,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                    )
+                    TripStatePill(label = colors.label, color = colors.foreground)
                 }
             }
             Column(

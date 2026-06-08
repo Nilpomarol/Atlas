@@ -40,4 +40,6 @@ data class TripEntity(
     val createdAt: String,
     @ColumnInfo(name = "updated_at")
     val updatedAt: String,
+    @ColumnInfo(name = "cover_photo_filename")
+    val coverPhotoFilename: String? = null,
 )

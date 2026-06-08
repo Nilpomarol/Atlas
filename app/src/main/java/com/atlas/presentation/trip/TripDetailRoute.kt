@@ -44,6 +44,7 @@ fun TripDetailRoute(
             stopPhotoRepository = app.container.stopPhotoRepository,
             addStopPhotosUseCase = app.container.addStopPhotosUseCase,
             deleteStopPhotoUseCase = app.container.deleteStopPhotoUseCase,
+            setTripCoverPhotoUseCase = app.container.setTripCoverPhotoUseCase,
             tripId = tripId,
         ),
     )
@@ -110,5 +111,6 @@ fun TripDetailRoute(
         onSaveExcursionStopDraft = viewModel::onSaveExcursionStopDraft,
         onAddPhotos = viewModel::onAddPhotos,
         onDeletePhoto = viewModel::onDeletePhoto,
+        onSetCoverPhoto = viewModel::onSetCoverPhoto,
     )
 }

@@ -22,6 +22,8 @@ interface TripRepository {
 
     suspend fun updateTrip(trip: Trip)
     suspend fun deleteTrip(trip: Trip)
+    suspend fun setCoverPhoto(tripId: String, filename: String?)
+    suspend fun clearCoverPhotoByFilename(filename: String)
 
     suspend fun createTripStop(
         tripId: String,

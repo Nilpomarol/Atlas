@@ -24,6 +24,7 @@ import com.atlas.domain.repository.TripMapPreferencesRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
+import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
 import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseCase
@@ -85,6 +86,7 @@ class TripDetailViewModel(
     private val stopPhotoRepository: StopPhotoRepository,
     private val addStopPhotosUseCase: AddStopPhotosUseCase,
     private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
+    private val setTripCoverPhotoUseCase: SetTripCoverPhotoUseCase,
     private val tripId: String,
 ) : ViewModel() {
     private val stopDraft = MutableStateFlow(TripStopDraftUiState())
@@ -289,6 +291,7 @@ class TripDetailViewModel(
                     status = draft.status,
                     dateRange = dateRange,
                     notes = draft.notes,
+                    coverPhotoFilename = draft.coverPhotoFilename,
                 ),
             )
             onDismissTripDraft()
@@ -763,6 +766,12 @@ class TripDetailViewModel(
         }
     }
 
+    fun onSetCoverPhoto(photo: StopPhoto?) {
+        viewModelScope.launch {
+            setTripCoverPhotoUseCase(tripId, photo)
+        }
+    }
+
     fun onGeneratedStopsVisibleOnMapChanged(isVisible: Boolean) {
         viewModelScope.launch {
             tripMapPreferencesRepository.setGeneratedStopsVisible(
@@ -856,6 +865,7 @@ class TripDetailViewModel(
         private val stopPhotoRepository: StopPhotoRepository,
         private val addStopPhotosUseCase: AddStopPhotosUseCase,
         private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
+        private val setTripCoverPhotoUseCase: SetTripCoverPhotoUseCase,
         private val tripId: String,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -887,6 +897,7 @@ class TripDetailViewModel(
                 stopPhotoRepository = stopPhotoRepository,
                 addStopPhotosUseCase = addStopPhotosUseCase,
                 deleteStopPhotoUseCase = deleteStopPhotoUseCase,
+                setTripCoverPhotoUseCase = setTripCoverPhotoUseCase,
                 tripId = tripId,
             ) as T
         }

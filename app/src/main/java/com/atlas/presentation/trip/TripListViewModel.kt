@@ -128,6 +128,7 @@ class TripListViewModel(
                         status = currentDraft.status,
                         dateRange = dateRange,
                         notes = currentDraft.notes,
+                        coverPhotoFilename = currentDraft.coverPhotoFilename,
                     ),
                 )
             }
@@ -164,6 +165,7 @@ data class TripListItemUiState(
     val firstStopName: String?,
     val lastStopName: String?,
     val mapPoints: List<TripStopMapPoint> = emptyList(),
+    val coverPhotoFilename: String? = null,
 )
 
 data class TripStopMapPoint(
@@ -185,5 +187,6 @@ private fun Trip.toListItem(stops: List<TripStop>): TripListItemUiState {
                 val longitude = stop.longitude ?: return@mapNotNull null
                 TripStopMapPoint(latitude = latitude, longitude = longitude)
             },
+        coverPhotoFilename = coverPhotoFilename,
     )
 }

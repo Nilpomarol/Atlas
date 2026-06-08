@@ -6,4 +6,5 @@ data class Trip(
     val status: TravelStatus,
     val dateRange: FlexibleDateRange?,
     val notes: String?,
+    val coverPhotoFilename: String? = null,
 )

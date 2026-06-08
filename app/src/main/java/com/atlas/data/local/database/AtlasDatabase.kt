@@ -54,7 +54,7 @@ import com.atlas.data.local.entity.TripStopEntity
         ExcursionStopEntity::class,
         StopPhotoEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -777,6 +777,12 @@ abstract class AtlasDatabase : RoomDatabase() {
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_stop_photos_stop_id_stop_type` ON `stop_photos` (`stop_id`, `stop_type`)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_stop_photos_sort_order` ON `stop_photos` (`sort_order`)")
+            }
+        }
+
+        val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `trips` ADD COLUMN `cover_photo_filename` TEXT")
             }
         }
     }

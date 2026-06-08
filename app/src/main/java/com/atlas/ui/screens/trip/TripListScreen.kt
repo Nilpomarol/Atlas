@@ -39,6 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import java.io.File
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -295,11 +299,21 @@ private fun TripCard(
                     .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                     .background(AtlasSurfaceSubtle),
             ) {
-                TripCardMap(
-                    mapPoints = item.mapPoints,
-                    stopCount = item.stopCount,
-                    routeColor = colors.foreground,
-                )
+                val context = LocalContext.current
+                if (item.coverPhotoFilename != null) {
+                    AsyncImage(
+                        model = File(context.filesDir, "photos/${item.coverPhotoFilename}"),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    TripCardMap(
+                        mapPoints = item.mapPoints,
+                        stopCount = item.stopCount,
+                        routeColor = colors.foreground,
+                    )
+                }
                 TripStatePill(
                     label = colors.label,
                     color = colors.foreground,

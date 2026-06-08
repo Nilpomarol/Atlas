@@ -85,8 +85,17 @@ class TripRepositoryImpl(
                 notes = trip.notes,
                 createdAt = now,
                 updatedAt = now,
+                coverPhotoFilename = trip.coverPhotoFilename,
             ),
         )
+    }
+
+    override suspend fun setCoverPhoto(tripId: String, filename: String?) {
+        tripDao.setCoverPhoto(tripId, filename)
+    }
+
+    override suspend fun clearCoverPhotoByFilename(filename: String) {
+        tripDao.clearCoverPhotoByFilename(filename)
     }
 
     override suspend fun deleteTrip(trip: Trip) {

@@ -13,6 +13,7 @@ fun TripEntity.toDomain(): Trip = Trip(
     status = TravelStatus.valueOf(status),
     dateRange = toDateRange(),
     notes = notes,
+    coverPhotoFilename = coverPhotoFilename,
 )
 
 private fun TripEntity.toDateRange(): FlexibleDateRange? {

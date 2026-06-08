@@ -337,11 +337,95 @@ Settings is now **push-nav only** — reached by tapping the atlas logo in the d
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
-### Next: v3.2
-- **Per-stop photos** — trip stops + excursion stops
+### Next: v3.2 — Per-stop photos
+
+Both trip stops and excursion stops get multiple photos. Design is fully specced below.
+
+---
+
+## v3.2 SPEC — Per-stop photos
+
+### User experience
+
+**Stop cards in TripDetail timeline (and excursion inline cards):**
+- The existing "logo/coordinates" area of a stop card is replaced by up to 4 photo thumbnails when photos exist. If no photos, the current layout is unchanged.
+- The entire stop card becomes tappable, opening the **Stop Detail Modal**.
+
+**Stop Detail Modal** (full-height bottom sheet or dialog):
+- **Header:** stop title + location name.
+- **Info section:** dates, notes — read-only display. Edit button opens the existing stop editor dialog. Delete button (with confirmation) deletes the stop + all its photos.
+- **"Afegeix fotos" button** — opens Android photo picker (multi-select, up to remaining capacity). No camera capture.
+- **Full photo grid** — lazy 3-column grid of all photos for this stop, in insertion order.
+- Tapping a photo opens the **Full-screen viewer**.
+
+**Full-screen viewer:**
+- Horizontal pager (swipe between photos).
+- Trash icon deletes the current photo (confirmation snackbar / undo optional).
+- Back closes the viewer and returns to the modal.
+
+**Photo limit:** 25 per stop. The "Afegeix fotos" button is disabled / shows a message when the limit is reached.
+
+**Excursion stops** are treated identically to trip stops throughout.
+
+---
+
+### Data model — DB v20
+
+New table, simple `CREATE TABLE` migration:
+
+```sql
+CREATE TABLE stop_photos (
+    id          TEXT PRIMARY KEY,   -- UUID
+    stop_id     TEXT NOT NULL,
+    stop_type   TEXT NOT NULL,      -- 'TRIP_STOP' | 'EXCURSION_STOP'
+    filename    TEXT NOT NULL,      -- e.g. "a3f2...uuid.jpg" in filesDir/photos/
+    sort_order  INTEGER NOT NULL,   -- insertion order, 0-based
+    created_at  TEXT NOT NULL       -- ISO instant string
+)
+```
+
+No FK to stop tables (Room can't enforce cross-table FKs with different stop types). Cascade-delete is handled in the repository layer when a stop is deleted.
+
+**File storage:** `context.filesDir/photos/<uuid>.jpg` — app-private internal storage. **Compress on copy:** resize to max 1920px longest side, ~80% JPEG quality. A typical 5 MB phone photo becomes ~300–500 KB. Files are deleted from disk when the photo row is deleted or the parent stop is deleted.
+
+**Backup:** Photos are **excluded from JSON backup** (document in backup spec). Future cloud sync (e.g. Cloudflare R2) is the long-term path for cross-device photo access; deferred to v4.x.
+
+---
+
+### New layers
+
+| Layer | Details |
+|---|---|
+| `StopPhotoEntity` | `id, stop_id, stop_type, filename, sort_order, created_at` |
+| `StopPhotoDao` | `observeByStop(stopId, stopType): Flow<List<StopPhotoEntity>>`, `insert`, `delete(id)`, `deleteAllForStop(stopId, stopType)` |
+| `StopPhoto` domain model | mirrors entity |
+| `StopPhotoRepository` (interface + impl) | `addPhotos(stopId, stopType, uris): List<StopPhoto>` — copies + compresses each URI into `filesDir/photos/`, inserts rows; `deletePhoto(photo)` — deletes file + row; `deleteAllForStop(stopId, stopType)` — cascade on stop delete |
+| `AddStopPhotosUseCase` | wraps repository add, enforces 25-photo limit |
+| `DeleteStopPhotoUseCase` | wraps repository delete |
+| `StopDetailViewModel` | owns: full photo list, stop info for read display, `showAddPhotos`, `pendingDelete`. Reuses existing edit/delete use cases for the stop itself. |
+| `StopDetailModal` composable | bottom sheet with info + grid; shared for both stop types |
+| `StopPhotoGrid` composable | lazy 3-column grid, `+` button when < 25 photos |
+| `StopPhotoViewer` composable | full-screen pager with delete |
+| `StopPhotoThumbnails` composable | up to 4 thumbs on the stop card |
+
+**`TripDetailUiState` stop rows** gain:
+- `previewPhotos: List<StopPhoto>` — first 4, for the card thumbnails
+- `photoCount: Int` — total, for the "N more" label if > 4
+
+**Cascade delete:** `StopPhotoRepository.deleteAllForStop()` is called by `DeleteTripStopUseCase` and `DeleteExcursionStopUseCase` before deleting the stop row. File deletion + DB row deletion both happen in the repository.
+
+**Image loading:** Coil is already in the project. Local file photos load via `AsyncImage(model = File(filesDir, "photos/${photo.filename}"))`.
+
+**Compression:** Use Android's `BitmapFactory` + `Bitmap.compress()` — no new libraries needed.
+
+---
+
+### Open questions before starting
+- None. Design is fully agreed. Start with DB migration + entity/DAO, then repository, then ViewModel, then UI bottom-up.
 
 ### Beyond v3.2
 - **v4.0** Country depth (stats dataset, full stats page, country polygon detail map — `AtlasGeoCanvas` already supports polygon highlight; just needs zoom/pan and a tighter viewport). Stats placeholder screen already exists at route `"stats"`.
+- **Future:** Cloud photo sync (Cloudflare R2 or similar) to enable cross-device photo access without bundling photos into the JSON backup.
 
 Full roadmap: `Documentation/Atlas_Post_v2.0_Roadmap.md`
 

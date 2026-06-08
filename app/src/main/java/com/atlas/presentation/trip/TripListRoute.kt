@@ -19,6 +19,7 @@ fun TripListRoute(
             createTripUseCase = app.container.createTripUseCase,
             updateTripUseCase = app.container.updateTripUseCase,
             flexibleDateValidator = app.container.flexibleDateValidator,
+            flexibleDateFormatter = app.container.flexibleDateFormatter,
         ),
     )
     val uiState by viewModel.uiState.collectAsState()

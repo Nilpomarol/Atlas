@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos + cover photos, DB v21)
+* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; pre-v4.0 work planned)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -359,7 +359,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (224dp cards): map preview top (122dp) — replaced by `AsyncImage` (ContentScale.Crop) when the trip has a cover photo; compact date pill top-left, solid `TripStatePill` top-right (foreground bg + white dot + white text, same style as trip list), Fraunces `headlineSmall` title and country/route text in footer. Multi-month date pills omit the start year (`ABR. - FEBR. 2025`, `DES. - GEN. 2025`); year precision keeps both years (`2025 - 2026`).
 9. **Recent flights** — "Vols recents" section title. Horizontal scroll (196dp compact cards): airline logo/fallback + state pill, Fraunces IATA route row, flight number/airline line, date line.
 
-**Navigation:** All cards are clickable — trip cards → `trips/{tripId}`, solo flight cards → `flights/{flightId}`, itinerary group cards → `itineraries/{itineraryId}`. Section links switch tabs using `popUpTo + restoreState`.
+**Navigation:** All cards are clickable — trip cards → `trips/{tripId}`, solo flight cards → `flights/{flightId}`, itinerary group cards → `itineraries/{itineraryId}`. Section links switch tabs using `popUpTo(startDestinationId) + launchSingleTop` (no `saveState`/`restoreState` — tab taps always land on the tab root, not a previously saved sub-stack).
 
 **Key UiState additions in `DashboardUiState`:**
 - `worldPercentage: Float`, `hoursFlown: Double`, `uniqueAirportCount: Int`, `uniqueAirlineCount: Int`, `daysTraveled: Int`, `avgTripLengthDays: Double?`
@@ -396,9 +396,53 @@ Key implementation notes:
 - Deleting a cover photo (directly or via stop cascade) auto-clears the trip's `cover_photo_filename` via `clearCoverPhotoByFilename()` in `StopPhotoRepositoryImpl`.
 - EXIF orientation is corrected on import: URI opened twice (once for `ExifInterface`, once for `BitmapFactory`), then a `Matrix` rotation/flip is applied before JPEG compress.
 
-### Next: v4.0 — Country depth / Stats
+### ✅ Completed post-v3.2 — Navbar root navigation (committed `85680a4`)
 
-Stats placeholder (`"stats"` route, "Pròximament" message) already exists. Full stats page with dataset, country polygon detail, and map zoom/pan to be built here. `AtlasGeoCanvas` already supports polygon highlights; just needs a richer viewport and stats data layer.
+Bottom nav `onClick` no longer uses `saveState`/`restoreState`. Every tab tap navigates fresh to the tab's root screen. `launchSingleTop = true` is kept to prevent duplicate root entries when tapping the already-selected tab.
+
+---
+
+### Next items before v4.0 (agreed order)
+
+#### 1. Auto-status update for trips and flights
+
+**What:** On every cold app start, run a background coroutine that checks all PLANNED/IN_PROGRESS trips and flights against today's date and updates status silently.
+
+**Rules — trips:**
+- PLANNED + today ≥ start date → IN_PROGRESS
+- PLANNED or IN_PROGRESS + today > end date → COMPLETED
+- Trips with no `dateRange`, or with YEAR/MONTH precision: apply same logic using year/month boundaries
+- Never touch already-COMPLETED trips
+
+**Rules — flights:**
+- PLANNED + today ≥ scheduled departure date → IN_PROGRESS
+- PLANNED or IN_PROGRESS + today > scheduled arrival date → COMPLETED
+- Flights with no scheduled departure date: leave untouched
+- `inferFlightStatus()` already exists in `domain/util/FlightStatusInference.kt` and can be reused
+
+**Implementation approach:**
+- Background coroutine in `AtlasApplication.onCreate()` on `Dispatchers.IO` — main thread never blocked
+- No WorkManager needed: work only needs to run while the app is open; the on-open check catches up regardless of how many days have passed since the last open
+- Because ViewModels observe Room via `Flow`, any status updates propagate to the UI automatically — no additional wiring needed
+- No DB migration required (status column already exists)
+
+**Why not WorkManager:** WorkManager is designed for work that must run even when the app is closed. Since nothing depends on status being updated while closed (no widgets, no background notifications), a simple coroutine is sufficient and avoids a new dependency.
+
+#### 2. Stats page from existing data
+
+Fill in the `StatsRoute` / `StatsScreen` placeholder at route `"stats"` (currently shows "Pròximament"). All underlying numbers are already computed in `DashboardViewModel` — no new DB tables or datasets needed. Do this before v4.0 country stats because it has no data-layer dependencies and closes the visible "Pròximament" gap in the bottom nav.
+
+#### 3. v4.0 — Country depth / Stats dataset
+
+See §v4.0 milestones below. Start only after the two items above are complete.
+
+---
+
+### Deferred: flight arrival notification
+
+A future feature (v4.x or v5.x) to prompt the user to enter actual arrival times after a flight lands. **This is intentionally different from auto-status update** — auto-status silently moves state; the notification actively asks the user to input data.
+
+Requires: WorkManager (new dependency), `POST_NOTIFICATIONS` permission (Android 13+), schedule/cancel job lifecycle tied to flight create/edit/delete. Should be built as a standalone feature once auto-status is in place, since auto-status is a prerequisite (the notification can check whether the flight is already COMPLETED before firing).
 
 ---
 

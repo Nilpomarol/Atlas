@@ -2,14 +2,14 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos, DB v20)
+* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos + cover photos, DB v21)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
 * **v3.1 is complete and committed.** All screens redesigned.
-* **Current phase:** v3.2 **complete** (per-stop photos, DB v20). Next phase is v4.0 (Country depth / Stats).
+* **Current phase:** v3.2 **complete** (per-stop photos + cover photos, DB v21). Next phase is v4.0 (Country depth / Stats).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -38,7 +38,7 @@
 ## KEY DECISIONS & GROUND TRUTHS
 
 ### Data model
-* **Room DB version: 20.** Migration chain: 1→2→…→19→20. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries). Migration 15→16 creates the `aircraft_types` table. Migration 16→17 adds aircraft engine metadata, `aircraft_registration`, and the tail-number `aircraft` cache table. Migration 17→18 adds nullable UTC datetime columns and `distance_km` to `flights`. Migration 18→19 adds `destination_counts_for_country_tracking` (default 1) and `origin_counts_for_country_tracking` (default 0) to `flights`. Migration 19→20 creates `stop_photos` table with indices on `(stop_id, stop_type)` and `sort_order`.
+* **Room DB version: 21.** Migration chain: 1→2→…→19→20→21. All migrations live in `AtlasDatabase.kt`. SQLite cannot add FK columns via `ALTER TABLE` — those require drop-and-recreate (done for migrations 8→9, 9→10). Migration 13→14 was simple `ALTER TABLE ADD COLUMN`. Migration 14→15 creates the `airlines` table (iata PK, no FK to countries). Migration 15→16 creates the `aircraft_types` table. Migration 16→17 adds aircraft engine metadata, `aircraft_registration`, and the tail-number `aircraft` cache table. Migration 17→18 adds nullable UTC datetime columns and `distance_km` to `flights`. Migration 18→19 adds `destination_counts_for_country_tracking` (default 1) and `origin_counts_for_country_tracking` (default 0) to `flights`. Migration 19→20 creates `stop_photos` table with indices on `(stop_id, stop_type)` and `sort_order`. Migration 20→21 adds `cover_photo_filename TEXT` (nullable) to `trips`.
 * **Backup version: 2.** Covers all v2 entities (trips, stops, excursions, flights, itineraries, groups). v1 backups import cleanly via defaults. The three new flight provenance columns (`fetched_from`, `external_provider`, `external_id`) are not yet included in the backup — they are operational metadata.
 * **Country dataset:** 244 entries, version `2026.1`. Importer inserts `parent_iso2 = null` entries first to satisfy the self-referencing FK.
 * **Airport dataset:** 5,931 airports, version `2026.3`. 141 entries skipped (null id / unknown country / null city).
@@ -170,8 +170,8 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 
 ## WHAT EXISTS IN THE CODEBASE
 
-### Domain entities (Room DB v20)
-`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity`, `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `AircraftTypeEntity`, `AircraftEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`, `StopPhotoEntity`
+### Domain entities (Room DB v21)
+`CountryEntity`, `CountryLogEntity`, `CountryUserStateEntity`, `TripEntity` (+ `cover_photo_filename`), `TripStopEntity`, `AirportEntity`, `AirlineEntity`, `AircraftTypeEntity`, `AircraftEntity`, `FlightEntity`, `ItineraryEntity`, `ItineraryGroupEntity`, `ExcursionEntity`, `ExcursionStopEntity`, `StopPhotoEntity`
 
 ### Screens and routes
 * **Countries:** list, detail (state-colored hero, timeline, map hero), log editor
@@ -190,7 +190,8 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 * `LookupAircraftUseCase` — AeroDataBox tail-number lookup; cache-first
 * `inferFlightStatus()` — pure utility in `domain/util/FlightStatusInference.kt`
 * `FlightTimeCalculations.kt` — UTC-first flight sort/duration/delay/layover helpers with local fallback for incomplete rows. Public functions: `utcAwareSortKey`, `utcAwareDepartureSortKey`, `utcAwareDurationMinutes`, `utcAwareDelayMinutes`, `utcAwareDepartureDelayMinutes`, `utcAwareArrivalDelayMinutes`, `utcAwareLayoverDurationMinutesTo`, `groupDurationMinutes(firstFlight, lastFlight)`, `dayOffsetBetween(departureDatetime, arrivalDatetime)`.
-* `FlexibleDateFormatter` / `FlexibleDateRangeDraftField`
+* `FlexibleDateFormatter` — `format(date/range/LocalDate/LocalDateTime)` + `formatTripPill(range?)`: shared trip date pill formatter with YEAR/MONTH/DAY precision and smart range compression; used by `TripListViewModel` and `DashboardViewModel`
+* `FlexibleDateRangeDraftField`
 * Backup: `AtlasBackupV2`, `BackupMappers`, `BackupValidation`
 
 ### New in v3.0 M1
@@ -228,7 +229,7 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 * `domain/usecase/photo/DeleteStopPhotoUseCase.kt` — thin wrapper; deletes file + DB row
 * `ui/components/StopPhotoThumbnails.kt` — 46dp thumbnail widget: 1 photo fills area; 2+ shows 2×2 grid; overflow `+N` on 4th cell
 * `ui/components/StopDetailModal.kt` — `ModalBottomSheet` with header, info section, 3-column `LazyVerticalGrid` photo grid, `AddPhotoCell`, delete confirmation `AlertDialog`; internally shows `StopPhotoViewer`
-* `StopPhotoViewer` (inside `StopDetailModal.kt`) — full-screen `Dialog` + `HorizontalPager`, back + delete controls, auto-dismiss when all photos deleted
+* `StopPhotoViewer` (inside `StopDetailModal.kt`) — full-screen `Dialog` + `HorizontalPager`, back + delete controls, star/outline-star toggle to set/unset trip cover photo, auto-dismiss when all photos deleted
 * Updated `DeleteTripStopUseCase` + `DeleteExcursionStopUseCase` — call `stopPhotoRepository.deleteAllForStop()` before deleting the stop row
 * Updated `AtlasDatabase` — DB v20, `MIGRATION_19_20`, `stopPhotoDao()`
 * Updated `AtlasAppContainer` — wires `StopPhotoRepositoryImpl`, `AddStopPhotosUseCase`, `DeleteStopPhotoUseCase`
@@ -240,6 +241,26 @@ Layout (top to bottom): back + overflow header → **route hero** → stat strip
 **Cascade delete:** `StopPhotoRepository.deleteAllForStop()` called by both delete-stop use cases before removing the stop row.
 
 **`observeByStopIds` empty-list guard:** repository returns `flowOf(emptyList())` when `stopIds.isEmpty()` (DAO IN query fails on empty list).
+
+**EXIF orientation (added post-v3.2):** `StopPhotoRepositoryImpl.compressAndSave()` opens the URI stream twice — once for `android.media.ExifInterface` to read orientation, once for `BitmapFactory.decodeStream`. Applies a `Matrix` rotation/flip before compress. Available API 24+, no new dependency needed (minSdk = 26).
+
+### New in v3.2 (cover photos — DB v21, committed `a50ef77`)
+* `domain/usecase/photo/SetTripCoverPhotoUseCase.kt` — calls `tripRepository.setCoverPhoto(tripId, photo?.filename)`; pass `null` to unset
+* `TripEntity` gains `@ColumnInfo(name = "cover_photo_filename") val coverPhotoFilename: String? = null`; `Trip` domain model and `TripMapper` updated accordingly
+* `TripDao` — `setCoverPhoto(tripId, filename?)` and `clearCoverPhotoByFilename(filename)` (sets column to NULL on all trips matching that filename)
+* `TripRepository` / `TripRepositoryImpl` — two new methods delegating to dao
+* `StopPhotoRepositoryImpl` — calls `tripDao.clearCoverPhotoByFilename(filename)` in both `deletePhoto()` and `deleteAllForStop()` so deleting a photo auto-unsets it as cover
+* `TripEditorDraftUiState` — carries `coverPhotoFilename`; `fromTrip()` preserves it so trip edits via `@Upsert` never clobber the cover
+* `TripListViewModel` — `TripListItemUiState` gains `coverPhotoFilename` and `datePillText`; `FlexibleDateFormatter` injected; `toListItem()` populates both
+* `TripDetailViewModel` — `SetTripCoverPhotoUseCase` injected; `onSetCoverPhoto(photo?)` action added
+* `StopDetailModal` — `PhotoGridCell` shows a filled star badge (16dp, `AtlasPrimary`) on the cover photo cell; `StopPhotoViewer` top bar has star/outline-star toggle button (`AtlasPrimary` / `Color.White`)
+* `TripDetailScreen` — `onSetCoverPhoto` param wired through
+* `TripListScreen` — card image area height 124dp → 160dp; shows `AsyncImage` (ContentScale.Crop) when `coverPhotoFilename != null`, else `TripCardMap`; conditional gradient scrim (transparent → black 55%, `fillMaxHeight(0.4f)`) only when photo is set; title color `Color.White` with photo, `AtlasOnSurfaceStrong` without
+* `FlexibleDateFormatter` — `formatTripPill(range: FlexibleDateRange?): String?` added; handles YEAR/MONTH/DAY precision with smart range compression (shared by trip list and dashboard)
+* `DashboardViewModel` — `DashboardTripUiState` gains `coverPhotoFilename: String? = null`; populated from `trip.coverPhotoFilename` in `toDashboardTrip()`
+* `DashboardTripCards` — `RecentTripCard` shows `AsyncImage` when `coverPhotoFilename != null`, else `TripCardMap`; `AtlasPill` replaced by `TripStatePill` (solid foreground bg + white dot + white text, matching trip list style)
+* `AtlasDatabase` — DB v21, `MIGRATION_20_21`
+* `AtlasAppContainer` — `MIGRATION_20_21` registered; `SetTripCoverPhotoUseCase` wired; `StopPhotoRepositoryImpl` now receives `tripDao`
 
 ### Tests
 Flexible date validator/formatter, country state derivation (including layover cases), UTC-first flight time calculations, backup validator/mappers, Nominatim mapper, airport search use case.
@@ -335,7 +356,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 5. **Stats card** — `AtlasCard` with "Estadístiques" section title + "Veure tot →" link navigating to `"stats"` route. 3 rows × 2 stats (Fraunces `headlineSmall` for values): Viatges/Vols · Km volats/Aeroports · Dies viatjats/Durada mitj. — no title on the card itself.
 6. **Upcoming trips** — "Propers viatges" section title + "Tots els viatges →" (switches to Trips tab). Vertical list of 2–3 PLANNED trips: left map preview, state pill, Fraunces title, date below title, route text, compact day count.
 7. **Upcoming flights** — "Propers vols" section title + "Tots els vols →" (switches to Flights tab). Vertical list of 2–3 PLANNED/IN_PROGRESS flights; real flight rows render through the shared `FlightCard`.
-8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (224dp cards): state-colored map preview top (122dp), compact date pill top-left, state pill top-right, Fraunces `headlineSmall` title and country/route text in footer. Multi-month date pills omit the start year (`ABR. - FEBR. 2025`, `DES. - GEN. 2025`); year precision keeps both years (`2025 - 2026`).
+8. **Recent trips** — "Viatges recents" section title. Horizontal scroll (224dp cards): map preview top (122dp) — replaced by `AsyncImage` (ContentScale.Crop) when the trip has a cover photo; compact date pill top-left, solid `TripStatePill` top-right (foreground bg + white dot + white text, same style as trip list), Fraunces `headlineSmall` title and country/route text in footer. Multi-month date pills omit the start year (`ABR. - FEBR. 2025`, `DES. - GEN. 2025`); year precision keeps both years (`2025 - 2026`).
 9. **Recent flights** — "Vols recents" section title. Horizontal scroll (196dp compact cards): airline logo/fallback + state pill, Fraunces IATA route row, flight number/airline line, date line.
 
 **Navigation:** All cards are clickable — trip cards → `trips/{tripId}`, solo flight cards → `flights/{flightId}`, itinerary group cards → `itineraries/{itineraryId}`. Section links switch tabs using `popUpTo + restoreState`.
@@ -363,14 +384,17 @@ Settings is now **push-nav only** — reached by tapping the atlas logo in the d
 ### One-time data tooling
 * `scripts/migrate_country_visits.py` — migrated 49 country visit logs from the old app's backup JSON directly into `atlas.db` via ADB (non-destructive INSERT OR IGNORE). Already run on 2026-06-05. Safe to re-run (idempotent).
 
-### ✅ Completed in v3.2 — Per-stop photos (DB v20, build verified 2026-06-08)
+### ✅ Completed in v3.2 — Per-stop photos + cover photos (DB v21, build verified 2026-06-08)
 
-Both trip stops and excursion stops now have full photo support. See §New in v3.2 for the complete file list.
+Both trip stops and excursion stops have full photo support. Any stop photo can be designated as the trip cover photo; it replaces the map in both the trip list cards and the dashboard recent trips cards.
 
 Key implementation notes:
 - No `StopDetailViewModel` was created; photo state is folded into `TripDetailViewModel` to stay consistent with the manual DI architecture (no Hilt).
 - `combine` hit the 5-flow typed overload limit — resolved by first combining the two photo flows into a `photosData` intermediate, then combining that with the 4 existing flows.
 - `observeByStopIds` with an empty list is guarded in the repository layer.
+- `TripEditorDraftUiState` carries `coverPhotoFilename` so the `@Upsert` pattern on trip edit never clobbers the cover.
+- Deleting a cover photo (directly or via stop cascade) auto-clears the trip's `cover_photo_filename` via `clearCoverPhotoByFilename()` in `StopPhotoRepositoryImpl`.
+- EXIF orientation is corrected on import: URI opened twice (once for `ExifInterface`, once for `BitmapFactory`), then a `Matrix` rotation/flip is applied before JPEG compress.
 
 ### Next: v4.0 — Country depth / Stats
 

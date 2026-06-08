@@ -31,11 +31,20 @@ class FlexibleDateFormatter {
         val start = range.start
         val end = range.end
         return when {
-            start == null -> end?.toMonthYearText()
-            end == null -> start.toMonthYearText()
-            start.sameMonthAndYear(end) -> end.toMonthYearText()
-            start.precision == DatePrecision.YEAR && end.precision == DatePrecision.YEAR -> "${start.year} - ${end.year}"
-            else -> "${start.toMonthOnlyText()} - ${end.toMonthYearText()}"
+            start == null -> end?.let { format(it) }
+            end == null -> format(start)
+            range.precision == DatePrecision.YEAR -> "${start.year} - ${end.year}"
+            range.precision == DatePrecision.DAY -> when {
+                start.sameMonthAndYear(end) && start.day == end.day -> format(end)
+                start.sameMonthAndYear(end) ->
+                    "${start.day} - ${end.day} ${end.month.monthAbbreviation()} ${end.year}"
+                start.year == end.year ->
+                    "${start.day} ${start.month.monthAbbreviation()} - ${end.day} ${end.month.monthAbbreviation()} ${end.year}"
+                else -> "${format(start)} - ${format(end)}"
+            }
+            // MONTH precision
+            start.sameMonthAndYear(end) -> format(end)
+            else -> "${start.toMonthOnlyText()} - ${format(end)}"
         }
     }
 
@@ -66,9 +75,6 @@ class FlexibleDateFormatter {
     }
 
     private fun Int.twoDigits(): String = toString().padStart(2, '0')
-
-    private fun FlexibleDate.toMonthYearText(): String =
-        month?.let { "${it.monthAbbreviation()} $year" } ?: year.toString()
 
     private fun FlexibleDate.toMonthOnlyText(): String =
         month?.monthAbbreviation() ?: year.toString()

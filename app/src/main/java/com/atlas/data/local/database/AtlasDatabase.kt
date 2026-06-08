@@ -16,6 +16,7 @@ import com.atlas.data.local.dao.ExcursionDao
 import com.atlas.data.local.dao.FlightDao
 import com.atlas.data.local.dao.ItineraryDao
 import com.atlas.data.local.dao.TripDao
+import com.atlas.data.local.dao.StopPhotoDao
 import com.atlas.data.local.dao.TripStopDao
 import com.atlas.data.local.entity.AircraftEntity
 import com.atlas.data.local.entity.AircraftTypeEntity
@@ -31,6 +32,7 @@ import com.atlas.data.local.entity.CountryLogEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
 import com.atlas.data.local.entity.DatasetMetadataEntity
 import com.atlas.data.local.entity.TripEntity
+import com.atlas.data.local.entity.StopPhotoEntity
 import com.atlas.data.local.entity.TripStopEntity
 
 @Database(
@@ -50,8 +52,9 @@ import com.atlas.data.local.entity.TripStopEntity
         ItineraryGroupEntity::class,
         ExcursionEntity::class,
         ExcursionStopEntity::class,
+        StopPhotoEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -68,6 +71,7 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun flightDao(): FlightDao
     abstract fun itineraryDao(): ItineraryDao
     abstract fun excursionDao(): ExcursionDao
+    abstract fun stopPhotoDao(): StopPhotoDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -753,6 +757,26 @@ abstract class AtlasDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `flights` ADD COLUMN `destination_counts_for_country_tracking` INTEGER NOT NULL DEFAULT 1")
                 db.execSQL("ALTER TABLE `flights` ADD COLUMN `origin_counts_for_country_tracking` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `stop_photos` (
+                        `id` TEXT NOT NULL,
+                        `stop_id` TEXT NOT NULL,
+                        `stop_type` TEXT NOT NULL,
+                        `filename` TEXT NOT NULL,
+                        `sort_order` INTEGER NOT NULL,
+                        `created_at` TEXT NOT NULL,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_stop_photos_stop_id_stop_type` ON `stop_photos` (`stop_id`, `stop_type`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_stop_photos_sort_order` ON `stop_photos` (`sort_order`)")
             }
         }
     }

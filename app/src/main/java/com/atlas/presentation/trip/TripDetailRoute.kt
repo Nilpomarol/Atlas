@@ -41,6 +41,9 @@ fun TripDetailRoute(
             reorderExcursionStopsUseCase = app.container.reorderExcursionStopsUseCase,
             flexibleDateValidator = app.container.flexibleDateValidator,
             tripMapPreferencesRepository = app.container.tripMapPreferencesRepository,
+            stopPhotoRepository = app.container.stopPhotoRepository,
+            addStopPhotosUseCase = app.container.addStopPhotosUseCase,
+            deleteStopPhotoUseCase = app.container.deleteStopPhotoUseCase,
             tripId = tripId,
         ),
     )
@@ -105,5 +108,7 @@ fun TripDetailRoute(
         onExcursionStopDateFieldChanged = viewModel::onExcursionStopDateFieldChanged,
         onExcursionStopNotesChanged = viewModel::onExcursionStopNotesChanged,
         onSaveExcursionStopDraft = viewModel::onSaveExcursionStopDraft,
+        onAddPhotos = viewModel::onAddPhotos,
+        onDeletePhoto = viewModel::onDeletePhoto,
     )
 }

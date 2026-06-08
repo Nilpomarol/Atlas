@@ -11,6 +11,7 @@ import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.preferences.TripMapPreferencesDataSource
 import com.atlas.data.local.database.AtlasDatabase
+import com.atlas.data.repository.StopPhotoRepositoryImpl
 import com.atlas.data.repository.AircraftTypeRepositoryImpl
 import com.atlas.data.repository.AircraftRepositoryImpl
 import com.atlas.data.repository.AirlineRepositoryImpl
@@ -21,6 +22,7 @@ import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
 import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
+import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.AircraftTypeRepository
 import com.atlas.domain.repository.AircraftApiClient
 import com.atlas.domain.repository.AircraftRepository
@@ -49,6 +51,8 @@ import com.atlas.domain.usecase.country.UpdateCountryLogUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
 import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
+import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
+import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
 import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
@@ -110,6 +114,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_16_17)
         .addMigrations(AtlasDatabase.MIGRATION_17_18)
         .addMigrations(AtlasDatabase.MIGRATION_18_19)
+        .addMigrations(AtlasDatabase.MIGRATION_19_20)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -172,6 +177,11 @@ class AtlasAppContainer(context: Context) {
         database = database,
     )
 
+    val stopPhotoRepository: StopPhotoRepository = StopPhotoRepositoryImpl(
+        context = applicationContext,
+        dao = database.stopPhotoDao(),
+    )
+
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
 
     val apiKeyRepository: ApiKeyRepository = ApiKeyPreferencesDataSource(applicationContext)
@@ -224,6 +234,7 @@ class AtlasAppContainer(context: Context) {
 
     val deleteTripStopUseCase = DeleteTripStopUseCase(
         tripRepository = tripRepository,
+        stopPhotoRepository = stopPhotoRepository,
     )
 
     val updateTripStopUseCase = UpdateTripStopUseCase(
@@ -339,10 +350,19 @@ class AtlasAppContainer(context: Context) {
 
     val deleteExcursionStopUseCase = DeleteExcursionStopUseCase(
         excursionRepository = excursionRepository,
+        stopPhotoRepository = stopPhotoRepository,
     )
 
     val reorderExcursionStopsUseCase = ReorderExcursionStopsUseCase(
         excursionRepository = excursionRepository,
+    )
+
+    val addStopPhotosUseCase = AddStopPhotosUseCase(
+        stopPhotoRepository = stopPhotoRepository,
+    )
+
+    val deleteStopPhotoUseCase = DeleteStopPhotoUseCase(
+        stopPhotoRepository = stopPhotoRepository,
     )
 
     fun importInitialData() {

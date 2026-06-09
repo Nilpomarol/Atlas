@@ -287,6 +287,7 @@ class StatsViewModel(
             photoCount = photos.totalCount,
             tripVisuals = tripVisuals,
             tripMonthStats = tripMonthStats,
+            tripSeasonStats = buildTripSeasonStats(trips),
             tripRecords = tripRecords,
             flightCount = flights.size,
             completedFlightCount = completedFlights.size,
@@ -449,6 +450,7 @@ data class StatsUiState(
     val photoCount: Int = 0,
     val tripVisuals: List<StatsTripVisual> = emptyList(),
     val tripMonthStats: List<StatsMonthStat> = emptyList(),
+    val tripSeasonStats: List<StatsSeasonStat> = emptyList(),
     val tripRecords: List<StatsRecord> = emptyList(),
     val flightCount: Int = 0,
     val completedFlightCount: Int = 0,
@@ -524,6 +526,7 @@ data class StatsMapMarker(
 data class StatsDelayBucket(val label: String, val count: Int)
 data class StatsMonthStat(val month: Int, val label: String, val tripCount: Int)
 data class StatsYearStat(val year: Int, val tripCount: Int, val flightCount: Int, val countryCount: Int)
+data class StatsSeasonStat(val name: String, val emoji: String, val tripCount: Int)
 data class StatsRecord(val title: String, val value: String, val detail: String)
 enum class BadgeTier { BRONZE, PLATA, OR, PLATI }
 
@@ -813,6 +816,26 @@ private fun buildTripMonthStats(trips: List<Trip>): List<StatsMonthStat> {
     }
 }
 
+private fun buildTripSeasonStats(trips: List<Trip>): List<StatsSeasonStat> {
+    val counts = IntArray(4) // 0=Primavera, 1=Estiu, 2=Tardor, 3=Hivern
+    trips.forEach { trip ->
+        val month = trip.dateRange?.primaryMonth() ?: return@forEach
+        val season = when (month) {
+            in 3..5 -> 0
+            in 6..8 -> 1
+            in 9..11 -> 2
+            else -> 3  // 12, 1, 2
+        }
+        counts[season]++
+    }
+    return listOf(
+        StatsSeasonStat("Primavera", "🌸", counts[0]),
+        StatsSeasonStat("Estiu", "☀️", counts[1]),
+        StatsSeasonStat("Tardor", "🍂", counts[2]),
+        StatsSeasonStat("Hivern", "❄️", counts[3]),
+    )
+}
+
 private fun buildDelayBuckets(flights: List<Flight>): List<StatsDelayBucket> {
     val delays = flights.mapNotNull { it.utcAwareDelayMinutes() }
     return listOf(
@@ -893,6 +916,9 @@ private fun buildTripRecords(
             val count = tripPhotoCountByTripId[trip.id] ?: 0
             if (count > 0) StatsRecord("Viatge més fotografiat", count.toString(), trip.title) else null
         },
+        trips.filter { it.dateRange?.start?.year != null }
+            .minByOrNull { it.dateRange!!.start!!.year }
+            ?.let { trip -> StatsRecord("Primer viatge", trip.dateRange!!.start!!.year.toString(), trip.title) },
     )
 }
 

@@ -54,8 +54,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -82,6 +86,7 @@ import com.atlas.presentation.stats.StatsRecord
 import com.atlas.presentation.stats.StatsRouteRank
 import com.atlas.presentation.stats.StatsTripVisual
 import com.atlas.presentation.stats.StatsUiState
+import com.atlas.presentation.stats.StatsSeasonStat
 import com.atlas.presentation.stats.StatsYearStat
 import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
@@ -363,6 +368,12 @@ private fun TripsTab(uiState: StatsUiState) {
         }
         Section("Viatges per mes") {
             TripMonthChart(uiState.tripMonthStats)
+        }
+        Section("Viatges per any") {
+            TripYearChart(uiState.yearStats)
+        }
+        Section("Temporades") {
+            TripSeasonCard(uiState.tripSeasonStats)
         }
         Section("Rècords de viatge") {
             RecordGrid(uiState.tripRecords)
@@ -1030,10 +1041,188 @@ private fun TripMonthChart(monthStats: List<StatsMonthStat>) {
                         modifier = Modifier
                             .width(16.dp)
                             .height(if (stat.tripCount == 0) 8.dp else (100.dp * (stat.tripCount.toFloat() / maxValue)).coerceAtLeast(12.dp))
-                            .clip(RoundedCornerShape(999.dp))
-                            .background(AtlasPrimary),
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(if (stat.tripCount == 0) AtlasSurfaceSubtle else AtlasPrimary),
                     )
                     Text(stat.label, style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp), color = AtlasOnSurfaceMuted)
+                }
+            }
+        }
+    }
+}
+
+private fun smoothLinePath(points: List<Offset>): Path = Path().apply {
+    if (points.isEmpty()) return@apply
+    moveTo(points[0].x, points[0].y)
+    for (i in 0 until points.size - 1) {
+        val p0 = if (i > 0) points[i - 1] else points[i]
+        val p1 = points[i]
+        val p2 = points[i + 1]
+        val p3 = if (i < points.size - 2) points[i + 2] else points[i + 1]
+        cubicTo(
+            p1.x + (p2.x - p0.x) / 6f,
+            p1.y + (p2.y - p0.y) / 6f,
+            p2.x - (p3.x - p1.x) / 6f,
+            p2.y - (p3.y - p1.y) / 6f,
+            p2.x,
+            p2.y,
+        )
+    }
+}
+
+@Composable
+private fun TripYearChart(yearStats: List<StatsYearStat>) {
+    if (yearStats.none { it.tripCount > 0 }) {
+        EmptyStatCard("Encara no hi ha viatges amb dates per any.")
+        return
+    }
+    val active = yearStats.filter { it.tripCount > 0 }
+    val minYear = active.minOf { it.year }
+    val maxYear = active.maxOf { it.year }
+    // Fill any gap years between first and last active year
+    val data = (minYear..maxYear).map { year ->
+        year to (yearStats.find { it.year == year }?.tripCount ?: 0)
+    }
+    val maxValue = data.maxOf { it.second }.coerceAtLeast(1)
+
+    AtlasCard {
+        if (data.size == 1) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = data[0].first.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Text(
+                    text = data[0].second.toString(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AtlasOnSurfaceStrong,
+                )
+                Text(
+                    text = if (data[0].second == 1) "viatge" else "viatges",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
+            return@AtlasCard
+        }
+
+        val textMeasurer = rememberTextMeasurer()
+        val sidePadDp = 16.dp
+        val chartHeightDp = 140.dp
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(chartHeightDp),
+        ) {
+            val sidePad = sidePadDp.toPx()
+            val pointSpacing = (size.width - sidePad * 2) / (data.size - 1)
+                val topPad = 24.dp.toPx()   // room for count labels above highest point
+                val labelH = 20.dp.toPx()    // room for year labels below line
+                val chartBottom = size.height - labelH
+
+                val points = data.mapIndexed { idx, (_, count) ->
+                    Offset(
+                        x = sidePad + idx * pointSpacing,
+                        y = topPad + (1f - count.toFloat() / maxValue) * (chartBottom - topPad),
+                    )
+                }
+
+                // Soft area fill under the curve
+                val areaPath = smoothLinePath(points).also { path ->
+                    path.lineTo(points.last().x, chartBottom)
+                    path.lineTo(points.first().x, chartBottom)
+                    path.close()
+                }
+                drawPath(areaPath, color = AtlasPrimary.copy(alpha = 0.10f))
+
+                // Smooth line
+                drawPath(
+                    path = smoothLinePath(points),
+                    color = AtlasPrimary,
+                    style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+                )
+
+                val labelStyle = TextStyle(fontSize = 9.sp, color = AtlasOnSurfaceMuted)
+
+                points.forEachIndexed { idx, pt ->
+                    val count = data[idx].second
+                    if (count > 0) {
+                        // Count above dot
+                        val countText = count.toString()
+                        val countMeasured = textMeasurer.measure(countText, labelStyle)
+                        drawText(
+                            textMeasurer = textMeasurer,
+                            text = countText,
+                            topLeft = Offset(
+                                x = pt.x - countMeasured.size.width / 2f,
+                                y = pt.y - countMeasured.size.height - 4.dp.toPx(),
+                            ),
+                            style = labelStyle,
+                        )
+                        // Dot
+                        drawCircle(color = AtlasPrimary, radius = 3.5.dp.toPx(), center = pt)
+                        drawCircle(color = AtlasSurface, radius = 1.5.dp.toPx(), center = pt)
+                    }
+
+                    // Year label below axis
+                    val yearText = data[idx].first.toString()
+                    val yearMeasured = textMeasurer.measure(yearText, labelStyle)
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = yearText,
+                        topLeft = Offset(
+                            x = pt.x - yearMeasured.size.width / 2f,
+                            y = chartBottom + 4.dp.toPx(),
+                        ),
+                        style = labelStyle,
+                    )
+                }
+        }
+    }
+}
+
+@Composable
+private fun TripSeasonCard(seasons: List<StatsSeasonStat>) {
+    if (seasons.all { it.tripCount == 0 }) {
+        EmptyStatCard("Encara no hi ha viatges amb dates per calcular temporades.")
+        return
+    }
+    val maxCount = seasons.maxOf { it.tripCount }.coerceAtLeast(1)
+    val seasonColors = listOf(
+        Color(0xFF8FD4A0), // Primavera — soft green
+        Color(0xFFF5C04A), // Estiu — warm amber
+        Color(0xFFD4845A), // Tardor — terracotta
+        Color(0xFF7BB8E8), // Hivern — icy blue
+    )
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            seasons.forEachIndexed { index, season ->
+                val color = seasonColors.getOrElse(index) { AtlasPrimary }
+                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(text = season.emoji, fontSize = 16.sp)
+                        Text(
+                            text = season.name,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                        Text(
+                            text = season.tripCount.toString(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (season.tripCount > 0) color else AtlasOnSurfaceMuted,
+                        )
+                    }
+                    ThickProgress(value = season.tripCount, maxValue = maxCount, color = color)
                 }
             }
         }

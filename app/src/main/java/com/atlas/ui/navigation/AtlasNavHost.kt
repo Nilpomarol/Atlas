@@ -21,6 +21,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.atlas.presentation.dashboard.DashboardRoute
 import com.atlas.presentation.stats.StatsRoute
+import com.atlas.presentation.timeline.TimelineRoute
 import com.atlas.presentation.country.CountryDetailRoute
 import com.atlas.presentation.country.CountryListRoute
 import com.atlas.presentation.flight.FlightDetailRoute
@@ -119,7 +120,14 @@ fun AtlasNavHost() {
                 )
             }
             composable(AtlasDestination.Stats.route) {
-                StatsRoute()
+                StatsRoute(onTimelineClick = { navController.navigate("timeline") })
+            }
+            composable("timeline") {
+                TimelineRoute(
+                    onBackClick = navController::popBackStack,
+                    onTripClick = { tripId -> navController.navigate("trips/$tripId") },
+                    onItineraryClick = { itineraryId -> navController.navigate("itineraries/$itineraryId") },
+                )
             }
             composable("settings") {
                 SettingsRoute(onBackClick = navController::popBackStack)

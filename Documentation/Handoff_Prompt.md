@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅; auto-status update next)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; auto-status update next)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -367,7 +367,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. Resum, Cronologia, Mapa, Països, and Viatges tabs are complete. Vols and Rècords tabs have placeholder content that may need device QA.
+**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. All six stats tabs are complete: Resum, Cronologia, Mapa, Països, Viatges, Vols, and Insígnies (formerly Rècords).
 
 ### Settings design (✅ complete)
 
@@ -447,7 +447,7 @@ _Earlier polish (same session, not re-listed in detail):_
 _Badge system (`StatsViewModel.kt`):_
 - `BadgeTier` enum: `BRONZE, PLATA, OR, PLATI`.
 - `StatsBadge` data class: `nextGoal: String?`, `tier: BadgeTier?`, `progress: Float?`. Progress is 0–1 fraction between thresholds for tiered badges; `1f`/`0f` for binary.
-- Helpers: `tieredBadge(title, value, thresholds, detailText, nextGoalText)` and `binaryBadge(title, unlocked, goal)`. 11 tiered + 9 binary badges.
+- Helpers: `tieredBadge(title, value, thresholds, detailText, nextGoalText)` and `binaryBadge(title, unlocked, goal)`. 14 tiered + 14 binary badges (28 total).
 - Continent names via `toCatalanContinent()` extension applied in `buildContinentStats`.
 - `buildYearStats` country-count logic fixed: trip/excursion stops use `stop.dateRange?.primaryYear()` first, falling back to trip year. Standalone flights count destination only (not origin). Itinerary groups count only the last flight's destination — layover airports are excluded. `itineraryGroups: List<ItineraryGroup>` added as parameter.
 
@@ -534,6 +534,56 @@ _`StatsViewModel.kt`:_
 - `buildTripRecords` — added "Primer viatge" as a 6th record (previously 5, which left an orphan row in the 2-column `RecordGrid`). Finds the trip with the earliest `dateRange.start.year` across all trips; shows the year as value and trip title as detail. No-op if no trip has a start date.
 
 _Imports added to `StatsScreen.kt`:_ `androidx.compose.ui.graphics.Path`, `androidx.compose.ui.text.TextStyle`, `androidx.compose.ui.text.drawText`, `androidx.compose.ui.text.rememberTextMeasurer`.
+
+**✅ Vols tab — complete (2026-06-09)**
+
+_`GeoModels.kt`:_
+- `GeoRouteSegment` gained two backward-compatible fields: `strokeWidthDp: Float = 2.2f` and `showGlow: Boolean = true`.
+
+_`AtlasGeoCanvas.kt`:_
+- `drawRouteSegment` respects `showGlow` (conditionally skips the soft outer glow draw call) and uses `segment.strokeWidthDp` for the main stroke width.
+
+_`StatsScreen.kt` — new and redesigned composables:_
+- `FlightMapCanvas` — flight arches use `strokeWidthDp = 1.2f, showGlow = false` (thin solid lines, no glow).
+- `FlightHeroPanel` — moon distance replaced the hidden `labelSmall` line with a divider + emoji + `headlineSmall` value (`AtlasGold`) + label row.
+- `TopAirlineBars` — airline logos enlarged from 48×28 dp to 64×36 dp.
+- `TopAircraftCard` — single card with 150 dp hero image (`ContentScale.Fit`), gradient overlay showing model name + count in `headlineSmall`, per-aircraft rows with `ThickProgress`. Aircraft rows collapse name + category into one line (`"Airbus A320 · Fuselatge estret"`).
+- `DelayDistributionCard` — count and percentage split into two separate fixed-width `Text`s (26 dp + 36 dp) for stable column alignment.
+- `NightDayCard` — bar titles use inline `labelMedium` + `FontWeight.Bold` rows instead of `ProgressBarRow`'s `labelSmall`.
+- `FlightYearChart` — Canvas smooth Catmull-Rom line chart (same pattern as `TripYearChart`), using `AtlasPlanned` color.
+- `FlightScopeCard` — intercontinental/continental bars + short/medium/long-haul breakdown separated by a divider.
+- `TopDelayChart` — top-5 delays as horizontal `ThickProgress` bars (`AtlasError` color) + route + delay duration label.
+- `TopRoutesChart` — top-5 routes as horizontal bars + count × + distance label.
+- `TopAirportsChart` — top-10 airports with country flag + IATA + city + count × + `ThickProgress`.
+- `FlightsTab` — "Retards destacats", "Rutes principals", "Aeroports principals" are three separate sections using the new chart composables.
+
+_`StatsViewModel.kt` additions:_
+- `MOON_DISTANCE_KM = 384_400.0` constant; `moonLoops` derived field in `StatsUiState`.
+- `nightFlightCount`, `dayFlightCount` (flights by hour of departure).
+- `shortHaulCount`, `mediumHaulCount`, `longHaulCount` (by `distanceKm` thresholds: <1500, 1500–4000, >4000).
+- `StatsTopDelay(route, delayMinutes, delayLabel)` data class + `topDelayStats: List<StatsTopDelay>` in `StatsUiState`.
+- `buildTopDelayStats` — top-5 delayed flights sorted by delay.
+- `StatsAirportRank` gained `countryIso2: String`; `buildTopAirports` populates it.
+- `buildFlightRecords` — added "Aeroport principal" as 6th record (top airport IATA + city) for even pairing in `RecordGrid`.
+
+_Aircraft duplicate fix (`AircraftTypeRepositoryImpl.kt`, committed `ce19f8c`):_
+- After the two standard lookups fail, tries stripping a single leading manufacturer letter when the next character is a digit (e.g. `"B777300ER"` → `"777300ER"`). Covers the Boeing `B-prefix` shorthand convention.
+- `resolveTopAircraft` in `StatsViewModel` now re-groups resolved entries by `displayName` and merges duplicates (summing `count` + `distanceKm`), so different raw spellings that resolve to the same model appear as one row.
+
+**✅ Insígnies tab — complete (2026-06-09)**
+
+_The `Records` tab was renamed `Badges("Insígnies")` in the `StatsTab` enum._
+
+_`StatsScreen.kt` — new and redesigned composables:_
+- `BadgesTab` — replaces `RecordsTab`. Shows `BadgeCompletionCard` + full `BadgeGrid`.
+- `BadgeCompletionCard` — `headlineLarge` unlocked count + `headlineSmall` total, `ThickProgress` bar (`AtlasGold`), tier breakdown row (colored dot + "Bronze · N", "Plata · N", "Or · N", "Platí · N").
+- `BadgeCard` — fixed 136 dp height removed; cards wrap content. `Arrangement.SpaceBetween` replaced with `Arrangement.spacedBy(8.dp)`. A 5 dp thin progress bar added at the bottom of every card (tier color, opacity 55% when locked, 100% when unlocked).
+
+_`StatsViewModel.kt` — badge additions:_
+- New tiered badges (3): "Models d'aeronau" [5,10,20,35], "Vols nocturns" [1,5,10,20], "Rutes úniques" [5,15,30,50].
+- New binary badges (5): "Volta al món" (earthLoops ≥ 1.0), "Tots els continents" (≥7 continents), "Ultrallarg" (flight ≥ 6 000 km), "Matiner" (flight departing 00h–04h), "Grand Tour" (completed trip ≥ 14 days).
+- Total badge count: **28** (14 tiered + 14 binary).
+- `buildBadges` receives 7 new parameters: `uniqueRouteCount`, `aircraftTypeCount`, `nightFlightCount`, `hasUltraLongFlight`, `hasEarlyMorningFlight`, `hasLongTrip`, and the existing `visitedContinents` now drives the "Tots els continents" binary badge.
 
 #### 3. v4.0 — Country depth / Stats dataset
 

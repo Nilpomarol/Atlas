@@ -152,7 +152,7 @@ fun StatsScreen(uiState: StatsUiState, onTimelineClick: () -> Unit = {}) {
                     StatsTab.Countries -> CountriesTab(uiState)
                     StatsTab.Trips -> TripsTab(uiState)
                     StatsTab.Flights -> FlightsTab(uiState)
-                    StatsTab.Records -> RecordsTab(uiState)
+                    StatsTab.Badges -> BadgesTab(uiState)
                 }
             }
         }
@@ -422,15 +422,12 @@ private fun FlightsTab(uiState: StatsUiState) {
 }
 
 @Composable
-private fun RecordsTab(uiState: StatsUiState) {
+private fun BadgesTab(uiState: StatsUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Section("Completesa") {
-            CompletionCard(uiState.completionTier, uiState.worldPercentage)
+        Section("Progrés") {
+            BadgeCompletionCard(uiState.badges)
         }
-        Section("Rècords") {
-            RecordGrid(uiState.recordCards)
-        }
-        Section("Insígnies") {
+        Section("Totes les insígnies") {
             BadgeGrid(uiState.badges)
         }
     }
@@ -578,7 +575,7 @@ private fun NextMilestonesCard(uiState: StatsUiState) {
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth(badge.progress.coerceIn(0f, 1f))
+                                        .fillMaxWidth((badge.progress ?: 0f).coerceIn(0f, 1f))
                                         .height(5.dp)
                                         .background(accentColor),
                                 )
@@ -2207,6 +2204,64 @@ private fun RecordCard(record: StatsRecord, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun BadgeCompletionCard(badges: List<StatsBadge>) {
+    val unlocked = badges.count { it.unlocked }
+    val total = badges.size.coerceAtLeast(1)
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
+            ) {
+                Text(
+                    text = "$unlocked",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasGold,
+                )
+                Text(
+                    text = " / $total",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AtlasOnSurfaceMuted,
+                    modifier = Modifier.padding(bottom = 3.dp),
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = "INSÍGNIES\nDESBLOQUEJADES",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.padding(bottom = 3.dp),
+                )
+            }
+            ThickProgress(value = unlocked, maxValue = total, color = AtlasGold)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                BadgeTier.entries.forEach { tier ->
+                    val count = badges.count { it.tier == tier }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(tier.color(), CircleShape),
+                        )
+                        Text(
+                            text = "${tier.label()} · $count",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun BadgeGrid(badges: List<StatsBadge>) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         badges.chunked(2).forEach { row ->
@@ -2222,14 +2277,14 @@ private fun BadgeGrid(badges: List<StatsBadge>) {
 private fun BadgeCard(badge: StatsBadge, modifier: Modifier = Modifier) {
     val accentColor = badge.tier?.color() ?: if (badge.unlocked) AtlasPrimary else AtlasOnSurfaceFaint
     Surface(
-        modifier = modifier.height(136.dp),
+        modifier = modifier,
         shape = RoundedCornerShape(18.dp),
         color = if (badge.unlocked) AtlasSurface else AtlasSurfaceSubtle.copy(alpha = 0.72f),
         border = BorderStroke(1.dp, accentColor.copy(alpha = if (badge.unlocked) 0.28f else 0.18f)),
     ) {
         Column(
             modifier = Modifier.padding(13.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2279,6 +2334,21 @@ private fun BadgeCard(badge: StatsBadge, modifier: Modifier = Modifier) {
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(5.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(AtlasSurfaceSubtle),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth((badge.progress ?: 0f).coerceIn(0f, 1f))
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(accentColor.copy(alpha = if (badge.unlocked) 1f else 0.55f)),
+                )
             }
         }
     }
@@ -2515,5 +2585,5 @@ private enum class StatsTab(val label: String) {
     Countries("Països"),
     Trips("Viatges"),
     Flights("Vols"),
-    Records("Rècords"),
+    Badges("Insígnies"),
 }

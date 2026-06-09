@@ -12,5 +12,6 @@ class AtlasApplication : Application() {
         MapLibre.getInstance(this)
         container = AtlasAppContainer(this)
         container.importInitialData()
+        container.refreshTravelStatusesOnStartup()
     }
 }

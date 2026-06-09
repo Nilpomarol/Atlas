@@ -54,6 +54,7 @@ import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
 import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
+import com.atlas.domain.usecase.status.UpdateCurrentTravelStatusesUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
 import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
@@ -372,12 +373,23 @@ class AtlasAppContainer(context: Context) {
         tripRepository = tripRepository,
     )
 
+    val updateCurrentTravelStatusesUseCase = UpdateCurrentTravelStatusesUseCase(
+        tripRepository = tripRepository,
+        flightRepository = flightRepository,
+    )
+
     fun importInitialData() {
         applicationScope.launch {
             countryDatasetImporter.importIfNeeded()
             airportDatasetImporter.importIfNeeded()
             airlineDatasetImporter.importIfNeeded()
             aircraftTypeDatasetImporter.importIfNeeded()
+        }
+    }
+
+    fun refreshTravelStatusesOnStartup() {
+        applicationScope.launch(Dispatchers.IO) {
+            updateCurrentTravelStatusesUseCase()
         }
     }
 

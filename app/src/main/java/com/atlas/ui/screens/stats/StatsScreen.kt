@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -51,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -257,8 +259,9 @@ private fun MapTab(uiState: StatsUiState, modifier: Modifier = Modifier) {
 @Composable
 private fun CountriesTab(uiState: StatsUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        CountriesHeroCard(uiState)
         Section("Col·lecció de països") {
-            CountryStampRail(uiState.countryStamps)
+            CountryFlagGrid(uiState.countryStamps)
         }
         Section("Continents") {
             ContinentProgressCard(uiState.continentStats)
@@ -269,6 +272,83 @@ private fun CountriesTab(uiState: StatsUiState) {
         Section("Rècords de països") {
             RecordGrid(uiState.countryRecords)
         }
+    }
+}
+
+@Composable
+private fun CountriesHeroCard(uiState: StatsUiState) {
+    AtlasCard(modifier = Modifier.padding(horizontal = 20.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "${uiState.visitedCountries}",
+                            style = MaterialTheme.typography.headlineLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasVisited,
+                        )
+                        Text(
+                            text = " / ${uiState.totalCountries}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = AtlasOnSurfaceMuted,
+                            modifier = Modifier.padding(bottom = 3.dp),
+                        )
+                    }
+                    Text(
+                        text = "PAÏSOS VISITATS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "${uiState.worldPercentage.roundToInt()}%",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceStrong,
+                    )
+                    Text(
+                        text = "DEL MÓN",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
+            StackedProgressBar(
+                primary = uiState.visitedCountries,
+                secondary = uiState.plannedCountries,
+                total = uiState.totalCountries,
+                height = 10.dp,
+            )
+            Row(modifier = Modifier.fillMaxWidth()) {
+                CountriesHeroStat("Viscuts", uiState.livedCountries, AtlasLived, Modifier.weight(1f))
+                CountriesHeroStat("Continents", uiState.visitedContinents, AtlasNavy, Modifier.weight(1f))
+                CountriesHeroStat("Plans", uiState.plannedCountries, AtlasPlanned, Modifier.weight(1f))
+                CountriesHeroStat("Desitjats", uiState.wishedCountries, AtlasWished, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountriesHeroStat(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = color,
+        )
+        Text(
+            text = label.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
+            color = AtlasOnSurfaceMuted,
+        )
     }
 }
 
@@ -961,44 +1041,78 @@ private fun TripMonthChart(monthStats: List<StatsMonthStat>) {
 }
 
 @Composable
-private fun CountryStampRail(stamps: List<StatsCountryStamp>) {
+private fun CountryFlagGrid(stamps: List<StatsCountryStamp>) {
     if (stamps.isEmpty()) {
-        EmptyStatCard("Cap país visitat encara.")
+        EmptyStatCard("Cap país registrat encara.")
         return
     }
-    Row(
-        modifier = Modifier.horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        stamps.forEach { stamp ->
-            Surface(
-                modifier = Modifier.width(92.dp).height(98.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = stamp.state.color().copy(alpha = 0.10f),
-                border = BorderStroke(1.dp, stamp.state.color().copy(alpha = 0.30f)),
+    val scrollState = rememberScrollState()
+    val row1 = stamps.filterIndexed { i, _ -> i % 2 == 0 }
+    val row2 = stamps.filterIndexed { i, _ -> i % 2 == 1 }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.horizontalScroll(scrollState),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            row1.forEach { FlagStampCard(it) }
+        }
+        if (row2.isNotEmpty()) {
+            Row(
+                modifier = Modifier.horizontalScroll(scrollState),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(8.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    CountryFlag(iso2 = stamp.iso2, modifier = Modifier.size(30.dp))
-                    Text(
-                        text = stamp.name,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = AtlasOnSurfaceStrong,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = stamp.label.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp),
-                        color = stamp.state.color(),
-                        maxLines = 1,
-                    )
-                }
+                row2.forEach { FlagStampCard(it) }
+            }
+        }
+    }
+}
+
+// Flags that are not standard rectangles (square or irregular shape):
+// these need Fit so the full shape is visible; all other flags use Crop to fill the card.
+private fun flagContentScale(iso2: String): ContentScale =
+    if (iso2.uppercase() in setOf("CH", "VA", "NP")) ContentScale.Fit else ContentScale.Crop
+
+@Composable
+private fun FlagStampCard(stamp: StatsCountryStamp) {
+    val stateColor = stamp.state.color()
+    Surface(
+        modifier = Modifier.width(120.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = AtlasSurface,  // neutral background visible around non-rectangular flags
+        border = BorderStroke(1.dp, stateColor.copy(alpha = 0.22f)),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 2f),
+        ) {
+            CountryFlag(
+                iso2 = stamp.iso2,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = flagContentScale(stamp.iso2),
+            )
+            // Gradient scrim + name overlay at the bottom
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(34.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, AtlasNavy.copy(alpha = 0.85f)),
+                        )
+                    ),
+                contentAlignment = Alignment.BottomStart,
+            ) {
+                Text(
+                    text = stamp.name,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = stateColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
@@ -1014,18 +1128,30 @@ private fun ContinentProgressCard(continents: List<StatsContinent>) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             continents.forEach { continent ->
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         Text(
                             text = continent.name,
                             modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = AtlasOnSurfaceStrong,
                         )
                         Text(
-                            text = "${continent.visited}/${continent.total} · ${continent.percentLabel()}",
+                            text = "${continent.visited}/${continent.total}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (continent.visited > 0) AtlasVisited else AtlasOnSurfaceMuted,
+                        )
+                        Text(
+                            text = continent.percentLabel(),
                             style = MaterialTheme.typography.labelSmall,
                             color = AtlasOnSurfaceMuted,
+                            modifier = Modifier.width(36.dp),
+                            textAlign = TextAlign.End,
                         )
                     }
                     StackedProgressBar(
@@ -1040,25 +1166,25 @@ private fun ContinentProgressCard(continents: List<StatsContinent>) {
 }
 
 @Composable
-private fun StackedProgressBar(primary: Int, secondary: Int, total: Int) {
+private fun StackedProgressBar(primary: Int, secondary: Int, total: Int, height: Dp = 16.dp) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(16.dp)
+            .height(height)
             .clip(RoundedCornerShape(4.dp))
             .background(AtlasSurfaceSubtle),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth(((primary + secondary).toFloat() / total.coerceAtLeast(1)).coerceIn(0f, 1f))
-                .height(16.dp)
+                .height(height)
                 .clip(RoundedCornerShape(4.dp))
                 .background(AtlasPlanned.copy(alpha = 0.62f)),
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth((primary.toFloat() / total.coerceAtLeast(1)).coerceIn(0f, 1f))
-                .height(16.dp)
+                .height(height)
                 .clip(RoundedCornerShape(4.dp))
                 .background(AtlasVisited),
         )
@@ -1071,55 +1197,58 @@ private fun RankedCountryCard(items: List<StatsRank>) {
         EmptyStatCard("Encara no hi ha prou activitat per ordenar països.")
         return
     }
-    AtlasCard(contentPadding = PaddingValues(0.dp)) {
-        Column {
-            items.forEachIndexed { index, item ->
-                CountryRankedRow(index + 1, item)
-                if (index < items.lastIndex) DividerLine()
+    val maxValue = items.maxOf { it.value }.coerceAtLeast(1)
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Registres · viatges · vols (sense escales)",
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceMuted,
+            )
+            items.forEach { item ->
+                CountryRankItem(item = item, maxValue = maxValue)
             }
         }
     }
 }
 
 @Composable
-private fun CountryRankedRow(rank: Int, item: StatsRank) {
+private fun CountryRankItem(item: StatsRank, maxValue: Int) {
+    val accentColor = item.state?.color() ?: AtlasVisited
     Row(
-        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(
-            text = rank.toString(),
-            modifier = Modifier.width(20.dp),
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = item.state?.color() ?: AtlasVisited,
-            textAlign = TextAlign.Center,
-        )
-        item.iso2?.let { CountryFlag(iso2 = it, modifier = Modifier.size(30.dp)) }
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = item.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = AtlasOnSurfaceStrong,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = item.subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = AtlasOnSurfaceMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Box(
+            modifier = Modifier
+                .width(48.dp)
+                .aspectRatio(3f / 2f)
+                .clip(RoundedCornerShape(4.dp))
+                .background(AtlasSurface),
+        ) {
+            item.iso2?.let { iso2 ->
+                CountryFlag(iso2 = iso2, modifier = Modifier.fillMaxSize(), contentScale = flagContentScale(iso2))
+            }
         }
-        Text(
-            text = item.value.toString(),
-            style = MaterialTheme.typography.titleMedium,
-            color = item.state?.color() ?: AtlasVisited,
-            fontWeight = FontWeight.Bold,
-        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = item.title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = item.value.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
+            ThickProgress(value = item.value, maxValue = maxValue, color = accentColor)
+        }
     }
 }
 

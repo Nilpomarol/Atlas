@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum tab ✅ + Cronologia screen ✅ + Mapa tab ✅; auto-status update next)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅; auto-status update next)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -367,7 +367,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. It is not being marked complete yet; see the notes in "Next items before v4.0".
+**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. Resum, Cronologia, Mapa, and Països tabs are complete. Viatges, Vols, and Rècords tabs have placeholder content that may need device QA.
 
 ### Settings design (✅ complete)
 
@@ -428,16 +428,14 @@ Bottom nav `onClick` no longer uses `saveState`/`restoreState`. Every tab tap na
 
 **Why not WorkManager:** WorkManager is designed for work that must run even when the app is closed. Since nothing depends on status being updated while closed (no widgets, no background notifications), a simple coroutine is sufficient and avoids a new dependency.
 
-#### 2. Stats page from existing data ✅ (Resum + Cronologia + Mapa tabs complete)
+#### 2. Stats page from existing data ✅ (Resum + Cronologia + Mapa + Països tabs complete)
 
-The `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a placeholder. Resum, Cronologia, and Mapa tabs are all complete. Remaining tabs (Països, Viatges, Vols, Rècords) have placeholder content that may need device QA; revisit after auto-status update if gaps are found.
+The `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a placeholder. Resum, Cronologia, Mapa, and Països tabs are all complete. Remaining tabs (Viatges, Vols, Rècords) have placeholder content that may need device QA; revisit after auto-status update if gaps are found.
 
-**Partial implementation added 2026-06-08 (not marked complete):**
+**Initial implementation added 2026-06-08:**
 - Added `StatsViewModel` under `presentation/stats`, using only existing repository flows: countries/user states/logs, trips/stops, excursions, flights, itinerary groups, airports, and stop photos.
 - Replaced the placeholder with a read-only tabbed stats surface: `Resum`, `Mapa`, `Països`, `Viatges`, `Vols`, and `Rècords`.
-- Current visuals include `AtlasGeoCanvas` world highlights, flight route arcs, airport markers, progress rings, bar/pulse charts, country stamp rail, trip cover-photo/map postcard rail, airline logo rail, ranked lists, records, and badge cards.
 - No DB migration, no new data tables, no write actions, and no navigation changes were added.
-- Still needs device visual QA and likely polish after seeing it with real data; keep this item open until reviewed on device.
 
 **Stats polish pass (✅ Resum tab complete; ✅ Mapa tab complete):**
 
@@ -485,6 +483,30 @@ _Modified files:_
 - `AtlasNavHost.kt`: `"timeline"` composable route added; `StatsRoute` receives `onTimelineClick`.
 - `StatsRoute.kt`: accepts `onTimelineClick: () -> Unit`, passes to `StatsScreen`.
 - `StatsScreen.kt`: `onTimelineClick` threaded to `SummaryTab` → `YearPulseChart`.
+
+**✅ Països tab — complete (2026-06-09)**
+
+_`CountryFlag.kt`:_
+- Added `contentScale: ContentScale = ContentScale.Crop` parameter (backward-compatible default).
+
+_`StatsScreen.kt` — new and redesigned composables:_
+- `flagContentScale(iso2)` — pure helper: returns `ContentScale.Fit` for `CH`, `VA`, `NP` (non-rectangular / square flags); `ContentScale.Crop` for all others, so regular flags fill their card fully.
+- `CountriesHeroCard` — top KPI card: `headlineLarge` visited count, world %, 10dp `StackedProgressBar`, 4 mini stats (`CountriesHeroStat`).
+- `CountryFlagGrid` — 2-row synchronized horizontal scroll; both rows share a single `rememberScrollState()` instance so scrolling either row moves both.
+- `FlagStampCard` — 120dp wide, `aspectRatio(3:2)`, full-card flag with `flagContentScale`. Gradient scrim (`Color.Transparent → AtlasNavy 85%`, 34dp tall) overlaid at the bottom. Country name uses `labelMedium` Bold coloured in the state accent colour (no separate state dot or label text).
+- `ContinentProgressCard` — compact mono style: `labelMedium` (SpaceMono Bold) for continent name and visited/total counts, `labelSmall` for percentage, 16dp `StackedProgressBar`.
+- `RankedCountryCard` / `CountryRankItem` — mirrors `TopAirlineBars` layout exactly: normal `AtlasCard` padding, `Column(spacedBy(12.dp))`, each item is `Row { 48×32dp flag + Column(spacedBy(5dp)) { [name · count row] + ThickProgress } }`. Bar colour follows the country's tracking state accent.
+
+_`StatsViewModel.kt` — activity ranking and data pipeline:_
+- `FlightData` now includes `itineraries: List<Itinerary>` (loaded via `observeItineraries()` added to the 3-flow `flightData` combine, making it 4 flows).
+- `standaloneItineraryGroups` — computed in the ViewModel body by filtering `itineraryGroups` to exclude groups whose parent `Itinerary` has a `tripId`. This prevents double-counting: if a flight is part of a trip, the trip itself already represents that activity.
+- `buildCountryRanks` activity counting rules (excursion stops removed entirely):
+  - **Logs** → +1 per log
+  - **Trips** → +1 per unique country per trip (multiple stops in the same country within one trip count as 1, not N)
+  - **Solo flights** (no `itineraryGroupId`) → +1 per endpoint country
+  - **Standalone itinerary groups** (itinerary `tripId == null`) → +1 for group origin + group destination only; intermediate layover airports skipped
+- Caption in card: `"Registres · viatges · vols (sense escales)"`.
+- `buildCountryRecords` extended with 3 new records: `Continent complet` (first fully covered continent), `País més viscut` (≥2 lived logs), `País amb més parades` (≥2 trip stops).
 
 **✅ Mapa tab — complete**
 

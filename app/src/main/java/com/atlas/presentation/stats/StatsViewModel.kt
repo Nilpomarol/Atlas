@@ -10,6 +10,7 @@ import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.StopPhoto
@@ -77,9 +78,10 @@ class StatsViewModel(
     private val flightData = combine(
         flightRepository.observeFlights(),
         itineraryRepository.observeAllGroups(),
+        itineraryRepository.observeItineraries(),
         airportRepository.observeAirports(),
-    ) { flights, groups, airports ->
-        FlightData(flights, groups, airports)
+    ) { flights, groups, itineraries, airports ->
+        FlightData(flights, groups, itineraries, airports)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -129,7 +131,12 @@ class StatsViewModel(
         val tripStops = data.tripData.stops
         val flights = data.flightData.flights
         val itineraryGroups = data.flightData.itineraryGroups
+        val itineraries = data.flightData.itineraries
         val airports = data.flightData.airports
+        // Groups whose itinerary is linked to a trip are excluded from activity counting —
+        // the trip stops already represent that activity. Only standalone itinerary groups count.
+        val tripLinkedItineraryIds = itineraries.filter { it.tripId != null }.mapTo(mutableSetOf()) { it.id }
+        val standaloneItineraryGroups = itineraryGroups.filter { it.itineraryId !in tripLinkedItineraryIds }
         val excursions = data.excursions
         val photos = data.photos
 
@@ -179,8 +186,8 @@ class StatsViewModel(
             countryStates = countryStates,
             logs = data.countryData.logs,
             tripStops = tripStops,
-            excursions = excursions,
             flights = flights,
+            itineraryGroups = standaloneItineraryGroups,
             airportsById = airportsById,
         )
         val continentStats = buildContinentStats(countries, countryStates)
@@ -217,6 +224,9 @@ class StatsViewModel(
         val countryRecords = buildCountryRecords(
             topCountryRanks = topCountryRanks,
             continentStats = continentStats,
+            logsByCountryIso2 = logsByIso2,
+            stopsByCountryIso2 = stopsByIso2,
+            countryNamesByIso2 = countryNamesByIso2,
         )
         val tripRecords = buildTripRecords(
             trips = trips,
@@ -552,7 +562,8 @@ private data class TripData(val trips: List<Trip>, val stops: List<TripStop>)
 
 private data class FlightData(
     val flights: List<Flight>,
-    val itineraryGroups: List<com.atlas.domain.model.ItineraryGroup>,
+    val itineraryGroups: List<ItineraryGroup>,
+    val itineraries: List<Itinerary>,
     val airports: List<Airport>,
 )
 
@@ -571,17 +582,35 @@ private fun buildCountryRanks(
     countryStates: List<Pair<Country, CountryTrackingState>>,
     logs: List<CountryLog>,
     tripStops: List<TripStop>,
-    excursions: List<Excursion>,
     flights: List<Flight>,
+    itineraryGroups: List<ItineraryGroup>,
     airportsById: Map<String, Airport>,
 ): List<StatsRank> {
     val activity = mutableMapOf<String, Int>()
-    logs.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 2 }
-    tripStops.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 1 }
-    excursions.flatMap { it.stops }.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 1 }
-    flights.forEach { flight ->
-        listOfNotNull(airportsById[flight.originAirportId]?.countryIso2, airportsById[flight.destinationAirportId]?.countryIso2)
-            .forEach { activity[it] = (activity[it] ?: 0) + 1 }
+    // Each log = 1 activity for that country
+    logs.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 1 }
+    // Each trip = 1 activity per unique country it visited (multiple stops in same country count once)
+    tripStops.groupBy { it.tripId }.forEach { (_, stops) ->
+        stops.map { it.countryIso2 }.toSet().forEach { iso2 ->
+            activity[iso2] = (activity[iso2] ?: 0) + 1
+        }
+    }
+    // Solo flights (no itinerary group): count both origin and destination
+    flights.filter { it.itineraryGroupId == null }.forEach { flight ->
+        listOfNotNull(
+            airportsById[flight.originAirportId]?.countryIso2,
+            airportsById[flight.destinationAirportId]?.countryIso2,
+        ).forEach { activity[it] = (activity[it] ?: 0) + 1 }
+    }
+    // Standalone itinerary group flights (no trip): count only group endpoints, skip layovers
+    itineraryGroups.forEach { group ->
+        val sorted = group.flights.sortedBy { it.sortOrder ?: Int.MAX_VALUE }
+        if (sorted.isNotEmpty()) {
+            airportsById[sorted.first().originAirportId]?.countryIso2
+                ?.let { activity[it] = (activity[it] ?: 0) + 1 }
+            airportsById[sorted.last().destinationAirportId]?.countryIso2
+                ?.let { activity[it] = (activity[it] ?: 0) + 1 }
+        }
     }
     val stateByIso2 = countryStates.associate { it.first.iso2 to it.second }
     return countries.mapNotNull { country ->
@@ -811,15 +840,31 @@ private fun buildTopDelayRecords(flights: List<Flight>, airportsById: Map<String
 private fun buildCountryRecords(
     topCountryRanks: List<StatsRank>,
     continentStats: List<StatsContinent>,
-): List<StatsRecord> = listOfNotNull(
-    topCountryRanks.firstOrNull()?.let { StatsRecord("País més actiu", it.title, "${it.value} registres") },
-    continentStats.firstOrNull()?.let {
-        StatsRecord("Continent més explorat", it.name, "${it.visited}/${it.total} · ${it.percentLabel()}")
-    },
-    continentStats.lastOrNull()?.takeIf { it.visited == 0 }?.let {
-        StatsRecord("Continent per descobrir", it.name, "0 de ${it.total} països")
-    },
-)
+    logsByCountryIso2: Map<String, List<CountryLog>>,
+    stopsByCountryIso2: Map<String, List<TripStop>>,
+    countryNamesByIso2: Map<String, String>,
+): List<StatsRecord> {
+    val mostLogged = logsByCountryIso2.entries.filter { it.value.size >= 2 }.maxByOrNull { it.value.size }
+    val mostStops = stopsByCountryIso2.entries.filter { it.value.size >= 2 }.maxByOrNull { it.value.size }
+    return listOfNotNull(
+        topCountryRanks.firstOrNull()?.let { StatsRecord("País més actiu", it.title, "${it.value} registres") },
+        continentStats.firstOrNull()?.let {
+            StatsRecord("Continent més explorat", it.name, "${it.visited}/${it.total} · ${it.percentLabel()}")
+        },
+        continentStats.lastOrNull()?.takeIf { it.visited == 0 }?.let {
+            StatsRecord("Continent per descobrir", it.name, "0 de ${it.total} països")
+        },
+        continentStats.firstOrNull { it.visited == it.total && it.total > 0 }?.let {
+            StatsRecord("Continent complet", it.name, "${it.total} de ${it.total} països visitats")
+        },
+        mostLogged?.let { (iso2, logs) ->
+            StatsRecord("País més viscut", countryNamesByIso2[iso2] ?: iso2, "${logs.size} estades registrades")
+        },
+        mostStops?.let { (iso2, stops) ->
+            StatsRecord("País amb més parades", countryNamesByIso2[iso2] ?: iso2, "${stops.size} parades de viatge")
+        },
+    )
+}
 
 private fun buildTripRecords(
     trips: List<Trip>,

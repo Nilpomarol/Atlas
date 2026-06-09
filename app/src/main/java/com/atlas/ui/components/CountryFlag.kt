@@ -21,6 +21,7 @@ import com.atlas.ui.theme.AtlasOnSurfaceMuted
 fun CountryFlag(
     iso2: String,
     modifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Crop,
 ) {
     SubcomposeAsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -33,7 +34,7 @@ fun CountryFlag(
     ) {
         when (painter.state) {
             is AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent(
-                contentScale = ContentScale.Crop,
+                contentScale = contentScale,
             )
             is AsyncImagePainter.State.Error,
             is AsyncImagePainter.State.Empty -> FlagIso2Fallback(iso2)

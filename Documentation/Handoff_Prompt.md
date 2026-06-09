@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; list page headers standardized ✅; auto-status update next)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; list page headers standardized ✅; auto-status update ✅ already implemented)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -408,29 +408,9 @@ Bottom nav `onClick` no longer uses `saveState`/`restoreState`. Every tab tap na
 
 ### Next items before v4.0 (agreed order)
 
-#### 1. Auto-status update for trips and flights
+#### 1. Auto-status update for trips and flights ✅ (already implemented)
 
-**What:** On every cold app start, run a background coroutine that checks all PLANNED/IN_PROGRESS trips and flights against today's date and updates status silently.
-
-**Rules — trips:**
-- PLANNED + today ≥ start date → IN_PROGRESS
-- PLANNED or IN_PROGRESS + today > end date → COMPLETED
-- Trips with no `dateRange`, or with YEAR/MONTH precision: apply same logic using year/month boundaries
-- Never touch already-COMPLETED trips
-
-**Rules — flights:**
-- PLANNED + today ≥ scheduled departure date → IN_PROGRESS
-- PLANNED or IN_PROGRESS + today > scheduled arrival date → COMPLETED
-- Flights with no scheduled departure date: leave untouched
-- `inferFlightStatus()` already exists in `domain/util/FlightStatusInference.kt` and can be reused
-
-**Implementation approach:**
-- Background coroutine in `AtlasApplication.onCreate()` on `Dispatchers.IO` — main thread never blocked
-- No WorkManager needed: work only needs to run while the app is open; the on-open check catches up regardless of how many days have passed since the last open
-- Because ViewModels observe Room via `Flow`, any status updates propagate to the UI automatically — no additional wiring needed
-- No DB migration required (status column already exists)
-
-**Why not WorkManager:** WorkManager is designed for work that must run even when the app is closed. Since nothing depends on status being updated while closed (no widgets, no background notifications), a simple coroutine is sufficient and avoids a new dependency.
+`AtlasApplication.onCreate()` calls `container.refreshTravelStatusesOnStartup()`, which launches `UpdateCurrentTravelStatusesUseCase` on `Dispatchers.IO`. Room `Flow` propagates any changes to the UI automatically. No further work needed.
 
 #### 2. Stats page from existing data ✅ (Resum + Cronologia + Mapa + Països tabs complete)
 

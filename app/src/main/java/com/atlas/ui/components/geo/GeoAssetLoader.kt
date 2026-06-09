@@ -15,10 +15,14 @@ import kotlinx.serialization.json.jsonPrimitive
 
 object AtlasGeoAssetLoader {
     private const val CountriesAssetPath = "geo/ne_110m_admin_0_countries.geojson"
+    private const val Countries50mAssetPath = "geo/ne_50m_admin_0_countries.geojson"
     private val json = Json { ignoreUnknownKeys = true }
 
     @Volatile
     private var cachedCountries: GeoFeatureCollection? = null
+
+    @Volatile
+    private var cachedCountries50m: GeoFeatureCollection? = null
 
     suspend fun loadCountries(context: Context): GeoFeatureCollection {
         cachedCountries?.let { return it }
@@ -26,6 +30,18 @@ object AtlasGeoAssetLoader {
             synchronized(this@AtlasGeoAssetLoader) {
                 cachedCountries ?: parseCountries(context.assets.open(CountriesAssetPath).bufferedReader().use { it.readText() })
                     .also { cachedCountries = it }
+            }
+        }
+    }
+
+    suspend fun loadCountries50m(context: Context): GeoFeatureCollection {
+        cachedCountries50m?.let { return it }
+        return withContext(Dispatchers.IO) {
+            cachedCountries50m ?: try {
+                parseCountries(context.assets.open(Countries50mAssetPath).bufferedReader().use { it.readText() })
+                    .also { cachedCountries50m = it }
+            } catch (_: Exception) {
+                loadCountries(context)
             }
         }
     }

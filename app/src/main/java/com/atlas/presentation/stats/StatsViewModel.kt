@@ -1,0 +1,1124 @@
+package com.atlas.presentation.stats
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.atlas.domain.model.Airport
+import com.atlas.domain.model.Country
+import com.atlas.domain.model.CountryLog
+import com.atlas.domain.model.CountryTrackingState
+import com.atlas.domain.model.Excursion
+import com.atlas.domain.model.Flight
+import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.StopPhoto
+import com.atlas.domain.model.StopType
+import com.atlas.domain.model.TravelStatus
+import com.atlas.domain.model.Trip
+import com.atlas.domain.model.TripStop
+import com.atlas.domain.repository.AircraftTypeRepository
+import com.atlas.domain.repository.AirportRepository
+import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.ExcursionRepository
+import com.atlas.domain.repository.FlightRepository
+import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.StopPhotoRepository
+import com.atlas.domain.repository.TripRepository
+import com.atlas.domain.service.CountryStateDerivationService
+import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.domain.util.utcAwareDelayMinutes
+import com.atlas.domain.util.utcAwareDurationMinutes
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class StatsViewModel(
+    countryRepository: CountryRepository,
+    tripRepository: TripRepository,
+    flightRepository: FlightRepository,
+    itineraryRepository: ItineraryRepository,
+    excursionRepository: ExcursionRepository,
+    airportRepository: AirportRepository,
+    stopPhotoRepository: StopPhotoRepository,
+    private val aircraftTypeRepository: AircraftTypeRepository,
+    private val countryStateDerivationService: CountryStateDerivationService,
+    private val flexibleDateFormatter: FlexibleDateFormatter,
+) : ViewModel() {
+    private val countryData = combine(
+        countryRepository.observeTrackableCountries(),
+        countryRepository.observeUserStates(),
+        countryRepository.observeCountryLogs(),
+    ) { countries, userStates, logs ->
+        CountryData(countries, userStates.associateBy { it.countryIso2 }, logs)
+    }
+
+    private val tripStopsFlow = tripRepository.observeTripStops()
+    private val tripsFlow = tripRepository.observeTrips()
+    private val excursionsFlow = excursionRepository.observeExcursions()
+
+    private val tripData = combine(
+        tripsFlow,
+        tripStopsFlow,
+    ) { trips, stops ->
+        TripData(trips, stops)
+    }
+
+    private val flightData = combine(
+        flightRepository.observeFlights(),
+        itineraryRepository.observeAllGroups(),
+        airportRepository.observeAirports(),
+    ) { flights, groups, airports ->
+        FlightData(flights, groups, airports)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private val tripStopPhotosFlow = tripStopsFlow.flatMapLatest { stops ->
+        val ids = stops.map { it.id }
+        if (ids.isEmpty()) flowOf(emptyMap())
+        else stopPhotoRepository.observeByStopIds(ids, StopType.TRIP_STOP)
+            .map { photos -> photos.groupBy { it.stopId } }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private val excursionStopPhotosFlow = excursionsFlow.flatMapLatest { excursions ->
+        val ids = excursions.flatMap { it.stops }.map { it.id }
+        if (ids.isEmpty()) flowOf(emptyMap())
+        else stopPhotoRepository.observeByStopIds(ids, StopType.EXCURSION_STOP)
+            .map { photos -> photos.groupBy { it.stopId } }
+    }
+
+    private val photosData = combine(
+        tripStopPhotosFlow,
+        excursionStopPhotosFlow,
+    ) { tripStopPhotos, excursionStopPhotos ->
+        PhotosData(tripStopPhotos, excursionStopPhotos)
+    }
+
+    private val sourceData = combine(
+        countryData,
+        tripData,
+        flightData,
+        excursionsFlow,
+        photosData,
+    ) { countries, trips, flights, excursions, photos ->
+        StatsSourceData(countries, trips, flights, excursions, photos)
+    }
+
+    val uiState: StateFlow<StatsUiState> = sourceData
+        .mapLatest { data -> buildUiState(data) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = StatsUiState(),
+        )
+
+    private suspend fun buildUiState(data: StatsSourceData): StatsUiState {
+        val countries = data.countryData.countries
+        val trips = data.tripData.trips
+        val tripStops = data.tripData.stops
+        val flights = data.flightData.flights
+        val itineraryGroups = data.flightData.itineraryGroups
+        val airports = data.flightData.airports
+        val excursions = data.excursions
+        val photos = data.photos
+
+        val airportsById = airports.associateBy { it.id }
+        val countriesByIso2 = countries.associateBy { it.iso2 }
+        val countryNamesByIso2 = countries.associate { it.iso2 to it.nameCa }
+        val airportCountryIso2ById = airports.associate { it.id to it.countryIso2 }
+        val logsByIso2 = data.countryData.logs.groupBy { it.countryIso2 }
+        val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
+
+        val countryStates = countries.map { country ->
+            country to countryStateDerivationService.derive(
+                countryIso2 = country.iso2,
+                userState = data.countryData.userStatesByIso2[country.iso2],
+                logs = logsByIso2[country.iso2].orEmpty(),
+                trips = trips,
+                tripStops = stopsByIso2[country.iso2].orEmpty(),
+                flights = flights,
+                itineraryGroups = itineraryGroups,
+                excursions = excursions,
+                airportCountryIso2ById = airportCountryIso2ById,
+            )
+        }
+
+        val livingIso2s = countryStates.filter { it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
+        val livedIso2s = countryStates.filter { it.second.lived && !it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
+        val visitedIso2s = countryStates.filter { it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
+        val plannedIso2s = countryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
+        val wishedIso2s = countryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
+
+        val visitedCount = countryStates.count { it.second.visited }
+        val worldPercentage = if (countries.isEmpty()) 0f else visitedCount.toFloat() / countries.size.toFloat() * 100f
+        val currentLivingMapCenter = countryStates.firstOrNull { it.second.currentlyLiving }?.first?.toMapPoint()
+
+        val completedTrips = trips.filter { it.status == TravelStatus.COMPLETED }
+        val completedFlights = flights.filter { it.status == TravelStatus.COMPLETED }
+        val totalFlightMinutes = completedFlights.sumOf { it.utcAwareDurationMinutes()?.coerceAtLeast(0) ?: 0L }
+        val flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 }
+        val tripDays = completedTrips.mapNotNull { it.dayCount() }
+        val tripStopsByTripId = tripStops.groupBy { it.tripId }
+        val excursionsByTripId = excursions.groupBy { it.tripId }
+        val tripPhotoCountByTripId = buildTripPhotoCountByTripId(trips, tripStopsByTripId, excursionsByTripId, photos)
+        val tripCountryCountByTripId = buildTripCountryCountByTripId(trips, tripStopsByTripId, excursionsByTripId)
+
+        val topCountryRanks = buildCountryRanks(
+            countries = countries,
+            countryStates = countryStates,
+            logs = data.countryData.logs,
+            tripStops = tripStops,
+            excursions = excursions,
+            flights = flights,
+            airportsById = airportsById,
+        )
+        val continentStats = buildContinentStats(countries, countryStates)
+        val topRoutes = buildTopRoutes(flights, airportsById)
+        val topAirports = buildTopAirports(flights, airportsById)
+        val topAirlines = buildTopAirlines(flights)
+        val topAircraft = resolveTopAircraft(flights)
+        val yearStats = buildYearStats(trips, flights, tripStops, excursions, airportsById, itineraryGroups)
+        val tripMonthStats = buildTripMonthStats(trips)
+        val flightMapRoutes = buildFlightMapRoutes(flights, airportsById)
+        val tripStopMapMarkers = buildTripStopMarkers(trips, tripStopsByTripId)
+        val excursionStopMapMarkers = buildExcursionStopMarkers(excursions)
+        val delayBuckets = buildDelayBuckets(flights)
+        val topDelays = buildTopDelayRecords(flights, airportsById)
+        val intercontinentalFlights = flights.count { it.isIntercontinental(airportsById, countriesByIso2) }
+        val continentalFlights = flights.count { it.hasKnownContinentalPair(airportsById, countriesByIso2) } - intercontinentalFlights
+
+        val tripVisuals = trips
+            .filter { it.coverPhotoFilename != null || tripStopsByTripId[it.id].orEmpty().any { stop -> stop.latitude != null && stop.longitude != null } }
+            .sortedWith(
+                compareByDescending<Trip> { it.coverPhotoFilename != null }
+                    .thenByDescending { tripPhotoCountByTripId[it.id] ?: 0 }
+                    .thenByDescending { it.dateRange?.start?.year ?: it.dateRange?.end?.year ?: 0 },
+            )
+            .take(12)
+            .map { trip ->
+                trip.toStatsTripVisual(
+                    stops = tripStopsByTripId[trip.id].orEmpty(),
+                    countryNamesByIso2 = countryNamesByIso2,
+                    photoCount = tripPhotoCountByTripId[trip.id] ?: 0,
+                )
+            }
+
+        val countryRecords = buildCountryRecords(
+            topCountryRanks = topCountryRanks,
+            continentStats = continentStats,
+        )
+        val tripRecords = buildTripRecords(
+            trips = trips,
+            completedTrips = completedTrips,
+            tripStopsByTripId = tripStopsByTripId,
+            tripCountryCountByTripId = tripCountryCountByTripId,
+            tripPhotoCountByTripId = tripPhotoCountByTripId,
+        )
+        val flightRecords = buildFlightRecords(
+            flights = flights,
+            airportsById = airportsById,
+            topRoutes = topRoutes,
+        )
+        val geographicRecords = buildGeographicRecords(tripStops, excursions)
+        val recordCards = (countryRecords + tripRecords + flightRecords + geographicRecords).distinctBy { it.title to it.detail }
+
+        return StatsUiState(
+            totalCountries = countries.size,
+            visitedCountries = visitedCount,
+            livedCountries = countryStates.count { it.second.lived },
+            currentlyLivingCountries = countryStates.count { it.second.currentlyLiving },
+            plannedCountries = countryStates.count { it.second.planned },
+            wishedCountries = countryStates.count { it.second.wished },
+            visitedContinents = countryStates.filter { it.second.visited || it.second.lived }.map { it.first.continent }.distinct().size,
+            worldPercentage = worldPercentage,
+            completionTier = buildCompletionTier(worldPercentage),
+            currentLivingMapCenter = currentLivingMapCenter,
+            livingIso2s = livingIso2s,
+            livedIso2s = livedIso2s,
+            visitedIso2s = visitedIso2s,
+            plannedIso2s = plannedIso2s,
+            wishedIso2s = wishedIso2s,
+            travelIdentity = buildTravelIdentity(
+                visitedCountries = visitedCount,
+                tripCount = trips.size,
+                flightCount = flights.size,
+                stopCount = tripStops.size,
+                uniqueAirportCount = topAirports.size,
+                wishedCount = wishedIso2s.size,
+            ),
+            countryRanks = topCountryRanks.take(10),
+            countryStamps = countryStates
+                .mapNotNull { (country, state) -> country.toStamp(state) }
+                .sortedWith(compareBy<StatsCountryStamp> { it.state.priority }.thenBy { it.name })
+                .take(90),
+            continentStats = continentStats,
+            countryRecords = countryRecords,
+            tripCount = trips.size,
+            completedTripCount = completedTrips.size,
+            plannedTripCount = trips.count { it.status == TravelStatus.PLANNED },
+            inProgressTripCount = trips.count { it.status == TravelStatus.IN_PROGRESS },
+            tripStopCount = tripStops.size,
+            excursionCount = excursions.size,
+            excursionStopCount = excursions.sumOf { it.stops.size },
+            totalStopCount = tripStops.size + excursions.sumOf { it.stops.size },
+            daysTraveled = tripDays.sum(),
+            avgTripLengthDays = tripDays.takeIf { it.isNotEmpty() }?.average(),
+            photoCount = photos.totalCount,
+            tripVisuals = tripVisuals,
+            tripMonthStats = tripMonthStats,
+            tripRecords = tripRecords,
+            flightCount = flights.size,
+            completedFlightCount = completedFlights.size,
+            plannedFlightCount = flights.count { it.status == TravelStatus.PLANNED },
+            inProgressFlightCount = flights.count { it.status == TravelStatus.IN_PROGRESS },
+            flownDistanceKm = flownDistanceKm,
+            hoursFlown = totalFlightMinutes / 60.0,
+            earthLoops = flownDistanceKm / EARTH_CIRCUMFERENCE_KM,
+            uniqueAirportCount = topAirports.size,
+            uniqueAirlineCount = topAirlines.size,
+            aircraftTypeCount = topAircraft.size,
+            topRoutes = topRoutes.take(10),
+            topAirports = topAirports.take(10),
+            topAirlines = topAirlines.take(10),
+            topAircraft = topAircraft.take(10),
+            flightMapRoutes = flightMapRoutes,
+            tripStopMapMarkers = tripStopMapMarkers,
+            excursionStopMapMarkers = excursionStopMapMarkers,
+            delayBuckets = delayBuckets,
+            topDelays = topDelays,
+            intercontinentalFlightCount = intercontinentalFlights,
+            continentalFlightCount = continentalFlights.coerceAtLeast(0),
+            yearStats = yearStats,
+            flightRecords = flightRecords,
+            recordCards = recordCards,
+            badges = buildBadges(
+                visitedCountries = visitedCount,
+                visitedContinents = countryStates.filter { it.second.visited || it.second.lived }.map { it.first.continent }.distinct().size,
+                uniqueAirports = topAirports.size,
+                uniqueAirlineCount = topAirlines.size,
+                flightCount = flights.size,
+                intercontinentalFlightCount = intercontinentalFlights,
+                earthLoops = flownDistanceKm / EARTH_CIRCUMFERENCE_KM,
+                photoCount = photos.totalCount,
+                topRoutes = topRoutes,
+                completedTrips = completedTrips.size,
+                daysTraveled = tripDays.sum(),
+                totalStopCount = tripStops.size + excursions.sumOf { it.stops.size },
+                worldPercentage = worldPercentage,
+                yearStats = yearStats,
+                hasNightFlight = flights.any { f ->
+                    val dep = f.scheduledDepartureAt?.take(10) ?: return@any false
+                    val arr = (f.scheduledArrivalAt ?: f.actualArrivalAt)?.take(10) ?: return@any false
+                    arr > dep
+                },
+                hasBigDelay = flights.any { (it.utcAwareDelayMinutes() ?: 0L) > 180L },
+                hasItinerary = itineraryGroups.isNotEmpty(),
+            ),
+        )
+    }
+
+    private suspend fun resolveTopAircraft(flights: List<Flight>): List<StatsAircraftRank> {
+        val grouped = flights.mapNotNull { flight ->
+            val raw = flight.aircraft?.trim()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            raw.normalizedAircraftLabel() to flight
+        }.groupBy({ it.first }, { it.second })
+
+        return grouped.map { (raw, rows) ->
+            val resolved = aircraftTypeRepository.resolveAircraftType(raw)
+            StatsAircraftRank(
+                rawValue = raw,
+                displayName = resolved?.displayName ?: raw,
+                category = resolved?.category?.toCatalanAircraftCategory(),
+                count = rows.size,
+                distanceKm = rows.sumOf { it.distanceKm ?: 0.0 },
+                imageAssetRef = resolved?.imageAssetRef,
+            )
+        }.sortedWith(compareByDescending<StatsAircraftRank> { it.count }.thenByDescending { it.distanceKm })
+    }
+
+    private fun Trip.toStatsTripVisual(
+        stops: List<TripStop>,
+        countryNamesByIso2: Map<String, String>,
+        photoCount: Int,
+    ): StatsTripVisual {
+        val sortedStops = stops.sortedBy { it.sortOrder }
+        val route = when {
+            sortedStops.isEmpty() -> null
+            sortedStops.first().locationName == sortedStops.last().locationName -> sortedStops.first().locationName
+            else -> "${sortedStops.first().locationName} → ${sortedStops.last().locationName}"
+        }
+        val countries = sortedStops.map { countryNamesByIso2[it.countryIso2] ?: it.countryIso2 }.distinct()
+        return StatsTripVisual(
+            tripId = id,
+            title = title,
+            dateText = dateRange?.let(flexibleDateFormatter::format),
+            routeText = route ?: countries.joinToString(", ").ifBlank { null },
+            stopCount = sortedStops.size,
+            photoCount = photoCount,
+            coverPhotoFilename = coverPhotoFilename,
+            points = sortedStops.mapNotNull { stop ->
+                StatsMapPoint(
+                    latitude = stop.latitude ?: return@mapNotNull null,
+                    longitude = stop.longitude ?: return@mapNotNull null,
+                )
+            },
+        )
+    }
+
+    class Factory(
+        private val countryRepository: CountryRepository,
+        private val tripRepository: TripRepository,
+        private val flightRepository: FlightRepository,
+        private val itineraryRepository: ItineraryRepository,
+        private val excursionRepository: ExcursionRepository,
+        private val airportRepository: AirportRepository,
+        private val stopPhotoRepository: StopPhotoRepository,
+        private val aircraftTypeRepository: AircraftTypeRepository,
+        private val countryStateDerivationService: CountryStateDerivationService,
+        private val flexibleDateFormatter: FlexibleDateFormatter,
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T =
+            StatsViewModel(
+                countryRepository = countryRepository,
+                tripRepository = tripRepository,
+                flightRepository = flightRepository,
+                itineraryRepository = itineraryRepository,
+                excursionRepository = excursionRepository,
+                airportRepository = airportRepository,
+                stopPhotoRepository = stopPhotoRepository,
+                aircraftTypeRepository = aircraftTypeRepository,
+                countryStateDerivationService = countryStateDerivationService,
+                flexibleDateFormatter = flexibleDateFormatter,
+            ) as T
+    }
+}
+
+data class StatsUiState(
+    val totalCountries: Int = 0,
+    val visitedCountries: Int = 0,
+    val livedCountries: Int = 0,
+    val currentlyLivingCountries: Int = 0,
+    val plannedCountries: Int = 0,
+    val wishedCountries: Int = 0,
+    val visitedContinents: Int = 0,
+    val worldPercentage: Float = 0f,
+    val completionTier: StatsCompletionTier = StatsCompletionTier("Primer segell", "Comença la col·lecció.", 0f, "10%"),
+    val currentLivingMapCenter: StatsMapPoint? = null,
+    val livingIso2s: Set<String> = emptySet(),
+    val livedIso2s: Set<String> = emptySet(),
+    val visitedIso2s: Set<String> = emptySet(),
+    val plannedIso2s: Set<String> = emptySet(),
+    val wishedIso2s: Set<String> = emptySet(),
+    val travelIdentity: StatsIdentity = StatsIdentity("Atlas en construcció", "Afegeix viatges, països i vols per veure el teu patró."),
+    val countryRanks: List<StatsRank> = emptyList(),
+    val countryStamps: List<StatsCountryStamp> = emptyList(),
+    val continentStats: List<StatsContinent> = emptyList(),
+    val countryRecords: List<StatsRecord> = emptyList(),
+    val tripCount: Int = 0,
+    val completedTripCount: Int = 0,
+    val plannedTripCount: Int = 0,
+    val inProgressTripCount: Int = 0,
+    val tripStopCount: Int = 0,
+    val excursionCount: Int = 0,
+    val excursionStopCount: Int = 0,
+    val totalStopCount: Int = 0,
+    val daysTraveled: Int = 0,
+    val avgTripLengthDays: Double? = null,
+    val photoCount: Int = 0,
+    val tripVisuals: List<StatsTripVisual> = emptyList(),
+    val tripMonthStats: List<StatsMonthStat> = emptyList(),
+    val tripRecords: List<StatsRecord> = emptyList(),
+    val flightCount: Int = 0,
+    val completedFlightCount: Int = 0,
+    val plannedFlightCount: Int = 0,
+    val inProgressFlightCount: Int = 0,
+    val flownDistanceKm: Double = 0.0,
+    val hoursFlown: Double = 0.0,
+    val earthLoops: Double = 0.0,
+    val uniqueAirportCount: Int = 0,
+    val uniqueAirlineCount: Int = 0,
+    val aircraftTypeCount: Int = 0,
+    val topRoutes: List<StatsRouteRank> = emptyList(),
+    val topAirports: List<StatsAirportRank> = emptyList(),
+    val topAirlines: List<StatsAirlineRank> = emptyList(),
+    val topAircraft: List<StatsAircraftRank> = emptyList(),
+    val flightMapRoutes: List<StatsFlightMapRoute> = emptyList(),
+    val tripStopMapMarkers: List<StatsMapMarker> = emptyList(),
+    val excursionStopMapMarkers: List<StatsMapMarker> = emptyList(),
+    val delayBuckets: List<StatsDelayBucket> = emptyList(),
+    val topDelays: List<StatsRecord> = emptyList(),
+    val intercontinentalFlightCount: Int = 0,
+    val continentalFlightCount: Int = 0,
+    val yearStats: List<StatsYearStat> = emptyList(),
+    val flightRecords: List<StatsRecord> = emptyList(),
+    val recordCards: List<StatsRecord> = emptyList(),
+    val badges: List<StatsBadge> = emptyList(),
+)
+
+data class StatsIdentity(val title: String, val subtitle: String)
+data class StatsCompletionTier(val title: String, val detail: String, val progress: Float, val nextTargetLabel: String)
+data class StatsRank(val iso2: String?, val title: String, val subtitle: String, val value: Int, val state: StatsCountryState?)
+data class StatsCountryStamp(val iso2: String, val name: String, val flag: String?, val label: String, val state: StatsCountryState)
+data class StatsContinent(val name: String, val visited: Int, val planned: Int, val total: Int)
+data class StatsMapPoint(val latitude: Double, val longitude: Double)
+data class StatsTripVisual(
+    val tripId: String,
+    val title: String,
+    val dateText: String?,
+    val routeText: String?,
+    val stopCount: Int,
+    val photoCount: Int,
+    val coverPhotoFilename: String?,
+    val points: List<StatsMapPoint>,
+)
+data class StatsRouteRank(val route: String, val count: Int, val distanceKm: Double)
+data class StatsAirportRank(val airportId: String, val code: String, val city: String, val count: Int)
+data class StatsAirlineRank(val code: String, val count: Int, val distanceKm: Double)
+data class StatsAircraftRank(
+    val rawValue: String,
+    val displayName: String,
+    val category: String?,
+    val count: Int,
+    val distanceKm: Double,
+    val imageAssetRef: String?,
+)
+data class StatsFlightMapRoute(
+    val fromLatitude: Double,
+    val fromLongitude: Double,
+    val toLatitude: Double,
+    val toLongitude: Double,
+    val count: Int,
+    val isPlanned: Boolean = false,
+    val fromCode: String = "",
+    val toCode: String = "",
+)
+
+data class StatsMapMarker(
+    val latitude: Double,
+    val longitude: Double,
+    val status: TravelStatus,
+    val label: String,
+)
+data class StatsDelayBucket(val label: String, val count: Int)
+data class StatsMonthStat(val month: Int, val label: String, val tripCount: Int)
+data class StatsYearStat(val year: Int, val tripCount: Int, val flightCount: Int, val countryCount: Int)
+data class StatsRecord(val title: String, val value: String, val detail: String)
+enum class BadgeTier { BRONZE, PLATA, OR, PLATI }
+
+data class StatsBadge(
+    val title: String,
+    val detail: String,
+    val nextGoal: String?,
+    val unlocked: Boolean,
+    val tier: BadgeTier? = null,
+    val progress: Float? = null,
+)
+
+enum class StatsCountryState(val priority: Int) {
+    Living(0),
+    Lived(1),
+    Visited(2),
+    Planned(3),
+    Wished(4),
+}
+
+private data class StatsSourceData(
+    val countryData: CountryData,
+    val tripData: TripData,
+    val flightData: FlightData,
+    val excursions: List<Excursion>,
+    val photos: PhotosData,
+)
+
+private data class CountryData(
+    val countries: List<Country>,
+    val userStatesByIso2: Map<String, com.atlas.domain.model.CountryUserState>,
+    val logs: List<CountryLog>,
+)
+
+private data class TripData(val trips: List<Trip>, val stops: List<TripStop>)
+
+private data class FlightData(
+    val flights: List<Flight>,
+    val itineraryGroups: List<com.atlas.domain.model.ItineraryGroup>,
+    val airports: List<Airport>,
+)
+
+private data class PhotosData(
+    val tripStopPhotosByStopId: Map<String, List<StopPhoto>>,
+    val excursionStopPhotosByStopId: Map<String, List<StopPhoto>>,
+) {
+    val totalCount: Int
+        get() = tripStopPhotosByStopId.values.sumOf { it.size } + excursionStopPhotosByStopId.values.sumOf { it.size }
+}
+
+private const val EARTH_CIRCUMFERENCE_KM = 40_075.0
+
+private fun buildCountryRanks(
+    countries: List<Country>,
+    countryStates: List<Pair<Country, CountryTrackingState>>,
+    logs: List<CountryLog>,
+    tripStops: List<TripStop>,
+    excursions: List<Excursion>,
+    flights: List<Flight>,
+    airportsById: Map<String, Airport>,
+): List<StatsRank> {
+    val activity = mutableMapOf<String, Int>()
+    logs.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 2 }
+    tripStops.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 1 }
+    excursions.flatMap { it.stops }.forEach { activity[it.countryIso2] = (activity[it.countryIso2] ?: 0) + 1 }
+    flights.forEach { flight ->
+        listOfNotNull(airportsById[flight.originAirportId]?.countryIso2, airportsById[flight.destinationAirportId]?.countryIso2)
+            .forEach { activity[it] = (activity[it] ?: 0) + 1 }
+    }
+    val stateByIso2 = countryStates.associate { it.first.iso2 to it.second }
+    return countries.mapNotNull { country ->
+        val value = activity[country.iso2] ?: 0
+        if (value == 0) return@mapNotNull null
+        val state = stateByIso2[country.iso2]?.toStatsCountryState()
+        StatsRank(
+            iso2 = country.iso2,
+            title = country.nameCa,
+            subtitle = state?.toCatalanLabel() ?: country.continent,
+            value = value,
+            state = state,
+        )
+    }.sortedWith(compareByDescending<StatsRank> { it.value }.thenBy { it.title })
+}
+
+private fun buildContinentStats(
+    countries: List<Country>,
+    countryStates: List<Pair<Country, CountryTrackingState>>,
+): List<StatsContinent> =
+    countries.groupBy { it.continent }
+        .map { (continent, group) ->
+            val groupIso2s = group.map { it.iso2 }.toSet()
+            StatsContinent(
+                name = continent.toCatalanContinent(),
+                visited = countryStates.count { it.first.iso2 in groupIso2s && (it.second.visited || it.second.lived) },
+                planned = countryStates.count { it.first.iso2 in groupIso2s && it.second.planned },
+                total = group.size,
+            )
+        }
+        .sortedWith(compareByDescending<StatsContinent> { it.visited.toFloat() / it.total.coerceAtLeast(1) }.thenBy { it.name })
+
+private fun buildTripPhotoCountByTripId(
+    trips: List<Trip>,
+    tripStopsByTripId: Map<String, List<TripStop>>,
+    excursionsByTripId: Map<String, List<Excursion>>,
+    photos: PhotosData,
+): Map<String, Int> = trips.associate { trip ->
+    val tripStopPhotoCount = tripStopsByTripId[trip.id].orEmpty().sumOf { stop ->
+        photos.tripStopPhotosByStopId[stop.id].orEmpty().size
+    }
+    val excursionPhotoCount = excursionsByTripId[trip.id].orEmpty().flatMap { it.stops }.sumOf { stop ->
+        photos.excursionStopPhotosByStopId[stop.id].orEmpty().size
+    }
+    trip.id to tripStopPhotoCount + excursionPhotoCount
+}
+
+private fun buildTripCountryCountByTripId(
+    trips: List<Trip>,
+    tripStopsByTripId: Map<String, List<TripStop>>,
+    excursionsByTripId: Map<String, List<Excursion>>,
+): Map<String, Int> = trips.associate { trip ->
+    val countries = buildSet {
+        tripStopsByTripId[trip.id].orEmpty().forEach { add(it.countryIso2) }
+        excursionsByTripId[trip.id].orEmpty().flatMap { it.stops }.forEach { add(it.countryIso2) }
+    }
+    trip.id to countries.size
+}
+
+private fun buildTopRoutes(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsRouteRank> =
+    flights.groupBy { flight ->
+        val origin = airportsById[flight.originAirportId]?.shortCode() ?: flight.originAirportId
+        val destination = airportsById[flight.destinationAirportId]?.shortCode() ?: flight.destinationAirportId
+        "$origin → $destination"
+    }.map { (route, rows) ->
+        StatsRouteRank(route = route, count = rows.size, distanceKm = rows.sumOf { it.distanceKm ?: 0.0 })
+    }.sortedWith(compareByDescending<StatsRouteRank> { it.count }.thenByDescending { it.distanceKm })
+
+private fun buildTopAirports(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsAirportRank> {
+    val counts = mutableMapOf<String, Int>()
+    flights.forEach { flight ->
+        counts[flight.originAirportId] = (counts[flight.originAirportId] ?: 0) + 1
+        counts[flight.destinationAirportId] = (counts[flight.destinationAirportId] ?: 0) + 1
+    }
+    return counts.mapNotNull { (airportId, count) ->
+        val airport = airportsById[airportId] ?: return@mapNotNull null
+        StatsAirportRank(airportId = airportId, code = airport.shortCode(), city = airport.city, count = count)
+    }.sortedWith(compareByDescending<StatsAirportRank> { it.count }.thenBy { it.code })
+}
+
+private fun buildTopAirlines(flights: List<Flight>): List<StatsAirlineRank> =
+    flights.mapNotNull { flight ->
+        val code = flight.airline?.trim()?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+        code.uppercase() to flight
+    }.groupBy({ it.first }, { it.second })
+        .map { (code, rows) ->
+            StatsAirlineRank(code = code, count = rows.size, distanceKm = rows.sumOf { it.distanceKm ?: 0.0 })
+        }
+        .sortedWith(compareByDescending<StatsAirlineRank> { it.count }.thenByDescending { it.distanceKm })
+
+private fun buildFlightMapRoutes(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsFlightMapRoute> {
+    val isPlanned = { f: Flight -> f.status == TravelStatus.PLANNED }
+    return flights
+        .groupBy { Triple(it.originAirportId, it.destinationAirportId, isPlanned(it)) }
+        .mapNotNull { (triple, rows) ->
+            val origin = airportsById[triple.first] ?: return@mapNotNull null
+            val destination = airportsById[triple.second] ?: return@mapNotNull null
+            StatsFlightMapRoute(
+                fromLatitude = origin.latitude,
+                fromLongitude = origin.longitude,
+                toLatitude = destination.latitude,
+                toLongitude = destination.longitude,
+                count = rows.size,
+                isPlanned = triple.third,
+                fromCode = origin.shortCode(),
+                toCode = destination.shortCode(),
+            )
+        }
+        .sortedByDescending { it.count }
+        .take(120)
+}
+
+private fun buildTripStopMarkers(trips: List<Trip>, tripStopsByTripId: Map<String, List<TripStop>>): List<StatsMapMarker> =
+    trips.flatMap { trip ->
+        tripStopsByTripId[trip.id].orEmpty().mapNotNull { stop ->
+            val lat = stop.latitude ?: return@mapNotNull null
+            val lng = stop.longitude ?: return@mapNotNull null
+            StatsMapMarker(
+                latitude = lat,
+                longitude = lng,
+                status = trip.status,
+                label = stop.locationName.takeIf { it.isNotBlank() } ?: "Parada",
+            )
+        }
+    }
+
+private fun buildExcursionStopMarkers(excursions: List<Excursion>): List<StatsMapMarker> =
+    excursions.flatMap { excursion ->
+        excursion.stops.mapNotNull { stop ->
+            val lat = stop.latitude ?: return@mapNotNull null
+            val lng = stop.longitude ?: return@mapNotNull null
+            StatsMapMarker(
+                latitude = lat,
+                longitude = lng,
+                status = TravelStatus.COMPLETED,
+                label = stop.locationName.takeIf { it.isNotBlank() } ?: "Excursió",
+            )
+        }
+    }
+
+private fun buildYearStats(
+    trips: List<Trip>,
+    flights: List<Flight>,
+    tripStops: List<TripStop>,
+    excursions: List<Excursion>,
+    airportsById: Map<String, Airport>,
+    itineraryGroups: List<  ItineraryGroup>,
+): List<StatsYearStat> {
+    val tripYearById = trips.associate { trip -> trip.id to trip.dateRange?.primaryYear() }
+    val tripCounts = trips.mapNotNull { it.dateRange?.primaryYear() }.groupingBy { it }.eachCount()
+    val flightCounts = flights.mapNotNull { it.primaryYear() }.groupingBy { it }.eachCount()
+    val countriesByYear = mutableMapOf<Int, MutableSet<String>>()
+
+    // Trip stops: prefer the stop's own date if set, fall back to trip year.
+    tripStops.forEach { stop ->
+        val year = stop.dateRange?.primaryYear() ?: tripYearById[stop.tripId] ?: return@forEach
+        countriesByYear.getOrPut(year) { mutableSetOf() }.add(stop.countryIso2)
+    }
+
+    // Excursion stops: prefer the stop's own date, fall back to parent trip year.
+    excursions.forEach { excursion ->
+        val tripYear = tripYearById[excursion.tripId]
+        excursion.stops.forEach { stop ->
+            val year = stop.dateRange?.primaryYear() ?: tripYear ?: return@forEach
+            countriesByYear.getOrPut(year) { mutableSetOf() }.add(stop.countryIso2)
+        }
+    }
+
+    // Standalone flights: only count the destination country (not origin, no layovers).
+    flights.filter { it.itineraryGroupId == null }.forEach { flight ->
+        val year = flight.primaryYear() ?: return@forEach
+        airportsById[flight.destinationAirportId]?.countryIso2
+            ?.let { countriesByYear.getOrPut(year) { mutableSetOf() }.add(it) }
+    }
+
+    // Itinerary groups: only count the final destination of each group (skips layover airports).
+    itineraryGroups.forEach { group ->
+        val lastFlight = group.flights.maxByOrNull { it.sortOrder ?: Int.MAX_VALUE } ?: return@forEach
+        val year = lastFlight.primaryYear() ?: return@forEach
+        airportsById[lastFlight.destinationAirportId]?.countryIso2
+            ?.let { countriesByYear.getOrPut(year) { mutableSetOf() }.add(it) }
+    }
+
+    return (tripCounts.keys + flightCounts.keys + countriesByYear.keys)
+        .sorted()
+        .map { year ->
+            StatsYearStat(
+                year = year,
+                tripCount = tripCounts[year] ?: 0,
+                flightCount = flightCounts[year] ?: 0,
+                countryCount = countriesByYear[year]?.size ?: 0,
+            )
+        }
+}
+
+private fun buildTripMonthStats(trips: List<Trip>): List<StatsMonthStat> {
+    val counts = trips.mapNotNull { it.dateRange?.primaryMonth() }.groupingBy { it }.eachCount()
+    return (1..12).map { month ->
+        StatsMonthStat(month = month, label = month.toCatalanShortMonth(), tripCount = counts[month] ?: 0)
+    }
+}
+
+private fun buildDelayBuckets(flights: List<Flight>): List<StatsDelayBucket> {
+    val delays = flights.mapNotNull { it.utcAwareDelayMinutes() }
+    return listOf(
+        StatsDelayBucket("Abans", delays.count { it < 0 }),
+        StatsDelayBucket("Puntual", delays.count { it == 0L }),
+        StatsDelayBucket("0-15", delays.count { it in 1..15 }),
+        StatsDelayBucket("16-30", delays.count { it in 16..30 }),
+        StatsDelayBucket("31-60", delays.count { it in 31..60 }),
+        StatsDelayBucket("60+", delays.count { it > 60 }),
+    )
+}
+
+private fun buildTopDelayRecords(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsRecord> =
+    flights.mapNotNull { flight ->
+        val delay = flight.utcAwareDelayMinutes()?.takeIf { it > 0 } ?: return@mapNotNull null
+        val origin = airportsById[flight.originAirportId]?.shortCode() ?: flight.originAirportId
+        val destination = airportsById[flight.destinationAirportId]?.shortCode() ?: flight.destinationAirportId
+        StatsRecord(
+            title = "Retard",
+            value = delay.toDurationLabel(),
+            detail = "$origin → $destination",
+        ) to delay
+    }.sortedByDescending { it.second }.take(5).map { it.first }
+
+private fun buildCountryRecords(
+    topCountryRanks: List<StatsRank>,
+    continentStats: List<StatsContinent>,
+): List<StatsRecord> = listOfNotNull(
+    topCountryRanks.firstOrNull()?.let { StatsRecord("País més actiu", it.title, "${it.value} registres") },
+    continentStats.firstOrNull()?.let {
+        StatsRecord("Continent més explorat", it.name, "${it.visited}/${it.total} · ${it.percentLabel()}")
+    },
+    continentStats.lastOrNull()?.takeIf { it.visited == 0 }?.let {
+        StatsRecord("Continent per descobrir", it.name, "0 de ${it.total} països")
+    },
+)
+
+private fun buildTripRecords(
+    trips: List<Trip>,
+    completedTrips: List<Trip>,
+    tripStopsByTripId: Map<String, List<TripStop>>,
+    tripCountryCountByTripId: Map<String, Int>,
+    tripPhotoCountByTripId: Map<String, Int>,
+): List<StatsRecord> {
+    val durationRecords = completedTrips.mapNotNull { trip -> trip.dayCount()?.let { trip to it } }
+    return listOfNotNull(
+        durationRecords.maxByOrNull { it.second }?.let { (trip, days) ->
+            StatsRecord("Viatge més llarg", "$days ${if (days == 1) "dia" else "dies"}", trip.title)
+        },
+        durationRecords.minByOrNull { it.second }?.let { (trip, days) ->
+            StatsRecord("Viatge més curt", "$days ${if (days == 1) "dia" else "dies"}", trip.title)
+        },
+        trips.maxByOrNull { tripStopsByTripId[it.id].orEmpty().size }?.let { trip ->
+            val count = tripStopsByTripId[trip.id].orEmpty().size
+            if (count > 0) StatsRecord("Més parades", count.toString(), trip.title) else null
+        },
+        trips.maxByOrNull { tripCountryCountByTripId[it.id] ?: 0 }?.let { trip ->
+            val count = tripCountryCountByTripId[trip.id] ?: 0
+            if (count > 0) StatsRecord("Més països en un viatge", count.toString(), trip.title) else null
+        },
+        trips.maxByOrNull { tripPhotoCountByTripId[it.id] ?: 0 }?.let { trip ->
+            val count = tripPhotoCountByTripId[trip.id] ?: 0
+            if (count > 0) StatsRecord("Viatge més fotografiat", count.toString(), trip.title) else null
+        },
+    )
+}
+
+private fun buildFlightRecords(
+    flights: List<Flight>,
+    airportsById: Map<String, Airport>,
+    topRoutes: List<StatsRouteRank>,
+): List<StatsRecord> {
+    val byDuration = flights.mapNotNull { flight -> flight.utcAwareDurationMinutes()?.takeIf { it > 0 }?.let { flight to it } }
+    val byDistance = flights.mapNotNull { flight -> flight.distanceKm?.takeIf { it > 0 }?.let { flight to it } }
+    return listOfNotNull(
+        byDuration.maxByOrNull { it.second }?.let { (flight, minutes) ->
+            StatsRecord("Vol més llarg per temps", minutes.toDurationLabel(), flight.routeLabel(airportsById))
+        },
+        byDuration.minByOrNull { it.second }?.let { (flight, minutes) ->
+            StatsRecord("Vol més curt per temps", minutes.toDurationLabel(), flight.routeLabel(airportsById))
+        },
+        byDistance.maxByOrNull { it.second }?.let { (flight, km) ->
+            StatsRecord("Vol més llarg per km", "${km.roundToInt()} km", flight.routeLabel(airportsById))
+        },
+        byDistance.minByOrNull { it.second }?.let { (flight, km) ->
+            StatsRecord("Vol més curt per km", "${km.roundToInt()} km", flight.routeLabel(airportsById))
+        },
+        topRoutes.firstOrNull()?.takeIf { it.count >= 2 }?.let { StatsRecord("Ruta preferida", "${it.count}×", it.route) },
+    )
+}
+
+private fun buildGeographicRecords(tripStops: List<TripStop>, excursions: List<Excursion>): List<StatsRecord> {
+    val stops = tripStops.map { it.locationName to (it.latitude to it.longitude) } +
+        excursions.flatMap { excursion -> excursion.stops.map { it.locationName to (it.latitude to it.longitude) } }
+    val withLat = stops.mapNotNull { (name, coords) -> coords.first?.let { Triple(name, it, coords.second) } }
+    val withLng = stops.mapNotNull { (name, coords) -> coords.second?.let { Triple(name, coords.first, it) } }
+    return listOfNotNull(
+        withLat.maxByOrNull { it.second }?.let { StatsRecord("Parada més al nord", "${it.second.roundToInt()}°", it.first) },
+        withLat.minByOrNull { it.second }?.let { StatsRecord("Parada més al sud", "${it.second.roundToInt()}°", it.first) },
+        withLng.maxByOrNull { it.third }?.let { StatsRecord("Parada més a l'est", "${it.third.roundToInt()}°", it.first) },
+        withLng.minByOrNull { it.third }?.let { StatsRecord("Parada més a l'oest", "${it.third.roundToInt()}°", it.first) },
+    )
+}
+
+private fun buildTravelIdentity(
+    visitedCountries: Int,
+    tripCount: Int,
+    flightCount: Int,
+    stopCount: Int,
+    uniqueAirportCount: Int,
+    wishedCount: Int,
+): StatsIdentity = when {
+    flightCount >= tripCount.coerceAtLeast(1) * 2 && uniqueAirportCount >= 10 ->
+        StatsIdentity("Connector d'aeroports", "El teu atlas dibuixa més rutes aèries que fronteres.")
+    stopCount >= visitedCountries.coerceAtLeast(1) * 3 ->
+        StatsIdentity("Col·leccionista de parades", "T'agrada omplir cada país amb llocs concrets.")
+    wishedCount > visitedCountries ->
+        StatsIdentity("Cartògraf de futurs", "La llista de desitjos ja marca la pròxima aventura.")
+    visitedCountries >= 25 ->
+        StatsIdentity("Explorador global", "El mapa comença a tenir una veu pròpia.")
+    else ->
+        StatsIdentity("Atlas en moviment", "Cada registre fa créixer una mica més el teu món.")
+}
+
+private fun buildCompletionTier(worldPercentage: Float): StatsCompletionTier = when {
+    worldPercentage >= 75f -> StatsCompletionTier("Llegenda mundial", "Tres quartes parts del mapa ja tenen història.", 1f, "100%")
+    worldPercentage >= 50f -> StatsCompletionTier("Mig món", "El teu atlas ja pesa com una vida sencera.", worldPercentage / 75f, "75%")
+    worldPercentage >= 25f -> StatsCompletionTier("Mapa encès", "Una quarta part del món ja és teva.", worldPercentage / 50f, "50%")
+    worldPercentage >= 10f -> StatsCompletionTier("Primer gran cercle", "Ja no és una col·lecció petita.", worldPercentage / 25f, "25%")
+    else -> StatsCompletionTier("Primer segell", "El mapa encara té molt espai per sorprendre.", worldPercentage / 10f, "10%")
+}
+
+private fun tieredBadge(
+    title: String,
+    value: Int,
+    thresholds: List<Int>,
+    detailText: String,
+    nextGoalText: (Int) -> String,
+): StatsBadge {
+    val tierIndex = thresholds.indexOfLast { value >= it }
+    val currentTier = if (tierIndex >= 0) BadgeTier.entries[tierIndex] else null
+    val nextThreshold = thresholds.getOrNull(tierIndex + 1)
+    val prevThreshold = if (tierIndex >= 0) thresholds[tierIndex] else 0
+    val progress = when {
+        nextThreshold != null -> ((value - prevThreshold).toFloat() / (nextThreshold - prevThreshold)).coerceIn(0f, 1f)
+        currentTier != null -> 1f
+        else -> (value.toFloat() / thresholds.first()).coerceIn(0f, 1f)
+    }
+    return StatsBadge(
+        title = title,
+        detail = detailText,
+        nextGoal = nextThreshold?.let(nextGoalText),
+        unlocked = currentTier != null,
+        tier = currentTier,
+        progress = progress,
+    )
+}
+
+private fun binaryBadge(title: String, unlocked: Boolean, goal: String): StatsBadge =
+    StatsBadge(
+        title = title,
+        detail = if (unlocked) "Desbloquejat" else goal,
+        nextGoal = null,
+        unlocked = unlocked,
+        tier = null,
+        progress = if (unlocked) 1f else 0f,
+    )
+
+private fun buildBadges(
+    visitedCountries: Int,
+    visitedContinents: Int,
+    uniqueAirports: Int,
+    uniqueAirlineCount: Int,
+    flightCount: Int,
+    intercontinentalFlightCount: Int,
+    earthLoops: Double,
+    photoCount: Int,
+    topRoutes: List<StatsRouteRank>,
+    completedTrips: Int,
+    daysTraveled: Int,
+    totalStopCount: Int,
+    worldPercentage: Float,
+    yearStats: List<StatsYearStat>,
+    hasNightFlight: Boolean,
+    hasBigDelay: Boolean,
+    hasItinerary: Boolean,
+): List<StatsBadge> {
+    val earthLoopsInt = earthLoops.toInt()
+    val earthLoopsDetail = if (earthLoops < 1.0) "${(earthLoops * EARTH_CIRCUMFERENCE_KM).roundToInt()} km" else "${"%.1f".format(earthLoops)}× la Terra"
+    val topRouteCount = topRoutes.firstOrNull()?.count ?: 0
+    return listOf(
+        // Tiered
+        tieredBadge("Països visitats", visitedCountries, listOf(10, 25, 50, 100), "$visitedCountries països") { "$it països" },
+        tieredBadge("Continents explorats", visitedContinents, listOf(2, 4, 6, 7), "$visitedContinents continents") { "$it continents" },
+        tieredBadge("Vols registrats", flightCount, listOf(10, 50, 100, 200), "$flightCount vols") { "$it vols" },
+        tieredBadge("Aeroports", uniqueAirports, listOf(10, 25, 50, 100), "$uniqueAirports aeroports") { "$it aeroports" },
+        tieredBadge("Quilòmetres volats", earthLoopsInt, listOf(1, 3, 5, 10), earthLoopsDetail) { "${it}× la Terra" },
+        tieredBadge("Arxiu fotogràfic", photoCount, listOf(25, 100, 250, 500), "$photoCount fotos") { "$it fotos" },
+        tieredBadge("Viatger", completedTrips, listOf(5, 15, 30, 50), "$completedTrips viatges completats") { "$it viatges" },
+        tieredBadge("Ruta fidel", topRouteCount, listOf(2, 3, 5, 10), if (topRouteCount > 0) "${topRouteCount}× la mateixa ruta" else "Cap ruta repetida") { "${it}× la mateixa ruta" },
+        tieredBadge("Dies de viatge", daysTraveled, listOf(30, 100, 250, 500), "$daysTraveled dies") { "$it dies" },
+        tieredBadge("Parades registrades", totalStopCount, listOf(10, 50, 100, 250), "$totalStopCount parades") { "$it parades" },
+        tieredBadge("Companyies aèries", uniqueAirlineCount, listOf(5, 10, 20, 40), "$uniqueAirlineCount companyies") { "$it companyies" },
+        // Binary
+        binaryBadge("Primer país", visitedCountries >= 1, "Visita el primer territori"),
+        binaryBadge("Primer vol", flightCount >= 1, "Registra el primer vol"),
+        binaryBadge("Primer viatge complet", completedTrips >= 1, "Completa el primer viatge"),
+        binaryBadge("Vol intercontinental", intercontinentalFlightCount >= 1, "Un vol entre continents"),
+        binaryBadge("Mig món", worldPercentage >= 50f, "Visita el 50% del món"),
+        binaryBadge("Noctàmbul", hasNightFlight, "Un vol que aterra l'endemà"),
+        binaryBadge("Gran retard", hasBigDelay, "Un retard superior a 3 hores"),
+        binaryBadge("Any de vols", yearStats.any { it.flightCount >= 12 }, "12 vols en un any natural"),
+        binaryBadge("Explorador d'itineraris", hasItinerary, "Crea el primer itinerari"),
+    )
+}
+
+private fun Trip.dayCount(): Int? {
+    val start = dateRange?.start?.toLocalDateOrNull() ?: return null
+    val end = dateRange.end?.toLocalDateOrNull() ?: start
+    return ChronoUnit.DAYS.between(start, end).coerceAtLeast(0).toInt() + 1
+}
+
+private fun FlexibleDateRange.primaryYear(): Int? = start?.year ?: end?.year
+private fun FlexibleDateRange.primaryMonth(): Int? = start?.month ?: end?.month
+
+private fun FlexibleDate.toLocalDateOrNull(): LocalDate? {
+    val month = month ?: return null
+    val day = day ?: return null
+    return runCatching { LocalDate.of(year, month, day) }.getOrNull()
+}
+
+private fun Flight.primaryYear(): Int? =
+    (actualDepartureAt ?: scheduledDepartureAt ?: actualArrivalAt ?: scheduledArrivalAt)
+        ?.take(4)
+        ?.toIntOrNull()
+
+private fun Flight.routeLabel(airportsById: Map<String, Airport>): String {
+    val origin = airportsById[originAirportId]?.shortCode() ?: originAirportId
+    val destination = airportsById[destinationAirportId]?.shortCode() ?: destinationAirportId
+    return "$origin → $destination"
+}
+
+private fun Flight.isIntercontinental(airportsById: Map<String, Airport>, countriesByIso2: Map<String, Country>): Boolean {
+    val originContinent = airportsById[originAirportId]?.countryIso2?.let { countriesByIso2[it]?.continent }
+    val destinationContinent = airportsById[destinationAirportId]?.countryIso2?.let { countriesByIso2[it]?.continent }
+    return originContinent != null && destinationContinent != null && originContinent != destinationContinent
+}
+
+private fun Flight.hasKnownContinentalPair(airportsById: Map<String, Airport>, countriesByIso2: Map<String, Country>): Boolean {
+    val originContinent = airportsById[originAirportId]?.countryIso2?.let { countriesByIso2[it]?.continent }
+    val destinationContinent = airportsById[destinationAirportId]?.countryIso2?.let { countriesByIso2[it]?.continent }
+    return originContinent != null && destinationContinent != null
+}
+
+private fun Airport.shortCode(): String = iata ?: icao ?: city
+
+private fun Country.toMapPoint(): StatsMapPoint? {
+    val lat = latitude ?: capitalLatitude ?: return null
+    val lng = longitude ?: capitalLongitude ?: return null
+    return StatsMapPoint(latitude = lat, longitude = lng)
+}
+
+private fun Country.toStamp(state: CountryTrackingState): StatsCountryStamp? {
+    val statsState = state.toStatsCountryState() ?: return null
+    return StatsCountryStamp(
+        iso2 = iso2,
+        name = nameCa,
+        flag = flagEmoji?.takeIf { it.isNotBlank() },
+        label = statsState.toCatalanLabel(),
+        state = statsState,
+    )
+}
+
+private fun CountryTrackingState.toStatsCountryState(): StatsCountryState? = when {
+    currentlyLiving -> StatsCountryState.Living
+    lived -> StatsCountryState.Lived
+    visited -> StatsCountryState.Visited
+    planned -> StatsCountryState.Planned
+    wished -> StatsCountryState.Wished
+    else -> null
+}
+
+private fun StatsCountryState.toCatalanLabel(): String = when (this) {
+    StatsCountryState.Living -> "Vivint-hi"
+    StatsCountryState.Lived -> "Viscut"
+    StatsCountryState.Visited -> "Visitat"
+    StatsCountryState.Planned -> "Pla"
+    StatsCountryState.Wished -> "Desig"
+}
+
+private fun StatsContinent.percentLabel(): String =
+    "${(visited.toFloat() / total.coerceAtLeast(1) * 100f).roundToInt()}%"
+
+private fun Long.toDurationLabel(): String {
+    val hours = this / 60
+    val minutes = this % 60
+    return if (hours > 0 && minutes > 0) "${hours} h ${minutes} min" else if (hours > 0) "${hours} h" else "${minutes} min"
+}
+
+private fun Double.toDurationLabel(): String = roundToInt().toLong().toDurationLabel()
+
+private fun String.normalizedAircraftLabel(): String =
+    trim().replace(Regex("\\s+"), " ").uppercase()
+
+private fun String.toCatalanAircraftCategory(): String = when (uppercase()) {
+    "WIDEBODY" -> "Fuselatge ample"
+    "NARROWBODY" -> "Fuselatge estret"
+    "REGIONAL" -> "Regional"
+    "TURBOPROP" -> "Turboprop"
+    else -> lowercase().replaceFirstChar { it.uppercase() }
+}
+
+private fun String.toCatalanContinent(): String = when (this) {
+    "Europe" -> "Europa"
+    "Asia" -> "Àsia"
+    "North America" -> "Amèrica del Nord"
+    "South America" -> "Amèrica del Sud"
+    "Africa" -> "Àfrica"
+    "Oceania" -> "Oceania"
+    "Antarctica" -> "Antàrtida"
+    else -> this
+}
+
+private fun Int.toCatalanShortMonth(): String = when (this) {
+    1 -> "Gen."
+    2 -> "Febr."
+    3 -> "Març"
+    4 -> "Abr."
+    5 -> "Maig"
+    6 -> "Juny"
+    7 -> "Jul."
+    8 -> "Ag."
+    9 -> "Set."
+    10 -> "Oct."
+    11 -> "Nov."
+    12 -> "Des."
+    else -> ""
+}

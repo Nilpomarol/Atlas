@@ -6,6 +6,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
@@ -20,10 +21,10 @@ private const val RadiansToDegrees = 180.0 / PI
 
 internal data class GeoProjection(
     val centerLongitude: Double,
-    private val centerX: Double,
-    private val centerY: Double,
-    private val scale: Double,
-    private val drawSize: Size,
+    internal val centerX: Double,
+    internal val centerY: Double,
+    internal val scale: Double,
+    internal val drawSize: Size,
 ) {
     fun project(coordinate: GeoCoordinate): Offset {
         val longitude = normalizeLongitudeAround(coordinate.longitude, centerLongitude)
@@ -32,6 +33,27 @@ internal data class GeoProjection(
         return Offset(
             x = (drawSize.width / 2f + ((x - centerX) * scale).toFloat()),
             y = (drawSize.height / 2f - ((y - centerY) * scale).toFloat()),
+        )
+    }
+
+    fun projectZoomed(coordinate: GeoCoordinate, userScale: Float, panX: Float, panY: Float): Offset {
+        val base = project(coordinate)
+        return Offset(
+            x = (base.x - drawSize.width / 2f) * userScale + drawSize.width / 2f + panX,
+            y = (base.y - drawSize.height / 2f) * userScale + drawSize.height / 2f + panY,
+        )
+    }
+
+    fun unproject(screenOffset: Offset, userScale: Float, panX: Float, panY: Float): GeoCoordinate {
+        val baseX = (screenOffset.x - drawSize.width / 2.0 - panX) / userScale + drawSize.width / 2.0
+        val baseY = (screenOffset.y - drawSize.height / 2.0 - panY) / userScale + drawSize.height / 2.0
+        val lonRad = (baseX - drawSize.width / 2.0) / scale + centerX
+        val mercY = (drawSize.height / 2.0 - baseY) / scale + centerY
+        val longitude = lonRad * RadiansToDegrees
+        val latitude = (2.0 * atan(exp(mercY)) - PI / 2.0) * RadiansToDegrees
+        return GeoCoordinate(
+            latitude = latitude.coerceIn(-85.0, 85.0),
+            longitude = normalizeLongitudeAround(longitude, centerLongitude),
         )
     }
 }

@@ -42,6 +42,9 @@ class TripRepositoryImpl(
             stops.map { it.toDomain() }
         }
 
+    override suspend fun getTripsForStatusRefresh(): List<Trip> =
+        tripDao.getForStatusRefresh().map { it.toDomain() }
+
     override suspend fun createTrip(
         title: String,
         status: TravelStatus,
@@ -88,6 +91,10 @@ class TripRepositoryImpl(
                 coverPhotoFilename = trip.coverPhotoFilename,
             ),
         )
+    }
+
+    override suspend fun updateTripStatus(id: String, status: TravelStatus, updatedAt: String) {
+        tripDao.updateStatus(id = id, status = status.name, updatedAt = updatedAt)
     }
 
     override suspend fun setCoverPhoto(tripId: String, filename: String?) {

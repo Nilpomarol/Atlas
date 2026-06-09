@@ -18,6 +18,9 @@ interface TripDao {
     @Query("SELECT * FROM trips ORDER BY updated_at DESC")
     suspend fun getAll(): List<TripEntity>
 
+    @Query("SELECT * FROM trips WHERE status IN ('PLANNED', 'IN_PROGRESS') ORDER BY updated_at DESC")
+    suspend fun getForStatusRefresh(): List<TripEntity>
+
     @Upsert
     suspend fun upsert(trip: TripEntity)
 
@@ -32,6 +35,9 @@ interface TripDao {
 
     @Query("UPDATE trips SET cover_photo_filename = :filename WHERE id = :tripId")
     suspend fun setCoverPhoto(tripId: String, filename: String?)
+
+    @Query("UPDATE trips SET status = :status, updated_at = :updatedAt WHERE id = :id")
+    suspend fun updateStatus(id: String, status: String, updatedAt: String)
 
     @Query("UPDATE trips SET cover_photo_filename = NULL WHERE cover_photo_filename = :filename")
     suspend fun clearCoverPhotoByFilename(filename: String)

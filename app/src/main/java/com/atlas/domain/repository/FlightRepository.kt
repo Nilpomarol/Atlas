@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface FlightRepository {
     fun observeFlights(): Flow<List<Flight>>
     fun observeFlight(id: String): Flow<Flight?>
+    suspend fun getFlightsForStatusRefresh(): List<Flight>
 
     suspend fun createFlight(
         originAirportId: String,
@@ -31,6 +32,7 @@ interface FlightRepository {
     )
 
     suspend fun updateFlight(flight: Flight)
+    suspend fun updateFlightStatus(id: String, status: TravelStatus, updatedAt: String)
     suspend fun deleteFlight(flight: Flight)
     suspend fun reorderFlightsInGroup(flights: List<Flight>)
 }

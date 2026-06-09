@@ -43,6 +43,9 @@ interface FlightDao {
     )
     suspend fun getAll(): List<FlightEntity>
 
+    @Query("SELECT * FROM flights WHERE status IN ('PLANNED', 'IN_PROGRESS')")
+    suspend fun getForStatusRefresh(): List<FlightEntity>
+
     @Query("DELETE FROM flights")
     suspend fun deleteAll()
 
@@ -60,6 +63,9 @@ interface FlightDao {
 
     @Query("UPDATE flights SET sort_order = :sortOrder, updated_at = :updatedAt WHERE id = :id")
     suspend fun updateSortOrder(id: String, sortOrder: Int, updatedAt: String)
+
+    @Query("UPDATE flights SET status = :status, updated_at = :updatedAt WHERE id = :id")
+    suspend fun updateStatus(id: String, status: String, updatedAt: String)
 
     @Query("UPDATE flights SET itinerary_group_id = NULL, sort_order = NULL WHERE itinerary_group_id = :groupId")
     suspend fun clearGroup(groupId: String)

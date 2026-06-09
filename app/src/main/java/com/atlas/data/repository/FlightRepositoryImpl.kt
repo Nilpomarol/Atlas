@@ -25,6 +25,9 @@ class FlightRepositoryImpl(
     override fun observeFlight(id: String): Flow<Flight?> =
         flightDao.observeById(id).map { it?.toDomain() }
 
+    override suspend fun getFlightsForStatusRefresh(): List<Flight> =
+        flightDao.getForStatusRefresh().map { it.toDomain() }
+
     override suspend fun createFlight(
         originAirportId: String,
         destinationAirportId: String,
@@ -129,6 +132,10 @@ class FlightRepositoryImpl(
                 updatedAt = now,
             ),
         )
+    }
+
+    override suspend fun updateFlightStatus(id: String, status: TravelStatus, updatedAt: String) {
+        flightDao.updateStatus(id = id, status = status.name, updatedAt = updatedAt)
     }
 
     override suspend fun deleteFlight(flight: Flight) {

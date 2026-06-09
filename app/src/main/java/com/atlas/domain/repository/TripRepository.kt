@@ -12,6 +12,7 @@ interface TripRepository {
     fun observeTrip(id: String): Flow<Trip?>
     fun observeTripStops(): Flow<List<TripStop>>
     fun observeTripStops(tripId: String): Flow<List<TripStop>>
+    suspend fun getTripsForStatusRefresh(): List<Trip>
 
     suspend fun createTrip(
         title: String,
@@ -21,6 +22,7 @@ interface TripRepository {
     )
 
     suspend fun updateTrip(trip: Trip)
+    suspend fun updateTripStatus(id: String, status: TravelStatus, updatedAt: String)
     suspend fun deleteTrip(trip: Trip)
     suspend fun setCoverPhoto(tripId: String, filename: String?)
     suspend fun clearCoverPhotoByFilename(filename: String)

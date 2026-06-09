@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; auto-status update next)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; list page headers standardized ✅; auto-status update next)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -368,6 +368,10 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
 **Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. All six stats tabs are complete: Resum, Cronologia, Mapa, Països, Viatges, Vols, and Insígnies (formerly Rècords).
+
+**List page headers standardized (✅ committed `576d1c4`):** `TripListHeader`, `FlightListHeader`, and `ItineraryListHeader` now share a consistent layout — `horizontal=20dp, vertical=16dp` padding, `10dp` row spacing, `RoundedCornerShape(13dp)` button shape, `AtlasNavy/AtlasSurface` primary CTA, and `AtlasFilterPill` status pills (on Trips and Flights). `TripStatusFilterChip` in `TripListScreen` is a private wrapper around `AtlasFilterPill` and was left in place.
+
+**Stats page header static (✅ committed `3a7470d`, tab pill margin `5cdc95b`):** `StatsHeader` and `StatsTabRow` are hoisted outside the scroll column — they stay fixed while tab content scrolls. The duplicated `if/else` (which had header+tabrow in both the Map and non-Map branches) was collapsed into a single `Column { StatsHeader → StatsTabRow → if Map / else scrollable Column }`. Header padding aligned to `16dp` vertical, subtitle changed to `labelMedium`, vertical alignment changed to `CenterVertically`. `StatsTabRow` has `8dp` bottom padding for breathing room.
 
 ### Settings design (✅ complete)
 

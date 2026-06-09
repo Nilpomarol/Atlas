@@ -84,6 +84,7 @@ import com.atlas.presentation.stats.StatsMonthStat
 import com.atlas.presentation.stats.StatsRank
 import com.atlas.presentation.stats.StatsRecord
 import com.atlas.presentation.stats.StatsRouteRank
+import com.atlas.presentation.stats.StatsTopDelay
 import com.atlas.presentation.stats.StatsTripVisual
 import com.atlas.presentation.stats.StatsUiState
 import com.atlas.presentation.stats.StatsSeasonStat
@@ -387,11 +388,17 @@ private fun FlightsTab(uiState: StatsUiState) {
         Section("Bitàcola aèria") {
             FlightHeroPanel(uiState)
         }
+        Section("Vols per any") {
+            FlightYearChart(uiState.yearStats)
+        }
+        Section("Dia i nit") {
+            NightDayCard(uiState.nightFlightCount, uiState.dayFlightCount)
+        }
         Section("Companyies principals") {
             TopAirlineBars(uiState.topAirlines)
         }
         Section("Aeronau") {
-            TopAircraftList(uiState.topAircraft)
+            TopAircraftCard(uiState.topAircraft)
         }
         Section("Puntualitat") {
             DelayDistributionCard(uiState.delayBuckets)
@@ -400,13 +407,13 @@ private fun FlightsTab(uiState: StatsUiState) {
             FlightScopeCard(uiState)
         }
         Section("Retards destacats") {
-            RecordGrid(uiState.topDelays)
+            TopDelayChart(uiState.topDelayStats)
         }
-        Section("Rutes") {
-            RankedRouteList(uiState.topRoutes)
+        Section("Rutes principals") {
+            TopRoutesChart(uiState.topRoutes)
         }
-        Section("Aeroports") {
-            RankedAirportList(uiState.topAirports)
+        Section("Aeroports principals") {
+            TopAirportsChart(uiState.topAirports)
         }
         Section("Rècords de vol") {
             RecordGrid(uiState.flightRecords)
@@ -769,8 +776,10 @@ private fun FlightMapCanvas(
         GeoRouteSegment(
             from = GeoCoordinate(it.fromLatitude, it.fromLongitude),
             to = GeoCoordinate(it.toLatitude, it.toLongitude),
-            color = AtlasPrimary,
-            alpha = (routeAlpha + it.count * 0.04f).coerceAtMost(0.88f),
+            color = if (it.isPlanned) AtlasPlanned else AtlasPrimary,
+            alpha = if (it.isPlanned) 0.55f else 1.0f,
+            strokeWidthDp = 1.2f,
+            showGlow = false,
         )
     }
     AtlasGeoCanvas(
@@ -792,7 +801,7 @@ private fun FlightHeroPanel(uiState: StatsUiState) {
                 uiState = uiState,
                 viewport = WorldViewport,
                 showMarkers = false,
-                routeAlpha = 0.34f,
+                routeAlpha = 0.70f,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(188.dp)
@@ -811,12 +820,45 @@ private fun FlightHeroPanel(uiState: StatsUiState) {
                 )
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     BigStatLine(uiState.flownDistanceKm.formatKm(), "quilòmetres volats", AtlasPrimary)
-                    BigStatLine("${uiState.hoursFlown.roundToInt().formatInt()} h", "hores a l'aire", AtlasPlanned)
-                    Text(
-                        text = "${uiState.uniqueAirlineCount} companyies · ${uiState.aircraftTypeCount} tipus d'avió",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AtlasOnSurfaceMuted,
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        BigStatLine("${uiState.hoursFlown.roundToInt().formatInt()} h", "hores a l'aire", AtlasPlanned)
+                        Text(
+                            text = "${uiState.uniqueAirlineCount} companyies · ${uiState.aircraftTypeCount} tipus d'avió",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                    }
+                }
+            }
+            if (uiState.moonLoops >= 0.01) {
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text("🌕", style = MaterialTheme.typography.headlineMedium)
+                    Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        val moonValue = if (uiState.moonLoops >= 1.0)
+                            String.format(Locale("ca", "ES"), "%.2f×", uiState.moonLoops)
+                        else
+                            "${(uiState.moonLoops * 100).roundToInt()}%"
+                        val moonLabel = if (uiState.moonLoops >= 1.0)
+                            "de la distància fins a la Lluna"
+                        else
+                            "del camí fins a la Lluna"
+                        Text(
+                            text = moonValue,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasGold,
+                        )
+                        Text(
+                            text = moonLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                    }
                 }
             }
         }
@@ -1230,6 +1272,152 @@ private fun TripSeasonCard(seasons: List<StatsSeasonStat>) {
 }
 
 @Composable
+private fun FlightYearChart(yearStats: List<StatsYearStat>) {
+    if (yearStats.none { it.flightCount > 0 }) {
+        EmptyStatCard("Encara no hi ha vols amb dates per any.")
+        return
+    }
+    val active = yearStats.filter { it.flightCount > 0 }
+    val minYear = active.minOf { it.year }
+    val maxYear = active.maxOf { it.year }
+    val data = (minYear..maxYear).map { year ->
+        year to (yearStats.find { it.year == year }?.flightCount ?: 0)
+    }
+    val maxValue = data.maxOf { it.second }.coerceAtLeast(1)
+
+    AtlasCard {
+        if (data.size == 1) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(data[0].first.toString(), style = MaterialTheme.typography.labelMedium, color = AtlasOnSurfaceMuted)
+                Text(data[0].second.toString(), style = MaterialTheme.typography.headlineSmall, color = AtlasOnSurfaceStrong)
+                Text(if (data[0].second == 1) "vol" else "vols", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+            }
+            return@AtlasCard
+        }
+
+        val textMeasurer = rememberTextMeasurer()
+        val sidePadDp = 16.dp
+        val chartHeightDp = 140.dp
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(chartHeightDp),
+        ) {
+            val sidePad = sidePadDp.toPx()
+            val pointSpacing = (size.width - sidePad * 2) / (data.size - 1)
+            val topPad = 24.dp.toPx()
+            val labelH = 20.dp.toPx()
+            val chartBottom = size.height - labelH
+
+            val points = data.mapIndexed { idx, (_, count) ->
+                Offset(
+                    x = sidePad + idx * pointSpacing,
+                    y = topPad + (1f - count.toFloat() / maxValue) * (chartBottom - topPad),
+                )
+            }
+
+            val areaPath = smoothLinePath(points).also { path ->
+                path.lineTo(points.last().x, chartBottom)
+                path.lineTo(points.first().x, chartBottom)
+                path.close()
+            }
+            drawPath(areaPath, color = AtlasPlanned.copy(alpha = 0.10f))
+
+            drawPath(
+                path = smoothLinePath(points),
+                color = AtlasPlanned,
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
+            )
+
+            val labelStyle = TextStyle(fontSize = 9.sp, color = AtlasOnSurfaceMuted)
+
+            points.forEachIndexed { idx, pt ->
+                val count = data[idx].second
+                if (count > 0) {
+                    val countText = count.toString()
+                    val countMeasured = textMeasurer.measure(countText, labelStyle)
+                    drawText(
+                        textMeasurer = textMeasurer,
+                        text = countText,
+                        topLeft = Offset(
+                            x = pt.x - countMeasured.size.width / 2f,
+                            y = pt.y - countMeasured.size.height - 4.dp.toPx(),
+                        ),
+                        style = labelStyle,
+                    )
+                    drawCircle(color = AtlasPlanned, radius = 3.5.dp.toPx(), center = pt)
+                    drawCircle(color = AtlasSurface, radius = 1.5.dp.toPx(), center = pt)
+                }
+                val yearText = data[idx].first.toString()
+                val yearMeasured = textMeasurer.measure(yearText, labelStyle)
+                drawText(
+                    textMeasurer = textMeasurer,
+                    text = yearText,
+                    topLeft = Offset(
+                        x = pt.x - yearMeasured.size.width / 2f,
+                        y = chartBottom + 4.dp.toPx(),
+                    ),
+                    style = labelStyle,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun NightDayCard(nightCount: Int, dayCount: Int) {
+    val total = nightCount + dayCount
+    if (total == 0) {
+        EmptyStatCard("No hi ha dades d'hora de sortida.")
+        return
+    }
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "☀️  Diürns",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                    Text(
+                        text = dayCount.formatInt(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasGold,
+                    )
+                }
+                ThickProgress(value = dayCount, maxValue = total, color = AtlasGold)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🌙  Nocturns  (22h–06h)",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                    Text(
+                        text = nightCount.formatInt(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasPlanned,
+                    )
+                }
+                ThickProgress(value = nightCount, maxValue = total, color = AtlasPlanned)
+            }
+        }
+    }
+}
+
+@Composable
 private fun CountryFlagGrid(stamps: List<StatsCountryStamp>) {
     if (stamps.isEmpty()) {
         EmptyStatCard("Cap país registrat encara.")
@@ -1442,93 +1630,122 @@ private fun CountryRankItem(item: StatsRank, maxValue: Int) {
 }
 
 @Composable
-private fun RankedRouteList(items: List<StatsRouteRank>) {
-    if (items.isEmpty()) {
-        EmptyStatCard("Encara no hi ha rutes de vol.")
+private fun RoutesAndAirportsCard(
+    routes: List<StatsRouteRank>,
+    airports: List<StatsAirportRank>,
+) {
+    if (routes.isEmpty() && airports.isEmpty()) {
+        EmptyStatCard("Encara no hi ha rutes ni aeroports registrats.")
         return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.forEachIndexed { index, route ->
-            RankedRow(
-                rank = index + 1,
-                title = route.route,
-                subtitle = route.distanceKm.formatKm(),
-                value = "${route.count}×",
-                color = AtlasPrimary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RankedAirportList(items: List<StatsAirportRank>) {
-    if (items.isEmpty()) {
-        EmptyStatCard("Encara no hi ha aeroports registrats.")
-        return
-    }
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items.forEachIndexed { index, airport ->
-            RankedRow(
-                rank = index + 1,
-                title = airport.code,
-                subtitle = airport.city,
-                value = airport.count.toString(),
-                color = AtlasNavy,
-            )
-        }
-    }
-}
-
-@Composable
-private fun RankedRow(rank: Int, title: String, subtitle: String, value: String, color: Color) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = AtlasSurface,
-        border = BorderStroke(1.dp, AtlasOutline),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center,
-            ) {
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            if (routes.isNotEmpty()) {
                 Text(
-                    text = rank.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = color,
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasOnSurfaceStrong,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    text = "Rutes",
+                    style = MaterialTheme.typography.labelSmall,
                     color = AtlasOnSurfaceMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    routes.forEachIndexed { index, route ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                modifier = Modifier.width(18.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AtlasOnSurfaceMuted,
+                                textAlign = TextAlign.Center,
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = route.route,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AtlasOnSurfaceStrong,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                                Text(
+                                    text = route.distanceKm.formatKm(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = AtlasOnSurfaceMuted,
+                                )
+                            }
+                            Text(
+                                text = "${route.count}×",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AtlasPrimary,
+                            )
+                        }
+                    }
+                }
             }
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                color = color,
-                fontWeight = FontWeight.Bold,
-            )
+            if (routes.isNotEmpty() && airports.isNotEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
+            }
+            if (airports.isNotEmpty()) {
+                Text(
+                    text = "Aeroports",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    airports.forEachIndexed { index, airport ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                text = "${index + 1}",
+                                modifier = Modifier.width(18.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AtlasOnSurfaceMuted,
+                                textAlign = TextAlign.Center,
+                            )
+                            if (airport.countryIso2.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(28.dp)
+                                        .aspectRatio(3f / 2f)
+                                        .clip(RoundedCornerShape(3.dp))
+                                        .background(AtlasSurfaceSubtle),
+                                ) {
+                                    CountryFlag(
+                                        iso2 = airport.countryIso2,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = flagContentScale(airport.countryIso2),
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = airport.code,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AtlasOnSurfaceStrong,
+                                )
+                                Text(
+                                    text = airport.city,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = AtlasOnSurfaceMuted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            Text(
+                                text = airport.count.toString(),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AtlasOnSurfaceMuted,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1551,13 +1768,13 @@ private fun TopAirlineBars(airlines: List<StatsAirlineRank>) {
                         AirlineLogo(
                             iata = airline.code,
                             modifier = Modifier
-                                .width(48.dp)
-                                .height(28.dp),
+                                .width(64.dp)
+                                .height(36.dp),
                         )
                     } else {
                         Text(
                             text = airline.code.take(4),
-                            modifier = Modifier.width(48.dp),
+                            modifier = Modifier.width(64.dp),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = AtlasOnSurfaceStrong,
@@ -1588,72 +1805,106 @@ private fun TopAirlineBars(airlines: List<StatsAirlineRank>) {
 }
 
 @Composable
-private fun TopAircraftList(aircraft: List<StatsAircraftRank>) {
+private fun TopAircraftCard(aircraft: List<StatsAircraftRank>) {
     if (aircraft.isEmpty()) {
         EmptyStatCard("Encara no hi ha models d'avió registrats.")
         return
     }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        aircraft.forEach { item ->
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                color = AtlasSurface,
-                border = BorderStroke(1.dp, AtlasOutline),
+    val top = aircraft.first()
+    val maxCount = aircraft.maxOf { it.count }.coerceAtLeast(1)
+    AtlasCard(contentPadding = PaddingValues(0.dp)) {
+        Column {
+            // Hero image of top aircraft — full width, no crop
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
+                    .background(AtlasSurfaceSubtle),
+                contentAlignment = Alignment.Center,
             ) {
-                Row(
-                    modifier = Modifier.padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                if (top.imageAssetRef != null) {
+                    AsyncImage(
+                        model = "file:///android_asset/${top.imageAssetRef}",
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.FlightTakeoff,
+                        contentDescription = null,
+                        tint = AtlasOnSurfaceMuted,
+                        modifier = Modifier.size(36.dp),
+                    )
+                }
+                // Gradient overlay with aircraft name
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(44.dp)
+                        .align(Alignment.BottomCenter)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, AtlasNavy.copy(alpha = 0.80f)),
+                            ),
+                        ),
+                    contentAlignment = Alignment.CenterStart,
                 ) {
-                    AircraftThumb(item)
-                    Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         Text(
-                            text = item.displayName,
-                            style = MaterialTheme.typography.titleSmall,
+                            text = top.displayName,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "${top.count}×",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasPrimary,
+                        )
+                    }
+                }
+            }
+            // List of all aircraft
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                aircraft.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            text = if (item.category != null) "${item.displayName} · ${item.category}" else item.displayName,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = AtlasOnSurfaceStrong,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            text = listOfNotNull(item.category, item.distanceKm.formatKm()).joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            text = "${item.count}×",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasPrimary,
                         )
                     }
-                    Text(
-                        text = "${item.count}×",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = AtlasPrimary,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    ThickProgress(value = item.count, maxValue = maxCount, color = AtlasPrimary)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun AircraftThumb(item: StatsAircraftRank) {
-    Box(
-        modifier = Modifier
-            .size(width = 76.dp, height = 48.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(AtlasSurfaceSubtle),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (item.imageAssetRef != null) {
-            AsyncImage(
-                model = "file:///android_asset/${item.imageAssetRef}",
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize(),
-            )
-        } else {
-            Icon(Icons.Filled.FlightTakeoff, contentDescription = null, tint = AtlasOnSurfaceMuted)
         }
     }
 }
@@ -1666,6 +1917,7 @@ private fun DelayDistributionCard(buckets: List<StatsDelayBucket>) {
     }
     AtlasCard {
         val maxValue = buckets.maxOf { it.count }.coerceAtLeast(1)
+        val total = buckets.sumOf { it.count }.coerceAtLeast(1)
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             buckets.forEach { bucket ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1679,8 +1931,16 @@ private fun DelayDistributionCard(buckets: List<StatsDelayBucket>) {
                         ThickProgress(value = bucket.count, maxValue = maxValue, color = bucket.delayColor())
                     }
                     Text(
-                        text = bucket.count.toString(),
+                        text = "${bucket.count}",
                         modifier = Modifier.width(26.dp),
+                        textAlign = TextAlign.End,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = bucket.delayColor(),
+                    )
+                    Text(
+                        text = "${(bucket.count.toFloat() / total * 100).roundToInt()}%",
+                        modifier = Modifier.width(36.dp),
                         textAlign = TextAlign.End,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
@@ -1693,12 +1953,165 @@ private fun DelayDistributionCard(buckets: List<StatsDelayBucket>) {
 }
 
 @Composable
+private fun TopDelayChart(delays: List<StatsTopDelay>) {
+    if (delays.isEmpty()) {
+        EmptyStatCard("Cap retard significatiu registrat.")
+        return
+    }
+    val maxDelay = delays.maxOf { it.delayMinutes }.coerceAtLeast(1)
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            delays.forEach { item ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = item.route,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasOnSurfaceStrong,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = item.delayLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasError,
+                        )
+                    }
+                    ThickProgress(value = item.delayMinutes.toInt(), maxValue = maxDelay.toInt(), color = AtlasError)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopRoutesChart(routes: List<StatsRouteRank>) {
+    if (routes.isEmpty()) {
+        EmptyStatCard("Encara no hi ha rutes registrades.")
+        return
+    }
+    val data = routes.take(5)
+    val maxCount = data.maxOf { it.count }.coerceAtLeast(1)
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            data.forEach { route ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = route.route,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasOnSurfaceStrong,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        ThickProgress(value = route.count, maxValue = maxCount, color = AtlasPrimary)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "${route.count}×",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasPrimary,
+                        )
+                        Text(
+                            text = route.distanceKm.formatKm(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TopAirportsChart(airports: List<StatsAirportRank>) {
+    if (airports.isEmpty()) {
+        EmptyStatCard("Encara no hi ha aeroports registrats.")
+        return
+    }
+    val maxCount = airports.maxOf { it.count }.coerceAtLeast(1)
+    AtlasCard {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            airports.forEach { airport ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (airport.countryIso2.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .width(28.dp)
+                                .aspectRatio(3f / 2f)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(AtlasSurfaceSubtle),
+                        ) {
+                            CountryFlag(
+                                iso2 = airport.countryIso2,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = flagContentScale(airport.countryIso2),
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = airport.code,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AtlasOnSurfaceStrong,
+                            )
+                            Text(
+                                text = airport.city,
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AtlasOnSurfaceMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                text = "${airport.count}×",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = AtlasPrimary,
+                            )
+                        }
+                        ThickProgress(value = airport.count, maxValue = maxCount, color = AtlasPrimary)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun FlightScopeCard(uiState: StatsUiState) {
     val total = uiState.continentalFlightCount + uiState.intercontinentalFlightCount
+    val haulTotal = uiState.shortHaulCount + uiState.mediumHaulCount + uiState.longHaulCount
     AtlasCard {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             ProgressBarRow("Intercontinentals", uiState.intercontinentalFlightCount, total.coerceAtLeast(1), AtlasPrimary)
             ProgressBarRow("Continentals", uiState.continentalFlightCount, total.coerceAtLeast(1), AtlasVisited)
+            if (haulTotal > 0) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline).padding(vertical = 2.dp))
+                ProgressBarRow("Curt  < 1.500 km", uiState.shortHaulCount, haulTotal, AtlasVisited)
+                ProgressBarRow("Mitjà 1.500–4.000 km", uiState.mediumHaulCount, haulTotal, AtlasPlanned)
+                ProgressBarRow("Llarg > 4.000 km", uiState.longHaulCount, haulTotal, AtlasPrimary)
+            }
         }
     }
 }

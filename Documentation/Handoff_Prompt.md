@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅ + Vols ✅ + Insígnies ✅; list page headers standardized ✅; auto-status update ✅ already implemented)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats all tabs ✅; list page headers standardized ✅; auto-status update ✅; all pre-v4.0 work done and pushed — ready for v4.0)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -406,11 +406,11 @@ Bottom nav `onClick` no longer uses `saveState`/`restoreState`. Every tab tap na
 
 ---
 
-### Next items before v4.0 (agreed order)
+### Pre-v4.0 items (all complete ✅)
 
-#### 1. Auto-status update for trips and flights ✅ (already implemented)
+#### 1. Auto-status update for trips and flights ✅
 
-`AtlasApplication.onCreate()` calls `container.refreshTravelStatusesOnStartup()`, which launches `UpdateCurrentTravelStatusesUseCase` on `Dispatchers.IO`. Room `Flow` propagates any changes to the UI automatically. No further work needed.
+`AtlasApplication.onCreate()` calls `container.refreshTravelStatusesOnStartup()`, which launches `UpdateCurrentTravelStatusesUseCase` on `Dispatchers.IO`. `TravelStatusRefreshPolicy` encapsulates the date-comparison rules. Room `Flow` propagates changes to the UI automatically. Committed `9187e13`.
 
 #### 2. Stats page from existing data ✅ (Resum + Cronologia + Mapa + Països tabs complete)
 
@@ -569,9 +569,9 @@ _`StatsViewModel.kt` — badge additions:_
 - Total badge count: **28** (14 tiered + 14 binary).
 - `buildBadges` receives 7 new parameters: `uniqueRouteCount`, `aircraftTypeCount`, `nightFlightCount`, `hasUltraLongFlight`, `hasEarlyMorningFlight`, `hasLongTrip`, and the existing `visitedContinents` now drives the "Tots els continents" binary badge.
 
-#### 3. v4.0 — Country depth / Stats dataset
+### Next: v4.0 — Country depth / Stats dataset
 
-See §v4.0 milestones below. Start only after the two items above are complete.
+All pre-v4.0 items are done. See §v4.0 milestones below.
 
 ---
 

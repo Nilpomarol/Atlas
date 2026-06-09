@@ -196,8 +196,8 @@ private fun FlightListHeader(
     onCreateItineraryClick: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),

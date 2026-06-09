@@ -38,11 +38,10 @@ import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.Itinerary
 import com.atlas.presentation.itinerary.ItineraryListUiState
 import com.atlas.ui.components.AtlasPage
-import com.atlas.ui.theme.AtlasAccentContainer
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
-import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
 
 @Composable
@@ -104,7 +103,7 @@ private fun ItineraryListHeader(count: Int, onCreateClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -121,10 +120,10 @@ private fun ItineraryListHeader(count: Int, onCreateClick: () -> Unit) {
         }
         Button(
             onClick = onCreateClick,
-            shape = RoundedCornerShape(999.dp),
+            shape = RoundedCornerShape(13.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = AtlasAccentContainer,
-                contentColor = AtlasPrimary,
+                containerColor = AtlasNavy,
+                contentColor = AtlasSurface,
             ),
             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
         ) {

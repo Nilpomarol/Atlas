@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-08 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; pre-v4.0 work planned)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum tab ✅ + Cronologia screen ✅ + Mapa tab ✅; auto-status update next)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -367,7 +367,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-**Stats placeholder:** `StatsRoute` / `StatsScreen` at route `"stats"` — "Pròximament" message. Now a bottom nav tab (replaced Settings tab). Ready to be built into a full stats screen.
+**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. It is not being marked complete yet; see the notes in "Next items before v4.0".
 
 ### Settings design (✅ complete)
 
@@ -428,9 +428,77 @@ Bottom nav `onClick` no longer uses `saveState`/`restoreState`. Every tab tap na
 
 **Why not WorkManager:** WorkManager is designed for work that must run even when the app is closed. Since nothing depends on status being updated while closed (no widgets, no background notifications), a simple coroutine is sufficient and avoids a new dependency.
 
-#### 2. Stats page from existing data
+#### 2. Stats page from existing data ✅ (Resum + Cronologia + Mapa tabs complete)
 
-Fill in the `StatsRoute` / `StatsScreen` placeholder at route `"stats"` (currently shows "Pròximament"). All underlying numbers are already computed in `DashboardViewModel` — no new DB tables or datasets needed. Do this before v4.0 country stats because it has no data-layer dependencies and closes the visible "Pròximament" gap in the bottom nav.
+The `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a placeholder. Resum, Cronologia, and Mapa tabs are all complete. Remaining tabs (Països, Viatges, Vols, Rècords) have placeholder content that may need device QA; revisit after auto-status update if gaps are found.
+
+**Partial implementation added 2026-06-08 (not marked complete):**
+- Added `StatsViewModel` under `presentation/stats`, using only existing repository flows: countries/user states/logs, trips/stops, excursions, flights, itinerary groups, airports, and stop photos.
+- Replaced the placeholder with a read-only tabbed stats surface: `Resum`, `Mapa`, `Països`, `Viatges`, `Vols`, and `Rècords`.
+- Current visuals include `AtlasGeoCanvas` world highlights, flight route arcs, airport markers, progress rings, bar/pulse charts, country stamp rail, trip cover-photo/map postcard rail, airline logo rail, ranked lists, records, and badge cards.
+- No DB migration, no new data tables, no write actions, and no navigation changes were added.
+- Still needs device visual QA and likely polish after seeing it with real data; keep this item open until reviewed on device.
+
+**Stats polish pass (✅ Resum tab complete; ✅ Mapa tab complete):**
+
+_Earlier polish (same session, not re-listed in detail):_
+- Header simplified; tabs compact non-scrolling pills; `Mapa` tab pan/zoom; `Països`/`Viatges`/`Vols`/`Rècords` tabs populated.
+
+**✅ Resum tab — complete**
+
+_Badge system (`StatsViewModel.kt`):_
+- `BadgeTier` enum: `BRONZE, PLATA, OR, PLATI`.
+- `StatsBadge` data class: `nextGoal: String?`, `tier: BadgeTier?`, `progress: Float?`. Progress is 0–1 fraction between thresholds for tiered badges; `1f`/`0f` for binary.
+- Helpers: `tieredBadge(title, value, thresholds, detailText, nextGoalText)` and `binaryBadge(title, unlocked, goal)`. 11 tiered + 9 binary badges.
+- Continent names via `toCatalanContinent()` extension applied in `buildContinentStats`.
+- `buildYearStats` country-count logic fixed: trip/excursion stops use `stop.dateRange?.primaryYear()` first, falling back to trip year. Standalone flights count destination only (not origin). Itinerary groups count only the last flight's destination — layover airports are excluded. `itineraryGroups: List<ItineraryGroup>` added as parameter.
+
+_WorldHero card (`StatsScreen.kt`):_
+- Single `Row`: `RingMetric` donut left; `Column(weight(1f), End)` right.
+- Right column: split visited count (`AtlasVisited` number + muted `/total` + "països visitats") above; `CountryStat` row below (3 × `weight(1f)`, centered number + label, right-aligned).
+
+_NextMilestonesCard (`StatsScreen.kt`):_
+- Replaces `IdentityCard`. Shows up to 3 upcoming milestones (tiered with next goal, then locked binary).
+- `titleLarge` bold title; progress text `"${detail} → ${nextGoal}"`; 5dp progress bar (tier color at 18% alpha + solid fill).
+- Plata color: `Color(0xFF7B96AF)` (steel blue).
+
+_Ritme anual (`StatsScreen.kt`):_
+- `VerticalStatBar` fills width via `fillMaxWidth()` + `weight(1f)` per bar in each year column.
+- Year column spacing: `spacedBy(14.dp)`. Divider line (1dp, 15% alpha) between chart and legend.
+- "Veure cronologia →" link at top-right of the card (see Timeline below).
+
+_Other Resum polish:_
+- `ThickProgress`/`StackedProgressBar`: 16dp height, `RoundedCornerShape(4.dp)`.
+- `MetricMosaic`: 2-col × 3-row; "Dies" → "Dies de ruta".
+- `CompactMetric`: icon + value top, label bottom.
+
+**✅ Cronologia (Timeline) — complete**
+
+New full-screen push-nav screen accessible via "Veure cronologia →" in the Ritme anual card.
+
+_New files:_
+- `presentation/timeline/TimelineViewModel.kt` — combines trips, standalone itineraries (`tripId == null`), and country logs; groups items by year (newest first). Itinerary route labels use the same deduplication logic as `buildItineraryCodeLabel`/`buildItineraryRouteLabel` in `ItineraryDetailScreen`: iterates sorted groups, adds origin of first flight + destination of last flight per group, skips already-seen airports. Produces `codeLabel` (IATA codes) and `cityLabel` (city names; omitted if identical to code label).
+- `presentation/timeline/TimelineRoute.kt` — wires ViewModel from app container.
+- `ui/screens/timeline/TimelineScreen.kt` — `LazyColumn` with sticky year headers. Trip items: left accent strip (status color) + cover photo + title + status pill. Itinerary items: same accent strip pattern, `codeLabel` bold + `cityLabel` muted + date. Log items: flag emoji + country name + log type chip.
+
+_Modified files:_
+- `AtlasNavHost.kt`: `"timeline"` composable route added; `StatsRoute` receives `onTimelineClick`.
+- `StatsRoute.kt`: accepts `onTimelineClick: () -> Unit`, passes to `StatsScreen`.
+- `StatsScreen.kt`: `onTimelineClick` threaded to `SummaryTab` → `YearPulseChart`.
+
+**✅ Mapa tab — complete**
+
+_`StatsMapCanvas.kt` (new file) + `StatsMapCanvas` composable:_
+- No scroll conflict — Map tab uses a separate non-scrolling `Column` branch; other tabs scroll normally.
+- Fullscreen `Canvas` with Mercator projection-based zoom (not `graphicsLayer`), so marker dot size stays fixed regardless of zoom level. Max zoom 20×.
+- `GeoProjection` gained `projectZoomed()` (zoom baked into projection) and `unproject()` (inverse Mercator for tap hit-testing). Both are `internal` and accessible within `:app`.
+- 50m Natural Earth GeoJSON (`ne_50m_admin_0_countries.geojson`, 3 MB) loaded asynchronously and cached via `AtlasGeoAssetLoader.loadCountries50m()`.
+- **Six drawable layers:** country state fills (visited/lived/living/planned/wished), completed flight arcs (solid, alpha=1), planned flight arcs (dashed, alpha=0.9), airport dots, trip stop markers (status-colored), excursion stop markers (hollow).
+- `MapLayerFilters` data class with 6 booleans; `MapFilterOverlay` is a collapsible bottom-right pill that expands into a 2-column × 3-row filter grid.
+- **Fixed-size markers** — drawn in `DrawScope` in dp, not affected by `userScale`.
+- **Tap-to-identify** — priority order: trip stops → excursion stops → airport dots → route midpoints → country polygon (ray-casting). Shows a floating label tooltip; tooltip dismisses on tap-elsewhere or on any pan/zoom gesture.
+- **Starting position** — `LaunchedEffect(countries, projection)` runs once when both GeoJSON and canvas projection are ready; finds the living country's largest polygon ring, computes bounding-box centroid, and pans+zooms to 5× centred on that point. Falls back to world view if no living country.
+- **Reset button** — top-right `Surface` pill with `Icons.Filled.Refresh`; restores the personalised initial zoom/pan (not hardcoded world view).
 
 #### 3. v4.0 — Country depth / Stats dataset
 

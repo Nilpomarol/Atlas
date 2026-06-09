@@ -2,7 +2,7 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅; auto-status update next)
+* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats Resum ✅ + Cronologia ✅ + Mapa ✅ + Països ✅ + Viatges ✅; auto-status update next)
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
@@ -367,7 +367,7 @@ Note: UTC flight fields now drive duration, delay, layover duration, and flight 
 - `DashboardTripUiState.tripId: String` — for navigation
 - `DashboardFlightUiState.flightId: String?` / `itineraryId: String?` — for navigation; `originCode`, `destinationCode`, `airlineIata`, `flightNumber` for card display
 
-**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. Resum, Cronologia, Mapa, and Països tabs are complete. Viatges, Vols, and Rècords tabs have placeholder content that may need device QA.
+**Stats page status:** `StatsRoute` / `StatsScreen` at route `"stats"` is no longer a plain "Pròximament" placeholder. A first read-only visual stats page has been started with tabs and existing-data aggregates. Resum, Cronologia, Mapa, Països, and Viatges tabs are complete. Vols and Rècords tabs have placeholder content that may need device QA.
 
 ### Settings design (✅ complete)
 
@@ -521,6 +521,19 @@ _`StatsMapCanvas.kt` (new file) + `StatsMapCanvas` composable:_
 - **Tap-to-identify** — priority order: trip stops → excursion stops → airport dots → route midpoints → country polygon (ray-casting). Shows a floating label tooltip; tooltip dismisses on tap-elsewhere or on any pan/zoom gesture.
 - **Starting position** — `LaunchedEffect(countries, projection)` runs once when both GeoJSON and canvas projection are ready; finds the living country's largest polygon ring, computes bounding-box centroid, and pans+zooms to 5× centred on that point. Falls back to world view if no living country.
 - **Reset button** — top-right `Surface` pill with `Icons.Filled.Refresh`; restores the personalised initial zoom/pan (not hardcoded world view).
+
+**✅ Viatges tab — complete (2026-06-09)**
+
+_`StatsScreen.kt` — redesigned composables:_
+- `TripMonthChart` — added `clip(RoundedCornerShape(4.dp))` to each bar box, matching the `ThickProgress` style from the first Viatges card.
+- `smoothLinePath(points: List<Offset>): Path` — file-level private helper; converts a list of screen-space points to a smooth Catmull-Rom cubic Bézier `Path` (each segment uses the 1/6 control-point formula).
+- `TripYearChart` — replaced bar chart with a Canvas-based smooth line graph. Fills gap years between first and last active year with zeros so the line is continuous. Draws: soft area fill (AtlasPrimary 10% alpha), 2dp smooth line stroke, solid dots + hollow centre on active years, trip count labels above each dot, year labels below. Canvas uses `fillMaxWidth()` with point spacing derived from `(size.width - sidePad * 2) / (data.size - 1)` — always stretches edge-to-edge, no horizontal scroll. Single-year fallback shows a plain row with the year + trip count.
+- `TripSeasonCard` — redesigned from 4-column layout to vertical list (4 rows). Each row: emoji (16sp) + full season name (`labelMedium`, muted, `weight(1f)`) + trip count (bold, tinted if > 0) + `ThickProgress`. Season-specific colours defined inline by index: Primavera `#8FD4A0` (soft green), Estiu `#F5C04A` (warm amber), Tardor `#D4845A` (terracotta), Hivern `#7BB8E8` (icy blue). Both the count number and the progress bar use the season colour.
+
+_`StatsViewModel.kt`:_
+- `buildTripRecords` — added "Primer viatge" as a 6th record (previously 5, which left an orphan row in the 2-column `RecordGrid`). Finds the trip with the earliest `dateRange.start.year` across all trips; shows the year as value and trip title as detail. No-op if no trip has a start date.
+
+_Imports added to `StatsScreen.kt`:_ `androidx.compose.ui.graphics.Path`, `androidx.compose.ui.text.TextStyle`, `androidx.compose.ui.text.drawText`, `androidx.compose.ui.text.rememberTextMeasurer`.
 
 #### 3. v4.0 — Country depth / Stats dataset
 

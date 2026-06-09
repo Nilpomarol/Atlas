@@ -130,29 +130,27 @@ fun StatsScreen(uiState: StatsUiState, onTimelineClick: () -> Unit = {}) {
     var selectedTab by rememberSaveable { mutableStateOf(StatsTab.Summary) }
 
     AtlasPage(contentPadding = PaddingValues(0.dp)) {
-        if (selectedTab == StatsTab.Map) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                StatsHeader()
-                StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
+        Column(modifier = Modifier.fillMaxSize()) {
+            StatsHeader()
+            StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
+            if (selectedTab == StatsTab.Map) {
                 MapTab(uiState = uiState, modifier = Modifier.weight(1f))
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(bottom = 28.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                StatsHeader()
-                StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
-                when (selectedTab) {
-                    StatsTab.Summary -> SummaryTab(uiState, onTimelineClick)
-                    StatsTab.Map -> Unit
-                    StatsTab.Countries -> CountriesTab(uiState)
-                    StatsTab.Trips -> TripsTab(uiState)
-                    StatsTab.Flights -> FlightsTab(uiState)
-                    StatsTab.Badges -> BadgesTab(uiState)
+            } else {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    when (selectedTab) {
+                        StatsTab.Summary -> SummaryTab(uiState, onTimelineClick)
+                        StatsTab.Map -> Unit
+                        StatsTab.Countries -> CountriesTab(uiState)
+                        StatsTab.Trips -> TripsTab(uiState)
+                        StatsTab.Flights -> FlightsTab(uiState)
+                        StatsTab.Badges -> BadgesTab(uiState)
+                    }
                 }
             }
         }
@@ -164,8 +162,8 @@ private fun StatsHeader() {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalAlignment = Alignment.Top,
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -176,8 +174,7 @@ private fun StatsHeader() {
             )
             Text(
                 text = "El teu atlas en xifres, rutes i records visuals.",
-                modifier = Modifier.padding(top = 3.dp),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelMedium,
                 color = AtlasOnSurfaceMuted,
             )
         }

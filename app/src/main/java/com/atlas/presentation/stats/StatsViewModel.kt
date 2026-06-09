@@ -341,6 +341,8 @@ class StatsViewModel(
                 visitedContinents = countryStates.filter { it.second.visited || it.second.lived }.map { it.first.continent }.distinct().size,
                 uniqueAirports = topAirports.size,
                 uniqueAirlineCount = topAirlines.size,
+                uniqueRouteCount = topRoutes.size,
+                aircraftTypeCount = topAircraft.size,
                 flightCount = flights.size,
                 intercontinentalFlightCount = intercontinentalFlights,
                 earthLoops = flownDistanceKm / EARTH_CIRCUMFERENCE_KM,
@@ -351,6 +353,7 @@ class StatsViewModel(
                 totalStopCount = tripStops.size + excursions.sumOf { it.stops.size },
                 worldPercentage = worldPercentage,
                 yearStats = yearStats,
+                nightFlightCount = nightFlightCount,
                 hasNightFlight = flights.any { f ->
                     val dep = f.scheduledDepartureAt?.take(10) ?: return@any false
                     val arr = (f.scheduledArrivalAt ?: f.actualArrivalAt)?.take(10) ?: return@any false
@@ -358,6 +361,14 @@ class StatsViewModel(
                 },
                 hasBigDelay = flights.any { (it.utcAwareDelayMinutes() ?: 0L) > 180L },
                 hasItinerary = itineraryGroups.isNotEmpty(),
+                hasUltraLongFlight = flights.any { (it.distanceKm ?: 0.0) >= 6000.0 },
+                hasEarlyMorningFlight = flights.any { f ->
+                    val dep = f.scheduledDepartureAt ?: return@any false
+                    if (dep.length < 13) return@any false
+                    val hour = dep.substring(11, 13).toIntOrNull() ?: return@any false
+                    hour < 5
+                },
+                hasLongTrip = completedTrips.any { it.dayCount()?.let { d -> d >= 14 } == true },
             ),
         )
     }
@@ -378,7 +389,16 @@ class StatsViewModel(
                 distanceKm = rows.sumOf { it.distanceKm ?: 0.0 },
                 imageAssetRef = resolved?.imageAssetRef,
             )
-        }.sortedWith(compareByDescending<StatsAircraftRank> { it.count }.thenByDescending { it.distanceKm })
+        }.groupBy { it.displayName }
+            .map { (_, items) ->
+                items.reduce { acc, item ->
+                    acc.copy(
+                        count = acc.count + item.count,
+                        distanceKm = acc.distanceKm + item.distanceKm,
+                    )
+                }
+            }
+            .sortedWith(compareByDescending<StatsAircraftRank> { it.count }.thenByDescending { it.distanceKm })
     }
 
     private fun Trip.toStatsTripVisual(
@@ -1070,6 +1090,8 @@ private fun buildBadges(
     visitedContinents: Int,
     uniqueAirports: Int,
     uniqueAirlineCount: Int,
+    uniqueRouteCount: Int,
+    aircraftTypeCount: Int,
     flightCount: Int,
     intercontinentalFlightCount: Int,
     earthLoops: Double,
@@ -1080,9 +1102,13 @@ private fun buildBadges(
     totalStopCount: Int,
     worldPercentage: Float,
     yearStats: List<StatsYearStat>,
+    nightFlightCount: Int,
     hasNightFlight: Boolean,
     hasBigDelay: Boolean,
     hasItinerary: Boolean,
+    hasUltraLongFlight: Boolean,
+    hasEarlyMorningFlight: Boolean,
+    hasLongTrip: Boolean,
 ): List<StatsBadge> {
     val earthLoopsInt = earthLoops.toInt()
     val earthLoopsDetail = if (earthLoops < 1.0) "${(earthLoops * EARTH_CIRCUMFERENCE_KM).roundToInt()} km" else "${"%.1f".format(earthLoops)}× la Terra"
@@ -1100,6 +1126,9 @@ private fun buildBadges(
         tieredBadge("Dies de viatge", daysTraveled, listOf(30, 100, 250, 500), "$daysTraveled dies") { "$it dies" },
         tieredBadge("Parades registrades", totalStopCount, listOf(10, 50, 100, 250), "$totalStopCount parades") { "$it parades" },
         tieredBadge("Companyies aèries", uniqueAirlineCount, listOf(5, 10, 20, 40), "$uniqueAirlineCount companyies") { "$it companyies" },
+        tieredBadge("Models d'aeronau", aircraftTypeCount, listOf(5, 10, 20, 35), "$aircraftTypeCount models") { "$it models" },
+        tieredBadge("Vols nocturns", nightFlightCount, listOf(1, 5, 10, 20), "$nightFlightCount vols nocturns") { "$it vols nocturns" },
+        tieredBadge("Rutes úniques", uniqueRouteCount, listOf(5, 15, 30, 50), "$uniqueRouteCount rutes") { "$it rutes" },
         // Binary
         binaryBadge("Primer país", visitedCountries >= 1, "Visita el primer territori"),
         binaryBadge("Primer vol", flightCount >= 1, "Registra el primer vol"),
@@ -1110,6 +1139,11 @@ private fun buildBadges(
         binaryBadge("Gran retard", hasBigDelay, "Un retard superior a 3 hores"),
         binaryBadge("Any de vols", yearStats.any { it.flightCount >= 12 }, "12 vols en un any natural"),
         binaryBadge("Explorador d'itineraris", hasItinerary, "Crea el primer itinerari"),
+        binaryBadge("Volta al món", earthLoops >= 1.0, "Vola la circumferència completa de la Terra"),
+        binaryBadge("Tots els continents", visitedContinents >= 7, "Posa el peu a tots els continents"),
+        binaryBadge("Ultrallarg", hasUltraLongFlight, "Un vol de més de 6.000 km"),
+        binaryBadge("Matiner", hasEarlyMorningFlight, "Un vol que surt entre les 00h i les 05h"),
+        binaryBadge("Grand Tour", hasLongTrip, "Un viatge de 14 dies o més"),
     )
 }
 

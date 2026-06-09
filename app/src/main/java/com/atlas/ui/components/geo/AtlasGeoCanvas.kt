@@ -243,21 +243,23 @@ private fun DrawScope.drawRouteSegment(
         previous = point
     }
 
-    drawPath(
-        path = path,
-        color = segment.color.copy(alpha = 0.22f * segment.alpha),
-        style = Stroke(
-            width = if (segment.isDashed) 3.2.dp.toPx() else 4.8.dp.toPx(),
-            cap = StrokeCap.Round,
-            join = StrokeJoin.Round,
-            pathEffect = if (segment.isDashed) PathEffect.dashPathEffect(floatArrayOf(12.dp.toPx(), 9.dp.toPx())) else null,
-        ),
-    )
+    if (segment.showGlow) {
+        drawPath(
+            path = path,
+            color = segment.color.copy(alpha = 0.22f * segment.alpha),
+            style = Stroke(
+                width = if (segment.isDashed) 3.2.dp.toPx() else (segment.strokeWidthDp * 2.2f).dp.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round,
+                pathEffect = if (segment.isDashed) PathEffect.dashPathEffect(floatArrayOf(12.dp.toPx(), 9.dp.toPx())) else null,
+            ),
+        )
+    }
     drawPath(
         path = path,
         color = segment.color.copy(alpha = segment.alpha),
         style = Stroke(
-            width = if (segment.isDashed) 1.5.dp.toPx() else 2.2.dp.toPx(),
+            width = if (segment.isDashed) 1.5.dp.toPx() else segment.strokeWidthDp.dp.toPx(),
             cap = StrokeCap.Round,
             join = StrokeJoin.Round,
             pathEffect = if (segment.isDashed) PathEffect.dashPathEffect(floatArrayOf(12.dp.toPx(), 9.dp.toPx())) else null,

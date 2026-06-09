@@ -46,6 +46,8 @@ data class GeoRouteSegment(
     val color: Color,
     val isDashed: Boolean = false,
     val alpha: Float = 1f,
+    val strokeWidthDp: Float = 2.2f,
+    val showGlow: Boolean = true,
 )
 
 data class GeoMarker(

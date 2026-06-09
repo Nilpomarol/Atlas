@@ -202,8 +202,23 @@ class StatsViewModel(
         val excursionStopMapMarkers = buildExcursionStopMarkers(excursions)
         val delayBuckets = buildDelayBuckets(flights)
         val topDelays = buildTopDelayRecords(flights, airportsById)
+        val topDelayStats = buildTopDelayStats(flights, airportsById)
         val intercontinentalFlights = flights.count { it.isIntercontinental(airportsById, countriesByIso2) }
         val continentalFlights = flights.count { it.hasKnownContinentalPair(airportsById, countriesByIso2) } - intercontinentalFlights
+
+        val moonLoops = flownDistanceKm / MOON_DISTANCE_KM
+        val nightFlightCount = flights.count { f ->
+            val depStr = f.scheduledDepartureAt ?: return@count false
+            if (depStr.length < 13) return@count false
+            val hour = depStr.substring(11, 13).toIntOrNull() ?: return@count false
+            hour < 6 || hour >= 22
+        }
+        val flightsWithKnownDep = flights.count { it.scheduledDepartureAt?.length?.let { l -> l >= 13 } == true }
+        val dayFlightCount = flightsWithKnownDep - nightFlightCount
+        val haulDistances = flights.mapNotNull { it.distanceKm }
+        val shortHaulCount = haulDistances.count { it < 1_500.0 }
+        val mediumHaulCount = haulDistances.count { it in 1_500.0..4_000.0 }
+        val longHaulCount = haulDistances.count { it > 4_000.0 }
 
         val tripVisuals = trips
             .filter { it.coverPhotoFilename != null || tripStopsByTripId[it.id].orEmpty().any { stop -> stop.latitude != null && stop.longitude != null } }
@@ -239,6 +254,7 @@ class StatsViewModel(
             flights = flights,
             airportsById = airportsById,
             topRoutes = topRoutes,
+            topAirports = topAirports.take(10),
         )
         val geographicRecords = buildGeographicRecords(tripStops, excursions)
         val recordCards = (countryRecords + tripRecords + flightRecords + geographicRecords).distinctBy { it.title to it.detail }
@@ -308,10 +324,17 @@ class StatsViewModel(
             excursionStopMapMarkers = excursionStopMapMarkers,
             delayBuckets = delayBuckets,
             topDelays = topDelays,
+            topDelayStats = topDelayStats,
             intercontinentalFlightCount = intercontinentalFlights,
             continentalFlightCount = continentalFlights.coerceAtLeast(0),
             yearStats = yearStats,
             flightRecords = flightRecords,
+            moonLoops = moonLoops,
+            nightFlightCount = nightFlightCount,
+            dayFlightCount = dayFlightCount,
+            shortHaulCount = shortHaulCount,
+            mediumHaulCount = mediumHaulCount,
+            longHaulCount = longHaulCount,
             recordCards = recordCards,
             badges = buildBadges(
                 visitedCountries = visitedCount,
@@ -475,6 +498,13 @@ data class StatsUiState(
     val continentalFlightCount: Int = 0,
     val yearStats: List<StatsYearStat> = emptyList(),
     val flightRecords: List<StatsRecord> = emptyList(),
+    val topDelayStats: List<StatsTopDelay> = emptyList(),
+    val moonLoops: Double = 0.0,
+    val nightFlightCount: Int = 0,
+    val dayFlightCount: Int = 0,
+    val shortHaulCount: Int = 0,
+    val mediumHaulCount: Int = 0,
+    val longHaulCount: Int = 0,
     val recordCards: List<StatsRecord> = emptyList(),
     val badges: List<StatsBadge> = emptyList(),
 )
@@ -496,7 +526,7 @@ data class StatsTripVisual(
     val points: List<StatsMapPoint>,
 )
 data class StatsRouteRank(val route: String, val count: Int, val distanceKm: Double)
-data class StatsAirportRank(val airportId: String, val code: String, val city: String, val count: Int)
+data class StatsAirportRank(val airportId: String, val code: String, val city: String, val countryIso2: String, val count: Int)
 data class StatsAirlineRank(val code: String, val count: Int, val distanceKm: Double)
 data class StatsAircraftRank(
     val rawValue: String,
@@ -528,6 +558,7 @@ data class StatsMonthStat(val month: Int, val label: String, val tripCount: Int)
 data class StatsYearStat(val year: Int, val tripCount: Int, val flightCount: Int, val countryCount: Int)
 data class StatsSeasonStat(val name: String, val emoji: String, val tripCount: Int)
 data class StatsRecord(val title: String, val value: String, val detail: String)
+data class StatsTopDelay(val route: String, val delayMinutes: Long, val delayLabel: String)
 enum class BadgeTier { BRONZE, PLATA, OR, PLATI }
 
 data class StatsBadge(
@@ -579,6 +610,7 @@ private data class PhotosData(
 }
 
 private const val EARTH_CIRCUMFERENCE_KM = 40_075.0
+private const val MOON_DISTANCE_KM = 384_400.0
 
 private fun buildCountryRanks(
     countries: List<Country>,
@@ -690,7 +722,7 @@ private fun buildTopAirports(flights: List<Flight>, airportsById: Map<String, Ai
     }
     return counts.mapNotNull { (airportId, count) ->
         val airport = airportsById[airportId] ?: return@mapNotNull null
-        StatsAirportRank(airportId = airportId, code = airport.shortCode(), city = airport.city, count = count)
+        StatsAirportRank(airportId = airportId, code = airport.shortCode(), city = airport.city, countryIso2 = airport.countryIso2, count = count)
     }.sortedWith(compareByDescending<StatsAirportRank> { it.count }.thenBy { it.code })
 }
 
@@ -860,6 +892,14 @@ private fun buildTopDelayRecords(flights: List<Flight>, airportsById: Map<String
         ) to delay
     }.sortedByDescending { it.second }.take(5).map { it.first }
 
+private fun buildTopDelayStats(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsTopDelay> =
+    flights.mapNotNull { flight ->
+        val delay = flight.utcAwareDelayMinutes()?.takeIf { it > 0 } ?: return@mapNotNull null
+        val origin = airportsById[flight.originAirportId]?.shortCode() ?: flight.originAirportId
+        val destination = airportsById[flight.destinationAirportId]?.shortCode() ?: flight.destinationAirportId
+        StatsTopDelay("$origin → $destination", delay, delay.toDurationLabel())
+    }.sortedByDescending { it.delayMinutes }.take(5)
+
 private fun buildCountryRecords(
     topCountryRanks: List<StatsRank>,
     continentStats: List<StatsContinent>,
@@ -926,6 +966,7 @@ private fun buildFlightRecords(
     flights: List<Flight>,
     airportsById: Map<String, Airport>,
     topRoutes: List<StatsRouteRank>,
+    topAirports: List<StatsAirportRank>,
 ): List<StatsRecord> {
     val byDuration = flights.mapNotNull { flight -> flight.utcAwareDurationMinutes()?.takeIf { it > 0 }?.let { flight to it } }
     val byDistance = flights.mapNotNull { flight -> flight.distanceKm?.takeIf { it > 0 }?.let { flight to it } }
@@ -943,6 +984,7 @@ private fun buildFlightRecords(
             StatsRecord("Vol més curt per km", "${km.roundToInt()} km", flight.routeLabel(airportsById))
         },
         topRoutes.firstOrNull()?.takeIf { it.count >= 2 }?.let { StatsRecord("Ruta preferida", "${it.count}×", it.route) },
+        topAirports.firstOrNull()?.let { StatsRecord("Aeroport principal", it.code, it.city) },
     )
 }
 

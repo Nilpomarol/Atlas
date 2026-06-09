@@ -130,26 +130,29 @@ fun StatsScreen(uiState: StatsUiState, onTimelineClick: () -> Unit = {}) {
     var selectedTab by rememberSaveable { mutableStateOf(StatsTab.Summary) }
 
     AtlasPage(contentPadding = PaddingValues(0.dp)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            StatsHeader()
-            StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
-            when (selectedTab) {
-                StatsTab.Map -> MapTab(uiState = uiState, modifier = Modifier.weight(1f))
-                else -> Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState())
-                        .padding(top = 14.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
-                    when (selectedTab) {
-                        StatsTab.Summary -> SummaryTab(uiState, onTimelineClick)
-                        StatsTab.Map -> Unit
-                        StatsTab.Countries -> CountriesTab(uiState)
-                        StatsTab.Trips -> TripsTab(uiState)
-                        StatsTab.Flights -> FlightsTab(uiState)
-                        StatsTab.Badges -> BadgesTab(uiState)
-                    }
+        if (selectedTab == StatsTab.Map) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                StatsHeader()
+                StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
+                MapTab(uiState = uiState, modifier = Modifier.weight(1f))
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 28.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                StatsHeader()
+                StatsTabRow(selectedTab = selectedTab, onSelected = { selectedTab = it })
+                when (selectedTab) {
+                    StatsTab.Summary -> SummaryTab(uiState, onTimelineClick)
+                    StatsTab.Map -> Unit
+                    StatsTab.Countries -> CountriesTab(uiState)
+                    StatsTab.Trips -> TripsTab(uiState)
+                    StatsTab.Flights -> FlightsTab(uiState)
+                    StatsTab.Badges -> BadgesTab(uiState)
                 }
             }
         }
@@ -262,14 +265,7 @@ private fun MapTab(uiState: StatsUiState, modifier: Modifier = Modifier) {
 @Composable
 private fun CountriesTab(uiState: StatsUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TabSection(
-            icon = Icons.Filled.Flag,
-            accentColor = AtlasVisited,
-            title = "Països",
-            subtitle = "${uiState.visitedCountries} de ${uiState.totalCountries} visitats · ${uiState.worldPercentage.roundToInt()}% del món",
-        ) {
-            CountriesHeroCard(uiState)
-        }
+        CountriesHeroCard(uiState)
         Section("Col·lecció de països") {
             CountryFlagGrid(uiState.countryStamps)
         }
@@ -365,12 +361,7 @@ private fun CountriesHeroStat(label: String, count: Int, color: Color, modifier:
 @Composable
 private fun TripsTab(uiState: StatsUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TabSection(
-            icon = Icons.Filled.Luggage,
-            accentColor = AtlasCompleted,
-            title = "Viatges",
-            subtitle = "${uiState.completedTripCount} completats · ${uiState.tripCount} en total",
-        ) {
+        Section("Viatges") {
             TripStatusPanel(uiState)
         }
         Section("Postals") {
@@ -394,12 +385,7 @@ private fun TripsTab(uiState: StatsUiState) {
 @Composable
 private fun FlightsTab(uiState: StatsUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TabSection(
-            icon = Icons.Filled.FlightTakeoff,
-            accentColor = AtlasPrimary,
-            title = "Vols",
-            subtitle = "${uiState.flightCount} vols · ${uiState.flownDistanceKm.formatKm()} volats",
-        ) {
+        Section("Bitàcola aèria") {
             FlightHeroPanel(uiState)
         }
         Section("Vols per any") {
@@ -437,14 +423,8 @@ private fun FlightsTab(uiState: StatsUiState) {
 
 @Composable
 private fun BadgesTab(uiState: StatsUiState) {
-    val unlockedBadgeCount = uiState.badges.count { it.unlocked }
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        TabSection(
-            icon = Icons.Filled.EmojiEvents,
-            accentColor = AtlasGold,
-            title = "Insígnies",
-            subtitle = "$unlockedBadgeCount de ${uiState.badges.size} desbloquejades",
-        ) {
+        Section("Progrés") {
             BadgeCompletionCard(uiState.badges)
         }
         Section("Totes les insígnies") {
@@ -2529,40 +2509,6 @@ private fun Section(title: String, content: @Composable () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         AtlasSectionLabel(title)
-        content()
-    }
-}
-
-@Composable
-private fun TabSection(
-    icon: ImageVector,
-    accentColor: Color,
-    title: String,
-    subtitle: String,
-    content: @Composable () -> Unit,
-) {
-    Column(
-        modifier = Modifier.padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            IconBadge(icon = icon, color = accentColor)
-            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = AtlasOnSurfaceStrong,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AtlasOnSurfaceMuted,
-                )
-            }
-        }
         content()
     }
 }

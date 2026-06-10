@@ -2,14 +2,15 @@
 
 ## PROJECT OVERVIEW & STATUS
 
-* **Last updated:** 2026-06-09 (v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats all tabs ✅; list page headers standardized ✅; auto-status update ✅; all pre-v4.0 work done and pushed — ready for v4.0)
+* **Last updated:** 2026-06-09 (**v4.0 M1 done** — country stats dataset + DB v22. Flexible `country_stat_facts` table; generated `country_stats.json` v2026.1: 244 countries, ~24k facts, ~98/country, 16 categories incl. religion/ethnicity breakdowns + curated social rights, memberships, Nobel/UNESCO/CPI/press/democracy/debt. `assembleDebug` green. Next: M2 Country Info screen.)
+* **Earlier:** v3.2 complete — per-stop photos + cover photos, DB v21; navbar fix; Stats all tabs ✅; list page headers standardized ✅; auto-status update ✅.
 * **v2.0 is complete and committed** (`b3d1896` 2026-06-02, polish `41fa56a` 2026-06-03). All milestones M0–M9 are live.
 * **v3.0 is complete and committed.** All 7 milestones are done:
   * M1 (`5e07f15`) — Flight API integration. Room DB v14.
   * M2 (`d1cdff7`, `0cfd5a8`, `16554a8`) — Airlines dataset, logos, autocomplete. Room DB v15.
   * M3–M7 committed together — Aircraft types + tail cache (DB v17), Canvas flight map (DB unchanged), UTC fields + distance (DB v18), Auto-suggest location search, Country tracking flags (DB v19).
 * **v3.1 is complete and committed.** All screens redesigned.
-* **Current phase:** v3.2 **complete** (per-stop photos + cover photos, DB v21). Next phase is v4.0 (Country depth / Stats).
+* **Current phase:** v4.0 (Country depth). **M1 (stats dataset + DB v22) complete.** Next: M2 (Country Info screen), M3 (detail enrichment), M4 (list filters).
 * **Project name/goal:** Atlas — a native Android local-first personal travel atlas. Tracks countries/territories, trips, stops, flights, itineraries, excursions, and JSON backup/restore.
 
 ---
@@ -569,9 +570,32 @@ _`StatsViewModel.kt` — badge additions:_
 - Total badge count: **28** (14 tiered + 14 binary).
 - `buildBadges` receives 7 new parameters: `uniqueRouteCount`, `aircraftTypeCount`, `nightFlightCount`, `hasUltraLongFlight`, `hasEarlyMorningFlight`, `hasLongTrip`, and the existing `visitedContinents` now drives the "Tots els continents" binary badge.
 
-### Next: v4.0 — Country depth / Stats dataset
+### v4.0 — Country depth
 
-All pre-v4.0 items are done. See §v4.0 milestones below.
+Full design + field contract: **`Documentation/Atlas_v4.0_Country_Stats_Spec.md`**.
+
+#### ✅ M1 — Country stats dataset + DB v22 (complete, build verified)
+
+**Room layer (DB v22):** flexible `country_stat_facts` table — composite PK `(country_iso2, category, key)` + `label_ca, value, unit, year, rank, rank_total, tier, sort_order`. Adding fields needs no migration. New files: `CountryStatFactEntity`, `CountryStatFactDao` (`observeByCountry`/`clear`/`upsertAll`), `CountryStatFact` (+mapper), `CountryStatRepository`(+Impl), `CountryStatDatasetDto`, `CountryStatDatasetImporter` (full-replace on version change). Wired into `AtlasDatabase` (v22 + `MIGRATION_21_22`), `DatasetConstants` (`COUNTRY_STATS_KEY/VERSION="2026.1"`), `AtlasAppContainer` (migration, importer, `countryStatRepository`, import call).
+
+**Dataset:** `assets/data/country_stats.json` v2026.1 — **244 countries, ~24k facts, ~98/country, 16 categories.** Catalan labels + categorical values; global ranks + Catalan tiers (Capdavanter/Alt/Mitjà/Baix/Inferior; `hdi` + `named` overrides).
+
+**Generation (`scripts/generate_country_stats.py` → JSON):**
+* **REST Countries v4** (build-time only; bundled output, so the preview API never runs in-app) — identity, geography, culture, practical, + **religion & ethnicity breakdowns** stored as a JSON-array string in `value` (`[{"name","pct"}]`; M2 parses).
+* **World Bank** via **`mrv=5` + pagination** (NOT `mrnev=1`/date-ranges — those time out from some networks and caused a 13-min hang). 78 indicators.
+* **UNDP HDR CSV** — HDI/IHDI/GII/GDI/mean+expected schooling.
+* WGI governance percentile ranks dropped (return ~0 countries).
+
+**Curated overrides (`scripts/build_curated_overrides.py` → `scripts/data/curated_overrides.json`, loaded by the generator):** Nobel, UNESCO, highest point, CPI, press freedom, democracy index, gov debt/fiscal (IMF via old project — live IMF API IP-blocks this env), Schengen/NATO/OECD (Sí/No), and a new **`drets` (Drets i societat)** category: death_penalty, same_sex_marriage, euthanasia, abortion. Source files in old project `Travel-app-2.0/Atlas/worker/src/data/` + inline pasted lists. **Caveats:** death_penalty one-sided (Vigent-only); social-rights partial snapshots; Schengen list verbatim from user (incl. Cyprus).
+
+**Pending manual fields (do later, then re-run builder + generator):** cannabis, voting_age, conscription, independence_year, motto, plug_type.
+
+**Polish deferred to v4.1:** gov-type translation is word-by-word/awkward; gentilici + national_holiday still English.
+
+#### Next: M2 — Country Info screen
+New push-nav screen reading `countryStatRepository.observeByCountry(iso2)`, grouped by `category` (screen imposes category display order), empty sections hidden. Renders value+unit+year+rank+tier chip; parses the religion/ethnic_groups JSON-array values into stacked bars/lists. Entry point from `CountryDetailScreen`. Design once the real dataset is reviewed (now available).
+
+Then **M3** (related flights + timeline enrichment + link to info page) and **M4** (country list filters by type/continent).
 
 ---
 

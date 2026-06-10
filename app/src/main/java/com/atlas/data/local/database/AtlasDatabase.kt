@@ -9,6 +9,7 @@ import com.atlas.data.local.dao.AircraftTypeDao
 import com.atlas.data.local.dao.AirlineDao
 import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
+import com.atlas.data.local.dao.CountryStatFactDao
 import com.atlas.data.local.dao.CountryUserStateDao
 import com.atlas.data.local.dao.DatasetMetadataDao
 import com.atlas.data.local.dao.AirportDao
@@ -29,6 +30,7 @@ import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
 import com.atlas.data.local.entity.CountryEntity
 import com.atlas.data.local.entity.CountryLogEntity
+import com.atlas.data.local.entity.CountryStatFactEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
 import com.atlas.data.local.entity.DatasetMetadataEntity
 import com.atlas.data.local.entity.TripEntity
@@ -53,8 +55,9 @@ import com.atlas.data.local.entity.TripStopEntity
         ExcursionEntity::class,
         ExcursionStopEntity::class,
         StopPhotoEntity::class,
+        CountryStatFactEntity::class,
     ],
-    version = 21,
+    version = 22,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -72,6 +75,7 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun itineraryDao(): ItineraryDao
     abstract fun excursionDao(): ExcursionDao
     abstract fun stopPhotoDao(): StopPhotoDao
+    abstract fun countryStatFactDao(): CountryStatFactDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -783,6 +787,32 @@ abstract class AtlasDatabase : RoomDatabase() {
         val MIGRATION_20_21 = object : Migration(20, 21) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `trips` ADD COLUMN `cover_photo_filename` TEXT")
+            }
+        }
+
+        val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `country_stat_facts` (
+                        `country_iso2` TEXT NOT NULL,
+                        `category` TEXT NOT NULL,
+                        `key` TEXT NOT NULL,
+                        `label_ca` TEXT NOT NULL,
+                        `value` TEXT NOT NULL,
+                        `unit` TEXT,
+                        `year` INTEGER,
+                        `rank` INTEGER,
+                        `rank_total` INTEGER,
+                        `tier` TEXT,
+                        `sort_order` INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY(`country_iso2`, `category`, `key`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_country_stat_facts_country_iso2` ON `country_stat_facts` (`country_iso2`)",
+                )
             }
         }
     }

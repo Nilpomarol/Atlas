@@ -82,6 +82,43 @@ internal fun highlightStandingColor(rank: Int, rankTotal: Int): Color = when {
     else -> AtlasOlive
 }
 
+/** A simplified, clean government descriptor derived from the raw dataset value. */
+internal data class GovernmentSummary(val form: String, val structure: String?)
+
+/**
+ * The raw `government_type` values are long and inconsistently translated (69 distinct
+ * variants). Collapse them into a small set of clean Catalan forms plus an optional
+ * structure tag (Unitari / Federal).
+ */
+internal fun simplifyGovernment(raw: String): GovernmentSummary {
+    val s = raw.lowercase()
+    val structure = when {
+        "federal" in s -> "Federal"
+        "unitàri" in s || "unitari" in s -> "Unitari"
+        else -> null
+    }
+    val form = when {
+        "teocr" in s || "theocr" in s || "ecclesiastical" in s -> "Teocràcia"
+        "monarquia" in s && ("absoluta" in s || "islàmica" in s || "islamica" in s) -> "Monarquia absoluta"
+        "monarquia" in s -> "Monarquia constitucional"
+        "comunista" in s -> "Estat comunista"
+        "one party" in s || "dominant party" in s || "totalitari" in s || "non partisan" in s ->
+            "Estat unipartidista"
+        "semi presidencialista" in s -> "República semipresidencialista"
+        "presidencialista" in s -> "República presidencialista"
+        "parlament" in s -> "República parlamentària"
+        "dependent" in s || "direct rule" in s || "devolution" in s || "self-governance" in s ->
+            "Territori dependent"
+        "rep" in s -> "República"
+        structure == "Federal" -> "Estat federal"
+        structure == "Unitari" -> "Estat unitari"
+        else -> raw.replaceFirstChar { it.uppercase() }
+    }
+    // Drop the structure tag when the form already names it, to avoid "Estat unitari · Unitari".
+    val tag = structure?.takeUnless { form == "Estat unitari" || form == "Estat federal" }
+    return GovernmentSummary(form, tag)
+}
+
 internal fun formatOrdinal(rank: Int): String = when (rank) {
     1 -> "1r"
     2 -> "2n"

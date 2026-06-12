@@ -115,13 +115,19 @@ internal fun SectionCard(section: CountryInfoSection, defaultExpanded: Boolean) 
 
 @Composable
 private fun FactItemRow(fact: CountryFactView, accent: Color) {
-    when (fact.renderType) {
-        FactRenderType.RANKED_NUMERIC -> RankedRow(fact)
-        FactRenderType.PERCENT -> PercentRow(fact, accent)
-        FactRenderType.BREAKDOWN -> BreakdownRow(fact)
-        FactRenderType.STATUS -> StatusRow(fact)
-        FactRenderType.MEMBERSHIP -> SimpleRow(fact)
-        FactRenderType.TEXT -> if (fact.key == "borders" || fact.key == "languages") ChipsRow(fact) else SimpleRow(fact)
+    // Some facts render by what they are, regardless of which section they live in.
+    when (fact.key) {
+        "coat_of_arms" -> CoatOfArmsRow(fact)
+        "government_type" -> GovernmentRow(fact)
+        "olympic_code", "fifa_code" -> MonoValueRow(fact)
+        else -> when (fact.renderType) {
+            FactRenderType.RANKED_NUMERIC -> RankedRow(fact)
+            FactRenderType.PERCENT -> PercentRow(fact, accent)
+            FactRenderType.BREAKDOWN -> BreakdownRow(fact)
+            FactRenderType.STATUS -> StatusRow(fact)
+            FactRenderType.MEMBERSHIP -> SimpleRow(fact)
+            FactRenderType.TEXT -> if (fact.key == "borders" || fact.key == "languages") ChipsRow(fact) else SimpleRow(fact)
+        }
     }
 }
 

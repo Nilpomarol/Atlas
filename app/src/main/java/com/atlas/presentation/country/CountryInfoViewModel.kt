@@ -79,8 +79,17 @@ class CountryInfoViewModel(
             unit == "%" -> FactRenderType.PERCENT
             else -> FactRenderType.TEXT
         }
+        // The "identity" facts have no section of their own; they are redistributed
+        // to the section that matches what each fact actually is, leading or trailing
+        // their target group so they read as a cluster.
+        val effectiveCategory = CATEGORY_REMAP[key] ?: category
+        val effectiveSortOrder = when {
+            key in LEAD_KEYS -> sortOrder - 1000
+            key in TRAIL_KEYS -> sortOrder + 1000
+            else -> sortOrder
+        }
         return CountryFactView(
-            category = category,
+            category = effectiveCategory,
             key = key,
             label = labelCa,
             value = value,
@@ -89,7 +98,7 @@ class CountryInfoViewModel(
             rank = rank,
             rankTotal = rankTotal,
             tier = tier,
-            sortOrder = sortOrder,
+            sortOrder = effectiveSortOrder,
             renderType = type,
             breakdown = if (type == FactRenderType.BREAKDOWN) parseBreakdown(value) else null,
         )
@@ -203,6 +212,21 @@ class CountryInfoViewModel(
         val json = Json { ignoreUnknownKeys = true }
 
         const val CAT_DRETS = "drets"
+
+        // Identity facts are redistributed into the section matching what they are.
+        val CATEGORY_REMAP = mapOf(
+            "capital" to "geografia",
+            "official_name" to "governanca",
+            "coat_of_arms" to "governanca",
+            "government_type" to "governanca",
+            "anthem" to "cultura",
+            "olympic_code" to "cultura",
+            "fifa_code" to "cultura",
+            "demonym" to "cultura",
+        )
+        // State symbols lead the governance group; cultural identity trails culture.
+        val LEAD_KEYS = setOf("official_name", "coat_of_arms", "government_type")
+        val TRAIL_KEYS = setOf("anthem", "olympic_code", "fifa_code", "demonym")
         val MEMBERSHIP_KEYS = setOf("un_member", "eu_member", "schengen", "nato_member", "oecd_member")
         val MEMBERSHIP_ORDER = listOf(
             "un_member" to "ONU",

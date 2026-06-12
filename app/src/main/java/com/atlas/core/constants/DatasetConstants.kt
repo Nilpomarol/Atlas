@@ -10,5 +10,5 @@ object DatasetConstants {
     const val AIRCRAFT_TYPES_KEY = "aircraft_types"
     const val AIRCRAFT_TYPES_VERSION = "2026.3"
     const val COUNTRY_STATS_KEY = "country_stats"
-    const val COUNTRY_STATS_VERSION = "2026.1"
+    const val COUNTRY_STATS_VERSION = "2026.2"
 }

@@ -1,20 +1,16 @@
 package com.atlas.ui.screens.countryinfo
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +24,6 @@ import coil.decode.SvgDecoder
 import coil.request.ImageRequest
 import com.atlas.presentation.country.CountryFactView
 import com.atlas.ui.theme.AtlasMono
-import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 
@@ -50,7 +45,7 @@ internal fun CoatOfArmsRow(fact: CountryFactView) {
     }
 }
 
-/** Government type: render the simplified form plus a structure tag. */
+/** Government type: render the simplified form plus its structure qualifier. */
 @Composable
 internal fun GovernmentRow(fact: CountryFactView) {
     val gov = simplifyGovernment(fact.value)
@@ -71,12 +66,11 @@ internal fun GovernmentRow(fact: CountryFactView) {
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                gov.form,
+                gov.form + (gov.structure?.let { " · $it" } ?: ""),
                 color = AtlasOnSurfaceStrong,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.End,
             )
-            gov.structure?.let { StructureChip(it) }
             FactYear(fact.year)
         }
     }
@@ -107,7 +101,7 @@ internal fun MonoValueRow(fact: CountryFactView) {
 }
 
 @Composable
-private fun CoatOfArms(url: String, modifier: Modifier = Modifier) {
+internal fun CoatOfArms(url: String, modifier: Modifier = Modifier) {
     SubcomposeAsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
             .data(url)
@@ -122,19 +116,3 @@ private fun CoatOfArms(url: String, modifier: Modifier = Modifier) {
     }
 }
 
-@Composable
-private fun StructureChip(text: String) {
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(AtlasNavy.copy(alpha = 0.12f))
-            .padding(horizontal = 10.dp, vertical = 3.dp),
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelSmall,
-            color = AtlasNavy,
-            fontWeight = FontWeight.Medium,
-        )
-    }
-}

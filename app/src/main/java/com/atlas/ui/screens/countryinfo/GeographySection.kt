@@ -380,27 +380,43 @@ private fun EnvMeter(fact: CountryFactView) {
             }
         }
         TrackBar(envFraction(fact.key, value), color)
+        if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) {
+            Text(
+                "${formatOrdinal(fact.rank)} de ${fact.rankTotal}",
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceFaint,
+            )
+        }
     }
 }
 
 @Composable
 private fun EnvNeutralRow(fact: CountryFactView) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom,
-    ) {
-        Text(
-            fact.label,
-            color = AtlasOnSurfaceMuted,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            fact.value + (fact.unit?.let { " $it" } ?: ""),
-            color = AtlasOnSurfaceStrong,
-            fontWeight = FontWeight.Medium,
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            Text(
+                fact.label,
+                color = AtlasOnSurfaceMuted,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                fact.value + (fact.unit?.let { " $it" } ?: ""),
+                color = AtlasOnSurfaceStrong,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+        if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) {
+            Text(
+                "${formatOrdinal(fact.rank)} de ${fact.rankTotal}",
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceFaint,
+            )
+        }
     }
 }
 

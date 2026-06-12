@@ -68,7 +68,9 @@ fun CountryInfoScreen(
             } else {
                 AtlasSectionLabel("Informació per àmbits")
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    uiState.sections.forEachIndexed { i, s -> SectionCard(s, defaultExpanded = i == 0) }
+                    uiState.sections.forEachIndexed { i, s ->
+                        SectionCard(s, defaultExpanded = i == 0, bordersMap = uiState.bordersMap)
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))

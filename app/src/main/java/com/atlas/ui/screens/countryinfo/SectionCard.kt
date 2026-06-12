@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atlas.presentation.country.CountryBordersUi
 import com.atlas.presentation.country.CountryFactView
 import com.atlas.presentation.country.CountryInfoSection
 import com.atlas.presentation.country.FactRenderType
@@ -49,7 +50,11 @@ import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasSurfaceRaised
 
 @Composable
-internal fun SectionCard(section: CountryInfoSection, defaultExpanded: Boolean) {
+internal fun SectionCard(
+    section: CountryInfoSection,
+    defaultExpanded: Boolean,
+    bordersMap: CountryBordersUi? = null,
+) {
     var expanded by rememberSaveable(section.key) { mutableStateOf(defaultExpanded) }
     val accent = sectionAccent(section.key)
     val chevronRot by animateFloatAsState(if (expanded) 180f else 0f, label = "chevron")
@@ -84,6 +89,8 @@ internal fun SectionCard(section: CountryInfoSection, defaultExpanded: Boolean) 
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
                         if (section.key == "drets") {
                             DretsGrid(section.items)
+                        } else if (section.key == "geo_medi") {
+                            GeographySection(section.items, bordersMap)
                         } else {
                             var previousCategory: String? = null
                             section.items.forEachIndexed { index, item ->

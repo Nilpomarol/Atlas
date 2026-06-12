@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -105,50 +106,54 @@ fun AtlasGeoCanvas(
             markers.forEach { marker ->
                 val center = projection.project(marker.coordinate)
                 val radius = 6.5.dp.toPx() * marker.radiusMultiplier
-                drawCircle(
-                    color = Color.White.copy(alpha = 0.9f * marker.alpha),
-                    radius = radius + 3.dp.toPx(),
-                    center = center,
-                )
-                if (marker.isHollow) {
+                if (!marker.labelOnly) {
                     drawCircle(
-                        color = Color.White.copy(alpha = marker.alpha),
-                        radius = radius,
+                        color = Color.White.copy(alpha = 0.9f * marker.alpha),
+                        radius = radius + 3.dp.toPx(),
                         center = center,
                     )
-                    drawCircle(
-                        color = marker.color.copy(alpha = marker.alpha),
-                        radius = radius,
-                        center = center,
-                        style = Stroke(width = 2.dp.toPx()),
-                    )
-                } else {
-                    drawCircle(
-                        color = marker.color.copy(alpha = marker.alpha),
-                        radius = radius,
-                        center = center,
-                    )
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.92f * marker.alpha),
-                        radius = radius,
-                        center = center,
-                        style = Stroke(width = 1.4.dp.toPx()),
-                    )
+                    if (marker.isHollow) {
+                        drawCircle(
+                            color = Color.White.copy(alpha = marker.alpha),
+                            radius = radius,
+                            center = center,
+                        )
+                        drawCircle(
+                            color = marker.color.copy(alpha = marker.alpha),
+                            radius = radius,
+                            center = center,
+                            style = Stroke(width = 2.dp.toPx()),
+                        )
+                    } else {
+                        drawCircle(
+                            color = marker.color.copy(alpha = marker.alpha),
+                            radius = radius,
+                            center = center,
+                        )
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.92f * marker.alpha),
+                            radius = radius,
+                            center = center,
+                            style = Stroke(width = 1.4.dp.toPx()),
+                        )
+                    }
                 }
                 marker.label?.takeIf { it.isNotBlank() }?.let { label ->
                     drawContext.canvas.nativeCanvas.apply {
+                        val textColor = if (marker.labelOnly) marker.color.toArgb() else android.graphics.Color.rgb(30, 42, 46)
                         val textPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                            color = android.graphics.Color.rgb(30, 42, 46)
+                            color = textColor
                             textSize = 10.dp.toPx()
                             typeface = android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)
                             textAlign = android.graphics.Paint.Align.CENTER
                         }
                         val bgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-                            color = android.graphics.Color.argb(216, 248, 243, 232)
+                            color = android.graphics.Color.argb(232, 248, 243, 232)
                         }
                         val textWidth = textPaint.measureText(label)
                         val x = center.x
-                        val y = center.y - radius - 9.dp.toPx()
+                        // Label-only tags sit centered on the point; pinned tags float above the dot.
+                        val y = if (marker.labelOnly) center.y + 4.dp.toPx() else center.y - radius - 9.dp.toPx()
                         drawRoundRect(
                             x - textWidth / 2f - 6.dp.toPx(),
                             y - 13.dp.toPx(),

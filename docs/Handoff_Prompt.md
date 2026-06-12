@@ -176,10 +176,13 @@ Map usage:
 Current priority:
 
 Country Info is being redesigned section by section. Hero, highlights/KPI shelf,
-identity (dissolved), and geography are done and committed.
+identity (dissolved), geography, governance, demography, and health are done and
+committed. Each redesigned section is a custom composable special-cased in
+`SectionCard` by section key.
 
-1. Continue the section-by-section redesign (governance, demography, economy,
-   etc.), keeping each section visual and hierarchical rather than a flat list.
+1. Continue the section-by-section redesign — remaining: economia, finances,
+   desenvolupament, infraestructura, cultura, drets, practic. Keep each section
+   visual, hierarchical, and color-driven rather than a flat list.
 2. Preserve current behavior, Room schema, presentation/domain boundaries; keep
    the dataset importer idempotent and version-gated.
 3. After Country Info redesign is accepted, continue v4.0 M3 country-detail
@@ -193,10 +196,20 @@ Completed in the current pass (committed):
   compact number formatter, tier-colored KPI tiles;
 - dissolved identity, redistributing facts and moving rich rendering (coat-of-arms
   emblem, simplified government, mono codes) to the fact-row level;
-- visual geography section with Everest comparison, land-use bar, grouped
-  environment report card, and an offline neighbors map (`GeoMarker.labelOnly`);
+- geography: Everest comparison, land-use bar, grouped environment report card,
+  and an offline neighbors map (`GeoMarker.labelOnly`);
+- governance: state header, democracy/press/corruption index report card, defense
+  block, and an even membership grid;
+- demography: population headline, age-structure bar, ethnic donut, and a Dinamica
+  block with a birth-vs-death natural-balance visual;
+- health: life-expectancy headline with gender split, mortality report card, basic
+  access meters, health-system rows, and risk-factor meters;
 - CO2 ranks derived at import (`co2_per_capita`, `co2_total`), dataset `2026.2`;
 - `assembleDebug` passes after each step.
+
+The health section is a first pass and may still change (thresholds, grouping,
+gender-gap visual). Section quality thresholds throughout are opinionated and
+easy to retune.
 
 Remaining visual review:
 
@@ -204,6 +217,7 @@ Remaining visual review:
 - device review of the geography neighbors-map framing (small vs many-neighbor
   countries), ISO3 tag collisions, and the environment meters;
 - verify CO2 ranks do not produce trivial highlights for near-zero emitters;
+- ethnic-group names render in English (dataset); decide whether to localize;
 - device review of long Catalan labels and narrow layouts.
 
 ## Validation

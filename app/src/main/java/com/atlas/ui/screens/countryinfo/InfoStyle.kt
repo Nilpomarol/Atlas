@@ -114,7 +114,8 @@ internal fun simplifyGovernment(raw: String): GovernmentSummary {
         structure == "Unitari" -> "Estat unitari"
         else -> raw.replaceFirstChar { it.uppercase() }
     }
-    // Drop the structure tag when the form already names it, to avoid "Estat unitari · Unitari".
+    // Keep the structure (Unitari / Federal) as a plain qualifier, unless the form
+    // already names it ("Estat unitari" / "Estat federal").
     val tag = structure?.takeUnless { form == "Estat unitari" || form == "Estat federal" }
     return GovernmentSummary(form, tag)
 }

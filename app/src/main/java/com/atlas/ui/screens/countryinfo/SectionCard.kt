@@ -91,6 +91,8 @@ internal fun SectionCard(
                             DretsGrid(section.items)
                         } else if (section.key == "geo_medi") {
                             GeographySection(section.items, bordersMap)
+                        } else if (section.key == "governanca") {
+                            GovernanceSection(section.items)
                         } else {
                             var previousCategory: String? = null
                             section.items.forEachIndexed { index, item ->

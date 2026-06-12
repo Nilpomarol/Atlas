@@ -57,4 +57,6 @@ data class GeoMarker(
     val alpha: Float = 1f,
     val isHollow: Boolean = false,
     val label: String? = null,
+    /** When true, draw only the label tag (colored by [color]) centered on the point — no dot. */
+    val labelOnly: Boolean = false,
 )

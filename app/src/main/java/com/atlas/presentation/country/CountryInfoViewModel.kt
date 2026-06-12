@@ -36,8 +36,9 @@ class CountryInfoViewModel(
         countryRepository.observeCountry(iso2),
         countryStatRepository.observeByCountry(iso2),
         countryPhotoRepository.observePhoto(iso2),
-    ) { country, facts, photo ->
-        buildUiState(country, facts, photo)
+        countryRepository.observeTrackableCountries(),
+    ) { country, facts, photo, countries ->
+        buildUiState(country, facts, photo, countries)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
@@ -55,6 +56,7 @@ class CountryInfoViewModel(
         country: Country?,
         facts: List<CountryStatFact>,
         photo: CountryPhoto?,
+        countries: List<Country>,
     ): CountryInfoUiState {
         if (country == null) {
             return CountryInfoUiState(isLoading = facts.isEmpty())
@@ -66,7 +68,31 @@ class CountryInfoViewModel(
             sections = buildSections(views),
             highlights = buildHighlights(views),
             kpis = buildKpis(views),
+            bordersMap = buildBordersMap(country, facts, countries),
             isLoading = false,
+        )
+    }
+
+    /** Resolve the Catalan border names into ISO2 + coordinates for a neighbors map. */
+    private fun buildBordersMap(
+        country: Country,
+        facts: List<CountryStatFact>,
+        countries: List<Country>,
+    ): CountryBordersUi? {
+        val names = facts.firstOrNull { it.key == "borders" }?.value
+            ?.split(", ")?.map { it.trim() }?.filter { it.isNotEmpty() }
+            ?: return null
+        if (names.isEmpty()) return null
+        val byName = countries.associateBy { it.nameCa.trim().lowercase() }
+        val borders = names.mapNotNull { byName[it.lowercase()] }
+            .map { BorderCountryUi(it.iso2, it.iso3, it.nameCa, it.latitude, it.longitude) }
+        if (borders.isEmpty()) return null
+        return CountryBordersUi(
+            selfIso2 = country.iso2,
+            selfIso3 = country.iso3,
+            selfLat = country.latitude,
+            selfLng = country.longitude,
+            borders = borders,
         )
     }
 
@@ -359,11 +385,28 @@ data class CountryKpi(
     val tier: String?,
 )
 
+data class BorderCountryUi(
+    val iso2: String,
+    val iso3: String?,
+    val nameCa: String,
+    val lat: Double?,
+    val lng: Double?,
+)
+
+data class CountryBordersUi(
+    val selfIso2: String,
+    val selfIso3: String?,
+    val selfLat: Double?,
+    val selfLng: Double?,
+    val borders: List<BorderCountryUi>,
+)
+
 data class CountryInfoUiState(
     val country: Country? = null,
     val photo: CountryPhoto? = null,
     val sections: List<CountryInfoSection> = emptyList(),
     val highlights: List<CountryHighlight> = emptyList(),
     val kpis: List<CountryKpi> = emptyList(),
+    val bordersMap: CountryBordersUi? = null,
     val isLoading: Boolean = true,
 )

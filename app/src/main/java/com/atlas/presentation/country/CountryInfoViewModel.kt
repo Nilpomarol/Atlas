@@ -169,7 +169,8 @@ class CountryInfoViewModel(
                     rank = it.rank!!,
                     rankTotal = it.rankTotal!!,
                     label = it.label,
-                    valueText = it.value + (it.unit?.let { u -> " $u" } ?: ""),
+                    value = it.value,
+                    unit = it.unit,
                     tier = it.tier,
                 )
             }
@@ -226,7 +227,7 @@ class CountryInfoViewModel(
 
         const val MIN_RANK_PEERS = 30
         const val HIGHLIGHT_PERCENTILE = 0.12
-        const val MAX_HIGHLIGHTS = 4
+        const val MAX_HIGHLIGHTS = 6
         const val MAX_KPIS = 4
 
         // 16 granular categories → 12 display sections.
@@ -320,7 +321,8 @@ data class CountryHighlight(
     val rank: Int,
     val rankTotal: Int,
     val label: String,
-    val valueText: String,
+    val value: String,
+    val unit: String?,
     val tier: String?,
 )
 

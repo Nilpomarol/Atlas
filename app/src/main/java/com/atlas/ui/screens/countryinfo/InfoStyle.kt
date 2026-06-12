@@ -28,10 +28,15 @@ import com.atlas.ui.theme.AtlasNavySoft
 import com.atlas.ui.theme.AtlasOlive
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasBronze
+import com.atlas.ui.theme.AtlasMedalGold
 import com.atlas.ui.theme.AtlasPlanned
 import com.atlas.ui.theme.AtlasPrimary
+import com.atlas.ui.theme.AtlasSilver
 import com.atlas.ui.theme.AtlasVisited
 import com.atlas.ui.theme.AtlasWished
+import kotlin.math.abs
+import kotlin.math.roundToLong
 
 // --------------------------------------------------------------------------- //
 // Formatting + numeric helpers
@@ -41,6 +46,40 @@ internal fun String.toCaDouble(): Double = replace(".", "").replace(",", ".").to
 internal fun formatPct(v: Double): String {
     val r = (v * 10).toLong() / 10.0
     return (if (r % 1.0 == 0.0) r.toLong().toString() else r.toString()).replace(".", ",")
+}
+
+/**
+ * Compact, Catalan-formatted magnitude for large numbers so tiles never overflow:
+ * k (milers), M (milions), B (mil milions), T (bilions). Values below 1000 or that
+ * are not parseable numbers are returned untouched, so decimals, percentages, codes
+ * and short values keep their original formatting.
+ */
+internal fun formatCompactValue(raw: String): String {
+    val parsed = raw.replace(".", "").replace(",", ".").toDoubleOrNull() ?: return raw
+    val magnitude = abs(parsed)
+    if (magnitude < 1000) return raw
+    val (scaled, suffix) = when {
+        magnitude >= 1e12 -> parsed / 1e12 to "T"
+        magnitude >= 1e9 -> parsed / 1e9 to "B"
+        magnitude >= 1e6 -> parsed / 1e6 to "M"
+        else -> parsed / 1e3 to "k"
+    }
+    val rounded = (scaled * 10).roundToLong() / 10.0
+    val text = if (rounded % 1.0 == 0.0) rounded.toLong().toString() else rounded.toString()
+    return text.replace(".", ",") + suffix
+}
+
+/**
+ * Medal color for a highlight by the country's actual world rank: the literal
+ * podium (1/2/3) is gold/silver/bronze, and everything below it is green, deeper
+ * for the stronger ranks. (Highlights are already filtered to roughly the top 12%.)
+ */
+internal fun highlightStandingColor(rank: Int, rankTotal: Int): Color = when {
+    rank == 1 -> AtlasMedalGold
+    rank == 2 -> AtlasSilver
+    rank == 3 -> AtlasBronze
+    rank.toDouble() / rankTotal <= 0.05 -> AtlasVisited
+    else -> AtlasOlive
 }
 
 internal fun formatOrdinal(rank: Int): String = when (rank) {

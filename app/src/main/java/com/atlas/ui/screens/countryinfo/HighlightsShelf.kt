@@ -19,9 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,6 +35,10 @@ import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasSerif
 import com.atlas.ui.theme.AtlasSurfaceRaised
 
+private val HIGHLIGHT_CARD_WIDTH = 150.dp
+private val HIGHLIGHT_CARD_HEIGHT = 126.dp
+private val KPI_TILE_HEIGHT = 116.dp
+
 @Composable
 internal fun HighlightsShelf(highlights: List<CountryHighlight>) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -44,32 +48,48 @@ internal fun HighlightsShelf(highlights: List<CountryHighlight>) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             highlights.forEach { h ->
-                val c = tierColor(h.tier)
-                Box(
-                    Modifier.width(158.dp).clip(RoundedCornerShape(16.dp)).background(AtlasSurfaceRaised)
-                        .border(1.dp, AtlasOutline, RoundedCornerShape(16.dp)),
-                ) {
-                    Box(Modifier.fillMaxHeight().width(5.dp).background(c).align(Alignment.CenterStart))
-                    Column(Modifier.padding(start = 17.dp, top = 14.dp, end = 13.dp, bottom = 14.dp)) {
-                        Text(formatOrdinal(h.rank), fontFamily = AtlasSerif, fontSize = 34.sp, fontWeight = FontWeight.Medium, color = c)
-                        Text(
-                            text = h.label,
-                            color = AtlasOnSurfaceStrong,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "${h.valueText} · de ${h.rankTotal}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AtlasOnSurfaceMuted,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
+                HighlightCard(h, highlightStandingColor(h.rank, h.rankTotal))
             }
+        }
+    }
+}
+
+@Composable
+private fun HighlightCard(h: CountryHighlight, accent: Color) {
+    Box(
+        Modifier
+            .width(HIGHLIGHT_CARD_WIDTH)
+            .height(HIGHLIGHT_CARD_HEIGHT)
+            .clip(RoundedCornerShape(14.dp))
+            .background(AtlasSurfaceRaised)
+            .border(1.dp, AtlasOutline, RoundedCornerShape(14.dp)),
+    ) {
+        Column(
+            Modifier.fillMaxHeight().padding(horizontal = 14.dp, vertical = 12.dp),
+        ) {
+            Text(
+                formatOrdinal(h.rank),
+                fontFamily = AtlasSerif,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Medium,
+                color = accent,
+            )
+            Spacer(Modifier.weight(1f))
+            Text(
+                text = h.label,
+                color = AtlasOnSurfaceStrong,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "${formatCompactValue(h.value)}${h.unit?.let { " $it" } ?: ""} · de ${h.rankTotal}",
+                style = MaterialTheme.typography.labelMedium,
+                color = AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -97,9 +117,13 @@ internal fun KpiGrid(kpis: List<CountryKpi>) {
 private fun KpiTile(kpi: CountryKpi, modifier: Modifier = Modifier) {
     val color = tierColor(kpi.tier)
     Box(
-        modifier.clip(RoundedCornerShape(16.dp)).background(color.copy(alpha = 0.10f)).padding(15.dp),
+        modifier
+            .height(KPI_TILE_HEIGHT)
+            .clip(RoundedCornerShape(16.dp))
+            .background(color.copy(alpha = 0.12f))
+            .border(1.dp, color.copy(alpha = 0.28f), RoundedCornerShape(16.dp)),
     ) {
-        Column {
+        Column(Modifier.fillMaxHeight().padding(horizontal = 15.dp, vertical = 14.dp)) {
             Text(
                 text = kpi.label,
                 style = MaterialTheme.typography.labelMedium,
@@ -107,23 +131,24 @@ private fun KpiTile(kpi: CountryKpi, modifier: Modifier = Modifier) {
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.weight(1f))
             Text(
-                text = kpi.value + (kpi.unit?.let { " $it" } ?: ""),
+                text = formatCompactValue(kpi.value) + (kpi.unit?.let { " $it" } ?: ""),
                 fontFamily = AtlasSerif,
                 fontSize = 25.sp,
                 fontWeight = FontWeight.Medium,
                 color = AtlasOnSurfaceStrong,
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (kpi.rank != null) {
                 Text(
                     text = "${formatOrdinal(kpi.rank)} del món" + (kpi.tier?.let { " · $it" } ?: ""),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = color,
                     fontWeight = FontWeight.Medium,
-                    maxLines = 2,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }

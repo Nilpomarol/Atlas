@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.atlas.presentation.country.BreakdownSlice
 import com.atlas.presentation.country.Membership
+import com.atlas.ui.theme.AtlasMono
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -44,6 +45,24 @@ internal fun PositionBar(rank: Int, rankTotal: Int, color: Color) {
 internal fun TrackBar(fraction: Float, color: Color) {
     Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(5.dp)).background(AtlasSurfaceSubtle)) {
         Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(color))
+    }
+}
+
+/** A label + value pair for compact two-column key-fact grids. */
+internal data class KeyFact(val label: String, val value: String, val mono: Boolean = false)
+
+@Composable
+internal fun RowScope.KeyFactCell(fact: KeyFact) {
+    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(fact.label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint)
+        Text(
+            fact.value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = if (fact.mono) AtlasMono else null,
+            fontWeight = FontWeight.Medium,
+            color = AtlasOnSurfaceStrong,
+            maxLines = 2,
+        )
     }
 }
 

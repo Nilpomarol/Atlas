@@ -178,7 +178,7 @@ private fun DretsGrid(items: List<SectionItem>) {
 @Composable
 private fun RightsTile(fact: CountryFactView, modifier: Modifier = Modifier) {
     val color = statusColor(fact.value)
-    Box(modifier.clip(RoundedCornerShape(13.dp)).background(color.copy(alpha = 0.12f)).padding(13.dp)) {
+    Box(modifier.clip(RoundedCornerShape(13.dp)).background(color.copy(alpha = 0.12f)).border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(13.dp)).padding(13.dp)) {
         Column {
             Text(
                 text = fact.label,

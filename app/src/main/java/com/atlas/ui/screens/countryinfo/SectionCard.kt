@@ -103,6 +103,8 @@ internal fun SectionCard(
                             DevelopmentSection(section.items)
                         } else if (section.key == "infraestructura") {
                             InfrastructureSection(section.items)
+                        } else if (section.key == "cultura") {
+                            CultureSection(section.items)
                         } else {
                             var previousCategory: String? = null
                             section.items.forEachIndexed { index, item ->

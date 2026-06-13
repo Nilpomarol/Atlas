@@ -1,16 +1,26 @@
 package com.atlas.ui.screens.countryinfo
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -21,12 +31,17 @@ import com.atlas.ui.components.AtlasSectionLabel
 import com.atlas.ui.theme.AtlasDelay
 import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasGold
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOlive
+import com.atlas.ui.theme.AtlasPlanned
 import com.atlas.ui.theme.AtlasSerif
+import com.atlas.ui.theme.AtlasSurfaceSubtle
 import com.atlas.ui.theme.AtlasVisited
+import com.atlas.ui.theme.AtlasWished
+import kotlin.math.abs
 
 @Composable
 internal fun HealthSection(items: List<SectionItem>) {
@@ -66,14 +81,55 @@ private fun LifeExpectancyHeadline(byKey: Map<String, CountryFactView>) {
             )
         }
         if (male != null && female != null) {
-            val gap = female.value.toCaDouble() - male.value.toCaDouble()
-            Text(
-                "♂ ${male.value} · ♀ ${female.value} ${le.unit ?: ""}".trim() +
-                    if (gap > 0) "  (+${formatPct(gap)} elles)" else "",
-                style = MaterialTheme.typography.labelMedium,
-                color = AtlasOnSurfaceMuted,
-            )
+            LifeExpectancyGap(male, female, le.unit ?: "anys")
         }
+    }
+}
+
+/** Male vs female life expectancy as a dumbbell on a zoomed axis so the gap shows. */
+@Composable
+private fun LifeExpectancyGap(male: CountryFactView, female: CountryFactView, unit: String) {
+    val axisMin = 50.0
+    val axisMax = 90.0
+    val span = axisMax - axisMin
+    fun frac(v: Double) = ((v - axisMin) / span).toFloat().coerceIn(0f, 1f)
+    val m = male.value.toCaDouble()
+    val f = female.value.toCaDouble()
+    val mF = frac(m)
+    val fF = frac(f)
+    val lo = minOf(mF, fF)
+    val hi = maxOf(mF, fF)
+    val dot = 14.dp
+
+    Column(Modifier.padding(top = 2.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().height(dot)) {
+            val w = maxWidth
+            Box(
+                Modifier.align(Alignment.CenterStart).fillMaxWidth().height(4.dp)
+                    .clip(RoundedCornerShape(2.dp)).background(AtlasSurfaceSubtle),
+            )
+            Box(
+                Modifier.align(Alignment.CenterStart).offset(x = w * lo).width(w * (hi - lo)).height(4.dp)
+                    .background(AtlasGold),
+            )
+            GenderMarker(this, (w * mF - dot / 2).coerceIn(0.dp, w - dot), AtlasPlanned)
+            GenderMarker(this, (w * fF - dot / 2).coerceIn(0.dp, w - dot), AtlasWished)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("♂ ${male.value}", style = MaterialTheme.typography.labelMedium, color = AtlasPlanned, fontWeight = FontWeight.Medium)
+            Text("Δ ${formatPct(abs(f - m))} $unit", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
+            Text("♀ ${female.value}", style = MaterialTheme.typography.labelMedium, color = AtlasWished, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Composable
+private fun GenderMarker(scope: androidx.compose.foundation.layout.BoxWithConstraintsScope, offsetX: androidx.compose.ui.unit.Dp, color: Color) {
+    with(scope) {
+        Box(
+            Modifier.align(Alignment.CenterStart).offset(x = offsetX).size(14.dp)
+                .clip(CircleShape).background(color).border(2.dp, Color.White, CircleShape),
+        )
     }
 }
 
@@ -113,33 +169,49 @@ private fun HealthSystem(byKey: Map<String, CountryFactView>) {
     val expGdp = byKey["health_exp_gdp"]
     if (listOfNotNull(physicians, beds, expPc, expGdp).isEmpty()) return
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         AtlasSectionLabel("Sistema sanitari")
-        physicians?.let { ResourceRow(it) }
-        beds?.let { ResourceRow(it) }
-        if (expPc != null || expGdp != null) {
-            val parts = listOfNotNull(
-                expGdp?.let { "${it.value} ${it.unit ?: ""}".trim() },
-                expPc?.let { "${formatCompactValue(it.value)} ${it.unit ?: ""} per càpita".trim() },
-            )
+        // Capacity per 1.000 inhabitants, as comparable bars.
+        physicians?.let { CapacityMeter(it, scale = 7.0) }
+        beds?.let { CapacityMeter(it, scale = 13.0) }
+        // Spending: share of GDP as the headline, per-capita as context.
+        if (expGdp != null || expPc != null) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                Text("Despesa en salut", color = AtlasOnSurfaceMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                Text(parts.joinToString(" · "), color = AtlasOnSurfaceStrong, fontWeight = FontWeight.Medium)
+                Column {
+                    Text("Despesa en salut", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint)
+                    expGdp?.let {
+                        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(it.value, fontFamily = AtlasSerif, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong)
+                            Text(it.unit ?: "% PIB", style = MaterialTheme.typography.bodyMedium, color = AtlasOnSurfaceMuted, modifier = Modifier.padding(bottom = 2.dp))
+                        }
+                    }
+                }
+                expPc?.let {
+                    Text(
+                        "${formatCompactValue(it.value)} ${it.unit ?: ""}/càpita".trim(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = AtlasOnSurfaceMuted,
+                        modifier = Modifier.padding(bottom = 2.dp),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ResourceRow(fact: CountryFactView) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-        Text(fact.label, color = AtlasOnSurfaceMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-        Column(horizontalAlignment = Alignment.End) {
-            Text("${fact.value} ${fact.unit ?: ""}".trim(), color = AtlasOnSurfaceStrong, fontWeight = FontWeight.Medium)
-            if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) {
-                Text("${formatOrdinal(fact.rank)} de ${fact.rankTotal}", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint)
+private fun CapacityMeter(fact: CountryFactView, scale: Double) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+            Text(fact.label, color = AtlasOnSurfaceMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+                Text("${fact.value} ${fact.unit ?: ""}".trim(), color = AtlasOnSurfaceStrong, fontWeight = FontWeight.Medium)
+                if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) {
+                    Text("${formatOrdinal(fact.rank)} de ${fact.rankTotal}", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint)
+                }
             }
         }
+        TrackBar((fact.value.toCaDouble() / scale).toFloat().coerceIn(0f, 1f), AtlasNavy)
     }
 }
 

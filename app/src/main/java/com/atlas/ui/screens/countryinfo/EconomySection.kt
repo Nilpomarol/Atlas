@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -86,7 +87,7 @@ private fun TradeBlock(byKey: Map<String, CountryFactView>) {
             imports?.let { StatRow(it.label, "${it.value} ${it.unit ?: ""}".trim(), AtlasOnSurfaceStrong) }
         }
         // Derived figures as side-by-side callouts.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (exports != null && imports != null) {
                 val bal = exports.value.toCaDouble() - imports.value.toCaDouble()
                 StatTile("Balança comercial", "${signPrefix(bal)}${formatPct(abs(bal))} % PIB", signedColor(bal))
@@ -123,13 +124,13 @@ private fun PublicFinanceBlock(byKey: Map<String, CountryFactView>) {
                         Text(it.value, fontFamily = AtlasSerif, fontSize = 26.sp, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong)
                         it.unit?.let { u -> Text(u, style = MaterialTheme.typography.bodyMedium, color = AtlasOnSurfaceMuted, modifier = Modifier.padding(bottom = 2.dp)) }
                     }
-                    RatingChip(rating)
+                    RatingChip(rating.color, rating.label)
                 }
                 TrackBar((v / 150.0).toFloat().coerceIn(0f, 1f), rating.color)
             }
         }
         // Fiscal balance + tax pressure as callouts.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (fiscal != null) {
                 val v = fiscal.value.toCaDouble()
                 StatTile(fiscal.label, "${signPrefix(v)}${formatPct(abs(v))} ${fiscal.unit ?: ""}".trim(), signedColor(v))
@@ -153,7 +154,7 @@ private fun InvestmentBlock(byKey: Map<String, CountryFactView>) {
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         AtlasSectionLabel("Inversió exterior")
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             if (fdi != null) {
                 StatTile("Inversió estrangera", "${formatCompactValue(fdi.value)} ${fdi.unit ?: ""}".trim(), AtlasNavy, caption = rankCaption(fdi))
             } else {
@@ -168,27 +169,7 @@ private fun InvestmentBlock(byKey: Map<String, CountryFactView>) {
     }
 }
 
-@Composable
-private fun RowScope.StatTile(label: String, value: String, color: Color, caption: String? = null) {
-    Box(
-        Modifier.weight(1f)
-            .clip(RoundedCornerShape(14.dp))
-            .background(color.copy(alpha = 0.10f))
-            .border(1.dp, color.copy(alpha = 0.20f), RoundedCornerShape(14.dp))
-            .padding(13.dp),
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted, maxLines = 2)
-            Text(value, fontFamily = AtlasSerif, fontSize = 20.sp, fontWeight = FontWeight.Medium, color = color)
-            caption?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint) }
-        }
-    }
-}
-
 private fun signPrefix(v: Double): String = if (v > 0) "+" else if (v < 0) "−" else ""
-
-private fun rankCaption(fact: CountryFactView): String? =
-    if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) "${formatOrdinal(fact.rank)} de ${fact.rankTotal}" else null
 
 private fun debtRating(v: Double): Rating = when {
     v <= 40.0 -> Rating(AtlasVisited, "Baix")
@@ -308,7 +289,7 @@ private fun IndicatorsBlock(byKey: Map<String, CountryFactView>) {
         AtlasSectionLabel("Indicadors")
         // The two signed indicators sit side by side as callout tiles, not a list.
         if (inflation != null || growth != null) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (inflation != null) {
                     IndicatorCell(inflation.label, "${inflation.value} ${inflation.unit ?: ""}".trim(), inflationRating(inflation.value.toCaDouble()))
                 } else {
@@ -343,8 +324,6 @@ private fun IndicatorsBlock(byKey: Map<String, CountryFactView>) {
     }
 }
 
-private data class Rating(val color: Color, val label: String)
-
 @Composable
 private fun IndicatorRow(
     fact: CountryFactView,
@@ -359,7 +338,7 @@ private fun IndicatorRow(
             Text(fact.label, color = AtlasOnSurfaceMuted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(valueText, color = valueColor, fontWeight = FontWeight.Medium)
-                RatingChip(rating)
+                RatingChip(rating.color, rating.label)
             }
         }
         bar?.invoke()
@@ -371,6 +350,7 @@ private fun IndicatorRow(
 private fun RowScope.IndicatorCell(label: String, valueText: String, rating: Rating) {
     Box(
         Modifier.weight(1f)
+            .fillMaxHeight()
             .clip(RoundedCornerShape(14.dp))
             .background(rating.color.copy(alpha = 0.10f))
             .border(1.dp, rating.color.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
@@ -385,19 +365,10 @@ private fun RowScope.IndicatorCell(label: String, valueText: String, rating: Rat
                     maxLines = 1,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                RatingChip(rating)
+                RatingChip(rating.color, rating.label)
             }
             Text(valueText, fontFamily = AtlasSerif, fontSize = 22.sp, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong)
         }
-    }
-}
-
-@Composable
-private fun RatingChip(rating: Rating) {
-    Box(
-        Modifier.clip(RoundedCornerShape(20.dp)).background(rating.color.copy(alpha = 0.15f)).padding(horizontal = 9.dp, vertical = 3.dp),
-    ) {
-        Text(rating.label, style = MaterialTheme.typography.labelSmall, color = rating.color, fontWeight = FontWeight.Medium)
     }
 }
 

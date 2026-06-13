@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.atlas.presentation.country.BreakdownSlice
+import com.atlas.presentation.country.CountryFactView
 import com.atlas.ui.theme.AtlasDelay
 import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasGold
@@ -127,6 +128,17 @@ internal fun formatOrdinal(rank: Int): String = when (rank) {
     4 -> "4t"
     else -> "${rank}è"
 }
+
+/** A color + short evaluation label, used by section meters and callouts. */
+internal data class Rating(val color: Color, val label: String)
+
+/** "Nè de M" world-rank caption, or null when the fact is unranked. */
+internal fun rankCaption(fact: CountryFactView): String? =
+    if (fact.rank != null && fact.rankTotal != null && fact.rankTotal > 1) {
+        "${formatOrdinal(fact.rank)} de ${fact.rankTotal}"
+    } else {
+        null
+    }
 
 @Composable
 internal fun FactYear(year: Int?) {

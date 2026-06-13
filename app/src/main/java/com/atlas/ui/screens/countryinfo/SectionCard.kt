@@ -99,6 +99,8 @@ internal fun SectionCard(
                             HealthSection(section.items)
                         } else if (section.key == "economia") {
                             EconomySection(section.items)
+                        } else if (section.key == "desenvolupament") {
+                            DevelopmentSection(section.items)
                         } else {
                             var previousCategory: String? = null
                             section.items.forEachIndexed { index, item ->

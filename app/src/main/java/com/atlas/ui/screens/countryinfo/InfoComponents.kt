@@ -2,7 +2,11 @@ package com.atlas.ui.screens.countryinfo
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,10 +25,13 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.atlas.presentation.country.BreakdownSlice
 import com.atlas.presentation.country.Membership
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasSerif
 import com.atlas.ui.theme.AtlasSurfaceSubtle
 
 @Composable
@@ -37,6 +44,33 @@ internal fun PositionBar(rank: Int, rankTotal: Int, color: Color) {
 internal fun TrackBar(fraction: Float, color: Color) {
     Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(5.dp)).background(AtlasSurfaceSubtle)) {
         Box(Modifier.fillMaxWidth(fraction).fillMaxHeight().clip(RoundedCornerShape(5.dp)).background(color))
+    }
+}
+
+/** A compact tinted stat tile for side-by-side callouts. Value is shown in [color]. */
+@Composable
+internal fun RowScope.StatTile(label: String, value: String, color: Color, caption: String? = null) {
+    Box(
+        Modifier.weight(1f)
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(14.dp))
+            .background(color.copy(alpha = 0.10f))
+            .border(1.dp, color.copy(alpha = 0.20f), RoundedCornerShape(14.dp))
+            .padding(13.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted, maxLines = 2)
+            Text(value, fontFamily = AtlasSerif, fontSize = 20.sp, fontWeight = FontWeight.Medium, color = color)
+            caption?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint) }
+        }
+    }
+}
+
+/** A small colored evaluation pill (e.g. "Moderat", "Controlada"). */
+@Composable
+internal fun RatingChip(color: Color, label: String) {
+    Box(Modifier.clip(RoundedCornerShape(20.dp)).background(color.copy(alpha = 0.15f)).padding(horizontal = 9.dp, vertical = 3.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Medium)
     }
 }
 

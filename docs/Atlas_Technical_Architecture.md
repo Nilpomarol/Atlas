@@ -1,0 +1,163 @@
+# Atlas Technical Architecture
+
+## Purpose
+
+This document defines the architecture currently implemented by Atlas. For exact implementation status and active work, read `docs/Handoff_Prompt.md` first.
+
+## Platform and Stack
+
+- Native Android application.
+- Kotlin.
+- Jetpack Compose and Material 3.
+- Navigation Compose.
+- Room with exported schemas and explicit migrations.
+- Coroutines and Flow.
+- `kotlinx.serialization`.
+- Manual dependency injection through `AtlasAppContainer`.
+- DataStore Preferences.
+- MapLibre for the remaining tile-backed map surface.
+- Compose Canvas geo components for offline world, country, and route visuals.
+- Coil for raster and SVG image loading.
+
+Atlas does not use Hilt, Koin, Retrofit, osmdroid, or a backend.
+
+## Layered Architecture
+
+```text
+UI -> Presentation -> Domain -> Data -> Room / Static Datasets / External Services
+```
+
+### UI
+
+Contains Compose screens, reusable components, theme, navigation, map/geo rendering, and interaction callbacks.
+
+UI may render display state and hold ephemeral visual state. It must not own persistence, API calls, validation, country derivation, flexible-date rules, or travel status rules.
+
+### Presentation
+
+Contains ViewModels, immutable UI state, event handling, Flow combination, and domain-to-display mapping.
+
+Presentation may call use cases and repository interfaces. It must expose loading, empty, error, partial, and normal states where relevant. It must not expose Room entities or external DTOs.
+
+### Domain
+
+Contains domain models, repository interfaces, use cases, validators, derivation services, and shared travel rules.
+
+Important centralized logic:
+
+- `CountryStateDerivationService`
+- flexible-date validation and formatting
+- flight status inference
+- UTC-first flight calculations
+- itinerary-generated stop derivation
+- travel status refresh policy
+
+Domain does not depend on Compose, Room entities, API DTOs, or provider SDKs.
+
+### Data
+
+Contains Room database code, DAOs, entities, migrations, bundled-dataset importers, backup implementation, API clients, DataStore sources, mappers, and repository implementations.
+
+Data maps storage and external representations into domain models before returning them upward.
+
+## Package Responsibilities
+
+```text
+com.atlas.app             application setup and AtlasAppContainer
+com.atlas.core            shared constants and primitives
+com.atlas.ui              Compose UI, theme, navigation, map components
+com.atlas.presentation    ViewModels and UI state
+com.atlas.domain          models, interfaces, use cases, rules
+com.atlas.data            Room, datasets, APIs, preferences, repositories
+```
+
+Nested `AGENTS.md` files provide the enforceable rules for each package.
+
+## Dependency Construction
+
+`AtlasAppContainer` constructs:
+
+- Room database and DAOs;
+- data sources and API clients;
+- repository implementations;
+- use cases and services;
+- dataset importers.
+
+Manual DI is the current project rule. New framework-based DI requires explicit approval and a demonstrated need.
+
+## Reactive Data Flow
+
+Read flow:
+
+```text
+Room/API cache -> Repository Flow -> ViewModel combine/map -> immutable UI state -> Compose
+```
+
+Write flow:
+
+```text
+UI event -> ViewModel -> Use case/repository -> Room/file/DataStore update -> Flow refresh
+```
+
+Long-running imports, file operations, and network work run off the main thread.
+
+## Persistence
+
+Room database version is 23. Every schema change requires:
+
+- an explicit migration;
+- registration in `AtlasAppContainer`;
+- an exported Room schema;
+- preservation of existing user data.
+
+Static/reference tables and user-created tables are separate. Dataset refreshes may replace versioned static rows but must not overwrite personal travel records.
+
+## Datasets
+
+Bundled JSON datasets are parsed with `kotlinx.serialization` and imported through dedicated importers. `dataset_metadata` records installed versions.
+
+Current datasets include countries, airports, airlines, aircraft types, and country stats. Import behavior must remain deterministic and idempotent for an unchanged version.
+
+## External Services
+
+External integrations are optional enhancements:
+
+- AeroDataBox flight and aircraft lookup;
+- Nominatim location search;
+- Unsplash country photos;
+- OpenFreeMap tiles through MapLibre;
+- remote airline logos and country flags through Coil.
+
+Provider-specific DTOs and failures stay in the data layer. Missing keys, network errors, malformed data, empty results, and rate limits must degrade gracefully without blocking local personal data.
+
+## Map Architecture
+
+- `AtlasGeoCanvas` is the reusable offline vector renderer.
+- `FlightRouteGeoMap`, `CountryMapHero`, and `DashboardMapHero` build on offline geo data.
+- `AtlasMapView` isolates MapLibre lifecycle/provider details.
+- `TripMapPreview` is the current MapLibre consumer.
+
+Screens should depend on reusable map components, not directly on provider APIs.
+
+## Image Architecture
+
+Coil is the only image-loading library.
+
+- Bundled/local images and app-private photo files load through Coil.
+- SVG flags use Coil's SVG decoder.
+- Remote content always has a local visual fallback.
+- Country photo refresh preserves the old cached file on failure.
+
+## Backup and Portability
+
+Backup JSON is versioned and uses `kotlinx.serialization`. Import validates supported versions and supplies defaults for older compatible data.
+
+Backup/import changes must preserve stable identifiers and existing compatibility. Photo binaries and replaceable external caches are currently outside the JSON backup.
+
+## Validation Strategy
+
+- Domain, mapping, ViewModel, and utility changes: focused unit tests.
+- Room entities, migrations, UI, resources, or wiring: `assembleDebug`.
+- Cross-layer changes: unit tests plus build where practical.
+- Visual changes: manual device or screenshot review after a successful build.
+

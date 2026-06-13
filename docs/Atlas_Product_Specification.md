@@ -4,14 +4,14 @@
 
 This document defines the long-term product specification for **Atlas**, a native Android travel tracking app.
 
-It describes what the full application should become, independently of what is included in the first MVP. MVP scope, version sequencing, and implementation milestones should be defined in separate documents, such as:
+It describes what the full application should become. It is not the source of truth for current implementation status or the current Room schema.
 
-```text
-Atlas_MVP_Specification.md
-Atlas_v2.0_Specification.md
-```
+Use:
 
-This document should be treated as the product reference for long-term design, domain modelling, feature decisions, and architectural direction.
+- `docs/Handoff_Prompt.md` for implemented behavior and active work;
+- `docs/Atlas_Technical_Architecture.md` for current architecture;
+- `docs/Atlas_Data_Model.md` for the implemented conceptual data model;
+- this document for long-term product direction.
 
 ---
 
@@ -1345,72 +1345,34 @@ This separation is important because user travel data and static/semi-static cou
 
 ---
 
-### 12.3 Country Stats Summary
-
-A small structured dataset should power top-level country cards and quick display.
-
-Conceptual model:
-
-```text
-CountryStatsSummary
-- country_id
-- capital optional
-- population optional
-- area_km2 optional
-- gdp_nominal optional
-- gdp_per_capita optional
-- hdi optional
-- life_expectancy optional
-- currency optional
-- languages optional
-- timezone_summary optional
-- updated_at
-- dataset_version
-```
-
----
-
-### 12.4 Country Stat Facts
+### 12.3 Country Stat Facts
 
 A flexible fact table should support detailed country info pages without requiring schema migrations for every new field.
 
-Conceptual model:
+Implemented model:
 
 ```text
 CountryStatFact
-- id
-- country_id
+- country_iso2
 - category
 - key
 - label_ca
-- value_text nullable
-- value_number nullable
-- value_boolean nullable
-- value_type: text | integer | decimal | percentage | currency | boolean | list | url
+- value
 - unit nullable
 - year nullable
-- source_name nullable
-- source_url nullable
-- display_order
-- updated_at
-- dataset_version
+- rank nullable
+- rank_total nullable
+- tier nullable
+- sort_order
 ```
 
-Suggested categories:
+Primary key:
 
 ```text
-geography
-demographics
-economy
-government
-health
-education
-culture
-rights
-environment
-tourism
-transport
+country_iso2 + category + key
 ```
+
+The bundled dataset may preformat Catalan display values. Distribution facts may use a JSON-array string in `value`, which presentation maps into display slices.
 
 ---
 
@@ -1418,75 +1380,41 @@ transport
 
 ### 13.1 Purpose
 
-Photo support is a future enhancement, but the product should prepare for it.
-
 Photos should support the emotional/memory side of Atlas.
 
-Future photo associations:
+Currently implemented:
 
-- trips
-- trip stops
-- excursions
-- excursion stops
-- countries/territories
-- possibly flights
+- app-private photos on trip stops and excursion stops;
+- optional trip cover photo selection;
+- optional cached country hero photos from an external provider.
 
 Photos should be local-first.
 
 ---
 
-### 13.2 Future Photo Model
-
-Conceptual model:
+### 13.2 Current Photo Model
 
 ```text
-Photo
+StopPhoto
 - id
-- local_uri
-- caption optional
-- taken_at optional
+- stop_id
+- stop_type: TRIP_STOP | EXCURSION_STOP
+- filename
+- sort_order
 - created_at
-- updated_at
-```
-
-Associations:
-
-```text
-TripPhoto
-- trip_id
-- photo_id
-- sort_order
 ```
 
 ```text
-TripStopPhoto
-- trip_stop_id
-- photo_id
-- sort_order
+CountryPhotoCache
+- country_iso2
+- filename
+- source_url
+- author
+- author_link
+- fetched_at
 ```
 
-```text
-ExcursionPhoto
-- excursion_id
-- photo_id
-- sort_order
-```
-
-```text
-ExcursionStopPhoto
-- excursion_stop_id
-- photo_id
-- sort_order
-```
-
-Possible future association:
-
-```text
-CountryPhoto
-- country_id
-- photo_id
-- sort_order
-```
+Stop-photo files live in app-private storage. Country photos are replaceable external cache data, not personal source data.
 
 ---
 
@@ -1599,16 +1527,15 @@ Recommended bundled dataset files:
 
 ```text
 assets/data/countries.json
-assets/data/country_stats_summary.json
-assets/data/country_stats_facts.json
 assets/data/airports.json
+assets/data/airlines.json
+assets/data/aircraft_types.json
+assets/data/country_stats.json
 ```
 
 Future possible datasets:
 
 ```text
-assets/data/airlines.json
-assets/data/aircraft_types.json
 assets/data/country_polygons.json
 assets/data/map_styles.json
 ```
@@ -1635,13 +1562,7 @@ Should include:
 
 ---
 
-### 15.2 country_stats_summary.json
-
-Contains frequently used structured country/territory stats.
-
----
-
-### 15.3 country_stats_facts.json
+### 15.2 country_stats.json
 
 Contains detailed flexible stat facts.
 
@@ -1650,16 +1571,16 @@ Example:
 ```json
 {
   "countryIso2": "JP",
-  "category": "demographics",
+  "category": "demografia",
   "key": "population",
   "labelCa": "Població",
-  "valueNumber": 124500000,
-  "valueType": "integer",
-  "unit": "people",
+  "value": "124.500.000",
+  "unit": "hab.",
   "year": 2024,
-  "sourceName": "World Bank",
-  "sourceUrl": "https://data.worldbank.org/",
-  "displayOrder": 1
+  "rank": 12,
+  "rankTotal": 195,
+  "tier": "Alt",
+  "sortOrder": 10
 }
 ```
 
@@ -1668,19 +1589,18 @@ Example:
 ```json
 {
   "countryIso2": "JP",
-  "category": "government",
+  "category": "governanca",
   "key": "government_type",
   "labelCa": "Tipus de govern",
-  "valueText": "Monarquia constitucional parlamentària",
-  "valueType": "text",
+  "value": "Monarquia constitucional parlamentària",
   "year": 2024,
-  "displayOrder": 3
+  "sortOrder": 30
 }
 ```
 
 ---
 
-### 15.4 airports.json
+### 15.3 airports.json
 
 Contains airport reference data.
 
@@ -1768,52 +1688,26 @@ CountryLog
 
 ---
 
-### 16.4 CountryStatsSummary
-
-```text
-CountryStatsSummary
-- country_id
-- capital optional
-- population optional
-- area_km2 optional
-- gdp_nominal optional
-- gdp_per_capita optional
-- hdi optional
-- life_expectancy optional
-- currency optional
-- languages optional
-- timezone_summary optional
-- updated_at
-- dataset_version
-```
-
----
-
-### 16.5 CountryStatFact
+### 16.4 CountryStatFact
 
 ```text
 CountryStatFact
-- id
-- country_id
+- country_iso2
 - category
 - key
 - label_ca
-- value_text nullable
-- value_number nullable
-- value_boolean nullable
-- value_type: text | integer | decimal | percentage | currency | boolean | list | url
+- value
 - unit nullable
 - year nullable
-- source_name nullable
-- source_url nullable
-- display_order
-- updated_at
-- dataset_version
+- rank nullable
+- rank_total nullable
+- tier nullable
+- sort_order
 ```
 
 ---
 
-### 16.6 Airport
+### 16.5 Airport
 
 ```text
 Airport
@@ -1830,7 +1724,7 @@ Airport
 
 ---
 
-### 16.7 Flight
+### 16.6 Flight
 
 ```text
 Flight
@@ -1871,7 +1765,7 @@ Flight
 
 ---
 
-### 16.8 Itinerary
+### 16.7 Itinerary
 
 ```text
 Itinerary
@@ -1891,7 +1785,7 @@ one trip → maximum one itinerary
 
 ---
 
-### 16.9 ItineraryGroup
+### 16.8 ItineraryGroup
 
 ```text
 ItineraryGroup
@@ -1906,7 +1800,7 @@ ItineraryGroup
 
 ---
 
-### 16.10 Trip
+### 16.9 Trip
 
 ```text
 Trip
@@ -1916,13 +1810,14 @@ Trip
 - status_source: manual | inferred
 - date_range optional
 - notes optional
+- cover_photo_filename optional
 - created_at
 - updated_at
 ```
 
 ---
 
-### 16.11 TripStop
+### 16.10 TripStop
 
 ```text
 TripStop
@@ -1950,7 +1845,7 @@ If `source = itinerary_group`, core location fields are generated.
 
 ---
 
-### 16.12 Excursion
+### 16.11 Excursion
 
 ```text
 Excursion
@@ -1968,7 +1863,7 @@ Excursion
 
 ---
 
-### 16.13 ExcursionStop
+### 16.12 ExcursionStop
 
 ```text
 ExcursionStop
@@ -1991,7 +1886,7 @@ ExcursionStop
 
 ---
 
-### 16.14 Place
+### 16.13 Place
 
 ```text
 Place
@@ -2016,16 +1911,26 @@ future_provider
 
 ---
 
-### 16.15 Photo
+### 16.14 StopPhoto
 
 ```text
-Photo
+StopPhoto
 - id
-- local_uri
-- caption optional
-- taken_at optional
+- stop_id
+- stop_type: TRIP_STOP | EXCURSION_STOP
+- filename
+- sort_order
 - created_at
-- updated_at
+```
+
+```text
+CountryPhotoCache
+- country_iso2
+- filename
+- source_url
+- author
+- author_link
+- fetched_at
 ```
 
 ---

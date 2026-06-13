@@ -194,7 +194,6 @@ internal fun sectionAccent(key: String): Color = when (key) {
 
 private val MERGED_SECTION_KEYS = setOf(
     "geo_medi",
-    "finances",
     "desenvolupament",
     "cultura",
 )

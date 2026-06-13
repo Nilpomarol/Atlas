@@ -288,8 +288,8 @@ class CountryInfoViewModel(
             "demografia" to "demografia",
             "salut" to "salut",
             "economia" to "economia",
-            "finances" to "finances",
-            "desigualtat" to "finances",
+            "finances" to "economia",
+            "desigualtat" to "desenvolupament",
             "desenvolupament" to "desenvolupament",
             "educacio" to "desenvolupament",
             "infraestructura" to "infraestructura",
@@ -300,7 +300,7 @@ class CountryInfoViewModel(
             "practic" to "practic",
         )
         val SECTION_ORDER = listOf(
-            "identitat", "geo_medi", "demografia", "salut", "economia", "finances",
+            "identitat", "geo_medi", "demografia", "salut", "economia",
             "desenvolupament", "infraestructura", "governanca", "cultura", "drets", "practic",
         )
         val SECTION_TITLE = mapOf(

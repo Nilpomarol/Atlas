@@ -34,6 +34,9 @@ class SettingsViewModel(
     val rapidApiKey: StateFlow<String> = apiKeyRepository.observeRapidApiKey()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
+    val unsplashKey: StateFlow<String> = apiKeyRepository.observeUnsplashKey()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
     private val mutableUiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = mutableUiState.asStateFlow()
 
@@ -49,6 +52,10 @@ class SettingsViewModel(
 
     fun saveRapidApiKey(key: String) {
         viewModelScope.launch { apiKeyRepository.saveRapidApiKey(key) }
+    }
+
+    fun saveUnsplashKey(key: String) {
+        viewModelScope.launch { apiKeyRepository.saveUnsplashKey(key) }
     }
 
     suspend fun buildBackupJson(): String =

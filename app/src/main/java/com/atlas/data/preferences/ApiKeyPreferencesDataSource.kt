@@ -22,7 +22,19 @@ class ApiKeyPreferencesDataSource(
         }
     }
 
+    override fun observeUnsplashKey(): Flow<String> =
+        context.atlasDataStore.data.map { prefs ->
+            prefs[UNSPLASH_KEY] ?: ""
+        }
+
+    override suspend fun saveUnsplashKey(key: String) {
+        context.atlasDataStore.edit { prefs ->
+            prefs[UNSPLASH_KEY] = key.trim()
+        }
+    }
+
     private companion object {
         val RAPID_API_KEY = stringPreferencesKey("rapid_api_key")
+        val UNSPLASH_KEY = stringPreferencesKey("unsplash_access_key")
     }
 }

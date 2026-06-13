@@ -23,6 +23,7 @@ import com.atlas.presentation.dashboard.DashboardRoute
 import com.atlas.presentation.stats.StatsRoute
 import com.atlas.presentation.timeline.TimelineRoute
 import com.atlas.presentation.country.CountryDetailRoute
+import com.atlas.presentation.country.CountryInfoRoute
 import com.atlas.presentation.country.CountryListRoute
 import com.atlas.presentation.flight.FlightDetailRoute
 import com.atlas.presentation.flight.FlightListRoute
@@ -155,6 +156,25 @@ fun AtlasNavHost() {
                         onTripClick = { tripId ->
                             navController.navigate("trips/$tripId")
                         },
+                        onInfoClick = {
+                            navController.navigate("countries/$iso2/info")
+                        },
+                    )
+                }
+            }
+            composable(
+                route = "countries/{iso2}/info",
+                arguments = listOf(
+                    navArgument("iso2") {
+                        type = NavType.StringType
+                    },
+                ),
+            ) { backStackEntry ->
+                val iso2 = backStackEntry.arguments?.getString("iso2")
+                if (iso2 != null) {
+                    CountryInfoRoute(
+                        iso2 = iso2,
+                        onBackClick = navController::popBackStack,
                     )
                 }
             }

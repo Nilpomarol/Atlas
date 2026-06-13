@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Upload
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -71,6 +72,7 @@ import com.atlas.ui.theme.AtlasVisited
 fun SettingsScreen(
     uiState: SettingsUiState,
     rapidApiKey: String,
+    unsplashKey: String,
     onBackClick: () -> Unit = {},
     onExportClick: () -> Unit,
     onImportClick: () -> Unit,
@@ -78,6 +80,7 @@ fun SettingsScreen(
     onDismissImport: () -> Unit,
     onDismissMessage: () -> Unit,
     onSaveRapidApiKey: (String) -> Unit,
+    onSaveUnsplashKey: (String) -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -120,6 +123,7 @@ fun SettingsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 AtlasSectionLabel("Integracions")
                 ApiKeyCard(savedKey = rapidApiKey, onSave = onSaveRapidApiKey)
+                UnsplashKeyCard(savedKey = unsplashKey, onSave = onSaveUnsplashKey)
             }
 
             // ── Dataset health ───────────────────────────────────────────────
@@ -216,6 +220,73 @@ private fun ApiKeyCard(savedKey: String, onSave: (String) -> Unit) {
                 onValueChange = { draft = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("Clau RapidAPI") },
+                placeholder = { Text("Enganxa la clau aquí", color = AtlasOnSurfaceMuted) },
+                singleLine = true,
+                visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    IconButton(onClick = { showKey = !showKey }) {
+                        Icon(
+                            imageVector = if (showKey) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            contentDescription = if (showKey) "Amaga" else "Mostra",
+                            tint = AtlasOnSurfaceMuted,
+                        )
+                    }
+                },
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Button(
+                    onClick = { onSave(draft) },
+                    enabled = draft != savedKey,
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AtlasPrimary, contentColor = AtlasSurface),
+                ) {
+                    Text("Desa clau")
+                }
+                if (savedKey.isNotBlank()) {
+                    OutlinedButton(
+                        onClick = { draft = ""; onSave("") },
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AtlasPrimary),
+                    ) {
+                        Text("Elimina")
+                    }
+                }
+                if (savedKey.isNotBlank()) {
+                    Text(
+                        text = "Clau configurada ✓",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UnsplashKeyCard(savedKey: String, onSave: (String) -> Unit) {
+    var draft by rememberSaveable(savedKey) { mutableStateOf(savedKey) }
+    var showKey by remember { mutableStateOf(false) }
+
+    AtlasCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            CardHeader(
+                icon = Icons.Filled.Image,
+                title = "Fotos dels països",
+                subtitle = "Unsplash",
+            )
+            Text(
+                text = "Clau d'accés d'Unsplash per mostrar una foto de cada país, que es renova cada dia. És gratuïta a unsplash.com/developers.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AtlasOnSurfaceMuted,
+            )
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Clau d'accés Unsplash") },
                 placeholder = { Text("Enganxa la clau aquí", color = AtlasOnSurfaceMuted) },
                 singleLine = true,
                 visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),

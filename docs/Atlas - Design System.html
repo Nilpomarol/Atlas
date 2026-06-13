@@ -6,7 +6,7 @@
 <title>Atlas — Design System · Cartographer's Ink</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <link href="atlas.css" rel="stylesheet" />
 <style>
 body{background:#E0D6C1;color:var(--ink);
@@ -18,7 +18,7 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opa
 
 /* masthead */
 .mast{display:flex;align-items:center;gap:22px;padding:52px 0 28px;border-bottom:1.5px solid var(--ink);}
-.mast img{width:62px;height:62px;border-radius:50%;}
+.mast .logo-mark{width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--navy);color:var(--paper);font-family:var(--serif);font-size:31px;}
 .mast .mt{font-family:var(--serif);font-size:34px;font-weight:500;letter-spacing:-.01em;line-height:1;white-space:nowrap;}
 .mast .ms{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:8px;}
 .mast .mr{margin-left:auto;text-align:right;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);line-height:2;}
@@ -96,15 +96,12 @@ p{max-width:64ch;}
 <div class="wrap">
 
   <header class="mast">
-    <img src="assets/atlas-logo.png" alt="Atlas" />
+    <div class="logo-mark" aria-label="Atlas">A</div>
     <div>
       <div class="mt">Atlas — design system</div>
       <div class="ms">Cartographer's Ink · v3.1 · final</div>
     </div>
-    <div class="mr">
-      Reference<br />
-      <a href="Atlas Redesign - Prototype.html">Open prototype →</a>
-    </div>
+    <div class="mr">Current reference<br />v4.0 polish</div>
   </header>
 
   <p class="intro">Atlas reads like a printed travel atlas you keep adding to — warm paper and ink, map graticules, stamped monospace labels, and pages where one thing is clearly the subject. This is the locked system behind the v3.1 redesign: foundations, the component kit, and the screen catalogue.</p>
@@ -126,7 +123,7 @@ p{max-width:64ch;}
   <section>
     <div class="sh"><span class="n">02</span><h2>Typography</h2><span class="note">An editorial serif, a warm grotesk, a cartographic mono.</span></div>
     <div class="type-row">
-      <div class="tm"><div class="tn">Newsreader</div><div class="td">Display · serif</div></div>
+      <div class="tm"><div class="tn">Fraunces</div><div class="td">Display · serif</div></div>
       <div class="sp-serif">El teu atlas · Tòquio, Japó</div>
     </div>
     <div class="type-row">
@@ -138,7 +135,7 @@ p{max-width:64ch;}
       <div class="sp-mono"><span class="l">Capital · Regió · Codi</span><br />BCN → DFW · AA 193 · 35.6769, 139.7639</div>
     </div>
     <div class="type-row" style="grid-template-columns:170px 1fr;">
-      <div class="tm"><div class="tn">Display scale</div><div class="td">Newsreader 500</div></div>
+      <div class="tm"><div class="tn">Display scale</div><div class="td">Fraunces 500</div></div>
       <div class="scale"><span style="font-size:46px;">60</span><span style="font-size:34px;">34</span><span style="font-size:27px;">27</span><span style="font-size:22px;">22</span><span style="font-size:18px;">18</span><span style="font-size:16px;">16</span></div>
     </div>
   </section>
@@ -318,7 +315,7 @@ p{max-width:64ch;}
     <div class="sh"><span class="n">06</span><h2>Tokens</h2><span class="note">The CSS variables behind every component.</span></div>
     <div class="grid g2">
       <div class="specimen"><div class="lbl">Type &amp; surfaces</div><div class="tokens">
-        <span class="k">--serif</span>: Newsreader <span class="c">/* display */</span><br />
+        <span class="k">--serif</span>: Fraunces <span class="c">/* display */</span><br />
         <span class="k">--sans</span>: Hanken Grotesk <span class="c">/* UI */</span><br />
         <span class="k">--mono</span>: Space Mono <span class="c">/* labels */</span><br />
         <span class="k">--paper</span>: #ECE3D2<br />
@@ -340,7 +337,7 @@ p{max-width:64ch;}
 
   <!-- 07 SCREENS -->
   <section style="border-bottom:none;">
-    <div class="sh"><span class="n">07</span><h2>Screen catalogue</h2><span class="note">Nine screens, one tappable prototype.</span></div>
+    <div class="sh"><span class="n">07</span><h2>Screen catalogue</h2><span class="note">Core screen patterns in the implemented visual system.</span></div>
     <div class="screen-list">
       <div class="screen-item"><div class="si-n">01</div><h3>Inici · Dashboard</h3><p>Polygon-map hero with a living marker, stat ledger, featured trip, domain stats (incl. distance), and what's next.</p></div>
       <div class="screen-item"><div class="si-n">02</div><h3>Països · list</h3><p>Search, state filters, continent groups, and compact colour-ticked rows.</p></div>
@@ -355,10 +352,9 @@ p{max-width:64ch;}
 
     <div class="footer-cta">
       <div>
-        <div class="fc-t">The system, alive</div>
-        <div class="fc-d">Every specimen here is the real component class. Tap through all nine screens in the interactive prototype.</div>
+        <div class="fc-t">The current visual reference</div>
+        <div class="fc-d">Use these tokens and patterns with the shared Compose theme and components. The running Android app is the final implementation authority.</div>
       </div>
-      <a href="Atlas Redesign - Prototype.html">Open prototype →</a>
     </div>
   </section>
 

@@ -2,12 +2,11 @@
 
 ## 0. Status & purpose
 
-* **Status:** design agreed, not yet implemented. This document is the contract the generation script, the Room layer, and the info screen are built against.
+* **Status:** implemented in v4.0 M1 and M2. DB v22 introduced the fact table; DB v23 added the optional country-photo cache. The current work is UI polish.
 * **Goal:** a deep, flexible per-country facts dataset (~165 fields across 16 categories) powering a new Country Info screen. Catalan throughout. Global **ranks** and Catalan **tiers** on every rankable numeric metric.
-* **Delivery is two-phase** (same schema, same importer, same categories — v4.1 is just more rows):
-  * **v4.0** — ~135 API-driven fields. Zero manual curation.
-  * **v4.1** — ~30 curated fields (independence year, ethnic groups, motto, social rights, Nobel, plug types, Schengen/NATO/OECD). Slot in with no code change.
-* The info screen **hides empty sections/fields automatically**, so v4.0 already looks complete and v4.1 only deepens it.
+* **Current dataset:** version `2026.1`, 244 countries, about 24,000 facts, and 16 raw categories. It combines API-driven fields with the curated overrides documented below.
+* **Future additions:** remaining curated fields can be added as rows with a dataset version bump and no Room schema change.
+* The implemented info screen hides empty sections/fields automatically.
 
 ---
 
@@ -430,7 +429,7 @@ build():
 
 * **`FIELD_CONFIG`** is the §4 catalog encoded as a list: `key, category, labelCa, source, code, unit, rankable, direction, tierStyle, sortOrder, phase`. Single source of truth; adding a field = one config row.
 * **Rank pass** runs after all values are collected: for each `rankable` field, sort countries by (direction-adjusted) value, assign `rank`/`rankTotal`, then bucket into `tier` per `tierStyle`.
-* **Phase filter** — v4.0 run emits only `phase == "4.0"` rows; v4.1 flips curated sources on. Same script, same output file.
+* **Phase filter** — the current v4.0 output includes API-driven rows and the curated overrides listed in section 3c. Future rows use the same script and output file.
 
 ---
 
@@ -461,16 +460,17 @@ Importer flattens `facts` into `country_stat_facts` rows, stamping `country_iso2
 
 ---
 
-## 9. Phasing summary
+## 9. Implementation summary
 
-* **v4.0** — DB v22 + `country_stat_facts` + DAO/repo/domain + source-agnostic importer + dataset-version tracking + the ~135 API-driven fields + ranks/tiers + the Country Info screen (separate spec). Ships a complete-looking dataset.
-* **v4.1** — author the curated bundles, flip them on in the script, regenerate the JSON, bump dataset version. **No app code change** beyond the new JSON and the version bump.
+* **Implemented:** DB v22 + `country_stat_facts` + DAO/repository/domain mapping + source-agnostic importer + dataset-version tracking + API-driven fields + curated overrides + ranks/tiers.
+* **Implemented:** Country Info presentation and screen rendering, including hidden empty sections and distribution parsing.
+* **Implemented in DB v23:** optional country-photo metadata/cache used by the Country Info hero.
+* **Future dataset work:** add remaining curated rows, regenerate JSON, and bump the dataset version. The flexible fact schema should not require an app migration.
 
 ---
 
-## 10. Open items before coding
+## 10. Remaining work
 
-1. WB code verification for the *(verify)*-marked climate/obesity indicators (script author confirms live).
-2. Confirm UNDP HDR release year to bundle (latest available at build time).
-3. Country Info **screen** design (layout, section rendering, rank/tier chip styling) — separate spec, M2 of v4.0.
-```
+1. Polish Country Info spacing, hierarchy, colors, and section defaults after device review.
+2. Add remaining manual fields when reliable data is available.
+3. Refresh time-sensitive curated snapshots as needed.

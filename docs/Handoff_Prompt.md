@@ -176,12 +176,16 @@ Map usage:
 Current priority:
 
 Country Info is being redesigned section by section. Hero, highlights/KPI shelf,
-identity (dissolved), geography, governance, demography, and health are done and
-committed. Each redesigned section is a custom composable special-cased in
-`SectionCard` by section key.
+identity (dissolved), geography, governance, demography, health, and economia are
+done and committed. Each redesigned section is a custom composable special-cased
+in `SectionCard` by section key.
 
-1. Continue the section-by-section redesign — remaining: economia, finances,
-   desenvolupament, infraestructura, cultura, drets, practic. Keep each section
+The standalone finances section was removed: fiscal/trade/investment facts route
+into economia and inequality (`desigualtat`) routes into desenvolupament (via
+`SECTION_FOR_CATEGORY`).
+
+1. Continue the section-by-section redesign — remaining: desenvolupament (now also
+   holds inequality), infraestructura, cultura, drets, practic. Keep each section
    visual, hierarchical, and color-driven rather than a flat list.
 2. Preserve current behavior, Room schema, presentation/domain boundaries; keep
    the dataset importer idempotent and version-gated.
@@ -204,6 +208,8 @@ Completed in the current pass (committed):
   block with a birth-vs-death natural-balance visual;
 - health: life-expectancy headline with gender split, mortality report card, basic
   access meters, health-system rows, and risk-factor meters;
+- economia: GDP headline + per-capita, sectors composition bar, rated macro
+  indicators, and the merged finances blocks (trade, public finance, investment);
 - CO2 ranks derived at import (`co2_per_capita`, `co2_total`), dataset `2026.2`;
 - `assembleDebug` passes after each step.
 

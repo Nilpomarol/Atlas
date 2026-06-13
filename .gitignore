@@ -6,3 +6,6 @@
 /local.properties
 __pycache__/
 *.pyc
+
+# Local Claude Code settings (per-user)
+.claude/settings.local.json

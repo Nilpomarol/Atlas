@@ -3,6 +3,7 @@ package com.atlas.app
 import android.content.Context
 import androidx.room.Room
 import com.atlas.data.api.AeroDataBoxClient
+import com.atlas.data.api.UnsplashClient
 import com.atlas.data.dataset.AircraftTypeDatasetImporter
 import com.atlas.data.dataset.AirlineDatasetImporter
 import com.atlas.data.dataset.AirportDatasetImporter
@@ -17,6 +18,7 @@ import com.atlas.data.repository.AircraftTypeRepositoryImpl
 import com.atlas.data.repository.AircraftRepositoryImpl
 import com.atlas.data.repository.AirlineRepositoryImpl
 import com.atlas.data.repository.AirportRepositoryImpl
+import com.atlas.data.repository.CountryPhotoRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
 import com.atlas.data.repository.CountryStatRepositoryImpl
 import com.atlas.data.repository.BackupRepositoryImpl
@@ -32,6 +34,7 @@ import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
+import com.atlas.domain.repository.CountryPhotoRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
 import com.atlas.domain.repository.FlightApiClient
@@ -122,6 +125,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_19_20)
         .addMigrations(AtlasDatabase.MIGRATION_20_21)
         .addMigrations(AtlasDatabase.MIGRATION_21_22)
+        .addMigrations(AtlasDatabase.MIGRATION_22_23)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -202,6 +206,13 @@ class AtlasAppContainer(context: Context) {
     val locationSearchRepository: LocationSearchRepository = NominatimLocationSearchRepository()
 
     val apiKeyRepository: ApiKeyRepository = ApiKeyPreferencesDataSource(applicationContext)
+    private val unsplashClient = UnsplashClient()
+    val countryPhotoRepository: CountryPhotoRepository = CountryPhotoRepositoryImpl(
+        context = applicationContext,
+        dao = database.countryPhotoDao(),
+        apiClient = unsplashClient,
+        apiKeyRepository = apiKeyRepository,
+    )
     val tripMapPreferencesRepository: TripMapPreferencesRepository =
         TripMapPreferencesDataSource(applicationContext)
     private val aeroDataBoxClient = AeroDataBoxClient()

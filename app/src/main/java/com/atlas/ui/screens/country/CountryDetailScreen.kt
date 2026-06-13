@@ -1,17 +1,27 @@
 package com.atlas.ui.screens.country
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,12 +34,18 @@ import com.atlas.domain.model.DatePrecision
 import com.atlas.presentation.country.CountryDetailUiState
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasNavy
+import com.atlas.ui.theme.AtlasOnSurfaceMuted
+import com.atlas.ui.theme.AtlasOnSurfaceStrong
+import com.atlas.ui.theme.AtlasOutline
+import com.atlas.ui.theme.AtlasSurfaceRaised
 
 @Composable
 fun CountryDetailScreen(
     uiState: CountryDetailUiState,
     onBackClick: () -> Unit,
     onTripClick: (String) -> Unit,
+    onInfoClick: () -> Unit,
     onWishedChanged: (Boolean) -> Unit,
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
@@ -52,6 +68,7 @@ fun CountryDetailScreen(
             uiState = uiState,
             onBackClick = onBackClick,
             onTripClick = onTripClick,
+            onInfoClick = onInfoClick,
             onWishedChanged = onWishedChanged,
             onSetCurrentlyLiving = onSetCurrentlyLiving,
             onAddVisitLog = onAddVisitLog,
@@ -94,6 +111,7 @@ private fun CountryDetailContent(
     uiState: CountryDetailUiState,
     onBackClick: () -> Unit,
     onTripClick: (String) -> Unit,
+    onInfoClick: () -> Unit,
     onWishedChanged: (Boolean) -> Unit,
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
@@ -132,6 +150,7 @@ private fun CountryDetailContent(
                 trackingState = uiState.trackingState,
                 style = style,
             )
+            CountryInfoEntryCard(onClick = onInfoClick)
             CountryQuickActions(
                 trackingState = uiState.trackingState,
                 onWishedChanged = onWishedChanged,
@@ -149,6 +168,53 @@ private fun CountryDetailContent(
                 onDeleteLog = onDeleteLog,
             )
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun CountryInfoEntryCard(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = AtlasSurfaceRaised,
+        border = BorderStroke(1.dp, AtlasOutline),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(AtlasNavy, RoundedCornerShape(10.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Outlined.Public,
+                    contentDescription = null,
+                    tint = androidx.compose.ui.graphics.Color.White,
+                )
+            }
+            Spacer(Modifier.size(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Informació del país",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AtlasOnSurfaceStrong,
+                )
+                Text(
+                    "Dades, rànquings i estadístiques",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = AtlasOnSurfaceMuted,
+            )
         }
     }
 }

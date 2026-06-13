@@ -13,6 +13,7 @@ fun CountryDetailRoute(
     iso2: String,
     onBackClick: () -> Unit,
     onTripClick: (String) -> Unit,
+    onInfoClick: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as AtlasApplication
     val viewModel: CountryDetailViewModel = viewModel(
@@ -40,6 +41,7 @@ fun CountryDetailRoute(
         uiState = uiState,
         onBackClick = onBackClick,
         onTripClick = onTripClick,
+        onInfoClick = onInfoClick,
         onWishedChanged = viewModel::onWishedChanged,
         onSetCurrentlyLiving = viewModel::onSetCurrentlyLiving,
         onAddVisitLog = viewModel::onAddVisitLog,

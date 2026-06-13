@@ -9,6 +9,7 @@ import com.atlas.data.local.dao.AircraftTypeDao
 import com.atlas.data.local.dao.AirlineDao
 import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
+import com.atlas.data.local.dao.CountryPhotoDao
 import com.atlas.data.local.dao.CountryStatFactDao
 import com.atlas.data.local.dao.CountryUserStateDao
 import com.atlas.data.local.dao.DatasetMetadataDao
@@ -30,6 +31,7 @@ import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
 import com.atlas.data.local.entity.CountryEntity
 import com.atlas.data.local.entity.CountryLogEntity
+import com.atlas.data.local.entity.CountryPhotoEntity
 import com.atlas.data.local.entity.CountryStatFactEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
 import com.atlas.data.local.entity.DatasetMetadataEntity
@@ -56,8 +58,9 @@ import com.atlas.data.local.entity.TripStopEntity
         ExcursionStopEntity::class,
         StopPhotoEntity::class,
         CountryStatFactEntity::class,
+        CountryPhotoEntity::class,
     ],
-    version = 22,
+    version = 23,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -76,6 +79,7 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun excursionDao(): ExcursionDao
     abstract fun stopPhotoDao(): StopPhotoDao
     abstract fun countryStatFactDao(): CountryStatFactDao
+    abstract fun countryPhotoDao(): CountryPhotoDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -812,6 +816,24 @@ abstract class AtlasDatabase : RoomDatabase() {
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS `index_country_stat_facts_country_iso2` ON `country_stat_facts` (`country_iso2`)",
+                )
+            }
+        }
+
+        val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `country_photos` (
+                        `country_iso2` TEXT NOT NULL,
+                        `filename` TEXT NOT NULL,
+                        `source_url` TEXT,
+                        `author` TEXT,
+                        `author_link` TEXT,
+                        `fetched_at` TEXT NOT NULL,
+                        PRIMARY KEY(`country_iso2`)
+                    )
+                    """.trimIndent(),
                 )
             }
         }

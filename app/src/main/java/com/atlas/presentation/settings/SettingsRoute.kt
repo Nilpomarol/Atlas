@@ -29,6 +29,7 @@ fun SettingsRoute(onBackClick: () -> Unit = {}) {
     )
     val uiState by viewModel.uiState.collectAsState()
     val rapidApiKey by viewModel.rapidApiKey.collectAsState()
+    val unsplashKey by viewModel.unsplashKey.collectAsState()
     val scope = rememberCoroutineScope()
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -71,6 +72,7 @@ fun SettingsRoute(onBackClick: () -> Unit = {}) {
     SettingsScreen(
         uiState = uiState,
         rapidApiKey = rapidApiKey,
+        unsplashKey = unsplashKey,
         onBackClick = onBackClick,
         onExportClick = {
             exportLauncher.launch("atlas-backup-${LocalDate.now()}.json")
@@ -82,6 +84,7 @@ fun SettingsRoute(onBackClick: () -> Unit = {}) {
         onDismissImport = viewModel::dismissImportPreview,
         onDismissMessage = viewModel::clearMessage,
         onSaveRapidApiKey = viewModel::saveRapidApiKey,
+        onSaveUnsplashKey = viewModel::saveUnsplashKey,
     )
 }
 

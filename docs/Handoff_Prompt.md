@@ -175,21 +175,23 @@ Map usage:
 
 Current priority:
 
-Country Info is being redesigned section by section. Hero, highlights/KPI shelf,
-identity (dissolved), geography, governance, demography, health, and economia are
-done and committed. Each redesigned section is a custom composable special-cased
-in `SectionCard` by section key.
+All Country Info sections now have a first-pass custom visual redesign, each a
+composable special-cased in `SectionCard` by section key: hero, highlights/KPI
+shelf, geography, governance, demography, health, economia, desenvolupament,
+infraestructura, cultura, drets, practic. Identity was dissolved into the others.
 
 The standalone finances section was removed: fiscal/trade/investment facts route
 into economia and inequality (`desigualtat`) routes into desenvolupament (via
 `SECTION_FOR_CATEGORY`).
 
-1. Continue the section-by-section redesign — remaining: desenvolupament (now also
-   holds inequality), infraestructura, cultura, drets, practic. Keep each section
-   visual, hierarchical, and color-driven rather than a flat list.
-2. Preserve current behavior, Room schema, presentation/domain boundaries; keep
+1. Polish the two last sections — `drets` and `practic` — which got lighter passes
+   than the rest; bring them fully in line with the visual/hierarchy/color standard.
+2. Run a complete manual QA of Country Info across countries and phone sizes:
+   every section's layout, long Catalan text, narrow screens, loading/empty/no-photo
+   states, the neighbors map framing, and opinionated thresholds throughout.
+3. Preserve current behavior, Room schema, presentation/domain boundaries; keep
    the dataset importer idempotent and version-gated.
-3. After Country Info redesign is accepted, continue v4.0 M3 country-detail
+4. After Country Info redesign is accepted, continue v4.0 M3 country-detail
    enrichment and M4 country-list filtering.
 
 Completed in the current pass (committed):
@@ -210,6 +212,14 @@ Completed in the current pass (committed):
   access meters, health-system rows, and risk-factor meters;
 - economia: GDP headline + per-capita, sectors composition bar, rated macro
   indicators, and the merged finances blocks (trade, public finance, investment);
+- desenvolupament: HDI headline + gender index tiles, education (literacy,
+  schooling bars, enrollment tiles, featured GDP education spend), and inequality
+  (Gini headline, income decile bars, poverty tiles);
+- infraestructura: internet headline, mobile/broadband meters, air passengers;
+- cultura: religion donut, language chips, gold heritage/Nobel trophy tiles,
+  featured tourism, and a two-column details grid;
+- drets: equal-size colored status tiles; practic: two-column key-facts grid;
+- shared meter/tile/rating/key-fact helpers consolidated in InfoComponents/InfoStyle;
 - CO2 ranks derived at import (`co2_per_capita`, `co2_total`), dataset `2026.2`;
 - `assembleDebug` passes after each step.
 

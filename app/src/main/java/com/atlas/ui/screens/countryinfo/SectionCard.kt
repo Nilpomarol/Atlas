@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -105,6 +106,8 @@ internal fun SectionCard(
                             InfrastructureSection(section.items)
                         } else if (section.key == "cultura") {
                             CultureSection(section.items)
+                        } else if (section.key == "practic") {
+                            PracticalSection(section.items)
                         } else {
                             var previousCategory: String? = null
                             section.items.forEachIndexed { index, item ->
@@ -162,8 +165,8 @@ private fun DretsGrid(items: List<SectionItem>) {
                 facts.forEach { fact -> RightsTile(fact, Modifier.fillMaxWidth()) }
             } else {
                 facts.chunked(2).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        row.forEach { fact -> RightsTile(fact, Modifier.weight(1f)) }
+                    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { fact -> RightsTile(fact, Modifier.weight(1f).fillMaxHeight()) }
                         if (row.size == 1) Spacer(Modifier.weight(1f))
                     }
                 }

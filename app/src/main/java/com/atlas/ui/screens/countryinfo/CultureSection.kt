@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.sp
 import com.atlas.presentation.country.SectionItem
 import com.atlas.ui.components.AtlasSectionLabel
 import com.atlas.ui.theme.AtlasGold
-import com.atlas.ui.theme.AtlasMono
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
@@ -123,23 +122,6 @@ internal fun CultureSection(items: List<SectionItem>) {
                 }
             }
         }
-    }
-}
-
-private data class KeyFact(val label: String, val value: String, val mono: Boolean)
-
-@Composable
-private fun RowScope.KeyFactCell(fact: KeyFact) {
-    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(fact.label, style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceFaint)
-        Text(
-            fact.value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = if (fact.mono) AtlasMono else null,
-            fontWeight = FontWeight.Medium,
-            color = AtlasOnSurfaceStrong,
-            maxLines = 2,
-        )
     }
 }
 

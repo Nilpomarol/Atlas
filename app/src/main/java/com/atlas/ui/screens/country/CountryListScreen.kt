@@ -14,14 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -31,11 +36,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,32 +50,25 @@ import com.atlas.domain.model.CountryType
 import com.atlas.presentation.country.CountryListFilter
 import com.atlas.presentation.country.CountryListItemUiState
 import com.atlas.presentation.country.CountryListUiState
+import com.atlas.presentation.country.CountrySort
 import com.atlas.ui.components.AtlasFilterPill
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasPill
-import com.atlas.ui.components.AtlasSemanticColors
 import com.atlas.ui.components.CountryFlag
 import com.atlas.ui.components.primaryStateColors
-import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasLived
-import com.atlas.ui.theme.AtlasLivedContainer
-import com.atlas.ui.theme.AtlasLiving
-import com.atlas.ui.theme.AtlasLivingContainer
+import com.atlas.ui.theme.AtlasMono
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceFaint
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
-import com.atlas.ui.theme.AtlasPending
-import com.atlas.ui.theme.AtlasPendingContainer
 import com.atlas.ui.theme.AtlasPlanned
-import com.atlas.ui.theme.AtlasPlannedContainer
 import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasSurfaceRaised
 import com.atlas.ui.theme.AtlasVisited
-import com.atlas.ui.theme.AtlasVisitedContainer
 import com.atlas.ui.theme.AtlasWished
-import com.atlas.ui.theme.AtlasWishedContainer
 
 @Composable
 fun CountryListScreen(
@@ -76,16 +76,23 @@ fun CountryListScreen(
     onCountryClick: (String) -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onFilterSelected: (CountryListFilter) -> Unit,
+    onSortSelected: (CountrySort) -> Unit,
+    onSortDirectionToggled: () -> Unit,
 ) {
     AtlasPage(contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) {
         var collapsedContinents by rememberSaveable { mutableStateOf(emptyList<String>()) }
+        var grouped by rememberSaveable { mutableStateOf(true) }
         Column(
             modifier = Modifier.fillMaxSize(),
         ) {
             CountryListHeader(
                 uiState = uiState,
+                grouped = grouped,
                 onSearchQueryChanged = onSearchQueryChanged,
                 onFilterSelected = onFilterSelected,
+                onSortSelected = onSortSelected,
+                onSortDirectionToggled = onSortDirectionToggled,
+                onToggleGrouped = { grouped = !grouped },
             )
 
             if (uiState.countries.isEmpty()) {
@@ -103,6 +110,17 @@ fun CountryListScreen(
                         bottom = 20.dp,
                     ),
                 ) {
+                    if (!grouped) {
+                        items(
+                            items = uiState.countries,
+                            key = { item -> item.country.iso2 },
+                        ) { item ->
+                            CountryRow(
+                                item = item,
+                                onClick = { onCountryClick(item.country.iso2) },
+                            )
+                        }
+                    } else {
                     uiState.countries
                         .groupBy { it.country.continent }
                         .entries
@@ -139,6 +157,7 @@ fun CountryListScreen(
                                 }
                             }
                         }
+                    }
                 }
             }
         }
@@ -148,8 +167,12 @@ fun CountryListScreen(
 @Composable
 private fun CountryListHeader(
     uiState: CountryListUiState,
+    grouped: Boolean,
     onSearchQueryChanged: (String) -> Unit,
     onFilterSelected: (CountryListFilter) -> Unit,
+    onSortSelected: (CountrySort) -> Unit,
+    onSortDirectionToggled: () -> Unit,
+    onToggleGrouped: () -> Unit,
 ) {
         Column(
         modifier = Modifier.padding(start = 20.dp, top = 18.dp, end = 20.dp, bottom = 6.dp),
@@ -171,6 +194,14 @@ private fun CountryListHeader(
                     color = AtlasOnSurfaceMuted,
                 )
             }
+            SortControl(
+                selected = uiState.selectedSort,
+                ascending = uiState.sortAscending,
+                grouped = grouped,
+                onSortSelected = onSortSelected,
+                onDirectionToggled = onSortDirectionToggled,
+                onToggleGrouped = onToggleGrouped,
+            )
         }
 
         OutlinedTextField(
@@ -199,13 +230,143 @@ private fun CountryListHeader(
             ),
         )
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(CountryListFilter.entries) { filter ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            CountryListFilter.entries.forEach { filter ->
                 AtlasFilterPill(
                     label = filter.label,
                     selected = uiState.selectedFilter == filter,
                     onClick = { onFilterSelected(filter) },
+                    selectedContainerColor = filter.pillColor(),
+                    modifier = Modifier.weight(1f),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SortControl(
+    selected: CountrySort,
+    ascending: Boolean,
+    grouped: Boolean,
+    onSortSelected: (CountrySort) -> Unit,
+    onDirectionToggled: () -> Unit,
+    onToggleGrouped: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        // Direction toggle (ascending / descending).
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(100.dp))
+                .border(1.dp, AtlasOutline, RoundedCornerShape(100.dp))
+                .clickable(onClickLabel = if (ascending) "Ordena descendent" else "Ordena ascendent") {
+                    onDirectionToggled()
+                }
+                .padding(7.dp),
+        ) {
+            Icon(
+                imageVector = if (ascending) Icons.Filled.ArrowUpward else Icons.Filled.ArrowDownward,
+                contentDescription = if (ascending) "Ascendent" else "Descendent",
+                tint = AtlasOnSurfaceStrong,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Box {
+            Row(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(100.dp))
+                    .border(1.dp, AtlasOutline, RoundedCornerShape(100.dp))
+                    .clickable { expanded = true }
+                    .padding(start = 12.dp, end = 10.dp, top = 7.dp, bottom = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Sort,
+                    contentDescription = "Ordena",
+                    tint = AtlasOnSurfaceMuted,
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = selected.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceStrong,
+                )
+            }
+            MaterialTheme(
+            colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
+            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
+        ) {
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.width(180.dp),
+            ) {
+                CountrySort.entries.forEach { sort ->
+                    val isSelected = sort == selected
+                    DropdownMenuItem(
+                        text = {
+                            Text(
+                                text = sort.label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) AtlasNavy else AtlasOnSurfaceStrong,
+                            )
+                        },
+                        trailingIcon = if (isSelected) {
+                            {
+                                Icon(
+                                    Icons.Filled.Check,
+                                    contentDescription = null,
+                                    tint = AtlasNavy,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        } else {
+                            null
+                        },
+                        onClick = {
+                            expanded = false
+                            onSortSelected(sort)
+                        },
+                    )
+                }
+                HorizontalDivider(color = AtlasOutline)
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = "Agrupa per continent",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (grouped) FontWeight.Bold else FontWeight.Medium,
+                            color = if (grouped) AtlasNavy else AtlasOnSurfaceStrong,
+                        )
+                    },
+                    trailingIcon = if (grouped) {
+                        {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = AtlasNavy,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        expanded = false
+                        onToggleGrouped()
+                    },
+                )
+            }
             }
         }
     }
@@ -341,6 +502,15 @@ private fun CountryRow(
                     )
                 }
             }
+            item.sortValueLabel?.let { label ->
+                Text(
+                    text = label,
+                    fontFamily = AtlasMono,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                )
+            }
             AtlasPill(
                 label = stateColors.label,
                 colors = stateColors,
@@ -352,14 +522,12 @@ private fun CountryRow(
     }
 }
 
-private fun CountryListFilter.colors(): AtlasSemanticColors = when (this) {
-    CountryListFilter.All -> AtlasSemanticColors(AtlasPrimary, AtlasAccentContainer, label)
-    CountryListFilter.Visited -> AtlasSemanticColors(AtlasVisited, AtlasVisitedContainer, label)
-    CountryListFilter.Wished -> AtlasSemanticColors(AtlasWished, AtlasWishedContainer, label)
-    CountryListFilter.Planned -> AtlasSemanticColors(AtlasPlanned, AtlasPlannedContainer, label)
-    CountryListFilter.Lived -> AtlasSemanticColors(AtlasLived, AtlasLivedContainer, label)
-    CountryListFilter.CurrentlyLiving -> AtlasSemanticColors(AtlasLiving, AtlasLivingContainer, label)
-    CountryListFilter.NeverVisited -> AtlasSemanticColors(AtlasPending, AtlasPendingContainer, label)
+private fun CountryListFilter.pillColor(): Color = when (this) {
+    CountryListFilter.All -> AtlasPrimary
+    CountryListFilter.Visited -> AtlasVisited
+    CountryListFilter.Wished -> AtlasWished
+    CountryListFilter.Planned -> AtlasPlanned
+    CountryListFilter.Lived -> AtlasLived
 }
 
 private fun com.atlas.domain.model.Country.metaText(): String =

@@ -15,4 +15,8 @@ class CountryStatRepositoryImpl(
     override fun observeByCountry(iso2: String): Flow<List<CountryStatFact>> =
         countryStatFactDao.observeByCountry(iso2)
             .map { list -> list.map { it.toDomain() } }
+
+    override fun observeByKeys(keys: Set<String>): Flow<List<CountryStatFact>> =
+        countryStatFactDao.observeByKeys(keys.toList())
+            .map { list -> list.map { it.toDomain() } }
 }

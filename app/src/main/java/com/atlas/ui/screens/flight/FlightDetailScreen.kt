@@ -584,9 +584,7 @@ private fun DatetimeRow(
             }
             Text(
                 text = formatDateOnlyForMode(displayedPrimary, displayMode),
-                style = MaterialTheme.typography.labelMedium
-
-                ,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 color = AtlasOnSurfaceMuted,
             )

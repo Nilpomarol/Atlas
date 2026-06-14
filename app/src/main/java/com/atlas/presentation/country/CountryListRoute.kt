@@ -21,6 +21,7 @@ fun CountryListRoute(
             itineraryRepository = app.container.itineraryRepository,
             excursionRepository = app.container.excursionRepository,
             airportRepository = app.container.airportRepository,
+            countryStatRepository = app.container.countryStatRepository,
             countryStateDerivationService = app.container.countryStateDerivationService,
         ),
     )
@@ -31,5 +32,7 @@ fun CountryListRoute(
         onCountryClick = onCountryClick,
         onSearchQueryChanged = viewModel::onSearchQueryChanged,
         onFilterSelected = viewModel::onFilterSelected,
+        onSortSelected = viewModel::onSortSelected,
+        onSortDirectionToggled = viewModel::onSortDirectionToggled,
     )
 }

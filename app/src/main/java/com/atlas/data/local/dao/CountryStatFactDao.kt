@@ -13,6 +13,9 @@ interface CountryStatFactDao {
     )
     fun observeByCountry(iso2: String): Flow<List<CountryStatFactEntity>>
 
+    @Query("SELECT * FROM country_stat_facts WHERE key IN (:keys)")
+    fun observeByKeys(keys: List<String>): Flow<List<CountryStatFactEntity>>
+
     @Query("DELETE FROM country_stat_facts")
     suspend fun clear()
 

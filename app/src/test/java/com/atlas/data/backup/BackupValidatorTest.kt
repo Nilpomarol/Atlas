@@ -8,7 +8,7 @@ class BackupValidatorTest {
     private val validCountries = setOf("AD", "ES", "FR")
 
     @Test
-    fun acceptsValidV2Backup() {
+    fun acceptsValidV3Backup() {
         validator.validate(backup = validBackup(), validCountryIso2 = validCountries)
     }
 
@@ -16,6 +16,11 @@ class BackupValidatorTest {
     fun acceptsV1BackupFormat() {
         // v1 backup (version = 1, no new fields) must still import cleanly
         validator.validate(backup = validBackup().copy(backupVersion = 1), validCountryIso2 = validCountries)
+    }
+
+    @Test
+    fun acceptsV2BackupFormat() {
+        validator.validate(backup = validBackup().copy(backupVersion = 2), validCountryIso2 = validCountries)
     }
 
     @Test
@@ -157,24 +162,53 @@ class BackupValidatorTest {
         }
     }
 
+    @Test
+    fun acceptsValidStopPhotos() {
+        validator.validate(
+            backup = validBackup(stopPhotos = listOf(validStopPhoto())),
+            validCountryIso2 = validCountries,
+        )
+    }
+
+    @Test
+    fun rejectsPhotoWithMissingStop() {
+        assertThrows(BackupValidationException::class.java) {
+            validator.validate(
+                backup = validBackup(stopPhotos = listOf(validStopPhoto().copy(stopId = "missing-stop"))),
+                validCountryIso2 = validCountries,
+            )
+        }
+    }
+
+    @Test
+    fun rejectsPhotoWithUnsafeFilename() {
+        assertThrows(BackupValidationException::class.java) {
+            validator.validate(
+                backup = validBackup(stopPhotos = listOf(validStopPhoto().copy(filename = "../photo.jpg"))),
+                validCountryIso2 = validCountries,
+            )
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private fun validBackup(
         countryUserStates: List<BackupCountryUserStateV1> = listOf(validCountryUserState()),
         countryLogs: List<BackupCountryLogV1> = listOf(validCountryLog()),
-        trips: List<BackupTripV1> = listOf(validTrip()),
+        trips: List<BackupTripV3> = listOf(validTrip()),
         tripStops: List<BackupTripStopV2> = listOf(validTripStop()),
         flights: List<BackupFlightV2> = emptyList(),
         itineraries: List<BackupItineraryV2> = emptyList(),
         itineraryGroups: List<BackupItineraryGroupV2> = emptyList(),
         excursions: List<BackupExcursionV2> = emptyList(),
         excursionStops: List<BackupExcursionStopV2> = emptyList(),
-    ): AtlasBackupV2 =
-        AtlasBackupV2(
-            backupVersion = 2,
+        stopPhotos: List<StopPhotoBackup> = emptyList(),
+    ): AtlasBackupV3 =
+        AtlasBackupV3(
+            backupVersion = 3,
             createdAt = "2026-05-30T00:00:00Z",
             countryDatasetVersion = "test",
-            data = AtlasBackupDataV2(
+            data = AtlasBackupDataV3(
                 countryUserStates = countryUserStates,
                 countryLogs = countryLogs,
                 trips = trips,
@@ -184,6 +218,7 @@ class BackupValidatorTest {
                 itineraryGroups = itineraryGroups,
                 excursions = excursions,
                 excursionStops = excursionStops,
+                stopPhotos = stopPhotos,
             ),
         )
 
@@ -194,7 +229,7 @@ class BackupValidatorTest {
         BackupCountryLogV1(id = "log-1", countryIso2 = "AD", type = "VISIT", startYear = 2026, startMonth = 5, datePrecision = "MONTH", createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
 
     private fun validTrip() =
-        BackupTripV1(id = "trip-1", title = "Viatge", status = "COMPLETED", startYear = 2026, datePrecision = "YEAR", createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
+        BackupTripV3(id = "trip-1", title = "Viatge", status = "COMPLETED", startYear = 2026, datePrecision = "YEAR", createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
 
     private fun validTripStop() =
         BackupTripStopV2(id = "stop-1", tripId = "trip-1", locationName = "Andorra la Vella", countryIso2 = "AD", sortOrder = 0, createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
@@ -213,4 +248,14 @@ class BackupValidatorTest {
 
     private fun validExcursionStop(excursionId: String = "excursion-1") =
         BackupExcursionStopV2(id = "excursion-stop-1", excursionId = excursionId, locationName = "Kamakura", countryIso2 = "AD", sortOrder = 0, createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
+
+    private fun validStopPhoto() =
+        StopPhotoBackup(
+            id = "photo-1",
+            stopId = "stop-1",
+            stopType = "TRIP_STOP",
+            filename = "11111111-1111-1111-1111-111111111111.jpg",
+            sortOrder = 0,
+            createdAt = "2026-05-30T00:00:00Z",
+        )
 }

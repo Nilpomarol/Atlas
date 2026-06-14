@@ -5,12 +5,36 @@ import com.atlas.data.local.entity.ExcursionStopEntity
 import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
+import com.atlas.data.local.entity.StopPhotoEntity
+import com.atlas.data.local.entity.TripEntity
 import com.atlas.data.local.entity.TripStopEntity
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class BackupMappersTest {
+    @Test
+    fun tripV3RoundTripPreservesCoverPhoto() {
+        val entity = TripEntity(
+            id = "trip-1",
+            title = "Viatge",
+            status = "COMPLETED",
+            startYear = 2026,
+            startMonth = 6,
+            startDay = null,
+            endYear = null,
+            endMonth = null,
+            endDay = null,
+            datePrecision = "MONTH",
+            notes = "Notes",
+            createdAt = "2026-05-30T00:00:00Z",
+            updatedAt = "2026-05-30T01:00:00Z",
+            coverPhotoFilename = "11111111-1111-1111-1111-111111111111.jpg",
+        )
+
+        assertEquals(entity, entity.toBackupV3().toEntity())
+    }
+
     @Test
     fun tripStopBackupRoundTripPreservesAllFields() {
         val entity = TripStopEntity(
@@ -113,6 +137,20 @@ class BackupMappersTest {
             createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z",
         )
         assertEquals(entity, entity.toBackupV2().toEntity())
+    }
+
+    @Test
+    fun stopPhotoRoundTripPreservesAllFields() {
+        val entity = StopPhotoEntity(
+            id = "photo-1",
+            stopId = "stop-1",
+            stopType = "TRIP_STOP",
+            filename = "11111111-1111-1111-1111-111111111111.jpg",
+            sortOrder = 2,
+            createdAt = "2026-05-30T00:00:00Z",
+        )
+
+        assertEquals(entity, entity.toBackupV3().toEntity())
     }
 
     private companion object {

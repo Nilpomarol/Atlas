@@ -18,7 +18,10 @@ Last updated: 2026-06-14.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
 - v4.0 M3 is complete and committed: country-detail enrichment — landscape photo hero with identity overlay and state pills, headline KPI tiles, compact offline map card, and a currency converter card. Room DB v24.
 - v4.0 M4 is complete and committed: country-list sorting (name/population/area/GDP/HDI) with ascending/descending, the sorted metric shown per row, accent-insensitive search and name sort, a continent-grouping on/off toggle, and state-colored filter pills.
-- v4.0 is feature-complete. The outstanding work is manual device QA across M3/M4 (none of it has been verified on a device yet) and any polish that surfaces from it.
+- v4.0 is feature-complete and device QA has been done.
+- Photo-inclusive backups are implemented: `.atlasbackup` ZIP container, backup format v3, `stop_photos` rows, trip cover references, and referenced user photo files. Legacy v1/v2 JSON backups remain importable.
+- Opt-in cloud backups are implemented through Android's document-provider folder picker. The user can select a Google Drive folder (or another compatible provider), create a backup immediately, and keep a monthly schedule with the three newest automatic backups retained.
+- Google Drive folder selection and a successful photo-inclusive upload have been verified on a device.
 
 ## Stack and Constraints
 
@@ -33,6 +36,7 @@ Last updated: 2026-06-14.
 - Offline Compose Canvas geo rendering for reusable world/country/flight surfaces.
 - Coil 2.7.0 for all image loading, including SVG flags.
 - DataStore Preferences for API keys and preferences.
+- WorkManager 2.11.2 for constrained periodic cloud backups.
 - No Hilt, Koin, Retrofit, osmdroid, backend requirement, or additional image loader unless explicitly approved.
 
 Visible UI is Catalan-first. Code, identifiers, comments, and technical documentation are English.
@@ -71,7 +75,21 @@ Current Room entities:
 - User-created: country user states, country logs, trips, trip stops, excursions, excursion stops, flights, itineraries, itinerary groups, stop photos.
 - External cache: country photos (portrait, Country Info), country landscape photos (country detail hero), currency rates.
 
-Backup format version is 2. Existing v1 backups import through defaults. Photo binaries and external photo cache files are not embedded in JSON backup.
+Backup format version is **3**. Exports use a `.atlasbackup` ZIP containing
+`atlas-backup.json` plus referenced files under `photos/`. Existing v1/v2 JSON
+backups import through defaults and clear photos because they contain no media.
+Replaceable country photo and currency caches remain excluded.
+
+Cloud backup settings live in DataStore, not Room. Automatic backups:
+
+- use a persistently granted document-tree URI selected by the user;
+- run every 30 days on an unmetered network with battery/storage safeguards;
+- use a foreground data-sync worker so large photo archives can finish;
+- retain the three newest `atlas-auto-backup-*` files without deleting manual exports;
+- include the just-created document in retention even if Drive's folder listing is delayed;
+- expose pause/resume, backup-now, folder change, queued/running feedback,
+  last-success, and error state in Settings;
+- post success and terminal-failure notifications when notification permission is available.
 
 ## Dataset Ground Truth
 
@@ -175,9 +193,28 @@ Map usage:
 
 ## Active Work
 
-v4.0 is feature-complete. The only outstanding work is **manual device QA** of the
-M3 and M4 changes (so far verified only by `assembleDebug` and unit tests), plus any
-polish that QA surfaces.
+The backup and portability milestone is implemented. The Settings flow exports and
+imports `.atlasbackup` archives containing structured data and referenced photos;
+legacy v1/v2 JSON remains importable. Validation covers unsafe ZIP entries, size
+limits, missing photo files, schema compatibility, and rollback-capable media
+replacement.
+
+Google Drive folder selection and a successful upload have been verified on a real
+device. Drive may display the destination document as 0 bytes while the provider is
+still committing the open output stream. Settings now shows queued/running state, and
+the worker posts success or terminal-failure notifications when permission is
+available.
+
+Before starting another product feature, finish the backup recovery drill:
+
+- export a photo-inclusive backup, clear/reinstall Atlas, import it, and verify photos
+  and trip covers;
+- import a legacy JSON backup;
+- verify notification permission, success notification, and terminal-failure feedback;
+- create at least four automatic backups and confirm only the newest three remain;
+- verify persisted Drive access after reboot and behavior after folder access is revoked.
+
+The v4.0 work below is complete and committed, kept here for reference.
 
 ### Country Info (complete, committed)
 
@@ -221,19 +258,6 @@ The country detail screen (`ui/screens/country/`) was restructured:
   color when selected.
 - `compactStatValue` extracted to shared `presentation/country/StatFormatting.kt`
   (used by detail KPIs and the list metric).
-
-### Remaining device QA
-
-- M3: landscape hero scrim/identity/state-pills across phone sizes and long names;
-  the currency converter (keyboard, swap, prefilled value, long converted amounts);
-  KPI tiles with long Catalan labels; offline behaviour (photo + currency cards must
-  hide gracefully when nothing is cached); a real Unsplash key for the landscape fetch.
-- M4: the five state-colored pills fitting one line on narrow screens; the per-row sort
-  metric not crowding long names; the grouping on/off toggle; accent-insensitive search.
-- Country Info (still pending device review from earlier): neighbors-map framing
-  (small vs many-neighbor countries), ISO3 tag collisions, CO2 ranks not producing
-  trivial highlights for near-zero emitters, and whether to localize English
-  ethnic-group names.
 
 ## Validation
 

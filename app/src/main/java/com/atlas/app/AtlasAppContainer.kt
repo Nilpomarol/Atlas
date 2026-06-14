@@ -12,7 +12,9 @@ import com.atlas.data.dataset.CountryDatasetImporter
 import com.atlas.data.dataset.CountryStatDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
+import com.atlas.data.preferences.CloudBackupPreferencesDataSource
 import com.atlas.data.preferences.TripMapPreferencesDataSource
+import com.atlas.data.backup.CloudBackupExporter
 import com.atlas.data.local.database.AtlasDatabase
 import com.atlas.data.repository.StopPhotoRepositoryImpl
 import com.atlas.data.repository.AircraftTypeRepositoryImpl
@@ -37,6 +39,8 @@ import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
+import com.atlas.domain.repository.CloudBackupPreferencesRepository
+import com.atlas.domain.repository.CloudBackupScheduler
 import com.atlas.domain.repository.CountryLandscapePhotoRepository
 import com.atlas.domain.repository.CountryPhotoRepository
 import com.atlas.domain.repository.CountryRepository
@@ -173,7 +177,17 @@ class AtlasAppContainer(context: Context) {
 
     val backupRepository: BackupRepository = BackupRepositoryImpl(
         database = database,
+        photosDirectory = java.io.File(applicationContext.filesDir, "photos"),
     )
+    val cloudBackupPreferencesRepository: CloudBackupPreferencesRepository =
+        CloudBackupPreferencesDataSource(applicationContext)
+    val cloudBackupExporter = CloudBackupExporter(
+        context = applicationContext,
+        backupRepository = backupRepository,
+        preferencesRepository = cloudBackupPreferencesRepository,
+    )
+    val cloudBackupScheduler: CloudBackupScheduler =
+        WorkManagerCloudBackupScheduler(applicationContext)
 
     val airportRepository: AirportRepository = AirportRepositoryImpl(
         database = database,
@@ -432,6 +446,14 @@ class AtlasAppContainer(context: Context) {
     fun refreshTravelStatusesOnStartup() {
         applicationScope.launch(Dispatchers.IO) {
             updateCurrentTravelStatusesUseCase()
+        }
+    }
+
+    fun refreshCloudBackupScheduleOnStartup() {
+        applicationScope.launch {
+            if (cloudBackupPreferencesRepository.getSettings().enabled) {
+                cloudBackupScheduler.scheduleMonthly()
+            }
         }
     }
 

@@ -6,7 +6,7 @@ This is the current operational source of truth for Atlas. It records what is im
 
 When this document conflicts with a long-term specification or roadmap, follow this document and the code currently in the repository.
 
-Last updated: 2026-06-12.
+Last updated: 2026-06-14.
 
 ## Current Status
 
@@ -15,9 +15,10 @@ Last updated: 2026-06-12.
 - The current phase is v4.0 Country Depth and UI polish.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
-- Country Info is being redesigned section by section (committed): full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), and a visual geography section with an offline neighbors map.
-- The active task remains Country Info redesign/polish. Do not treat this phase as complete yet.
-- v4.0 M3 country-detail enrichment and M4 country-list filtering follow only after Country Info visual review is accepted.
+- Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
+- v4.0 M3 is complete and committed: country-detail enrichment — landscape photo hero with identity overlay and state pills, headline KPI tiles, compact offline map card, and a currency converter card. Room DB v24.
+- v4.0 M4 is complete and committed: country-list sorting (name/population/area/GDP/HDI) with ascending/descending, the sorted metric shown per row, accent-insensitive search and name sort, a continent-grouping on/off toggle, and state-colored filter pills.
+- v4.0 is feature-complete. The outstanding work is manual device QA across M3/M4 (none of it has been verified on a device yet) and any polish that surfaces from it.
 
 ## Stack and Constraints
 
@@ -51,7 +52,7 @@ UI -> Presentation -> Domain -> Data -> Room / Static Datasets / External Servic
 
 ## Persistence Ground Truth
 
-Room database version: **23**.
+Room database version: **24**.
 
 The migration chain is explicit and registered in `AtlasAppContainer`.
 
@@ -62,12 +63,13 @@ Recent migrations:
 - `20 -> 21`: trip `cover_photo_filename`.
 - `21 -> 22`: `country_stat_facts`.
 - `22 -> 23`: `country_photos`.
+- `23 -> 24`: `country_landscape_photos` and `currency_rates`.
 
 Current Room entities:
 
 - Static/reference: countries, dataset metadata, airports, airlines, aircraft types, aircraft cache, country stat facts.
 - User-created: country user states, country logs, trips, trip stops, excursions, excursion stops, flights, itineraries, itinerary groups, stop photos.
-- External cache: country photos.
+- External cache: country photos (portrait, Country Info), country landscape photos (country detail hero), currency rates.
 
 Backup format version is 2. Existing v1 backups import through defaults. Photo binaries and external photo cache files are not embedded in JSON backup.
 
@@ -166,75 +168,72 @@ Implemented primary surfaces include dashboard, countries, country detail, Count
 Map usage:
 
 - `AtlasGeoCanvas`: reusable offline vector geo foundation.
-- `CountryMapHero`: offline Canvas geo.
+- `CountryMapCard`: offline Canvas geo on the country detail screen (replaced `CountryMapHero`).
 - `FlightRouteGeoMap`: offline Canvas geo.
 - `DashboardMapHero`: offline Canvas geo.
 - `TripMapPreview`: MapLibre.
 
 ## Active Work
 
-Current priority:
+v4.0 is feature-complete. The only outstanding work is **manual device QA** of the
+M3 and M4 changes (so far verified only by `assembleDebug` and unit tests), plus any
+polish that QA surfaces.
 
-All Country Info sections now have a first-pass custom visual redesign, each a
-composable special-cased in `SectionCard` by section key: hero, highlights/KPI
-shelf, geography, governance, demography, health, economia, desenvolupament,
-infraestructura, cultura, drets, practic. Identity was dissolved into the others.
+### Country Info (complete, committed)
 
-The standalone finances section was removed: fiscal/trade/investment facts route
-into economia and inequality (`desigualtat`) routes into desenvolupament (via
-`SECTION_FOR_CATEGORY`).
+All sections have a custom visual redesign, each special-cased in `SectionCard` by
+section key: hero, highlights/KPI shelf, geography, governance, demography, health,
+economia, desenvolupament, infraestructura, cultura, drets, practic. Identity was
+dissolved into the others; the standalone finances section was removed (fiscal/trade/
+investment route into economia, `desigualtat` into desenvolupament via
+`SECTION_FOR_CATEGORY`). CO2 ranks are derived at import (`co2_per_capita`,
+`co2_total`), dataset `2026.2`.
 
-1. Polish the two last sections — `drets` and `practic` — which got lighter passes
-   than the rest; bring them fully in line with the visual/hierarchy/color standard.
-2. Run a complete manual QA of Country Info across countries and phone sizes:
-   every section's layout, long Catalan text, narrow screens, loading/empty/no-photo
-   states, the neighbors map framing, and opinionated thresholds throughout.
-3. Preserve current behavior, Room schema, presentation/domain boundaries; keep
-   the dataset importer idempotent and version-gated.
-4. After Country Info redesign is accepted, continue v4.0 M3 country-detail
-   enrichment and M4 country-list filtering.
+### M3 — country detail enrichment (complete, committed)
 
-Completed in the current pass (committed):
+The country detail screen (`ui/screens/country/`) was restructured:
 
-- split `CountryInfoScreen` into focused files;
-- full-bleed hero with bottom scrim, shared `BackPill`, and SVG flag;
-- highlights/KPI shelf: fixed-size cards, medal colors by world standing, k/M/B/T
-  compact number formatter, tier-colored KPI tiles;
-- dissolved identity, redistributing facts and moving rich rendering (coat-of-arms
-  emblem, simplified government, mono codes) to the fact-row level;
-- geography: Everest comparison, land-use bar, grouped environment report card,
-  and an offline neighbors map (`GeoMarker.labelOnly`);
-- governance: state header, democracy/press/corruption index report card, defense
-  block, and an even membership grid;
-- demography: population headline, age-structure bar, ethnic donut, and a Dinamica
-  block with a birth-vs-death natural-balance visual;
-- health: life-expectancy headline with gender split, mortality report card, basic
-  access meters, health-system rows, and risk-factor meters;
-- economia: GDP headline + per-capita, sectors composition bar, rated macro
-  indicators, and the merged finances blocks (trade, public finance, investment);
-- desenvolupament: HDI headline + gender index tiles, education (literacy,
-  schooling bars, enrollment tiles, featured GDP education spend), and inequality
-  (Gini headline, income decile bars, poverty tiles);
-- infraestructura: internet headline, mobile/broadband meters, air passengers;
-- cultura: religion donut, language chips, gold heritage/Nobel trophy tiles,
-  featured tourism, and a two-column details grid;
-- drets: equal-size colored status tiles; practic: two-column key-facts grid;
-- shared meter/tile/rating/key-fact helpers consolidated in InfoComponents/InfoStyle;
-- CO2 ranks derived at import (`co2_per_capita`, `co2_total`), dataset `2026.2`;
-- `assembleDebug` passes after each step.
+- `CountryDetailHero`: landscape photo hero carrying identity on the image (name,
+  capital · subregion, flag) with prominent solid state pills; navy fallback when no
+  photo. Replaced the old map-based hero.
+- `CountryStatsCard`: 2x2 tier-colored KPI tiles (population, area, GDP/cap, HDI) with
+  a filled "Veure detalls" link into Country Info.
+- `CountryMapCard`: compact offline `AtlasGeoCanvas` map.
+- `CountryCurrencyCard`: compact converter (type-to-convert, swap direction, prefilled
+  with 1) showing the currency name, live EUR rate, and "Actualitzat … · BCE" caption.
+- `CountryQuickActions` gained an "El teu seguiment" section title.
+- Removed `CountryIdentityHeader`, `CountryInfoCard`, `CountryMapHero`.
+- Data: `country_landscape_photos` cache (rotating set of up to 5 landscape photos,
+  ~30-day refresh) via a landscape `UnsplashClient` method; `currency_rates` cache
+  (frankfurter.app, keyless, 12h refresh); `CountryCurrencyCodeMap` (domain) maps ISO2
+  → ISO 4217 because the dataset stores currency names, not codes.
 
-The health section is a first pass and may still change (thresholds, grouping,
-gender-gap visual). Section quality thresholds throughout are opinionated and
-easy to retune.
+### M4 — country list sorting and filter polish (complete, committed)
 
-Remaining visual review:
+- Sort by name, population, area, GDP (total), or HDI, with an ascending/descending
+  toggle; the active stat value is shown on each row. `sortCountryRows` is a pure,
+  unit-tested function; values come from `CountryStatRepository.observeByKeys`.
+- Accent/diacritic-insensitive search and name sorting (`String.foldAccents`).
+- Continent grouping is now a user toggle in the sort menu; ungrouped renders a flat,
+  globally-sorted list.
+- Filter pills: removed "currently living" and "never visited"; the remaining pills
+  (Tots, Visitats, Desitjats, Planejats, Viscuts) fill one line and take their state
+  color when selected.
+- `compactStatValue` extracted to shared `presentation/country/StatFormatting.kt`
+  (used by detail KPIs and the list metric).
 
-- device review of the full-bleed hero scrim and flag across phone sizes;
-- device review of the geography neighbors-map framing (small vs many-neighbor
-  countries), ISO3 tag collisions, and the environment meters;
-- verify CO2 ranks do not produce trivial highlights for near-zero emitters;
-- ethnic-group names render in English (dataset); decide whether to localize;
-- device review of long Catalan labels and narrow layouts.
+### Remaining device QA
+
+- M3: landscape hero scrim/identity/state-pills across phone sizes and long names;
+  the currency converter (keyboard, swap, prefilled value, long converted amounts);
+  KPI tiles with long Catalan labels; offline behaviour (photo + currency cards must
+  hide gracefully when nothing is cached); a real Unsplash key for the landscape fetch.
+- M4: the five state-colored pills fitting one line on narrow screens; the per-row sort
+  metric not crowding long names; the grouping on/off toggle; accent-insensitive search.
+- Country Info (still pending device review from earlier): neighbors-map framing
+  (small vs many-neighbor countries), ISO3 tag collisions, CO2 ranks not producing
+  trivial highlights for near-zero emitters, and whether to localize English
+  ethnic-group names.
 
 ## Validation
 

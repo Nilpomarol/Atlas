@@ -19,7 +19,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Backup
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Image
@@ -31,11 +33,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import com.atlas.domain.repository.BackupImportPreview
 import com.atlas.presentation.settings.DatasetVersionInfo
 import com.atlas.presentation.settings.SettingsUiState
+import com.atlas.domain.repository.CloudBackupWorkStatus
 import com.atlas.ui.components.AtlasCard
 import com.atlas.ui.components.AtlasDot
 import com.atlas.ui.components.AtlasPage
@@ -76,6 +81,10 @@ fun SettingsScreen(
     onBackClick: () -> Unit = {},
     onExportClick: () -> Unit,
     onImportClick: () -> Unit,
+    onChooseCloudBackupFolder: () -> Unit,
+    onCloudBackupEnabledChange: (Boolean) -> Unit,
+    onRunCloudBackupNow: () -> Unit,
+    onDisconnectCloudBackup: () -> Unit,
     onConfirmImport: () -> Unit,
     onDismissImport: () -> Unit,
     onDismissMessage: () -> Unit,
@@ -117,6 +126,13 @@ fun SettingsScreen(
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 AtlasSectionLabel("Còpia de seguretat")
                 BackupCard(isBusy = uiState.isBusy, onExportClick = onExportClick, onImportClick = onImportClick)
+                CloudBackupCard(
+                    state = uiState.cloudBackup,
+                    onChooseFolder = onChooseCloudBackupFolder,
+                    onEnabledChange = onCloudBackupEnabledChange,
+                    onRunNow = onRunCloudBackupNow,
+                    onDisconnect = onDisconnectCloudBackup,
+                )
             }
 
             // ── API key ──────────────────────────────────────────────────────
@@ -157,10 +173,10 @@ private fun BackupCard(isBusy: Boolean, onExportClick: () -> Unit, onImportClick
             CardHeader(
                 icon = Icons.Filled.Backup,
                 title = "Còpia de seguretat",
-                subtitle = "Format JSON · v2",
+                subtitle = "Arxiu Atlas · v3",
             )
             Text(
-                text = "Exporta o restaura les dades personals d'Atlas en format JSON.",
+                text = "Exporta o restaura les dades personals d'Atlas, incloses les fotos.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = AtlasOnSurfaceMuted,
             )
@@ -191,6 +207,136 @@ private fun BackupCard(isBusy: Boolean, onExportClick: () -> Unit, onImportClick
             }
             if (isBusy) {
                 Text("Treballant...", style = MaterialTheme.typography.bodySmall, color = AtlasOnSurfaceMuted)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CloudBackupCard(
+    state: com.atlas.presentation.settings.CloudBackupUiState,
+    onChooseFolder: () -> Unit,
+    onEnabledChange: (Boolean) -> Unit,
+    onRunNow: () -> Unit,
+    onDisconnect: () -> Unit,
+) {
+    val isActive = state.workStatus != CloudBackupWorkStatus.IDLE
+    val isRunning = state.workStatus == CloudBackupWorkStatus.RUNNING
+    AtlasCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            CardHeader(
+                icon = Icons.Filled.CloudUpload,
+                title = "Còpia al núvol",
+                subtitle = "Drive o fitxers · mensual",
+            )
+            Text(
+                text = "Selecciona una carpeta de Google Drive o d'un altre proveïdor compatible. Atlas conserva les tres còpies automàtiques més recents.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AtlasOnSurfaceMuted,
+            )
+
+            if (!state.isConfigured) {
+                Button(
+                    onClick = onChooseFolder,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtlasPrimary,
+                        contentColor = AtlasSurface,
+                    ),
+                ) {
+                    Icon(Icons.Filled.FolderOpen, contentDescription = null)
+                    Text(text = "Tria una carpeta", modifier = Modifier.padding(start = 8.dp))
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        Text(
+                            text = state.folderName.ifBlank { "Carpeta al núvol" },
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = AtlasOnSurfaceStrong,
+                        )
+                        Text(
+                            text = if (state.isEnabled) "Còpia mensual activa" else "Còpia automàtica pausada",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AtlasOnSurfaceMuted,
+                        )
+                    }
+                    Switch(
+                        checked = state.isEnabled,
+                        onCheckedChange = onEnabledChange,
+                        enabled = !isRunning,
+                    )
+                }
+
+                if (isRunning) {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = AtlasPrimary,
+                    )
+                }
+                Text(
+                    text = state.statusText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+                state.errorText?.takeIf { !isActive }?.let { error ->
+                    Text(
+                        text = error,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtlasPrimary,
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Button(
+                        onClick = onRunNow,
+                        enabled = state.isEnabled && !isActive,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = AtlasPrimary,
+                            contentColor = AtlasSurface,
+                        ),
+                    ) {
+                        Icon(Icons.Filled.CloudUpload, contentDescription = null)
+                        Text(
+                            text = when (state.workStatus) {
+                                CloudBackupWorkStatus.QUEUED -> "En espera"
+                                CloudBackupWorkStatus.RUNNING -> "Pujant…"
+                                CloudBackupWorkStatus.IDLE -> "Còpia ara"
+                            },
+                            modifier = Modifier.padding(start = 8.dp),
+                        )
+                    }
+                    OutlinedButton(
+                        onClick = onChooseFolder,
+                        enabled = !isRunning,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(999.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = AtlasPrimary),
+                    ) {
+                        Icon(Icons.Filled.FolderOpen, contentDescription = null)
+                        Text(text = "Canvia", modifier = Modifier.padding(start = 8.dp))
+                    }
+                }
+                TextButton(
+                    onClick = onDisconnect,
+                    enabled = !isRunning,
+                ) {
+                    Text("Desconnecta la carpeta")
+                }
             }
         }
     }
@@ -437,6 +583,7 @@ private fun ImportConfirmationDialog(
                 if (preview.flightCount > 0) Text("Vols: ${preview.flightCount}")
                 if (preview.itineraryCount > 0) Text("Itineraris: ${preview.itineraryCount}")
                 if (preview.excursionCount > 0) Text("Excursions: ${preview.excursionCount}")
+                Text("Fotos: ${preview.photoCount}")
             }
         },
         confirmButton = {

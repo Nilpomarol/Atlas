@@ -7,6 +7,7 @@ import com.atlas.data.local.entity.ExcursionStopEntity
 import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
+import com.atlas.data.local.entity.StopPhotoEntity
 import com.atlas.data.local.entity.TripEntity
 import com.atlas.data.local.entity.TripStopEntity
 
@@ -92,6 +93,42 @@ fun BackupTripV1.toEntity(): TripEntity =
         notes = notes,
         createdAt = createdAt,
         updatedAt = updatedAt,
+    )
+
+fun TripEntity.toBackupV3(): BackupTripV3 =
+    BackupTripV3(
+        id = id,
+        title = title,
+        status = status,
+        startYear = startYear,
+        startMonth = startMonth,
+        startDay = startDay,
+        endYear = endYear,
+        endMonth = endMonth,
+        endDay = endDay,
+        datePrecision = datePrecision,
+        notes = notes,
+        coverPhotoFilename = coverPhotoFilename,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+fun BackupTripV3.toEntity(): TripEntity =
+    TripEntity(
+        id = id,
+        title = title,
+        status = status,
+        startYear = startYear,
+        startMonth = startMonth,
+        startDay = startDay,
+        endYear = endYear,
+        endMonth = endMonth,
+        endDay = endDay,
+        datePrecision = datePrecision,
+        notes = notes,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+        coverPhotoFilename = coverPhotoFilename,
     )
 
 fun TripStopEntity.toBackupV1(): BackupTripStopV1 =
@@ -246,4 +283,24 @@ fun BackupExcursionStopV2.toEntity(): ExcursionStopEntity =
         endYear = endYear, endMonth = endMonth, endDay = endDay,
         datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
         createdAt = createdAt, updatedAt = updatedAt,
+    )
+
+fun StopPhotoEntity.toBackupV3(): StopPhotoBackup =
+    StopPhotoBackup(
+        id = id,
+        stopId = stopId,
+        stopType = stopType,
+        filename = filename,
+        sortOrder = sortOrder,
+        createdAt = createdAt,
+    )
+
+fun StopPhotoBackup.toEntity(): StopPhotoEntity =
+    StopPhotoEntity(
+        id = id,
+        stopId = stopId,
+        stopType = stopType,
+        filename = filename,
+        sortOrder = sortOrder,
+        createdAt = createdAt,
     )

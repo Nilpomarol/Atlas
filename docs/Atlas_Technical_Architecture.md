@@ -15,6 +15,7 @@ This document defines the architecture currently implemented by Atlas. For exact
 - `kotlinx.serialization`.
 - Manual dependency injection through `AtlasAppContainer`.
 - DataStore Preferences.
+- WorkManager for constrained periodic backup work.
 - MapLibre for the remaining tile-backed map surface.
 - Compose Canvas geo components for offline world, country, and route visuals.
 - Coil for raster and SVG image loading.
@@ -150,9 +151,19 @@ Coil is the only image-loading library.
 
 ## Backup and Portability
 
-Backup JSON is versioned and uses `kotlinx.serialization`. Import validates supported versions and supplies defaults for older compatible data.
+Backup payloads are versioned and use `kotlinx.serialization`. Format v3 is stored
+inside a `.atlasbackup` ZIP with referenced user photos. Import validates supported
+versions, supplies defaults for older compatible data, and still accepts legacy v1/v2
+JSON files.
 
-Backup/import changes must preserve stable identifiers and existing compatibility. Photo binaries and replaceable external caches are currently outside the JSON backup.
+Replaceable external photo and currency caches remain outside backups.
+
+Optional cloud backup uses the Storage Access Framework rather than a provider SDK.
+The user grants persistent access to a selected document-provider folder, and
+WorkManager writes the normal `.atlasbackup` archive every 30 days on an unmetered
+network. The worker runs as foreground data sync for large photo archives and retains
+the three newest automatic backups. No Atlas server, Google OAuth flow, or cloud sync
+model is introduced.
 
 ## Validation Strategy
 

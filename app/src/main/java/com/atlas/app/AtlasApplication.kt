@@ -13,5 +13,6 @@ class AtlasApplication : Application() {
         container = AtlasAppContainer(this)
         container.importInitialData()
         container.refreshTravelStatusesOnStartup()
+        container.refreshCloudBackupScheduleOnStartup()
     }
 }

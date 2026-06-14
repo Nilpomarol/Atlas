@@ -155,15 +155,19 @@ Any change to relationship or deletion behavior requires migration and backup re
 
 ## Backup
 
-Current backup format version: **2**.
+Current backup format version: **3**.
 
-JSON backup covers personal structured travel data. v1 imports remain supported through defaults.
+The `.atlasbackup` ZIP contains versioned JSON plus referenced user photo files.
+Legacy v1/v2 JSON imports remain supported through defaults.
+
+Optional cloud backup configuration and status are DataStore preferences. They are not
+part of the Room schema or the exported personal-data payload. Cloud backups reuse the
+same v3 archive format and do not introduce a second data model.
 
 The backup currently excludes:
 
 - bundled static datasets;
 - replaceable API caches;
-- stop photo binaries;
 - cached country photo binaries.
 
 Backup changes must not depend on the installed version of a replaceable static dataset when a stable identifier can be used instead.

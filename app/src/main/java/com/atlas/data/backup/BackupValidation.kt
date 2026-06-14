@@ -4,8 +4,10 @@ import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.validation.FlexibleDateValidator
+import java.util.UUID
 
 class BackupValidationException(message: String) : IllegalArgumentException(message)
 
@@ -13,7 +15,7 @@ class BackupValidator(
     private val flexibleDateValidator: FlexibleDateValidator = FlexibleDateValidator(),
 ) {
     fun validate(
-        backup: AtlasBackupV2,
+        backup: AtlasBackupV3,
         validCountryIso2: Set<String>,
     ) {
         requireBackup(backup.backupVersion in 1..BACKUP_VERSION) {
@@ -30,6 +32,7 @@ class BackupValidator(
         requireUnique(data.itineraryGroups.map { it.id }, "Hi ha grups d'itinerari duplicats.")
         requireUnique(data.excursions.map { it.id }, "Hi ha excursions duplicades.")
         requireUnique(data.excursionStops.map { it.id }, "Hi ha parades d'excursió duplicades.")
+        requireUnique(data.stopPhotos.map { it.id }, "Hi ha fotos duplicades.")
 
         requireBackup(data.countryUserStates.count { it.currentlyLiving } <= 1) {
             "La còpia té més d'un país marcat com a vivint-hi."
@@ -40,6 +43,7 @@ class BackupValidator(
         val itineraryIds = data.itineraries.map { it.id }.toSet()
         val groupIds = data.itineraryGroups.map { it.id }.toSet()
         val excursionIds = data.excursions.map { it.id }.toSet()
+        val excursionStopIds = data.excursionStops.map { it.id }.toSet()
 
         data.countryUserStates.forEach { requireCountryExists(it.countryIso2, validCountryIso2) }
 
@@ -93,6 +97,28 @@ class BackupValidator(
             requireBackup(it.locationName.isNotBlank()) { "Hi ha una parada d'excursió sense nom." }
             validateCoordinates(it.latitude, it.longitude)
             validateDateRange(it.datePrecision, it.startYear, it.startMonth, it.startDay, it.endYear, it.endMonth, it.endDay)
+        }
+        data.stopPhotos.forEach {
+            val stopType = enumValueOrNull<StopType>(it.stopType)
+                ?: throw BackupValidationException("El tipus d'una foto no és vàlid.")
+            val validStopIds = when (stopType) {
+                StopType.TRIP_STOP -> tripStopIds
+                StopType.EXCURSION_STOP -> excursionStopIds
+            }
+            requireBackup(it.stopId in validStopIds) {
+                "Hi ha una foto que apunta a una parada inexistent."
+            }
+            requireBackup(isValidPhotoFilename(it.filename)) {
+                "Hi ha una foto amb un nom de fitxer no vàlid."
+            }
+            requireBackup(it.sortOrder >= 0) {
+                "Hi ha una foto amb un ordre no vàlid."
+            }
+        }
+        data.trips.mapNotNull { it.coverPhotoFilename }.forEach { filename ->
+            requireBackup(isValidPhotoFilename(filename)) {
+                "Hi ha una portada amb un nom de fitxer no vàlid."
+            }
         }
     }
 
@@ -204,7 +230,12 @@ class BackupValidator(
     private inline fun <reified T : Enum<T>> enumValueOrNull(value: String): T? =
         runCatching { enumValueOf<T>(value) }.getOrNull()
 
+    private fun isValidPhotoFilename(filename: String): Boolean {
+        if (!filename.endsWith(".jpg", ignoreCase = true)) return false
+        return runCatching { UUID.fromString(filename.dropLast(4)) }.isSuccess
+    }
+
     companion object {
-        const val BACKUP_VERSION = 2
+        const val BACKUP_VERSION = 3
     }
 }

@@ -33,6 +33,9 @@ fun CountryDetailRoute(
             itineraryRepository = app.container.itineraryRepository,
             airportRepository = app.container.airportRepository,
             excursionRepository = app.container.excursionRepository,
+            countryStatRepository = app.container.countryStatRepository,
+            countryLandscapePhotoRepository = app.container.countryLandscapePhotoRepository,
+            currencyRateRepository = app.container.currencyRateRepository,
         ),
     )
     val uiState by viewModel.uiState.collectAsState()

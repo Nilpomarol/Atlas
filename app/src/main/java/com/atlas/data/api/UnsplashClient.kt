@@ -1,5 +1,7 @@
 package com.atlas.data.api
 
+import com.atlas.domain.repository.ApiLandscapePhoto
+import com.atlas.domain.repository.CountryLandscapePhotosApiResult
 import com.atlas.domain.repository.CountryPhotoApiClient
 import com.atlas.domain.repository.CountryPhotoApiResult
 import java.io.IOException
@@ -79,6 +81,67 @@ class UnsplashClient : CountryPhotoApiClient {
             }
         }
 
+    override suspend fun landscapePhotos(query: String, apiKey: String, count: Int): CountryLandscapePhotosApiResult =
+        withContext(Dispatchers.IO) {
+            if (apiKey.isBlank()) return@withContext CountryLandscapePhotosApiResult.NoApiKey
+
+            val q = URLEncoder.encode(query, StandardCharsets.UTF_8.name())
+
+            val url = "$BASE_URL/search/photos" +
+                    "?query=$q" +
+                    "&orientation=landscape" +
+                    "&content_filter=high" +
+                    "&order_by=relevant" +
+                    "&per_page=$LANDSCAPE_SEARCH_SIZE"
+
+            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = TIMEOUT_MILLIS
+                readTimeout = TIMEOUT_MILLIS
+                setRequestProperty("Authorization", "Client-ID $apiKey")
+                setRequestProperty("Accept-Version", "v1")
+                setRequestProperty("Accept", "application/json")
+            }
+
+            try {
+                when (val code = connection.responseCode) {
+                    200 -> {
+                        val body = connection.inputStream.bufferedReader().use { it.readText() }
+                        val dto = json.decodeFromString<UnsplashSearchResponseDto>(body)
+
+                        val photos = dto.results
+                            .filter { it.hasUsableImageUrl() && it.isLandscape() }
+                            .ifEmpty { dto.results.filter { it.hasUsableImageUrl() } }
+                            .take(count.coerceAtLeast(1))
+                            .mapNotNull { photo ->
+                                val imageUrl = photo.urls?.regular ?: photo.urls?.full ?: return@mapNotNull null
+                                ApiLandscapePhoto(
+                                    imageUrl = imageUrl,
+                                    author = photo.user?.name,
+                                    authorLink = photo.user?.links?.html,
+                                )
+                            }
+                        if (photos.isEmpty()) {
+                            CountryLandscapePhotosApiResult.NotFound
+                        } else {
+                            CountryLandscapePhotosApiResult.Success(photos)
+                        }
+                    }
+
+                    401, 403 -> CountryLandscapePhotosApiResult.NoApiKey
+                    404 -> CountryLandscapePhotosApiResult.NotFound
+                    429 -> CountryLandscapePhotosApiResult.RateLimited
+                    else -> CountryLandscapePhotosApiResult.Error("HTTP $code")
+                }
+            } catch (_: SerializationException) {
+                CountryLandscapePhotosApiResult.Error("Resposta invàlida d'Unsplash.")
+            } catch (_: IOException) {
+                CountryLandscapePhotosApiResult.Error("No s'ha pogut connectar amb Unsplash.")
+            } finally {
+                connection.disconnect()
+            }
+        }
+
     private fun UnsplashPhotoDto.hasUsableImageUrl(): Boolean {
         return urls?.regular != null || urls?.full != null
     }
@@ -89,9 +152,16 @@ class UnsplashClient : CountryPhotoApiClient {
         return h > w
     }
 
+    private fun UnsplashPhotoDto.isLandscape(): Boolean {
+        val w = width ?: return true
+        val h = height ?: return true
+        return w > h
+    }
+
     private companion object {
         const val BASE_URL = "https://api.unsplash.com"
         const val TIMEOUT_MILLIS = 15_000
+        const val LANDSCAPE_SEARCH_SIZE = 20
     }
 }
 

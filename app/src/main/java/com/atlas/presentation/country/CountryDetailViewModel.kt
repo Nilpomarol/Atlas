@@ -10,6 +10,10 @@ import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.util.CountryCurrencyCodeMap
+import com.atlas.domain.model.CountryLandscapePhotos
+import com.atlas.domain.model.CountryStatFact
+import com.atlas.domain.model.CurrencyRate
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.Itinerary
@@ -18,7 +22,10 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.repository.AirportRepository
+import com.atlas.domain.repository.CountryLandscapePhotoRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.CountryStatRepository
+import com.atlas.domain.repository.CurrencyRateRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -39,10 +46,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Duration
+import java.time.Instant
 
 class CountryDetailViewModel(
     countryRepository: CountryRepository,
@@ -59,8 +71,16 @@ class CountryDetailViewModel(
     itineraryRepository: ItineraryRepository,
     airportRepository: AirportRepository,
     excursionRepository: ExcursionRepository,
+    countryStatRepository: CountryStatRepository,
+    private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
+    currencyRateRepository: CurrencyRateRepository,
 ) : ViewModel() {
     private val logDraft = MutableStateFlow(CountryLogDraftUiState())
+
+    // The currency a country uses is static reference knowledge; EUR is the user's
+    // reference currency, so a EUR→EUR converter is pointless and the card is hidden.
+    private val currencyCode: String? =
+        CountryCurrencyCodeMap.codeForCountry(iso2)?.takeUnless { it == "EUR" }
 
     private val baseTrackingData = combine(
         countryRepository.observeUserState(iso2),
@@ -219,6 +239,22 @@ class CountryDetailViewModel(
         tripSummaries to airTravelSummaries
     }
 
+    private val countryStats = countryStatRepository.observeByCountry(iso2)
+
+    private val currencyRateFlow =
+        if (currencyCode == null) flowOf<CurrencyRate?>(null)
+        else currencyRateRepository.observeRate(currencyCode)
+
+    // Detail-screen enrichment that sits on top of the core tracking state: the rotating
+    // landscape hero photo, headline KPI stats, and the live currency rate.
+    private val enrichment = combine(
+        countryLandscapePhotoRepository.observePhotos(iso2),
+        countryStats,
+        currencyRateFlow,
+    ) { photos, facts, rate ->
+        buildEnrichment(photos, facts, rate)
+    }
+
     val uiState: StateFlow<CountryDetailUiState> = combine(
         combine(
             countryRepository.observeCountry(iso2),
@@ -237,14 +273,62 @@ class CountryDetailViewModel(
             )
         },
         countryDetailPills,
-    ) { uiState, detailPills ->
-        uiState.copy(detailPills = detailPills)
+        enrichment,
+    ) { uiState, detailPills, enrich ->
+        uiState.copy(
+            detailPills = detailPills,
+            landscapePhotoFilename = enrich.landscapePhotoFilename,
+            landscapePhotoAuthor = enrich.landscapePhotoAuthor,
+            landscapePhotoAuthorLink = enrich.landscapePhotoAuthorLink,
+            kpiStats = enrich.kpiStats,
+            currencyCode = enrich.currencyCode,
+            currencyName = enrich.currencyName,
+            eurRate = enrich.eurRate,
+            rateAge = enrich.rateAge,
+        )
     }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = CountryDetailUiState(),
         )
+
+    init {
+        viewModelScope.launch {
+            val country = countryRepository.observeCountry(iso2).filterNotNull().first()
+            countryLandscapePhotoRepository.refreshIfStale(iso2, country.nameEn ?: country.nameCa)
+        }
+        currencyCode?.let { code ->
+            viewModelScope.launch { currencyRateRepository.refreshIfStale(code) }
+        }
+    }
+
+    private fun buildEnrichment(
+        photos: CountryLandscapePhotos?,
+        facts: List<CountryStatFact>,
+        rate: CurrencyRate?,
+    ): DetailEnrichment {
+        // Deterministic daily rotation through the small cached set.
+        val today = photos?.photos?.takeIf { it.isNotEmpty() }?.let { list ->
+            list[(Instant.now().epochSecond / SECONDS_PER_DAY % list.size).toInt()]
+        }
+        val factsByKey = facts.associateBy { it.key }
+        val kpis = KPI_KEYS.mapNotNull { key ->
+            factsByKey[key]?.let { f ->
+                KpiStatUi(label = f.labelCa, value = compactStatValue(f.value), unit = f.unit, tier = f.tier)
+            }
+        }
+        return DetailEnrichment(
+            landscapePhotoFilename = today?.filename,
+            landscapePhotoAuthor = today?.author,
+            landscapePhotoAuthorLink = today?.authorLink,
+            kpiStats = kpis,
+            currencyCode = currencyCode,
+            currencyName = factsByKey["currency"]?.value,
+            eurRate = rate?.eurRate,
+            rateAge = rate?.let { formatRateAge(it.fetchedAt) },
+        )
+    }
 
     fun onWishedChanged(wished: Boolean) {
         val countryIso2 = uiState.value.country?.iso2 ?: return
@@ -389,6 +473,9 @@ class CountryDetailViewModel(
         private val itineraryRepository: ItineraryRepository,
         private val airportRepository: AirportRepository,
         private val excursionRepository: ExcursionRepository,
+        private val countryStatRepository: CountryStatRepository,
+        private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
+        private val currencyRateRepository: CurrencyRateRepository,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -407,6 +494,9 @@ class CountryDetailViewModel(
                 itineraryRepository = itineraryRepository,
                 airportRepository = airportRepository,
                 excursionRepository = excursionRepository,
+                countryStatRepository = countryStatRepository,
+                countryLandscapePhotoRepository = countryLandscapePhotoRepository,
+                currencyRateRepository = currencyRateRepository,
             ) as T
         }
     }
@@ -436,6 +526,33 @@ data class CountryDetailUiState(
     val logDraft: CountryLogDraftUiState = CountryLogDraftUiState(),
     val trackingState: CountryTrackingState = CountryTrackingState.Empty,
     val detailPills: CountryDetailPillUiState = CountryDetailPillUiState(),
+    val landscapePhotoFilename: String? = null,
+    val landscapePhotoAuthor: String? = null,
+    val landscapePhotoAuthorLink: String? = null,
+    val kpiStats: List<KpiStatUi> = emptyList(),
+    val currencyCode: String? = null,
+    val currencyName: String? = null,
+    val eurRate: Double? = null,
+    val rateAge: String? = null,
+)
+
+/** A headline statistic tile on the country detail screen. */
+data class KpiStatUi(
+    val label: String,
+    val value: String,
+    val unit: String?,
+    val tier: String?,
+)
+
+private data class DetailEnrichment(
+    val landscapePhotoFilename: String?,
+    val landscapePhotoAuthor: String?,
+    val landscapePhotoAuthorLink: String?,
+    val kpiStats: List<KpiStatUi>,
+    val currencyCode: String?,
+    val currencyName: String?,
+    val eurRate: Double?,
+    val rateAge: String?,
 )
 
 data class CountryDetailPillUiState(
@@ -522,3 +639,44 @@ private fun String.toCompactDateText(): String? =
     countryDetailDateFormatter.formatIsoDate(this)
 
 private val countryDetailDateFormatter = FlexibleDateFormatter()
+
+private const val SECONDS_PER_DAY = 86_400L
+
+// Headline stats for the detail screen, in display order.
+private val KPI_KEYS = listOf("population", "area", "gdp_per_capita", "hdi")
+
+/**
+ * Compact, Catalan-formatted magnitude for large KPI values so tiles never overflow:
+ * k (milers), M (milions), B (mil milions), T (bilions). Values below 1000 or that are
+ * not parseable numbers are returned untouched, so decimals (HDI) and small numbers keep
+ * their original formatting.
+ */
+private fun compactStatValue(raw: String): String {
+    val parsed = raw.replace(".", "").replace(",", ".").toDoubleOrNull() ?: return raw
+    val magnitude = kotlin.math.abs(parsed)
+    if (magnitude < 1000) return raw
+    val (scaled, suffix) = when {
+        magnitude >= 1e12 -> parsed / 1e12 to "T"
+        magnitude >= 1e9 -> parsed / 1e9 to "B"
+        magnitude >= 1e6 -> parsed / 1e6 to "M"
+        else -> parsed / 1e3 to "k"
+    }
+    val rounded = (scaled * 10).toLong() / 10.0
+    val text = if (rounded % 1.0 == 0.0) rounded.toLong().toString() else rounded.toString()
+    return text.replace(".", ",") + suffix
+}
+
+/** Compact Catalan "freshness" label for a cached rate timestamp, e.g. "fa 3 h". */
+private fun formatRateAge(fetchedAt: String): String? {
+    val instant = runCatching { Instant.parse(fetchedAt) }.getOrNull() ?: return null
+    val minutes = Duration.between(instant, Instant.now()).toMinutes().coerceAtLeast(0)
+    return when {
+        minutes < 1 -> "ara mateix"
+        minutes < 60 -> "fa $minutes min"
+        minutes < 1440 -> "fa ${minutes / 60} h"
+        else -> {
+            val days = minutes / 1440
+            if (days == 1L) "fa 1 dia" else "fa $days dies"
+        }
+    }
+}

@@ -9,8 +9,10 @@ import com.atlas.data.local.dao.AircraftTypeDao
 import com.atlas.data.local.dao.AirlineDao
 import com.atlas.data.local.dao.CountryDao
 import com.atlas.data.local.dao.CountryLogDao
+import com.atlas.data.local.dao.CountryLandscapePhotoDao
 import com.atlas.data.local.dao.CountryPhotoDao
 import com.atlas.data.local.dao.CountryStatFactDao
+import com.atlas.data.local.dao.CurrencyRateDao
 import com.atlas.data.local.dao.CountryUserStateDao
 import com.atlas.data.local.dao.DatasetMetadataDao
 import com.atlas.data.local.dao.AirportDao
@@ -30,10 +32,12 @@ import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
 import com.atlas.data.local.entity.CountryEntity
+import com.atlas.data.local.entity.CountryLandscapePhotoEntity
 import com.atlas.data.local.entity.CountryLogEntity
 import com.atlas.data.local.entity.CountryPhotoEntity
 import com.atlas.data.local.entity.CountryStatFactEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
+import com.atlas.data.local.entity.CurrencyRateEntity
 import com.atlas.data.local.entity.DatasetMetadataEntity
 import com.atlas.data.local.entity.TripEntity
 import com.atlas.data.local.entity.StopPhotoEntity
@@ -59,8 +63,10 @@ import com.atlas.data.local.entity.TripStopEntity
         StopPhotoEntity::class,
         CountryStatFactEntity::class,
         CountryPhotoEntity::class,
+        CountryLandscapePhotoEntity::class,
+        CurrencyRateEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -80,6 +86,8 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun stopPhotoDao(): StopPhotoDao
     abstract fun countryStatFactDao(): CountryStatFactDao
     abstract fun countryPhotoDao(): CountryPhotoDao
+    abstract fun countryLandscapePhotoDao(): CountryLandscapePhotoDao
+    abstract fun currencyRateDao(): CurrencyRateDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -832,6 +840,31 @@ abstract class AtlasDatabase : RoomDatabase() {
                         `author_link` TEXT,
                         `fetched_at` TEXT NOT NULL,
                         PRIMARY KEY(`country_iso2`)
+                    )
+                    """.trimIndent(),
+                )
+            }
+        }
+
+        val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `country_landscape_photos` (
+                        `country_iso2` TEXT NOT NULL,
+                        `photos_json` TEXT NOT NULL,
+                        `fetched_at` TEXT NOT NULL,
+                        PRIMARY KEY(`country_iso2`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `currency_rates` (
+                        `currency_code` TEXT NOT NULL,
+                        `eur_rate` REAL NOT NULL,
+                        `fetched_at` TEXT NOT NULL,
+                        PRIMARY KEY(`currency_code`)
                     )
                     """.trimIndent(),
                 )

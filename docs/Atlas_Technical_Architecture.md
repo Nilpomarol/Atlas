@@ -104,7 +104,7 @@ Long-running imports, file operations, and network work run off the main thread.
 
 ## Persistence
 
-Room database version is 23. Every schema change requires:
+Room database version is 24. Every schema change requires:
 
 - an explicit migration;
 - registration in `AtlasAppContainer`;
@@ -157,6 +157,10 @@ versions, supplies defaults for older compatible data, and still accepts legacy 
 JSON files.
 
 Replaceable external photo and currency caches remain outside backups.
+
+Android Auto Backup is disabled. Personal data moves only through Atlas's explicit
+`.atlasbackup` export/import and opt-in cloud backup flow, avoiding partial platform
+restores that can separate Room metadata from photo files.
 
 Optional cloud backup uses the Storage Access Framework rather than a provider SDK.
 The user grants persistent access to a selected document-provider folder, and

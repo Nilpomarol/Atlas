@@ -22,6 +22,8 @@ Last updated: 2026-06-14.
 - Photo-inclusive backups are implemented: `.atlasbackup` ZIP container, backup format v3, `stop_photos` rows, trip cover references, and referenced user photo files. Legacy v1/v2 JSON backups remain importable.
 - Opt-in cloud backups are implemented through Android's document-provider folder picker. The user can select a Google Drive folder (or another compatible provider), create a backup immediately, and keep a monthly schedule with the three newest automatic backups retained.
 - Google Drive folder selection and a successful photo-inclusive upload have been verified on a device.
+- The complete backup recovery drill has passed on a device: clean reinstall, explicit
+  restore, photos and trip covers, notification feedback, and automatic retention.
 
 ## Stack and Constraints
 
@@ -79,6 +81,11 @@ Backup format version is **3**. Exports use a `.atlasbackup` ZIP containing
 `atlas-backup.json` plus referenced files under `photos/`. Existing v1/v2 JSON
 backups import through defaults and clear photos because they contain no media.
 Replaceable country photo and currency caches remain excluded.
+
+Android Auto Backup is disabled with `android:allowBackup="false"`. Atlas owns
+personal-data portability through explicit `.atlasbackup` export/import and the
+opt-in cloud backup flow. This prevents reinstall from silently restoring Room or
+DataStore state outside the photo-consistent Atlas restore process.
 
 Cloud backup settings live in DataStore, not Room. Automatic backups:
 
@@ -193,26 +200,20 @@ Map usage:
 
 ## Active Work
 
-The backup and portability milestone is implemented. The Settings flow exports and
-imports `.atlasbackup` archives containing structured data and referenced photos;
-legacy v1/v2 JSON remains importable. Validation covers unsafe ZIP entries, size
-limits, missing photo files, schema compatibility, and rollback-capable media
-replacement.
+The v4.0 country-depth work and the backup/portability milestone are complete.
+Automated unit/build checks and the manual device smoke/recovery flow have passed.
 
-Google Drive folder selection and a successful upload have been verified on a real
-device. Drive may display the destination document as 0 bytes while the provider is
-still committing the open output stream. Settings now shows queued/running state, and
-the worker posts success or terminal-failure notifications when permission is
-available.
+Verified backup behavior:
 
-Before starting another product feature, finish the backup recovery drill:
+- clean reinstall starts with reference datasets and no restored personal records or
+  integration preferences;
+- explicit `.atlasbackup` restore recovers structured data, photos, and trip covers;
+- Google Drive upload reports queued/running/completed state and success notification;
+- automatic retention keeps the newest three Atlas cloud backups;
+- Android Auto Backup remains disabled so it cannot bypass Atlas's explicit restore.
 
-- export a photo-inclusive backup, clear/reinstall Atlas, import it, and verify photos
-  and trip covers;
-- import a legacy JSON backup;
-- verify notification permission, success notification, and terminal-failure feedback;
-- create at least four automatic backups and confirm only the newest three remain;
-- verify persisted Drive access after reboot and behavior after folder access is revoked.
+There is no active implementation milestone. The next product scope should be selected
+deliberately from the long-term specification before adding schema or dependencies.
 
 The v4.0 work below is complete and committed, kept here for reference.
 

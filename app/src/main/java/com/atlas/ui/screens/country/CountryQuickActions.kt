@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.CountryTrackingState
+import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.theme.AtlasLiving
 import com.atlas.ui.theme.AtlasLivingContainer
 import com.atlas.ui.theme.AtlasNavy
@@ -49,8 +50,27 @@ fun CountryQuickActions(
     onSetCurrentlyLiving: () -> Unit,
     onAddVisitLog: () -> Unit,
 ) {
+    Column {
+        AtlasSectionTitle(title = "El teu seguiment")
+        QuickActionsCard(
+            trackingState = trackingState,
+            onWishedChanged = onWishedChanged,
+            onSetCurrentlyLiving = onSetCurrentlyLiving,
+            onAddVisitLog = onAddVisitLog,
+        )
+    }
+}
+
+@Composable
+private fun QuickActionsCard(
+    trackingState: CountryTrackingState,
+    onWishedChanged: (Boolean) -> Unit,
+    onSetCurrentlyLiving: () -> Unit,
+    onAddVisitLog: () -> Unit,
+) {
     Column(
         modifier = Modifier
+            .padding(top = 10.dp)
             .fillMaxWidth()
             .background(AtlasSurface, RoundedCornerShape(16.dp))
             .border(1.dp, AtlasOutline, RoundedCornerShape(16.dp)),

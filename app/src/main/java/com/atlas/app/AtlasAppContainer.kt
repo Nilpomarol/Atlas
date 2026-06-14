@@ -3,6 +3,7 @@ package com.atlas.app
 import android.content.Context
 import androidx.room.Room
 import com.atlas.data.api.AeroDataBoxClient
+import com.atlas.data.api.FrankfurterClient
 import com.atlas.data.api.UnsplashClient
 import com.atlas.data.dataset.AircraftTypeDatasetImporter
 import com.atlas.data.dataset.AirlineDatasetImporter
@@ -18,9 +19,11 @@ import com.atlas.data.repository.AircraftTypeRepositoryImpl
 import com.atlas.data.repository.AircraftRepositoryImpl
 import com.atlas.data.repository.AirlineRepositoryImpl
 import com.atlas.data.repository.AirportRepositoryImpl
+import com.atlas.data.repository.CountryLandscapePhotoRepositoryImpl
 import com.atlas.data.repository.CountryPhotoRepositoryImpl
 import com.atlas.data.repository.CountryRepositoryImpl
 import com.atlas.data.repository.CountryStatRepositoryImpl
+import com.atlas.data.repository.CurrencyRateRepositoryImpl
 import com.atlas.data.repository.BackupRepositoryImpl
 import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
@@ -34,9 +37,11 @@ import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
+import com.atlas.domain.repository.CountryLandscapePhotoRepository
 import com.atlas.domain.repository.CountryPhotoRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
+import com.atlas.domain.repository.CurrencyRateRepository
 import com.atlas.domain.repository.FlightApiClient
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
@@ -126,6 +131,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_20_21)
         .addMigrations(AtlasDatabase.MIGRATION_21_22)
         .addMigrations(AtlasDatabase.MIGRATION_22_23)
+        .addMigrations(AtlasDatabase.MIGRATION_23_24)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -212,6 +218,17 @@ class AtlasAppContainer(context: Context) {
         dao = database.countryPhotoDao(),
         apiClient = unsplashClient,
         apiKeyRepository = apiKeyRepository,
+    )
+    val countryLandscapePhotoRepository: CountryLandscapePhotoRepository = CountryLandscapePhotoRepositoryImpl(
+        context = applicationContext,
+        dao = database.countryLandscapePhotoDao(),
+        apiClient = unsplashClient,
+        apiKeyRepository = apiKeyRepository,
+    )
+    private val frankfurterClient = FrankfurterClient()
+    val currencyRateRepository: CurrencyRateRepository = CurrencyRateRepositoryImpl(
+        dao = database.currencyRateDao(),
+        apiClient = frankfurterClient,
     )
     val tripMapPreferencesRepository: TripMapPreferencesRepository =
         TripMapPreferencesDataSource(applicationContext)

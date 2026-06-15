@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -14,11 +15,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.atlas.domain.model.StopPhoto
 import com.atlas.presentation.country.CountryMemoriesUiState
-import com.atlas.presentation.country.CountryMemoryGroupUiState
+import com.atlas.presentation.country.CountryMemoryTripUiState
+import com.atlas.presentation.trip.PhotoViewerItemUiState
 import com.atlas.ui.components.AtlasCard
 import com.atlas.ui.components.AtlasMemoryPhotoTile
 import com.atlas.ui.components.AtlasSectionTitle
@@ -29,8 +32,10 @@ import com.atlas.ui.theme.AtlasPrimary
 @Composable
 internal fun CountryMemoriesSection(
     memories: CountryMemoriesUiState,
+    isVisible: Boolean,
     onTripClick: (String) -> Unit,
-    onPhotoClick: (StopPhoto) -> Unit,
+    onPhotoClick: (PhotoViewerItemUiState) -> Unit,
+    onVisibleChanged: (Boolean) -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -38,29 +43,48 @@ internal fun CountryMemoriesSection(
         AtlasSectionTitle(
             title = "Els teus records",
             action = {
-                Text(
-                    text = "${memories.photoCount} ${if (memories.photoCount == 1) "FOTO" else "FOTOS"}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AtlasOnSurfaceMuted,
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "${memories.photoCount} ${if (memories.photoCount == 1) "FOTO" else "FOTOS"}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                    Text(
+                        text = if (isVisible) "AMAGA" else "MOSTRA",
+                        modifier = Modifier
+                            .clickable(
+                                role = Role.Button,
+                                onClick = { onVisibleChanged(!isVisible) },
+                            )
+                            .padding(vertical = 6.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasPrimary,
+                    )
+                }
             },
         )
 
-        memories.groups.forEach { group ->
-            CountryMemoryCard(
-                group = group,
-                onTripClick = { onTripClick(group.tripId) },
-                onPhotoClick = onPhotoClick,
-            )
+        if (isVisible) {
+            memories.trips.forEach { trip ->
+                CountryMemoryTripCard(
+                    trip = trip,
+                    onTripClick = { onTripClick(trip.tripId) },
+                    onPhotoClick = onPhotoClick,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun CountryMemoryCard(
-    group: CountryMemoryGroupUiState,
+private fun CountryMemoryTripCard(
+    trip: CountryMemoryTripUiState,
     onTripClick: () -> Unit,
-    onPhotoClick: (StopPhoto) -> Unit,
+    onPhotoClick: (PhotoViewerItemUiState) -> Unit,
 ) {
     AtlasCard(
         contentPadding = PaddingValues(0.dp),
@@ -84,14 +108,14 @@ private fun CountryMemoryCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = "VIATGE · ${group.tripTitle}",
+                            text = "VIATGE",
                             modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.labelSmall,
                             color = AtlasPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        group.tripDateText?.let { tripDate ->
+                        trip.tripDateText?.let { tripDate ->
                             Text(
                                 text = tripDate,
                                 style = MaterialTheme.typography.labelSmall,
@@ -102,15 +126,14 @@ private fun CountryMemoryCard(
                         }
                     }
                     Text(
-                        text = group.locationName,
+                        text = trip.tripTitle,
                         style = MaterialTheme.typography.titleMedium,
                         color = AtlasOnSurfaceStrong,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = listOfNotNull(group.sourceLabel, group.stopDateText)
-                            .joinToString(" · "),
+                        text = trip.locationNames.joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = AtlasOnSurfaceMuted,
                         maxLines = 1,
@@ -118,7 +141,7 @@ private fun CountryMemoryCard(
                     )
                 }
                 Text(
-                    text = group.photos.size.toString().padStart(2, '0'),
+                    text = trip.items.size.toString().padStart(2, '0'),
                     style = MaterialTheme.typography.labelMedium,
                     color = AtlasOnSurfaceMuted,
                     modifier = Modifier.padding(top = 1.dp),
@@ -133,15 +156,27 @@ private fun CountryMemoryCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(
-                    items = group.photos,
-                    key = StopPhoto::id,
-                ) { photo ->
-                    AtlasMemoryPhotoTile(
-                        photo = photo,
-                        locationName = group.locationName,
-                        isCover = false,
-                        onClick = { onPhotoClick(photo) },
-                    )
+                    items = trip.items,
+                    key = { item -> item.photo.id },
+                ) { item ->
+                    Column(
+                        modifier = Modifier.width(136.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        AtlasMemoryPhotoTile(
+                            photo = item.photo,
+                            locationName = item.title,
+                            isCover = false,
+                            onClick = { onPhotoClick(item) },
+                        )
+                        Text(
+                            text = item.title,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = AtlasOnSurfaceMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
         }

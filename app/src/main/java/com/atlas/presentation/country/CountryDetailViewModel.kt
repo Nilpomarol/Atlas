@@ -25,6 +25,7 @@ import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryLandscapePhotoRepository
+import com.atlas.domain.repository.CountryMemoriesPreferencesRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
 import com.atlas.domain.repository.CurrencyRateRepository
@@ -72,7 +73,7 @@ class CountryDetailViewModel(
     private val deleteCountryLogUseCase: DeleteCountryLogUseCase,
     countryStateDerivationService: CountryStateDerivationService,
     private val flexibleDateValidator: FlexibleDateValidator,
-    iso2: String,
+    private val iso2: String,
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     airportRepository: AirportRepository,
@@ -81,6 +82,7 @@ class CountryDetailViewModel(
     private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
     currencyRateRepository: CurrencyRateRepository,
     stopPhotoRepository: StopPhotoRepository,
+    private val countryMemoriesPreferencesRepository: CountryMemoriesPreferencesRepository,
 ) : ViewModel() {
     private val logDraft = MutableStateFlow(CountryLogDraftUiState())
 
@@ -299,11 +301,13 @@ class CountryDetailViewModel(
     private val countryContent = combine(
         historySummaries,
         countryMemories,
-    ) { history, memories ->
+        countryMemoriesPreferencesRepository.observeVisible(iso2),
+    ) { history, memories, memoriesVisible ->
         CountryContentData(
             tripSummaries = history.first,
             airTravelSummaries = history.second,
             memories = memories,
+            memoriesVisible = memoriesVisible,
         )
     }
 
@@ -339,6 +343,7 @@ class CountryDetailViewModel(
                 tripSummaries = content.tripSummaries,
                 airTravelSummaries = content.airTravelSummaries,
                 memories = content.memories,
+                memoriesVisible = content.memoriesVisible,
             )
         },
         countryDetailPills,
@@ -527,6 +532,15 @@ class CountryDetailViewModel(
         }
     }
 
+    fun onMemoriesVisibleChanged(isVisible: Boolean) {
+        viewModelScope.launch {
+            countryMemoriesPreferencesRepository.setVisible(
+                countryIso2 = iso2,
+                isVisible = isVisible,
+            )
+        }
+    }
+
     class Factory(
         private val countryRepository: CountryRepository,
         private val tripRepository: TripRepository,
@@ -546,6 +560,7 @@ class CountryDetailViewModel(
         private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
         private val currencyRateRepository: CurrencyRateRepository,
         private val stopPhotoRepository: StopPhotoRepository,
+        private val countryMemoriesPreferencesRepository: CountryMemoriesPreferencesRepository,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -568,6 +583,7 @@ class CountryDetailViewModel(
                 countryLandscapePhotoRepository = countryLandscapePhotoRepository,
                 currencyRateRepository = currencyRateRepository,
                 stopPhotoRepository = stopPhotoRepository,
+                countryMemoriesPreferencesRepository = countryMemoriesPreferencesRepository,
             ) as T
         }
     }
@@ -598,6 +614,7 @@ private data class CountryContentData(
     val tripSummaries: List<CountryTripSummaryUiState>,
     val airTravelSummaries: List<CountryAirTravelSummaryUiState>,
     val memories: CountryMemoriesUiState,
+    val memoriesVisible: Boolean,
 )
 
 data class CountryDetailUiState(
@@ -606,6 +623,7 @@ data class CountryDetailUiState(
     val tripSummaries: List<CountryTripSummaryUiState> = emptyList(),
     val airTravelSummaries: List<CountryAirTravelSummaryUiState> = emptyList(),
     val memories: CountryMemoriesUiState = CountryMemoriesUiState(),
+    val memoriesVisible: Boolean = true,
     val logDraft: CountryLogDraftUiState = CountryLogDraftUiState(),
     val trackingState: CountryTrackingState = CountryTrackingState.Empty,
     val detailPills: CountryDetailPillUiState = CountryDetailPillUiState(),

@@ -24,9 +24,9 @@ import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.DatePrecision
-import com.atlas.domain.model.StopPhoto
 import com.atlas.presentation.country.CountryDetailUiState
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
+import com.atlas.presentation.trip.PhotoViewerItemUiState
 import com.atlas.ui.components.PhotoViewerDialog
 import com.atlas.ui.theme.AtlasBackground
 
@@ -47,6 +47,7 @@ fun CountryDetailScreen(
     onLogDraftFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
     onLogNotesChanged: (String) -> Unit,
     onSaveLogDraft: () -> Unit,
+    onMemoriesVisibleChanged: (Boolean) -> Unit,
 ) {
     val country = uiState.country
     var selectedMemoryPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -65,7 +66,8 @@ fun CountryDetailScreen(
             onAddVisitLog = onAddVisitLog,
             onEditLog = onEditLog,
             onDeleteLog = onDeleteLog,
-            onMemoryPhotoClick = { photo -> selectedMemoryPhotoId = photo.id },
+            onMemoryPhotoClick = { item -> selectedMemoryPhotoId = item.photo.id },
+            onMemoriesVisibleChanged = onMemoriesVisibleChanged,
         )
     }
 
@@ -124,7 +126,8 @@ private fun CountryDetailContent(
     onAddVisitLog: () -> Unit,
     onEditLog: (CountryLog) -> Unit,
     onDeleteLog: (CountryLog) -> Unit,
-    onMemoryPhotoClick: (StopPhoto) -> Unit,
+    onMemoryPhotoClick: (PhotoViewerItemUiState) -> Unit,
+    onMemoriesVisibleChanged: (Boolean) -> Unit,
 ) {
     val style = uiState.trackingState.toStyle()
 
@@ -156,11 +159,13 @@ private fun CountryDetailContent(
                 rateAge = uiState.rateAge,
             )
             CountryMapCard(country = country, style = style)
-            if (uiState.memories.groups.isNotEmpty()) {
+            if (uiState.memories.trips.isNotEmpty()) {
                 CountryMemoriesSection(
                     memories = uiState.memories,
+                    isVisible = uiState.memoriesVisible,
                     onTripClick = onTripClick,
                     onPhotoClick = onMemoryPhotoClick,
+                    onVisibleChanged = onMemoriesVisibleChanged,
                 )
             }
             CountryQuickActions(

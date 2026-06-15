@@ -37,6 +37,7 @@ fun CountryDetailRoute(
             countryLandscapePhotoRepository = app.container.countryLandscapePhotoRepository,
             currencyRateRepository = app.container.currencyRateRepository,
             stopPhotoRepository = app.container.stopPhotoRepository,
+            countryMemoriesPreferencesRepository = app.container.countryMemoriesPreferencesRepository,
         ),
     )
     val uiState by viewModel.uiState.collectAsState()
@@ -57,5 +58,6 @@ fun CountryDetailRoute(
         onLogDraftFieldChanged = viewModel::onLogDraftFieldChanged,
         onLogNotesChanged = viewModel::onLogNotesChanged,
         onSaveLogDraft = viewModel::onSaveLogDraft,
+        onMemoriesVisibleChanged = viewModel::onMemoriesVisibleChanged,
     )
 }

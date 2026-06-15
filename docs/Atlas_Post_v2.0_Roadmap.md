@@ -145,9 +145,9 @@ their travel context.
 
 ## M3: Country Memories
 
-Status: implemented on 2026-06-15; automated checks passed and the APK
-installs/launches on the connected device. Country-detail visual review remains
-pending. Implementation contract:
+Status: implemented on 2026-06-15; automated checks pass. The initial M3 APK
+installed/launched on device; the one-card-per-trip and persistent-collapse
+refinement awaits device visual review. Implementation contract:
 `docs/Atlas_v5.0_Photo_Memories_M3_Spec.md`.
 
 ### Goal
@@ -160,10 +160,12 @@ travel history meet on the same surface.
 - Add an "Els teus records" section to country detail.
 - Derive memories from trip stops and excursion stops whose `countryIso2` matches the
   country.
-- Group by trip and location, with trip title and date context.
+- Use one card per trip, with one ordered carousel across all matching trip and
+  excursion stops. Keep the location visible per photo.
 - Open the same full-screen viewer used by trip galleries.
 - Provide navigation from a memory back to its trip or owning stop.
 - Hide the section when the country has no personal photos.
+- Allow the user to collapse/expand the cards and persist that choice per country.
 - Keep external country hero photos visually and semantically separate from personal
   memories.
 
@@ -177,6 +179,8 @@ travel history meet on the same surface.
   `StopPhotoEntity`.
 - Reuse the M1 photo tile and M2 viewer rather than creating a country-only media
   system.
+- Persist only the per-country visibility preference in the existing DataStore; photo
+  grouping remains a derived presentation projection.
 
 ### Data Impact
 

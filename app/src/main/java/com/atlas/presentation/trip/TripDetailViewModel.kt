@@ -161,6 +161,12 @@ class TripDetailViewModel(
             generatedStopsVisibleOnMap = generatedStopsVisibleOnMap,
             tripStopPhotoMap = photos.tripStopPhotos,
             excursionStopPhotoMap = photos.excursionStopPhotos,
+            photoGallery = buildTripPhotoGalleryUiState(
+                stops = content.stops,
+                excursions = content.excursions,
+                tripStopPhotoMap = photos.tripStopPhotos,
+                excursionStopPhotoMap = photos.excursionStopPhotos,
+            ),
         )
     }
         .stateIn(
@@ -922,6 +928,7 @@ data class TripDetailUiState(
     val generatedStopsVisibleOnMap: Boolean = true,
     val tripStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
     val excursionStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
+    val photoGallery: TripPhotoGalleryUiState = TripPhotoGalleryUiState(),
 )
 
 private data class TripContentData(

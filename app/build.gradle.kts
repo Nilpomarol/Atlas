@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
+    implementation(libs.telephoto.zoomable.image.coil)
 
     testImplementation(libs.junit)
 

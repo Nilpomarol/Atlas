@@ -13,6 +13,7 @@ import com.atlas.data.dataset.CountryStatDatasetImporter
 import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.preferences.CloudBackupPreferencesDataSource
+import com.atlas.data.preferences.CountryMemoriesPreferencesDataSource
 import com.atlas.data.preferences.TripMapPreferencesDataSource
 import com.atlas.data.backup.CloudBackupExporter
 import com.atlas.data.local.database.AtlasDatabase
@@ -41,6 +42,7 @@ import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.BackupRepository
 import com.atlas.domain.repository.CloudBackupPreferencesRepository
 import com.atlas.domain.repository.CloudBackupScheduler
+import com.atlas.domain.repository.CountryMemoriesPreferencesRepository
 import com.atlas.domain.repository.CountryLandscapePhotoRepository
 import com.atlas.domain.repository.CountryPhotoRepository
 import com.atlas.domain.repository.CountryRepository
@@ -246,6 +248,8 @@ class AtlasAppContainer(context: Context) {
     )
     val tripMapPreferencesRepository: TripMapPreferencesRepository =
         TripMapPreferencesDataSource(applicationContext)
+    val countryMemoriesPreferencesRepository: CountryMemoriesPreferencesRepository =
+        CountryMemoriesPreferencesDataSource(applicationContext)
     private val aeroDataBoxClient = AeroDataBoxClient()
     val flightApiClient: FlightApiClient = aeroDataBoxClient
     val aircraftApiClient: AircraftApiClient = aeroDataBoxClient

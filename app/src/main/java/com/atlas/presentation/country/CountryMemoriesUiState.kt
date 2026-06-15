@@ -2,7 +2,6 @@ package com.atlas.presentation.country
 
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.StopPhoto
-import com.atlas.domain.model.StopType
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.service.FlexibleDateFormatter
@@ -10,42 +9,23 @@ import com.atlas.presentation.trip.PhotoViewerItemUiState
 import com.atlas.presentation.trip.buildTripPhotoGalleryUiState
 
 data class CountryMemoriesUiState(
-    val groups: List<CountryMemoryGroupUiState> = emptyList(),
+    val trips: List<CountryMemoryTripUiState> = emptyList(),
 ) {
     val photoCount: Int
-        get() = groups.sumOf { it.photos.size }
+        get() = trips.sumOf { it.items.size }
 
     val viewerItems: List<PhotoViewerItemUiState>
-        get() = groups.flatMap { group ->
-            group.photos.map { photo ->
-                PhotoViewerItemUiState(
-                    photo = photo,
-                    stopId = group.stopId,
-                    stopType = group.stopType,
-                    title = group.locationName,
-                    contextLabel = group.viewerContextLabel,
-                    dateText = group.stopDateText ?: group.tripDateText,
-                    tripId = group.tripId,
-                )
-            }
-        }
+        get() = trips.flatMap(CountryMemoryTripUiState::items)
 }
 
-data class CountryMemoryGroupUiState(
+data class CountryMemoryTripUiState(
     val tripId: String,
     val tripTitle: String,
     val tripDateText: String?,
-    val stopId: String,
-    val stopType: StopType,
-    val locationName: String,
-    val sourceLabel: String,
-    val stopDateText: String?,
-    val photos: List<StopPhoto>,
+    val items: List<PhotoViewerItemUiState>,
 ) {
-    val viewerContextLabel: String
-        get() = listOf("VIATGE · $tripTitle", sourceLabel.takeUnless { it == "PARADA" })
-            .filterNotNull()
-            .joinToString(" · ")
+    val locationNames: List<String>
+        get() = items.map(PhotoViewerItemUiState::title).distinct()
 }
 
 internal fun buildCountryMemoriesUiState(
@@ -57,14 +37,14 @@ internal fun buildCountryMemoriesUiState(
     excursionStopPhotoMap: Map<String, List<StopPhoto>>,
     dateFormatter: FlexibleDateFormatter = FlexibleDateFormatter(),
 ): CountryMemoriesUiState {
-    val groups = trips
+    val memoryTrips = trips
         .sortedWith(
             compareByDescending<Trip> { it.dateRange?.start?.toCountryMemorySortKey().orEmpty() }
                 .thenBy { it.title }
                 .thenBy { it.id },
         )
-        .flatMap { trip ->
-            buildTripPhotoGalleryUiState(
+        .mapNotNull { trip ->
+            val items = buildTripPhotoGalleryUiState(
                 stops = tripStops.filter { it.tripId == trip.id },
                 excursions = excursions.filter { it.tripId == trip.id },
                 tripStopPhotoMap = tripStopPhotoMap,
@@ -72,22 +52,35 @@ internal fun buildCountryMemoriesUiState(
                 dateFormatter = dateFormatter,
             ).groups
                 .filter { group -> group.countryIso2.equals(countryIso2, ignoreCase = true) }
-                .map { group ->
-                    CountryMemoryGroupUiState(
-                        tripId = trip.id,
-                        tripTitle = trip.title,
-                        tripDateText = trip.dateRange?.let(dateFormatter::format),
-                        stopId = group.stopId,
-                        stopType = group.stopType,
-                        locationName = group.title,
-                        sourceLabel = group.contextLabel,
-                        stopDateText = group.dateText,
-                        photos = group.photos,
-                    )
+                .flatMap { group ->
+                    group.photos.map { photo ->
+                        PhotoViewerItemUiState(
+                            photo = photo,
+                            stopId = group.stopId,
+                            stopType = group.stopType,
+                            title = group.title,
+                            contextLabel = listOf(
+                                "VIATGE · ${trip.title}",
+                                group.contextLabel.takeUnless { it == "PARADA" },
+                            ).filterNotNull().joinToString(" · "),
+                            dateText = group.dateText
+                                ?: trip.dateRange?.let(dateFormatter::format),
+                            tripId = trip.id,
+                        )
+                    }
                 }
+
+            items.takeIf(List<PhotoViewerItemUiState>::isNotEmpty)?.let {
+                CountryMemoryTripUiState(
+                    tripId = trip.id,
+                    tripTitle = trip.title,
+                    tripDateText = trip.dateRange?.let(dateFormatter::format),
+                    items = items,
+                )
+            }
         }
 
-    return CountryMemoriesUiState(groups = groups)
+    return CountryMemoriesUiState(trips = memoryTrips)
 }
 
 private fun com.atlas.domain.model.FlexibleDate.toCountryMemorySortKey(): String {

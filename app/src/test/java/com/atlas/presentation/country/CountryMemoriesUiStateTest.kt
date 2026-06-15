@@ -37,7 +37,7 @@ class CountryMemoriesUiStateTest {
             excursionStopPhotoMap = emptyMap(),
         )
 
-        assertEquals(listOf("recent", "older"), result.groups.map { it.tripId })
+        assertEquals(listOf("recent", "older"), result.trips.map { it.tripId })
         assertEquals(
             listOf("recent-photo", "older-photo"),
             result.viewerItems.map { it.photo.id },
@@ -46,7 +46,33 @@ class CountryMemoriesUiStateTest {
     }
 
     @Test
-    fun `includes matching excursion photos in the trip narrative order`() {
+    fun `groups all matching stops from one trip into one card`() {
+        val trip = trip("trip", "Ruta")
+        val firstStop = tripStop("first-stop", trip.id, "ES", sortOrder = 10)
+        val secondStop = tripStop("second-stop", trip.id, "ES", sortOrder = 20)
+
+        val result = buildCountryMemoriesUiState(
+            countryIso2 = "ES",
+            trips = listOf(trip),
+            tripStops = listOf(secondStop, firstStop),
+            excursions = emptyList(),
+            tripStopPhotoMap = mapOf(
+                firstStop.id to listOf(photo("first-photo", firstStop.id)),
+                secondStop.id to listOf(photo("second-photo", secondStop.id)),
+            ),
+            excursionStopPhotoMap = emptyMap(),
+        )
+
+        assertEquals(1, result.trips.size)
+        assertEquals(listOf("first-stop", "second-stop"), result.trips.single().locationNames)
+        assertEquals(
+            listOf("first-photo", "second-photo"),
+            result.trips.single().items.map { it.photo.id },
+        )
+    }
+
+    @Test
+    fun `includes matching excursion photos in the same trip narrative sequence`() {
         val trip = trip("trip", "Ruta")
         val tripStop = tripStop("stop", trip.id, "ES")
         val excursionStop = excursionStop("excursion-stop", "excursion", "ES")
@@ -83,8 +109,15 @@ class CountryMemoriesUiStateTest {
             listOf("trip-photo", "excursion-photo"),
             result.viewerItems.map { it.photo.id },
         )
-        assertEquals(StopType.EXCURSION_STOP, result.groups.last().stopType)
-        assertEquals("EXCURSIÓ · Costa", result.groups.last().sourceLabel)
+        assertEquals(1, result.trips.size)
+        assertEquals(
+            StopType.EXCURSION_STOP,
+            result.trips.single().items.last().stopType,
+        )
+        assertEquals(
+            "VIATGE · Ruta · EXCURSIÓ · Costa",
+            result.trips.single().items.last().contextLabel,
+        )
         assertEquals("trip", result.viewerItems.last().tripId)
     }
 
@@ -101,7 +134,7 @@ class CountryMemoriesUiStateTest {
             excursionStopPhotoMap = emptyMap(),
         )
 
-        assertTrue(result.groups.isEmpty())
+        assertTrue(result.trips.isEmpty())
         assertTrue(result.viewerItems.isEmpty())
     }
 

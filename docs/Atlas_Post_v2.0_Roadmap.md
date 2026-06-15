@@ -46,8 +46,9 @@ useful.
 
 ## M1: Trip Gallery
 
-Status: implemented on 2026-06-14; automated checks passed, device visual review
-pending. Implementation contract: `docs/Atlas_v5.0_Photo_Memories_M1_Spec.md`.
+Status: implemented on 2026-06-14; automated checks passed and the gallery was
+confirmed on device during the M2 review. Implementation contract:
+`docs/Atlas_v5.0_Photo_Memories_M1_Spec.md`.
 
 ### Goal
 
@@ -96,8 +97,9 @@ excursion stops.
 
 ## M2: Full-Screen Photo Viewer
 
-Status: reimplemented cleanly on 2026-06-15; automated checks passed and the APK
-installs/launches on the connected device. Manual gesture review remains pending.
+Status: reimplemented cleanly on 2026-06-15; automated checks passed, the APK
+installs/launches on the connected device, and paging/zoom/pan were confirmed on
+device. Rotation and system-inset edge review remain pending.
 Implementation contract: `docs/Atlas_v5.0_Photo_Memories_M2_Spec.md`.
 
 ### Goal
@@ -143,6 +145,11 @@ their travel context.
 
 ## M3: Country Memories
 
+Status: implemented on 2026-06-15; automated checks passed and the APK
+installs/launches on the connected device. Country-detail visual review remains
+pending. Implementation contract:
+`docs/Atlas_v5.0_Photo_Memories_M3_Spec.md`.
+
 ### Goal
 
 Bring personal photos into country detail so general country information and personal
@@ -162,11 +169,14 @@ travel history meet on the same surface.
 
 ### Architecture
 
-- Add a country-scoped photo projection to the photo repository.
+- Derive a country-scoped presentation projection from the existing bulk
+  `StopPhotoRepository.observeByStopIds` flows. A dedicated repository method was
+  unnecessary because stop ownership and ISO2 context already exist in the observed
+  trip and excursion models.
 - Reuse ISO2 and current trip/stop relationships; do not store a second country ID on
   `StopPhotoEntity`.
-- Reuse the M1 gallery components and M2 viewer rather than creating a country-only
-  media system.
+- Reuse the M1 photo tile and M2 viewer rather than creating a country-only media
+  system.
 
 ### Data Impact
 

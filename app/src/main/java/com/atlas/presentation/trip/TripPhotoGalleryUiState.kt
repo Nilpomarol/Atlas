@@ -22,6 +22,7 @@ data class TripPhotoGalleryUiState(
                     title = group.title,
                     contextLabel = group.contextLabel,
                     dateText = group.dateText,
+                    tripId = group.tripId,
                 )
             }
         }
@@ -34,9 +35,11 @@ data class PhotoViewerItemUiState(
     val title: String,
     val contextLabel: String,
     val dateText: String?,
+    val tripId: String? = null,
 )
 
 data class TripPhotoGroupUiState(
+    val tripId: String,
     val stopId: String,
     val stopType: StopType,
     val title: String,
@@ -66,6 +69,7 @@ internal fun buildTripPhotoGalleryUiState(
                 ?.let { photos ->
                     add(
                         TripPhotoGroupUiState(
+                            tripId = stop.tripId,
                             stopId = stop.id,
                             stopType = StopType.TRIP_STOP,
                             title = stop.displayTitle?.takeIf(String::isNotBlank) ?: stop.locationName,
@@ -105,6 +109,7 @@ private fun MutableList<TripPhotoGroupUiState>.addExcursionGroups(
 
             add(
                 TripPhotoGroupUiState(
+                    tripId = excursion.tripId,
                     stopId = stop.id,
                     stopType = StopType.EXCURSION_STOP,
                     title = stop.locationName,

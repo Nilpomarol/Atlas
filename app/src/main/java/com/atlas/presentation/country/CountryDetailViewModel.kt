@@ -18,6 +18,8 @@ import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.model.StopPhoto
+import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
@@ -29,6 +31,7 @@ import com.atlas.domain.repository.CurrencyRateRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
 import com.atlas.domain.service.FlexibleDateFormatter
@@ -42,12 +45,14 @@ import com.atlas.domain.usecase.country.DeleteCountryLogUseCase
 import com.atlas.domain.usecase.country.SetCurrentlyLivingCountryUseCase
 import com.atlas.domain.usecase.country.ToggleWishedCountryUseCase
 import com.atlas.domain.usecase.country.UpdateCountryLogUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -56,6 +61,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CountryDetailViewModel(
     countryRepository: CountryRepository,
     tripRepository: TripRepository,
@@ -74,6 +80,7 @@ class CountryDetailViewModel(
     countryStatRepository: CountryStatRepository,
     private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
     currencyRateRepository: CurrencyRateRepository,
+    stopPhotoRepository: StopPhotoRepository,
 ) : ViewModel() {
     private val logDraft = MutableStateFlow(CountryLogDraftUiState())
 
@@ -82,12 +89,16 @@ class CountryDetailViewModel(
     private val currencyCode: String? =
         CountryCurrencyCodeMap.codeForCountry(iso2)?.takeUnless { it == "EUR" }
 
+    private val tripsFlow = tripRepository.observeTrips()
+    private val tripStopsFlow = tripRepository.observeTripStops()
+    private val excursionsFlow = excursionRepository.observeExcursions()
+
     private val baseTrackingData = combine(
         countryRepository.observeUserState(iso2),
         countryRepository.observeCountryLogs(iso2),
-        tripRepository.observeTrips(),
-        tripRepository.observeTripStops(),
-        excursionRepository.observeExcursions(),
+        tripsFlow,
+        tripStopsFlow,
+        excursionsFlow,
     ) { userState, logs, trips, tripStops, excursions ->
         BaseTrackingData(userState, logs, trips, tripStops, excursions)
     }
@@ -135,9 +146,9 @@ class CountryDetailViewModel(
     }
 
     private val countryTripSummaries = combine(
-        tripRepository.observeTrips(),
-        tripRepository.observeTripStops(),
-        excursionRepository.observeExcursions(),
+        tripsFlow,
+        tripStopsFlow,
+        excursionsFlow,
     ) { trips, tripStops, excursions ->
         val tripsById = trips.associateBy { it.id }
         val tripSummaries = tripStops
@@ -239,6 +250,63 @@ class CountryDetailViewModel(
         tripSummaries to airTravelSummaries
     }
 
+    private val countryTripStopPhotos = tripStopsFlow.flatMapLatest { stops ->
+        val stopIds = stops
+            .filter { it.countryIso2.equals(iso2, ignoreCase = true) }
+            .map { it.id }
+        if (stopIds.isEmpty()) {
+            flowOf<Map<String, List<StopPhoto>>>(emptyMap())
+        } else {
+            stopPhotoRepository.observeByStopIds(stopIds, StopType.TRIP_STOP)
+                .map { photos -> photos.groupBy { it.stopId } }
+        }
+    }
+
+    private val countryExcursionStopPhotos = excursionsFlow.flatMapLatest { excursions ->
+        val stopIds = excursions
+            .flatMap { it.stops }
+            .filter { it.countryIso2.equals(iso2, ignoreCase = true) }
+            .map { it.id }
+        if (stopIds.isEmpty()) {
+            flowOf<Map<String, List<StopPhoto>>>(emptyMap())
+        } else {
+            stopPhotoRepository.observeByStopIds(stopIds, StopType.EXCURSION_STOP)
+                .map { photos -> photos.groupBy { it.stopId } }
+        }
+    }
+
+    private val countryPhotoData = combine(
+        countryTripStopPhotos,
+        countryExcursionStopPhotos,
+    ) { tripStopPhotos, excursionStopPhotos ->
+        CountryPhotoData(tripStopPhotos, excursionStopPhotos)
+    }
+
+    private val countryMemories = combine(
+        baseTrackingData,
+        countryPhotoData,
+    ) { base, photos ->
+        buildCountryMemoriesUiState(
+            countryIso2 = iso2,
+            trips = base.trips,
+            tripStops = base.tripStops,
+            excursions = base.excursions,
+            tripStopPhotoMap = photos.tripStopPhotos,
+            excursionStopPhotoMap = photos.excursionStopPhotos,
+        )
+    }
+
+    private val countryContent = combine(
+        historySummaries,
+        countryMemories,
+    ) { history, memories ->
+        CountryContentData(
+            tripSummaries = history.first,
+            airTravelSummaries = history.second,
+            memories = memories,
+        )
+    }
+
     private val countryStats = countryStatRepository.observeByCountry(iso2)
 
     private val currencyRateFlow =
@@ -261,15 +329,16 @@ class CountryDetailViewModel(
             countryRepository.observeCountryLogs(iso2),
             logDraft,
             countryTrackingState,
-            historySummaries,
-        ) { country, logs, draft, trackingState, history ->
+            countryContent,
+        ) { country, logs, draft, trackingState, content ->
             CountryDetailUiState(
                 country = country,
                 logs = logs,
                 logDraft = draft,
                 trackingState = trackingState,
-                tripSummaries = history.first,
-                airTravelSummaries = history.second,
+                tripSummaries = content.tripSummaries,
+                airTravelSummaries = content.airTravelSummaries,
+                memories = content.memories,
             )
         },
         countryDetailPills,
@@ -476,6 +545,7 @@ class CountryDetailViewModel(
         private val countryStatRepository: CountryStatRepository,
         private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
         private val currencyRateRepository: CurrencyRateRepository,
+        private val stopPhotoRepository: StopPhotoRepository,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -497,6 +567,7 @@ class CountryDetailViewModel(
                 countryStatRepository = countryStatRepository,
                 countryLandscapePhotoRepository = countryLandscapePhotoRepository,
                 currencyRateRepository = currencyRateRepository,
+                stopPhotoRepository = stopPhotoRepository,
             ) as T
         }
     }
@@ -518,11 +589,23 @@ private data class FlightTrackingData(
     val airportCountryIso2ById: Map<String, String>,
 )
 
+private data class CountryPhotoData(
+    val tripStopPhotos: Map<String, List<StopPhoto>>,
+    val excursionStopPhotos: Map<String, List<StopPhoto>>,
+)
+
+private data class CountryContentData(
+    val tripSummaries: List<CountryTripSummaryUiState>,
+    val airTravelSummaries: List<CountryAirTravelSummaryUiState>,
+    val memories: CountryMemoriesUiState,
+)
+
 data class CountryDetailUiState(
     val country: Country? = null,
     val logs: List<CountryLog> = emptyList(),
     val tripSummaries: List<CountryTripSummaryUiState> = emptyList(),
     val airTravelSummaries: List<CountryAirTravelSummaryUiState> = emptyList(),
+    val memories: CountryMemoriesUiState = CountryMemoriesUiState(),
     val logDraft: CountryLogDraftUiState = CountryLogDraftUiState(),
     val trackingState: CountryTrackingState = CountryTrackingState.Empty,
     val detailPills: CountryDetailPillUiState = CountryDetailPillUiState(),

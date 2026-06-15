@@ -13,6 +13,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,8 +24,10 @@ import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.StopPhoto
 import com.atlas.presentation.country.CountryDetailUiState
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
+import com.atlas.ui.components.PhotoViewerDialog
 import com.atlas.ui.theme.AtlasBackground
 
 @Composable
@@ -43,6 +49,7 @@ fun CountryDetailScreen(
     onSaveLogDraft: () -> Unit,
 ) {
     val country = uiState.country
+    var selectedMemoryPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
 
     if (country == null) {
         LoadingScreen(onBackClick)
@@ -58,6 +65,22 @@ fun CountryDetailScreen(
             onAddVisitLog = onAddVisitLog,
             onEditLog = onEditLog,
             onDeleteLog = onDeleteLog,
+            onMemoryPhotoClick = { photo -> selectedMemoryPhotoId = photo.id },
+        )
+    }
+
+    selectedMemoryPhotoId?.let { photoId ->
+        PhotoViewerDialog(
+            items = uiState.memories.viewerItems,
+            initialPhotoId = photoId,
+            coverPhotoFilename = null,
+            onDismiss = { selectedMemoryPhotoId = null },
+            onOpenSource = { item ->
+                item.tripId?.let { tripId ->
+                    selectedMemoryPhotoId = null
+                    onTripClick(tripId)
+                }
+            },
         )
     }
 
@@ -101,6 +124,7 @@ private fun CountryDetailContent(
     onAddVisitLog: () -> Unit,
     onEditLog: (CountryLog) -> Unit,
     onDeleteLog: (CountryLog) -> Unit,
+    onMemoryPhotoClick: (StopPhoto) -> Unit,
 ) {
     val style = uiState.trackingState.toStyle()
 
@@ -132,6 +156,13 @@ private fun CountryDetailContent(
                 rateAge = uiState.rateAge,
             )
             CountryMapCard(country = country, style = style)
+            if (uiState.memories.groups.isNotEmpty()) {
+                CountryMemoriesSection(
+                    memories = uiState.memories,
+                    onTripClick = onTripClick,
+                    onPhotoClick = onMemoryPhotoClick,
+                )
+            }
             CountryQuickActions(
                 trackingState = uiState.trackingState,
                 onWishedChanged = onWishedChanged,

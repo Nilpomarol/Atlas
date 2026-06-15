@@ -1,4 +1,4 @@
-package com.atlas.ui.screens.trip
+package com.atlas.ui.screens.country
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,87 +17,49 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.StopPhoto
-import com.atlas.presentation.trip.TripPhotoGalleryUiState
-import com.atlas.presentation.trip.TripPhotoGroupUiState
+import com.atlas.presentation.country.CountryMemoriesUiState
+import com.atlas.presentation.country.CountryMemoryGroupUiState
 import com.atlas.ui.components.AtlasCard
 import com.atlas.ui.components.AtlasMemoryPhotoTile
 import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasPrimary
-import com.atlas.ui.theme.AtlasSurfaceSubtle
 
 @Composable
-internal fun TripPhotoGallerySection(
-    gallery: TripPhotoGalleryUiState,
-    coverPhotoFilename: String?,
-    onGroupClick: (TripPhotoGroupUiState) -> Unit,
+internal fun CountryMemoriesSection(
+    memories: CountryMemoriesUiState,
+    onTripClick: (String) -> Unit,
     onPhotoClick: (StopPhoto) -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         AtlasSectionTitle(
-            title = "Records",
+            title = "Els teus records",
             action = {
-                if (gallery.photoCount > 0) {
-                    Text(
-                        text = "${gallery.photoCount} ${if (gallery.photoCount == 1) "FOTO" else "FOTOS"}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = AtlasOnSurfaceMuted,
-                    )
-                }
+                Text(
+                    text = "${memories.photoCount} ${if (memories.photoCount == 1) "FOTO" else "FOTOS"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
             },
         )
 
-        if (gallery.groups.isEmpty()) {
-            TripPhotoGalleryEmptyState()
-        } else {
-            gallery.groups.forEach { group ->
-                TripPhotoGroupCard(
-                    group = group,
-                    coverPhotoFilename = coverPhotoFilename,
-                    onClick = { onGroupClick(group) },
-                    onPhotoClick = onPhotoClick,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TripPhotoGalleryEmptyState() {
-    AtlasCard(
-        color = AtlasSurfaceSubtle,
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 20.dp),
-    ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Text(
-                text = "EL VIATGE EN IMATGES",
-                style = MaterialTheme.typography.labelSmall,
-                color = AtlasPrimary,
-            )
-            Text(
-                text = "Encara no hi ha records fotogràfics",
-                style = MaterialTheme.typography.titleMedium,
-                color = AtlasOnSurfaceStrong,
-            )
-            Text(
-                text = "Afegeix fotos des de qualsevol parada i apareixeran aquí en l'ordre del viatge.",
-                style = MaterialTheme.typography.bodySmall,
-                color = AtlasOnSurfaceMuted,
+        memories.groups.forEach { group ->
+            CountryMemoryCard(
+                group = group,
+                onTripClick = { onTripClick(group.tripId) },
+                onPhotoClick = onPhotoClick,
             )
         }
     }
 }
 
 @Composable
-private fun TripPhotoGroupCard(
-    group: TripPhotoGroupUiState,
-    coverPhotoFilename: String?,
-    onClick: () -> Unit,
+private fun CountryMemoryCard(
+    group: CountryMemoryGroupUiState,
+    onTripClick: () -> Unit,
     onPhotoClick: (StopPhoto) -> Unit,
 ) {
     AtlasCard(
@@ -107,7 +69,7 @@ private fun TripPhotoGroupCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onClick)
+                    .clickable(onClick = onTripClick)
                     .padding(horizontal = 14.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.Top,
@@ -122,18 +84,16 @@ private fun TripPhotoGroupCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = group.contextLabel,
+                            text = "VIATGE · ${group.tripTitle}",
                             modifier = Modifier.weight(1f),
                             style = MaterialTheme.typography.labelSmall,
                             color = AtlasPrimary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        val metadata = listOfNotNull(group.dateText, group.countryIso2)
-                            .joinToString(" · ")
-                        if (metadata.isNotEmpty()) {
+                        group.tripDateText?.let { tripDate ->
                             Text(
-                                text = metadata,
+                                text = tripDate,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = AtlasOnSurfaceMuted,
                                 maxLines = 1,
@@ -142,9 +102,17 @@ private fun TripPhotoGroupCard(
                         }
                     }
                     Text(
-                        text = group.title,
+                        text = group.locationName,
                         style = MaterialTheme.typography.titleMedium,
                         color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = listOfNotNull(group.sourceLabel, group.stopDateText)
+                            .joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AtlasOnSurfaceMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -170,8 +138,8 @@ private fun TripPhotoGroupCard(
                 ) { photo ->
                     AtlasMemoryPhotoTile(
                         photo = photo,
-                        locationName = group.title,
-                        isCover = photo.filename == coverPhotoFilename,
+                        locationName = group.locationName,
+                        isCover = false,
                         onClick = { onPhotoClick(photo) },
                     )
                 }

@@ -56,9 +56,9 @@ fun PhotoViewerDialog(
     initialPhotoId: String,
     coverPhotoFilename: String?,
     onDismiss: () -> Unit,
-    onOpenSource: ((PhotoViewerItemUiState) -> Unit)?,
-    onDeletePhoto: (StopPhoto) -> Unit,
-    onSetCoverPhoto: (StopPhoto?) -> Unit,
+    onOpenSource: ((PhotoViewerItemUiState) -> Unit)? = null,
+    onDeletePhoto: ((StopPhoto) -> Unit)? = null,
+    onSetCoverPhoto: ((StopPhoto?) -> Unit)? = null,
 ) {
     if (items.isEmpty()) {
         LaunchedEffect(Unit) { onDismiss() }
@@ -106,7 +106,9 @@ fun PhotoViewerDialog(
                 item = currentItem,
                 coverPhotoFilename = coverPhotoFilename,
                 onDismiss = onDismiss,
-                onDelete = { currentItem?.let { pendingDelete = it } },
+                onDelete = onDeletePhoto?.let {
+                    { currentItem?.let { item -> pendingDelete = item } }
+                },
                 onSetCoverPhoto = onSetCoverPhoto,
             )
 
@@ -122,27 +124,29 @@ fun PhotoViewerDialog(
         }
     }
 
-    pendingDelete?.let { item ->
-        AlertDialog(
-            onDismissRequest = { pendingDelete = null },
-            title = { Text("Elimina la foto") },
-            text = { Text("Segur que vols eliminar aquesta foto?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        pendingDelete = null
-                        onDeletePhoto(item.photo)
-                    },
-                ) {
-                    Text("Elimina", color = AtlasError)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) {
-                    Text("Cancel·la")
-                }
-            },
-        )
+    onDeletePhoto?.let { deletePhoto ->
+        pendingDelete?.let { item ->
+            AlertDialog(
+                onDismissRequest = { pendingDelete = null },
+                title = { Text("Elimina la foto") },
+                text = { Text("Segur que vols eliminar aquesta foto?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            pendingDelete = null
+                            deletePhoto(item.photo)
+                        },
+                    ) {
+                        Text("Elimina", color = AtlasError)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingDelete = null }) {
+                        Text("Cancel·la")
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -179,8 +183,8 @@ private fun ViewerTopBar(
     item: PhotoViewerItemUiState?,
     coverPhotoFilename: String?,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit,
-    onSetCoverPhoto: (StopPhoto?) -> Unit,
+    onDelete: (() -> Unit)?,
+    onSetCoverPhoto: ((StopPhoto?) -> Unit)?,
 ) {
     Box(
         modifier = Modifier
@@ -200,10 +204,14 @@ private fun ViewerTopBar(
         }
 
         item?.let { current ->
+            val hasActions = onSetCoverPhoto != null || onDelete != null
             Column(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(horizontal = 108.dp),
+                    .padding(
+                        start = if (hasActions) 108.dp else 58.dp,
+                        end = if (hasActions) 108.dp else 58.dp,
+                    ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -223,28 +231,34 @@ private fun ViewerTopBar(
                 )
             }
 
-            val isCover = current.photo.filename == coverPhotoFilename
-            Row(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                ViewerIconButton(
-                    onClick = {
-                        onSetCoverPhoto(if (isCover) null else current.photo)
-                    },
+            if (hasActions) {
+                val isCover = current.photo.filename == coverPhotoFilename
+                Row(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Icon(
-                        imageVector = if (isCover) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                        contentDescription = if (isCover) "Treu portada" else "Fes portada",
-                        tint = if (isCover) AtlasPrimary else Color.White,
-                    )
-                }
-                ViewerIconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Elimina foto",
-                        tint = Color.White,
-                    )
+                    onSetCoverPhoto?.let { setCoverPhoto ->
+                        ViewerIconButton(
+                            onClick = {
+                                setCoverPhoto(if (isCover) null else current.photo)
+                            },
+                        ) {
+                            Icon(
+                                imageVector = if (isCover) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                                contentDescription = if (isCover) "Treu portada" else "Fes portada",
+                                tint = if (isCover) AtlasPrimary else Color.White,
+                            )
+                        }
+                    }
+                    onDelete?.let { delete ->
+                        ViewerIconButton(onClick = delete) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = "Elimina foto",
+                                tint = Color.White,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -295,7 +309,7 @@ private fun ViewerContextBar(
                 ViewerIconButton(onClick = openSource) {
                     Icon(
                         imageVector = Icons.Filled.Place,
-                        contentDescription = "Obre la parada",
+                        contentDescription = "Obre el registre d'origen",
                         tint = Color.White,
                     )
                 }

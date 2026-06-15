@@ -15,10 +15,12 @@ Last updated: 2026-06-15.
 - v4.0 Country Depth and the backup/portability milestone are complete.
 - The selected next direction is v5 Photos and Memories. Its roadmap is defined in
   `docs/Atlas_Post_v2.0_Roadmap.md`.
-- v5 M1 Trip Gallery is implemented and automated checks pass. Device visual review
-  remains pending.
-- v5 M2 Full-Screen Photo Viewer is implemented and automated checks pass. Device
-  gesture and rotation review remains pending.
+- v5 M1 Trip Gallery is implemented; automated checks pass and its gallery behavior
+  has been confirmed on device.
+- v5 M2 Full-Screen Photo Viewer is implemented; automated checks and core device
+  paging/zoom/pan review pass. Rotation and system-inset edge review remain pending.
+- v5 M3 Country Memories is implemented; automated checks pass and the APK
+  installs/launches on device. Country-detail visual review remains pending.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -234,11 +236,17 @@ existing use cases. Zoom/pan/rendering are delegated to Telephoto 0.13.0; all cu
 gesture and transformed-layer code was removed after device failures. Its contract is
 `docs/Atlas_v5.0_Photo_Memories_M2_Spec.md`.
 
+M3 adds an `Els teus records` section to country detail. It derives matching
+trip-stop and excursion-stop photos from existing bulk photo flows and stop ISO2
+relationships, groups them by trip and location, reuses the shared M1 photo tile and
+M2 viewer, and navigates back to the owning trip. The viewer is read-only from
+country detail, and the whole section is hidden when no personal photos match. Its
+contract is `docs/Atlas_v5.0_Photo_Memories_M3_Spec.md`.
+
 Automated unit tests and `assembleDebug` pass, and the debug APK installs and launches
-without a runtime crash. Device visual review for M1 and manual gesture/rotation review
-for M2 remain pending. Later milestones add country memories,
-optional photo metadata behind a schema gate, and finally a generated read-only trip
-story.
+without a runtime crash. Country-detail visual review for M3 and rotation/system-inset
+edge review for M2 remain pending. Later milestones add optional photo metadata behind
+a schema gate and finally a generated read-only trip story.
 
 Follow `docs/Atlas_Post_v2.0_Roadmap.md` for milestone boundaries and non-goals. Do not
 introduce DB v25 or backup v4 during M1–M3.

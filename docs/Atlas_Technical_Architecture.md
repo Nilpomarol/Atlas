@@ -19,6 +19,7 @@ This document defines the architecture currently implemented by Atlas. For exact
 - MapLibre for the remaining tile-backed map surface.
 - Compose Canvas geo components for offline world, country, and route visuals.
 - Coil for raster and SVG image loading.
+- Telephoto over Coil for full-screen photo zoom/pan and large-image rendering.
 
 Atlas does not use Hilt, Koin, Retrofit, osmdroid, or a backend.
 
@@ -146,6 +147,8 @@ Coil is the only image-loading library.
 
 - Bundled/local images and app-private photo files load through Coil.
 - SVG flags use Coil's SVG decoder.
+- Telephoto does not load images independently; it provides zoom/pan and
+  sub-sampling around Coil-backed full-screen photos.
 - Remote content always has a local visual fallback.
 - Country photo refresh preserves the old cached file on failure.
 

@@ -24,18 +24,12 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -44,32 +38,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
+import com.atlas.presentation.trip.PhotoViewerItemUiState
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasError
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
@@ -78,7 +66,6 @@ import com.atlas.ui.theme.AtlasOutline
 import com.atlas.ui.theme.AtlasPrimary
 import com.atlas.ui.theme.AtlasSurface
 import com.atlas.ui.theme.AtlasSurfaceSubtle
-import kotlinx.coroutines.launch
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,7 +89,6 @@ fun StopDetailModal(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var viewerInitialIndex by remember { mutableIntStateOf(0) }
     var showViewer by remember { mutableStateOf(false) }
-    var pendingDeletePhoto by remember { mutableStateOf<StopPhoto?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
@@ -214,35 +200,25 @@ fun StopDetailModal(
         }
     }
 
-    // ── Delete photo confirmation ──
-    if (pendingDeletePhoto != null) {
-        AlertDialog(
-            onDismissRequest = { pendingDeletePhoto = null },
-            title = { Text("Elimina la foto") },
-            text = { Text("Segur que vols eliminar aquesta foto?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDeletePhoto(pendingDeletePhoto!!)
-                    pendingDeletePhoto = null
-                }) { Text("Elimina", color = AtlasError) }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingDeletePhoto = null }) { Text("Cancel·la") }
-            },
-        )
-    }
-
     // ── Full-screen viewer ──
     if (showViewer && photos.isNotEmpty()) {
-        StopPhotoViewer(
-            photos = photos,
-            initialIndex = viewerInitialIndex.coerceAtMost(photos.lastIndex),
+        val initialPhoto = photos[viewerInitialIndex.coerceAtMost(photos.lastIndex)]
+        PhotoViewerDialog(
+            items = photos.map { photo ->
+                PhotoViewerItemUiState(
+                    photo = photo,
+                    stopId = stopId,
+                    stopType = stopType,
+                    title = title,
+                    contextLabel = metaLine,
+                    dateText = null,
+                )
+            },
+            initialPhotoId = initialPhoto.id,
             coverPhotoFilename = coverPhotoFilename,
             onDismiss = { showViewer = false },
-            onDeletePhoto = { photo ->
-                pendingDeletePhoto = photo
-                showViewer = false
-            },
+            onOpenSource = null,
+            onDeletePhoto = onDeletePhoto,
             onSetCoverPhoto = onSetCoverPhoto,
         )
     }
@@ -298,123 +274,5 @@ private fun AddPhotoCell(onClick: () -> Unit) {
             tint = AtlasOnSurfaceMuted,
             modifier = Modifier.size(28.dp),
         )
-    }
-}
-
-@Composable
-fun StopPhotoViewer(
-    photos: List<StopPhoto>,
-    initialIndex: Int,
-    coverPhotoFilename: String?,
-    onDismiss: () -> Unit,
-    onDeletePhoto: (StopPhoto) -> Unit,
-    onSetCoverPhoto: (StopPhoto?) -> Unit,
-) {
-    val pagerState = rememberPagerState(initialPage = initialIndex) { photos.size }
-    val context = LocalContext.current
-
-    // Auto-dismiss if all photos deleted
-    LaunchedEffect(photos.size) {
-        if (photos.isEmpty()) onDismiss()
-    }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false,
-        ),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black),
-        ) {
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize(),
-            ) { page ->
-                val photo = photos.getOrNull(page) ?: return@HorizontalPager
-                AsyncImage(
-                    model = File(context.filesDir, "photos/${photo.filename}"),
-                    contentDescription = null,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-
-            // Top bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 40.dp)
-                    .align(Alignment.TopStart),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(
-                    onClick = onDismiss,
-                    shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.5f),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Tanca",
-                        tint = Color.White,
-                        modifier = Modifier.padding(10.dp).size(20.dp),
-                    )
-                }
-
-                val currentPhoto = photos.getOrNull(pagerState.currentPage)
-                if (currentPhoto != null) {
-                    val isCover = currentPhoto.filename == coverPhotoFilename
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Surface(
-                            onClick = {
-                                onSetCoverPhoto(if (isCover) null else currentPhoto)
-                            },
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.5f),
-                        ) {
-                            Icon(
-                                imageVector = if (isCover) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                                contentDescription = if (isCover) "Treu portada" else "Fes portada",
-                                tint = if (isCover) AtlasPrimary else Color.White,
-                                modifier = Modifier.padding(10.dp).size(20.dp),
-                            )
-                        }
-                        Surface(
-                            onClick = { onDeletePhoto(currentPhoto) },
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.5f),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = "Elimina foto",
-                                tint = Color.White,
-                                modifier = Modifier.padding(10.dp).size(20.dp),
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Page indicator
-            if (photos.size > 1) {
-                Text(
-                    text = "${pagerState.currentPage + 1} / ${photos.size}",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp,
-                    color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 32.dp)
-                        .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
-                )
-            }
-        }
     }
 }

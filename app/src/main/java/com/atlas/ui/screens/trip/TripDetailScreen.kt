@@ -63,6 +63,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -93,6 +94,7 @@ import com.atlas.domain.model.TripStop
 import com.atlas.domain.model.TripStopSource
 import com.atlas.ui.components.StopDetailModal
 import com.atlas.ui.components.StopPhotoThumbnails
+import com.atlas.ui.components.PhotoViewerDialog
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
@@ -197,6 +199,7 @@ fun TripDetailScreen(
     var showMapModal by remember { mutableStateOf(false) }
     var selectedStop by remember { mutableStateOf<TripStop?>(null) }
     var selectedExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
+    var selectedTripPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val trip = uiState.trip
 
@@ -242,6 +245,7 @@ fun TripDetailScreen(
                 excursionStopPhotoMap = uiState.excursionStopPhotoMap,
                 onStopClick = { selectedStop = it },
                 onExcursionStopClick = { selectedExcursionStop = it },
+                onPhotoClick = { selectedTripPhotoId = it.id },
             )
         }
 
@@ -386,6 +390,31 @@ fun TripDetailScreen(
             body = "S'eliminarà \"${stop.locationName}\" de l'excursio. Aquesta acció no es pot desfer.",
             onDismiss = { pendingDeleteExcursionStop = null },
             onConfirm = { pendingDeleteExcursionStop = null; onDeleteExcursionStop(stop) },
+        )
+    }
+
+    selectedTripPhotoId?.let { photoId ->
+        PhotoViewerDialog(
+            items = uiState.photoGallery.viewerItems,
+            initialPhotoId = photoId,
+            coverPhotoFilename = uiState.trip?.coverPhotoFilename,
+            onDismiss = { selectedTripPhotoId = null },
+            onOpenSource = { item ->
+                selectedTripPhotoId = null
+                when (item.stopType) {
+                    StopType.TRIP_STOP -> {
+                        selectedStop = uiState.stops.firstOrNull { it.id == item.stopId }
+                    }
+                    StopType.EXCURSION_STOP -> {
+                        selectedExcursionStop = uiState.excursions
+                            .asSequence()
+                            .flatMap { it.stops.asSequence() }
+                            .firstOrNull { it.id == item.stopId }
+                    }
+                }
+            },
+            onDeletePhoto = onDeletePhoto,
+            onSetCoverPhoto = onSetCoverPhoto,
         )
     }
 
@@ -569,6 +598,7 @@ private fun TripDetailContent(
     excursionStopPhotoMap: Map<String, List<StopPhoto>>,
     onStopClick: (TripStop) -> Unit,
     onExcursionStopClick: (ExcursionStop) -> Unit,
+    onPhotoClick: (StopPhoto) -> Unit,
 ) {
     val tripCountries = uiState.stops
         .mapNotNull { it.countryIso2?.takeIf { iso -> iso.isNotBlank() } }
@@ -641,6 +671,24 @@ private fun TripDetailContent(
             excursionStopPhotoMap = excursionStopPhotoMap,
             onStopClick = onStopClick,
             onExcursionStopClick = onExcursionStopClick,
+        )
+
+        TripPhotoGallerySection(
+            gallery = uiState.photoGallery,
+            coverPhotoFilename = trip.coverPhotoFilename,
+            onGroupClick = { group ->
+                when (group.stopType) {
+                    StopType.TRIP_STOP -> uiState.stops
+                        .firstOrNull { it.id == group.stopId }
+                        ?.let(onStopClick)
+                    StopType.EXCURSION_STOP -> uiState.excursions
+                        .asSequence()
+                        .flatMap { it.stops.asSequence() }
+                        .firstOrNull { it.id == group.stopId }
+                        ?.let(onExcursionStopClick)
+                }
+            },
+            onPhotoClick = onPhotoClick,
         )
 
         Spacer(Modifier.height(24.dp))

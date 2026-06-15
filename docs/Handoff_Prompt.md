@@ -6,13 +6,19 @@ This is the current operational source of truth for Atlas. It records what is im
 
 When this document conflicts with a long-term specification or roadmap, follow this document and the code currently in the repository.
 
-Last updated: 2026-06-14.
+Last updated: 2026-06-15.
 
 ## Current Status
 
 - Atlas is a native Android, local-first personal travel atlas.
 - v2.0, v3.0, v3.1, and v3.2 are complete.
-- The current phase is v4.0 Country Depth and UI polish.
+- v4.0 Country Depth and the backup/portability milestone are complete.
+- The selected next direction is v5 Photos and Memories. Its roadmap is defined in
+  `docs/Atlas_Post_v2.0_Roadmap.md`.
+- v5 M1 Trip Gallery is implemented and automated checks pass. Device visual review
+  remains pending.
+- v5 M2 Full-Screen Photo Viewer is implemented and automated checks pass. Device
+  gesture and rotation review remains pending.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -37,6 +43,7 @@ Last updated: 2026-06-14.
 - MapLibre GL Android 11.11.0 where tile-backed geographic context is needed.
 - Offline Compose Canvas geo rendering for reusable world/country/flight surfaces.
 - Coil 2.7.0 for all image loading, including SVG flags.
+- Telephoto 0.13.0 for full-screen photo zoom/pan and sub-sampling over Coil.
 - DataStore Preferences for API keys and preferences.
 - WorkManager 2.11.2 for constrained periodic cloud backups.
 - No Hilt, Koin, Retrofit, osmdroid, backend requirement, or additional image loader unless explicitly approved.
@@ -212,8 +219,29 @@ Verified backup behavior:
 - automatic retention keeps the newest three Atlas cloud backups;
 - Android Auto Backup remains disabled so it cannot bypass Atlas's explicit restore.
 
-There is no active implementation milestone. The next product scope should be selected
-deliberately from the long-term specification before adding schema or dependencies.
+The selected next scope is **v5 Photos and Memories**. M1 is implemented: trip detail
+now derives a read-only `Records` gallery from existing trip-stop and excursion-stop
+photo flows. Groups follow deterministic trip narrative order, show location/date/
+excursion context, mark the trip cover, degrade missing files to a placeholder, and
+open the existing stop detail modal for photo actions. The implementation is specified
+in `docs/Atlas_v5.0_Photo_Memories_M1_Spec.md`.
+
+M1 required no Room migration, repository expansion, backup-format change, or photo
+file operation. M2 now adds one shared full-screen viewer used by both trip gallery
+and stop detail. It opens the exact tapped photo, follows the M1 sequence, shows
+travel context, navigates to the owning stop, and keeps cover/delete actions on the
+existing use cases. Zoom/pan/rendering are delegated to Telephoto 0.13.0; all custom
+gesture and transformed-layer code was removed after device failures. Its contract is
+`docs/Atlas_v5.0_Photo_Memories_M2_Spec.md`.
+
+Automated unit tests and `assembleDebug` pass, and the debug APK installs and launches
+without a runtime crash. Device visual review for M1 and manual gesture/rotation review
+for M2 remain pending. Later milestones add country memories,
+optional photo metadata behind a schema gate, and finally a generated read-only trip
+story.
+
+Follow `docs/Atlas_Post_v2.0_Roadmap.md` for milestone boundaries and non-goals. Do not
+introduce DB v25 or backup v4 during M1–M3.
 
 The v4.0 work below is complete and committed, kept here for reference.
 

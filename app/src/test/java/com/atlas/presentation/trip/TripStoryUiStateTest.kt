@@ -13,7 +13,7 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TripStoryUiStateTest {
@@ -45,9 +45,19 @@ class TripStoryUiStateTest {
             excursionStopPhotoMap = emptyMap(),
         )
 
-        assertEquals(listOf("stop-a", "stop-b"), result.stops.map { it.id })
-        assertEquals(listOf("anchored"), result.stops.first().excursions.map { it.id })
-        assertEquals(listOf("unanchored"), result.unanchoredExcursions.map { it.id })
+        assertEquals(listOf("stop-a", "stop-b"), result.mapStops.map { it.id })
+        assertEquals(listOf("anchored", "unanchored"), result.mapExcursions.map { it.id })
+        assertEquals(
+            listOf(
+                "stop-stop-a",
+                "excursion-anchored",
+                "excursion-stop-anchored-stop",
+                "stop-stop-b",
+                "excursion-unanchored",
+                "excursion-stop-unanchored-stop",
+            ),
+            result.slides.filterIsInstance<TripStorySlideUiState.Place>().map { it.id },
+        )
     }
 
     @Test
@@ -91,7 +101,11 @@ class TripStoryUiStateTest {
         assertEquals("PARADA", result.viewerItems.first().contextLabel)
         assertEquals("EXCURSIÓ · Costa", result.viewerItems.last().contextLabel)
         assertEquals(3, result.photoCount)
-        assertNotNull(result.routeText)
+        assertEquals(
+            listOf("stop-photo-1", "stop-photo-2", "excursion-photo"),
+            result.slides.filterIsInstance<TripStorySlideUiState.Photo>().map { it.item.photo.id },
+        )
+        assertTrue(result.slides.any { it is TripStorySlideUiState.Route })
     }
 
     private fun trip() = Trip(

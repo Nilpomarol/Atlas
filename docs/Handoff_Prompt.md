@@ -22,10 +22,11 @@ Last updated: 2026-06-16.
 - v5 M3 Country Memories is implemented; automated checks and device review pass.
 - v5 M4 Optional Photo Metadata is deferred because captions/favorites/taken-date
   metadata does not yet justify a Room and backup migration.
-- v5 M5 Generated Trip Story has an initial read-only implementation. It adds a story
-  route from trip detail and uses existing trip, stop, excursion, itinerary, note, and
-  photo data. Automated checks pass and the debug APK installs/launches; story-specific
-  visual review remains pending.
+- v5 M5 Generated Trip Story has a read-only slideshow implementation. It adds a story
+  route from trip detail and uses existing trip, stop, excursion, itinerary, map, note,
+  and photo data. It supports swipe, previous/next, play/pause auto-play, progress,
+  and read-only shared viewer opening from photo slides. Automated checks pass and the
+  debug APK installs/launches; story-specific visual review remains pending.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -254,11 +255,13 @@ M4 is explicitly deferred for now. Captions, favorites, and taken dates would re
 DB v25 and backup v4, so they should not be introduced until there is a concrete
 metadata need.
 
-M5 adds an initial read-only trip story route at `trips/{tripId}/story`, launched from
-trip detail with `Veure relat`. The story is a derived presentation surface: hero
-summary, route overview, optional itinerary context, stop-by-stop sections, anchored
-and unanchored excursions, notes, photos, and a generated summary. It uses existing
-photo files and the shared viewer in read-only mode. Its contract is
+M5 adds a read-only trip story route at `trips/{tripId}/story`, launched from trip
+detail with `Veure relat`. The story is a full-screen slideshow derived from existing
+data: title/stats, route map, optional itinerary context, stop intro slides, anchored
+and unanchored excursion slides, contextual photo slides, and a generated summary. It
+supports manual swiping, previous/next controls, play/pause auto-play that stops at
+the end, progress bars, and the shared viewer in read-only mode for photo detail. Its
+contract is
 `docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
 
 The final planned v5 step is M6 Photo UI Polish: a visual consistency pass across trip
@@ -270,7 +273,8 @@ with `adb install -r` and launches without an immediate `com.atlas` runtime cras
 Story-specific visual review remains pending.
 
 Follow `docs/Atlas_Post_v2.0_Roadmap.md` for milestone boundaries and non-goals. Do not
-introduce DB v25 or backup v4 during M1–M3.
+introduce DB v25 or backup v4 during v5 unless M4 is explicitly reopened with a
+concrete metadata requirement.
 
 The v4.0 work below is complete and committed, kept here for reference.
 

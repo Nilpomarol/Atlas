@@ -13,6 +13,7 @@ fun TripDetailRoute(
     tripId: String,
     onBackClick: () -> Unit,
     onItineraryClick: (String) -> Unit,
+    onStoryClick: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as AtlasApplication
     val viewModel: TripDetailViewModel = viewModel(
@@ -66,6 +67,7 @@ fun TripDetailRoute(
         onTripNotesChanged = viewModel::onTripNotesChanged,
         onSaveTripDraft = viewModel::onSaveTripDraft,
         onItineraryClick = onItineraryClick,
+        onStoryClick = onStoryClick,
         onOpenItineraryPicker = viewModel::onOpenItineraryPicker,
         onDismissItineraryPicker = viewModel::onDismissItineraryPicker,
         onLinkItinerary = viewModel::onLinkItinerary,

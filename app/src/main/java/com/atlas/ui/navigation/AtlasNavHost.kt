@@ -31,6 +31,7 @@ import com.atlas.presentation.itinerary.ItineraryDetailRoute
 import com.atlas.presentation.settings.SettingsRoute
 import com.atlas.presentation.trip.TripDetailRoute
 import com.atlas.presentation.trip.TripListRoute
+import com.atlas.presentation.trip.TripStoryRoute
 import com.atlas.ui.theme.AtlasAccentContainer
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
@@ -201,6 +202,25 @@ fun AtlasNavHost() {
                         onItineraryClick = { itineraryId ->
                             navController.navigate("itineraries/$itineraryId")
                         },
+                        onStoryClick = {
+                            navController.navigate("trips/$tripId/story")
+                        },
+                    )
+                }
+            }
+            composable(
+                route = "trips/{tripId}/story",
+                arguments = listOf(
+                    navArgument("tripId") {
+                        type = NavType.StringType
+                    },
+                ),
+            ) { backStackEntry ->
+                val tripId = backStackEntry.arguments?.getString("tripId")
+                if (tripId != null) {
+                    TripStoryRoute(
+                        tripId = tripId,
+                        onBackClick = navController::popBackStack,
                     )
                 }
             }

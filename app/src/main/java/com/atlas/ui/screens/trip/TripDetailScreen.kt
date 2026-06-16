@@ -144,6 +144,7 @@ fun TripDetailScreen(
     onTripNotesChanged: (String) -> Unit,
     onSaveTripDraft: () -> Unit,
     onItineraryClick: (String) -> Unit,
+    onStoryClick: () -> Unit,
     onOpenItineraryPicker: () -> Unit,
     onDismissItineraryPicker: () -> Unit,
     onLinkItinerary: (Itinerary) -> Unit,
@@ -225,6 +226,7 @@ fun TripDetailScreen(
                 onShowGeneratedStopsOnMapChanged = onShowGeneratedStopsOnMapChanged,
                 onExpandMap = { showMapModal = true },
                 onItineraryClick = onItineraryClick,
+                onStoryClick = onStoryClick,
                 onOpenItineraryPicker = onOpenItineraryPicker,
                 onUnlinkItinerary = onUnlinkItinerary,
                 onAddStopClick = onAddStopClick,
@@ -578,6 +580,7 @@ private fun TripDetailContent(
     onShowGeneratedStopsOnMapChanged: (Boolean) -> Unit,
     onExpandMap: () -> Unit,
     onItineraryClick: (String) -> Unit,
+    onStoryClick: () -> Unit,
     onOpenItineraryPicker: () -> Unit,
     onUnlinkItinerary: () -> Unit,
     onAddStopClick: () -> Unit,
@@ -625,6 +628,7 @@ private fun TripDetailContent(
             trip = trip,
             stopCount = uiState.stops.size,
             tripCountries = tripCountries,
+            onStoryClick = onStoryClick,
         )
 
         LinkedItineraryPanel(
@@ -704,6 +708,7 @@ private fun TripInfoCard(
     trip: Trip,
     stopCount: Int,
     tripCountries: List<TripCountryPillUiState>,
+    onStoryClick: () -> Unit,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -769,6 +774,23 @@ private fun TripInfoCard(
                         TripCountryPill(country = country)
                     }
                 }
+            }
+
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onStoryClick),
+                shape = RoundedCornerShape(999.dp),
+                color = AtlasAccentContainer,
+                border = BorderStroke(1.dp, AtlasOutline),
+            ) {
+                Text(
+                    text = "Veure relat",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasPrimary,
+                )
             }
         }
     }

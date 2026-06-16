@@ -6,7 +6,7 @@ This is the current operational source of truth for Atlas. It records what is im
 
 When this document conflicts with a long-term specification or roadmap, follow this document and the code currently in the repository.
 
-Last updated: 2026-06-15.
+Last updated: 2026-06-16.
 
 ## Current Status
 
@@ -17,11 +17,15 @@ Last updated: 2026-06-15.
   `docs/Atlas_Post_v2.0_Roadmap.md`.
 - v5 M1 Trip Gallery is implemented; automated checks pass and its gallery behavior
   has been confirmed on device.
-- v5 M2 Full-Screen Photo Viewer is implemented; automated checks and core device
-  paging/zoom/pan review pass. Rotation and system-inset edge review remain pending.
-- v5 M3 Country Memories is implemented; automated checks pass. The initial M3 APK
-  installed/launched on device; the latest one-card-per-trip and persistent-collapse
-  refinement awaits device visual review.
+- v5 M2 Full-Screen Photo Viewer is implemented; automated checks and device review
+  pass.
+- v5 M3 Country Memories is implemented; automated checks and device review pass.
+- v5 M4 Optional Photo Metadata is deferred because captions/favorites/taken-date
+  metadata does not yet justify a Room and backup migration.
+- v5 M5 Generated Trip Story has an initial read-only implementation. It adds a story
+  route from trip detail and uses existing trip, stop, excursion, itinerary, note, and
+  photo data. Automated checks pass and the debug APK installs/launches; story-specific
+  visual review remains pending.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -246,11 +250,24 @@ absent when no personal photos match; otherwise `AMAGA/MOSTRA` collapses the car
 persists that preference per country in DataStore across app restarts. Its contract
 is `docs/Atlas_v5.0_Photo_Memories_M3_Spec.md`.
 
-Automated unit tests and `assembleDebug` pass. The previous M3 debug APK installed and
-launched without a runtime crash; the device disconnected before the latest grouping
-and collapse refinement could be installed. Country-detail visual review for M3 and
-rotation/system-inset edge review for M2 remain pending. Later milestones add optional
-photo metadata behind a schema gate and finally a generated read-only trip story.
+M4 is explicitly deferred for now. Captions, favorites, and taken dates would require
+DB v25 and backup v4, so they should not be introduced until there is a concrete
+metadata need.
+
+M5 adds an initial read-only trip story route at `trips/{tripId}/story`, launched from
+trip detail with `Veure relat`. The story is a derived presentation surface: hero
+summary, route overview, optional itinerary context, stop-by-stop sections, anchored
+and unanchored excursions, notes, photos, and a generated summary. It uses existing
+photo files and the shared viewer in read-only mode. Its contract is
+`docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
+
+The final planned v5 step is M6 Photo UI Polish: a visual consistency pass across trip
+records, country memories, viewer overlays, and trip story, with no schema or backup
+change.
+
+Automated `testDebugUnitTest` and `assembleDebug` pass for M5. The debug APK installs
+with `adb install -r` and launches without an immediate `com.atlas` runtime crash.
+Story-specific visual review remains pending.
 
 Follow `docs/Atlas_Post_v2.0_Roadmap.md` for milestone boundaries and non-goals. Do not
 introduce DB v25 or backup v4 during M1–M3.

@@ -196,6 +196,10 @@ travel history meet on the same surface.
 
 ## M4: Optional Photo Metadata
 
+Status: deferred on 2026-06-16. M1-M3 device QA passed, but there is still no
+demonstrated need strong enough to justify a Room and backup migration. Revisit only
+after story mode or day-to-day photo browsing exposes a concrete metadata gap.
+
 ### Entry Gate
 
 Do not start M4 until M1–M3 have passed device review and there is a demonstrated need
@@ -230,6 +234,10 @@ possible rather than persisted as a new field.
 
 ## M5: Generated Trip Story
 
+Status: initial read-only implementation added on 2026-06-16. Automated checks pass
+and the debug APK installs/launches on device; story-specific visual review remains
+pending. Implementation contract: `docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
+
 ### Goal
 
 Generate a read-only narrative from existing trip data. Story mode is a presentation
@@ -262,6 +270,27 @@ A vertically scrolling Compose story containing only sections with useful data:
 - Story mode consumes domain projections built for galleries, timelines, maps, and
   related travel records.
 
+## M6: Final Photo UI Polish
+
+### Goal
+
+Do a final user-facing polish pass across the v5 photo-memory surfaces after M1-M5 are
+implemented and device-reviewed.
+
+### Scope
+
+- Review spacing, carousel gutters, card density, and text hierarchy across trip
+  records, country memories, viewer overlays, and trip story.
+- Confirm Catalan labels, empty states, and action wording are consistent.
+- Verify photo-empty, photo-heavy, narrow-screen, and long-title cases.
+- Keep this polish visual-only unless a small bug is found during review.
+
+### Data Impact
+
+- No Room migration.
+- No backup-format change.
+- No new feature scope.
+
 ## Explicit Non-Goals for v5
 
 - Public profiles, comments, likes, or shared social galleries.
@@ -291,8 +320,9 @@ A vertically scrolling Compose story containing only sections with useful data:
 2. Implement and device-review M1 before introducing the viewer.
 3. Reuse the validated trip sequence for M2.
 4. Reuse M1/M2 components and projections for M3.
-5. Decide whether M4 metadata is justified.
-6. Build M5 only after the memory surfaces and metadata contract are stable.
+5. Defer M4 unless a concrete metadata need appears.
+6. Build M5 from existing data with no schema change.
+7. Finish with M6 UI polish after story mode is device-reviewed.
 
 ## Later Directions
 

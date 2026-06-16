@@ -9,8 +9,8 @@ surface, not a second editor, export format, or social sharing flow.
 
 - Add a `Relat` entry point from trip detail.
 - Add a `trips/{tripId}/story` route.
-- Generate a vertical story from existing trip, stop, excursion, itinerary, note, and
-  photo data.
+- Generate a full-screen slideshow from existing trip, stop, excursion, itinerary,
+  note, map, and photo data.
 - Reuse the existing stop-photo files and the shared full-screen viewer.
 - Keep all story content reactive and derived from existing repositories.
 
@@ -19,7 +19,7 @@ Not included:
 - Room or backup format changes.
 - Editable story blocks.
 - Captions, favorites, photo metadata, video, music, export, or sharing.
-- A custom slideshow engine.
+- A custom image zoom/pan surface. Photo detail remains delegated to the shared viewer.
 
 ## Projection Contract
 
@@ -38,13 +38,19 @@ unanchored or missing-anchor excursions after all trip stops, and photos by
 
 ## UI Contract
 
-- The story screen uses the Warm Editorial Atlas card style.
-- The first screen area summarizes title, date, days, stops, countries, and photos.
-- Route overview uses existing stop/country data and must work without coordinates.
-- Stop cards show date/country context, notes, and photos.
-- Excursions appear in the relevant stop card when anchored, or in a separate section
-  when unanchored.
-- Tapping a photo opens the shared viewer in read-only mode.
+- The story screen is a full-screen `HorizontalPager` slideshow, not a vertical
+  article or editor.
+- Slides include trip title, route map, optional itinerary context, stop intro slides,
+  excursion intro slides, photo slides, and a generated summary.
+- The route slide reuses `TripMapPreview` with existing stop/excursion data and must
+  still be useful without coordinates.
+- Stop and excursion names stay visible on intro and photo slides so the user always
+  knows where a memory belongs.
+- The slideshow provides normal controls: back/close, previous, play/pause, next,
+  progress bars, and current/total count.
+- Auto-play advances through the slide deck and pauses at the end; pressing play at
+  the end restarts from the first slide.
+- Tapping a photo opens the shared viewer in read-only mode and pauses auto-play.
 - Empty photo sets are allowed; the story should still be useful.
 
 ## Data Safety
@@ -56,6 +62,8 @@ records.
 
 - The story appears from trip detail and returns with back navigation.
 - A trip with no photos still shows title, route, stops, notes, and summary.
+- The user can swipe manually between slides.
+- Auto-play can be paused/resumed and does not loop unexpectedly at the end.
 - Photos open at the exact tapped item in the shared viewer.
 - Anchored and unanchored excursions appear in deterministic order.
 - Automated unit tests cover the generated story ordering.

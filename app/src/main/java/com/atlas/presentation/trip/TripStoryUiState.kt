@@ -22,52 +22,59 @@ data class TripStoryUiState(
     val countryNames: List<String> = emptyList(),
     val routeText: String? = null,
     val photoCount: Int = 0,
-    val itinerary: TripStoryItineraryUiState? = null,
-    val stops: List<TripStoryStopUiState> = emptyList(),
-    val unanchoredExcursions: List<TripStoryExcursionUiState> = emptyList(),
+    val mapStops: List<TripStop> = emptyList(),
+    val mapExcursions: List<Excursion> = emptyList(),
+    val slides: List<TripStorySlideUiState> = emptyList(),
 ) {
     val viewerItems: List<PhotoViewerItemUiState>
-        get() = stops.flatMap { stop ->
-            stop.photos + stop.excursions.flatMap { excursion ->
-                excursion.stops.flatMap(TripStoryExcursionStopUiState::photos)
-            }
-        } + unanchoredExcursions.flatMap { excursion ->
-            excursion.stops.flatMap(TripStoryExcursionStopUiState::photos)
+        get() = slides.mapNotNull { slide ->
+            (slide as? TripStorySlideUiState.Photo)?.item
         }
 }
 
-data class TripStoryItineraryUiState(
-    val title: String,
-    val notes: String?,
-    val groupSummary: String?,
-)
+sealed interface TripStorySlideUiState {
+    val id: String
 
-data class TripStoryStopUiState(
-    val id: String,
-    val title: String,
-    val contextText: String?,
-    val notes: String?,
-    val photos: List<PhotoViewerItemUiState>,
-    val excursions: List<TripStoryExcursionUiState>,
-)
+    data class Title(
+        override val id: String,
+        val title: String,
+        val dateText: String?,
+        val dayCountText: String,
+        val stopCount: Int,
+        val countryCount: Int,
+        val photoCount: Int,
+    ) : TripStorySlideUiState
 
-data class TripStoryExcursionUiState(
-    val id: String,
-    val title: String,
-    val notes: String?,
-    val stops: List<TripStoryExcursionStopUiState>,
-) {
-    val photoCount: Int
-        get() = stops.sumOf { it.photos.size }
+    data class Route(
+        override val id: String,
+        val routeText: String?,
+        val countryNames: List<String>,
+    ) : TripStorySlideUiState
+
+    data class Place(
+        override val id: String,
+        val eyebrow: String,
+        val title: String,
+        val contextText: String?,
+        val notes: String?,
+        val photoCount: Int,
+    ) : TripStorySlideUiState
+
+    data class Photo(
+        override val id: String,
+        val item: PhotoViewerItemUiState,
+        val sectionLabel: String,
+    ) : TripStorySlideUiState
+
+    data class Summary(
+        override val id: String,
+        val title: String,
+        val dayCountText: String,
+        val stopCount: Int,
+        val countryCount: Int,
+        val photoCount: Int,
+    ) : TripStorySlideUiState
 }
-
-data class TripStoryExcursionStopUiState(
-    val id: String,
-    val title: String,
-    val contextText: String?,
-    val notes: String?,
-    val photos: List<PhotoViewerItemUiState>,
-)
 
 internal fun buildTripStoryUiState(
     trip: Trip?,
@@ -87,42 +94,8 @@ internal fun buildTripStoryUiState(
     val orderedExcursions = excursions.sortedWith(compareBy(Excursion::sortOrder, Excursion::id))
     val stopIds = orderedStops.mapTo(mutableSetOf(), TripStop::id)
     val anchoredExcursions = orderedExcursions.groupBy(Excursion::anchorTripStopId)
-
-    val storyStops = orderedStops.map { stop ->
-        TripStoryStopUiState(
-            id = stop.id,
-            title = stop.displayTitle?.takeIf(String::isNotBlank) ?: stop.locationName,
-            contextText = stop.contextText(countriesByIso, dateFormatter),
-            notes = stop.notes?.takeIf(String::isNotBlank),
-            photos = tripStopPhotoMap[stop.id].toStoryPhotos(
-                stopId = stop.id,
-                stopType = StopType.TRIP_STOP,
-                tripId = trip.id,
-                title = stop.displayTitle?.takeIf(String::isNotBlank) ?: stop.locationName,
-                contextLabel = "PARADA",
-                dateText = stop.dateRange?.let(dateFormatter::format),
-            ),
-            excursions = anchoredExcursions[stop.id].orEmpty().map { excursion ->
-                excursion.toStoryExcursion(
-                    trip = trip,
-                    countriesByIso = countriesByIso,
-                    photoMap = excursionStopPhotoMap,
-                    dateFormatter = dateFormatter,
-                )
-            },
-        )
-    }
-
-    val unanchored = orderedExcursions
+    val unanchoredExcursions = orderedExcursions
         .filter { it.anchorTripStopId == null || it.anchorTripStopId !in stopIds }
-        .map { excursion ->
-            excursion.toStoryExcursion(
-                trip = trip,
-                countriesByIso = countriesByIso,
-                photoMap = excursionStopPhotoMap,
-                dateFormatter = dateFormatter,
-            )
-        }
 
     val countryNames = (orderedStops.map { it.countryIso2 } + excursions.flatMap { excursion ->
         excursion.stops.map(ExcursionStop::countryIso2)
@@ -131,62 +104,190 @@ internal fun buildTripStoryUiState(
         .distinct()
         .map { iso2 -> countriesByIso[iso2]?.nameCa ?: iso2 }
 
+    val routeText = orderedStops
+        .joinToString(" → ") { it.storyTitle() }
+        .takeIf(String::isNotBlank)
+
+    val dateText = trip.dateRange?.let(dateFormatter::format)
+    val dayCountText = trip.dayCountText()
     val linkedGroups = itineraryGroups
         .filter { group -> itinerary != null && group.itineraryId == itinerary.id }
         .sortedWith(compareBy(ItineraryGroup::sortOrder, ItineraryGroup::id))
 
+    val slides = buildList {
+        add(
+            TripStorySlideUiState.Title(
+                id = "title-${trip.id}",
+                title = trip.title,
+                dateText = dateText,
+                dayCountText = dayCountText,
+                stopCount = orderedStops.size,
+                countryCount = countryNames.size,
+                photoCount = 0,
+            ),
+        )
+        add(
+            TripStorySlideUiState.Route(
+                id = "route-${trip.id}",
+                routeText = routeText,
+                countryNames = countryNames,
+            ),
+        )
+        itinerary?.let {
+            add(
+                TripStorySlideUiState.Place(
+                    id = "itinerary-${it.id}",
+                    eyebrow = "ITINERARI",
+                    title = it.title,
+                    contextText = linkedGroups.takeIf(List<ItineraryGroup>::isNotEmpty)
+                        ?.joinToString(" · ") { group ->
+                            group.title?.takeIf(String::isNotBlank) ?: "Tram ${group.sortOrder + 1}"
+                        },
+                    notes = it.notes?.takeIf(String::isNotBlank),
+                    photoCount = 0,
+                ),
+            )
+        }
+
+        orderedStops.forEach { stop ->
+            val stopPhotos = tripStopPhotoMap[stop.id].toStoryPhotos(
+                stopId = stop.id,
+                stopType = StopType.TRIP_STOP,
+                tripId = trip.id,
+                title = stop.storyTitle(),
+                contextLabel = "PARADA",
+                dateText = stop.dateRange?.let(dateFormatter::format),
+            )
+            add(
+                TripStorySlideUiState.Place(
+                    id = "stop-${stop.id}",
+                    eyebrow = "PARADA",
+                    title = stop.storyTitle(),
+                    contextText = stop.contextText(countriesByIso, dateFormatter),
+                    notes = stop.notes?.takeIf(String::isNotBlank),
+                    photoCount = stopPhotos.size,
+                ),
+            )
+            stopPhotos.forEach { item ->
+                add(
+                    TripStorySlideUiState.Photo(
+                        id = "photo-${item.photo.id}",
+                        item = item,
+                        sectionLabel = stop.storyTitle(),
+                    ),
+                )
+            }
+            anchoredExcursions[stop.id].orEmpty().forEach { excursion ->
+                addExcursionSlides(
+                    trip = trip,
+                    excursion = excursion,
+                    countriesByIso = countriesByIso,
+                    photoMap = excursionStopPhotoMap,
+                    dateFormatter = dateFormatter,
+                )
+            }
+        }
+
+        unanchoredExcursions.forEach { excursion ->
+            addExcursionSlides(
+                trip = trip,
+                excursion = excursion,
+                countriesByIso = countriesByIso,
+                photoMap = excursionStopPhotoMap,
+                dateFormatter = dateFormatter,
+            )
+        }
+    }
+
+    val photoCount = slides.count { it is TripStorySlideUiState.Photo }
+    val finalizedSlides = slides.map { slide ->
+        if (slide is TripStorySlideUiState.Title) {
+            slide.copy(photoCount = photoCount)
+        } else {
+            slide
+        }
+    } + TripStorySlideUiState.Summary(
+        id = "summary-${trip.id}",
+        title = trip.title,
+        dayCountText = dayCountText,
+        stopCount = orderedStops.size,
+        countryCount = countryNames.size,
+        photoCount = photoCount,
+    )
+
     return TripStoryUiState(
         trip = trip,
-        dateText = trip.dateRange?.let(dateFormatter::format),
-        dayCountText = trip.dayCountText(),
+        dateText = dateText,
+        dayCountText = dayCountText,
         stopCount = orderedStops.size,
         countryNames = countryNames,
-        routeText = orderedStops.joinToString(" → ") { it.displayTitle?.takeIf(String::isNotBlank) ?: it.locationName }
-            .takeIf(String::isNotBlank),
-        photoCount = storyStops.sumOf { stop ->
-            stop.photos.size + stop.excursions.sumOf(TripStoryExcursionUiState::photoCount)
-        } + unanchored.sumOf(TripStoryExcursionUiState::photoCount),
-        itinerary = itinerary?.let {
-            TripStoryItineraryUiState(
-                title = it.title,
-                notes = it.notes?.takeIf(String::isNotBlank),
-                groupSummary = linkedGroups.takeIf(List<ItineraryGroup>::isNotEmpty)
-                    ?.joinToString(" · ") { group -> group.title?.takeIf(String::isNotBlank) ?: "Tram ${group.sortOrder + 1}" },
-            )
-        },
-        stops = storyStops,
-        unanchoredExcursions = unanchored,
+        routeText = routeText,
+        photoCount = photoCount,
+        mapStops = orderedStops,
+        mapExcursions = orderedExcursions,
+        slides = finalizedSlides,
     )
 }
 
-private fun Excursion.toStoryExcursion(
+private fun MutableList<TripStorySlideUiState>.addExcursionSlides(
     trip: Trip,
+    excursion: Excursion,
     countriesByIso: Map<String, Country>,
     photoMap: Map<String, List<StopPhoto>>,
     dateFormatter: FlexibleDateFormatter,
-): TripStoryExcursionUiState =
-    TripStoryExcursionUiState(
-        id = id,
-        title = title,
-        notes = notes?.takeIf(String::isNotBlank),
-        stops = stops.sortedWith(compareBy(ExcursionStop::sortOrder, ExcursionStop::id))
-            .map { stop ->
-                TripStoryExcursionStopUiState(
-                    id = stop.id,
-                    title = stop.locationName,
-                    contextText = stop.contextText(countriesByIso, dateFormatter),
-                    notes = stop.notes?.takeIf(String::isNotBlank),
-                    photos = photoMap[stop.id].toStoryPhotos(
-                        stopId = stop.id,
-                        stopType = StopType.EXCURSION_STOP,
-                        tripId = trip.id,
-                        title = stop.locationName,
-                        contextLabel = "EXCURSIÓ · $title",
-                        dateText = stop.dateRange?.let(dateFormatter::format),
-                    ),
-                )
-            },
+) {
+    val orderedStops = excursion.stops.sortedWith(compareBy(ExcursionStop::sortOrder, ExcursionStop::id))
+    val photos = orderedStops.flatMap { stop ->
+        photoMap[stop.id].toStoryPhotos(
+            stopId = stop.id,
+            stopType = StopType.EXCURSION_STOP,
+            tripId = trip.id,
+            title = stop.locationName,
+            contextLabel = "EXCURSIÓ · ${excursion.title}",
+            dateText = stop.dateRange?.let(dateFormatter::format),
+        )
+    }
+    add(
+        TripStorySlideUiState.Place(
+            id = "excursion-${excursion.id}",
+            eyebrow = "EXCURSIÓ",
+            title = excursion.title,
+            contextText = orderedStops.joinToString(" · ") { it.locationName }
+                .takeIf(String::isNotBlank),
+            notes = excursion.notes?.takeIf(String::isNotBlank),
+            photoCount = photos.size,
+        ),
     )
+    orderedStops.forEach { stop ->
+        val stopPhotos = photoMap[stop.id].toStoryPhotos(
+            stopId = stop.id,
+            stopType = StopType.EXCURSION_STOP,
+            tripId = trip.id,
+            title = stop.locationName,
+            contextLabel = "EXCURSIÓ · ${excursion.title}",
+            dateText = stop.dateRange?.let(dateFormatter::format),
+        )
+        add(
+            TripStorySlideUiState.Place(
+                id = "excursion-stop-${stop.id}",
+                eyebrow = "PARADA D'EXCURSIÓ",
+                title = stop.locationName,
+                contextText = stop.contextText(countriesByIso, dateFormatter),
+                notes = stop.notes?.takeIf(String::isNotBlank),
+                photoCount = stopPhotos.size,
+            ),
+        )
+        stopPhotos.forEach { item ->
+            add(
+                TripStorySlideUiState.Photo(
+                    id = "photo-${item.photo.id}",
+                    item = item,
+                    sectionLabel = "${excursion.title} · ${stop.locationName}",
+                ),
+            )
+        }
+    }
+}
 
 private fun List<StopPhoto>?.toStoryPhotos(
     stopId: String,
@@ -209,6 +310,9 @@ private fun List<StopPhoto>?.toStoryPhotos(
                 tripId = tripId,
             )
         }
+
+private fun TripStop.storyTitle(): String =
+    displayTitle?.takeIf(String::isNotBlank) ?: locationName
 
 private fun TripStop.contextText(
     countriesByIso: Map<String, Country>,

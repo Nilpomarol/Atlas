@@ -4,13 +4,17 @@ import com.atlas.domain.model.Country
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.model.Flight
+import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.domain.util.utcAwareDepartureSortKey
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
@@ -85,10 +89,12 @@ internal fun buildTripStoryUiState(
     itineraryGroups: List<ItineraryGroup>,
     tripStopPhotoMap: Map<String, List<StopPhoto>>,
     excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    airports: List<Airport> = emptyList(),
     dateFormatter: FlexibleDateFormatter = FlexibleDateFormatter(),
 ): TripStoryUiState {
     if (trip == null) return TripStoryUiState()
 
+    val airportsById = airports.associateBy(Airport::id)
     val countriesByIso = countries.associateBy { it.iso2 }
     val orderedStops = stops.sortedWith(compareBy(TripStop::sortOrder, TripStop::id))
     val orderedExcursions = excursions.sortedWith(compareBy(Excursion::sortOrder, Excursion::id))
@@ -96,6 +102,7 @@ internal fun buildTripStoryUiState(
     val anchoredExcursions = orderedExcursions.groupBy(Excursion::anchorTripStopId)
     val unanchoredExcursions = orderedExcursions
         .filter { it.anchorTripStopId == null || it.anchorTripStopId !in stopIds }
+    val itineraryGroupsById = itineraryGroups.associateBy(ItineraryGroup::id)
 
     val countryNames = (orderedStops.map { it.countryIso2 } + excursions.flatMap { excursion ->
         excursion.stops.map(ExcursionStop::countryIso2)
@@ -105,15 +112,11 @@ internal fun buildTripStoryUiState(
         .map { iso2 -> countriesByIso[iso2]?.nameCa ?: iso2 }
 
     val routeText = orderedStops
-        .joinToString(" → ") { it.storyTitle() }
+        .joinToString(" → ") { it.storyTitle(itineraryGroupsById, airportsById) }
         .takeIf(String::isNotBlank)
 
     val dateText = trip.dateRange?.let(dateFormatter::format)
     val dayCountText = trip.dayCountText()
-    val linkedGroups = itineraryGroups
-        .filter { group -> itinerary != null && group.itineraryId == itinerary.id }
-        .sortedWith(compareBy(ItineraryGroup::sortOrder, ItineraryGroup::id))
-
     val slides = buildList {
         add(
             TripStorySlideUiState.Title(
@@ -133,36 +136,23 @@ internal fun buildTripStoryUiState(
                 countryNames = countryNames,
             ),
         )
-        itinerary?.let {
-            add(
-                TripStorySlideUiState.Place(
-                    id = "itinerary-${it.id}",
-                    eyebrow = "ITINERARI",
-                    title = it.title,
-                    contextText = linkedGroups.takeIf(List<ItineraryGroup>::isNotEmpty)
-                        ?.joinToString(" · ") { group ->
-                            group.title?.takeIf(String::isNotBlank) ?: "Tram ${group.sortOrder + 1}"
-                        },
-                    notes = it.notes?.takeIf(String::isNotBlank),
-                    photoCount = 0,
-                ),
-            )
-        }
 
         orderedStops.forEach { stop ->
+            val stopTitle = stop.storyTitle(itineraryGroupsById, airportsById)
+            val stopEyebrow = stop.storyEyebrow()
             val stopPhotos = tripStopPhotoMap[stop.id].toStoryPhotos(
                 stopId = stop.id,
                 stopType = StopType.TRIP_STOP,
                 tripId = trip.id,
-                title = stop.storyTitle(),
-                contextLabel = "PARADA",
+                title = stopTitle,
+                contextLabel = stopEyebrow,
                 dateText = stop.dateRange?.let(dateFormatter::format),
             )
             add(
                 TripStorySlideUiState.Place(
                     id = "stop-${stop.id}",
-                    eyebrow = "PARADA",
-                    title = stop.storyTitle(),
+                    eyebrow = stopEyebrow,
+                    title = stopTitle,
                     contextText = stop.contextText(countriesByIso, dateFormatter),
                     notes = stop.notes?.takeIf(String::isNotBlank),
                     photoCount = stopPhotos.size,
@@ -173,7 +163,7 @@ internal fun buildTripStoryUiState(
                     TripStorySlideUiState.Photo(
                         id = "photo-${item.photo.id}",
                         item = item,
-                        sectionLabel = stop.storyTitle(),
+                        sectionLabel = stopTitle,
                     ),
                 )
             }
@@ -311,8 +301,39 @@ private fun List<StopPhoto>?.toStoryPhotos(
             )
         }
 
-private fun TripStop.storyTitle(): String =
-    displayTitle?.takeIf(String::isNotBlank) ?: locationName
+private fun TripStop.storyTitle(
+    itineraryGroupsById: Map<String, ItineraryGroup>,
+    airportsById: Map<String, Airport>,
+): String =
+    displayTitle?.takeIf(String::isNotBlank)
+        ?: itineraryRouteTitle(itineraryGroupsById, airportsById)
+        ?: locationName.takeIf(String::isNotBlank)
+        ?: "Tram d'itinerari"
+
+private fun TripStop.storyEyebrow(): String =
+    if (source == TripStopSource.ITINERARY_GROUP) "VOL" else "PARADA"
+
+private fun TripStop.itineraryRouteTitle(
+    itineraryGroupsById: Map<String, ItineraryGroup>,
+    airportsById: Map<String, Airport>,
+): String? {
+    if (source != TripStopSource.ITINERARY_GROUP) return null
+    val group = itineraryGroupId?.let(itineraryGroupsById::get) ?: return null
+    return group.routeDisplayTitle(airportsById)
+}
+
+private fun ItineraryGroup.routeDisplayTitle(airportsById: Map<String, Airport>): String? {
+    val flights = flights.sortedWith(
+        compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
+            .thenBy { it.utcAwareDepartureSortKey() ?: "" },
+    )
+    val origin = flights.firstOrNull()?.originAirportId?.takeIf(String::isNotBlank) ?: return null
+    val destination = flights.lastOrNull()?.destinationAirportId?.takeIf(String::isNotBlank) ?: return null
+    return "${origin.displayAirportName(airportsById)} → ${destination.displayAirportName(airportsById)}"
+}
+
+private fun String.displayAirportName(airportsById: Map<String, Airport>): String =
+    airportsById[this]?.city?.takeIf(String::isNotBlank) ?: this
 
 private fun TripStop.contextText(
     countriesByIso: Map<String, Country>,

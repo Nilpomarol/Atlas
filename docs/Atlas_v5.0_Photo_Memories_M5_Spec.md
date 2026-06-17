@@ -11,7 +11,7 @@ surface, not a second editor, export format, or social sharing flow.
 - Add a `trips/{tripId}/story` route.
 - Generate a full-screen slideshow from existing trip, stop, excursion, itinerary,
   note, map, and photo data.
-- Reuse the existing stop-photo files and the shared full-screen viewer.
+- Reuse the existing stop-photo files.
 - Keep all story content reactive and derived from existing repositories.
 
 Not included:
@@ -19,7 +19,7 @@ Not included:
 - Room or backup format changes.
 - Editable story blocks.
 - Captions, favorites, photo metadata, video, music, export, or sharing.
-- A custom image zoom/pan surface. Photo detail remains delegated to the shared viewer.
+- A custom image zoom/pan surface inside story mode.
 
 ## Projection Contract
 
@@ -39,18 +39,22 @@ unanchored or missing-anchor excursions after all trip stops, and photos by
 ## UI Contract
 
 - The story screen is a full-screen `HorizontalPager` slideshow, not a vertical
-  article or editor.
-- Slides include trip title, route map, optional itinerary context, stop intro slides,
-  excursion intro slides, photo slides, and a generated summary.
+  article or editor. User dragging is disabled.
+- The story route opts out of the app scaffold bottom navigation and scaffold padding
+  so the slideshow owns the full app window.
+- Slides include trip title, route map, stop intro slides, itinerary-derived flight
+  slides, excursion intro slides, photo slides, and a generated summary.
 - The route slide reuses `TripMapPreview` with existing stop/excursion data and must
   still be useful without coordinates.
-- Stop and excursion names stay visible on intro and photo slides so the user always
-  knows where a memory belongs.
+- Stop, flight, and excursion names stay visible on intro and photo slides so the user
+  always knows where a memory belongs.
+- Itinerary-derived stops are labeled `VOL` in story mode, not `PARADA`.
 - The slideshow provides normal controls: back/close, previous, play/pause, next,
   progress bars, and current/total count.
+- Tapping the left half goes to the previous slide; tapping the right half goes to the
+  next slide. Photo taps are slide navigation, not photo-viewer entry points.
 - Auto-play advances through the slide deck and pauses at the end; pressing play at
   the end restarts from the first slide.
-- Tapping a photo opens the shared viewer in read-only mode and pauses auto-play.
 - Empty photo sets are allowed; the story should still be useful.
 
 ## Data Safety
@@ -62,8 +66,7 @@ records.
 
 - The story appears from trip detail and returns with back navigation.
 - A trip with no photos still shows title, route, stops, notes, and summary.
-- The user can swipe manually between slides.
+- The user can tap left/right to move between slides.
 - Auto-play can be paused/resumed and does not loop unexpectedly at the end.
-- Photos open at the exact tapped item in the shared viewer.
 - Anchored and unanchored excursions appear in deterministic order.
 - Automated unit tests cover the generated story ordering.

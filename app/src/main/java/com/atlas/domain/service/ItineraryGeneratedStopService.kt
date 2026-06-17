@@ -26,7 +26,8 @@ class ItineraryGeneratedStopService {
                 countryIso2 = airport.countryIso2,
                 latitude = airport.latitude,
                 longitude = airport.longitude,
-                displayTitle = group.title?.trim()?.ifBlank { null },
+                displayTitle = group.title?.trim()?.ifBlank { null }
+                    ?: group.routeDisplayTitle(airportsById),
                 sortOrder = 10_000 + index,
             )
         }
@@ -37,10 +38,7 @@ class ItineraryGeneratedStopService {
         isOnlyGroup: Boolean,
         isLastGroup: Boolean,
     ): String? {
-        val flights = group.flights.sortedWith(
-            compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
-                .thenBy { it.utcAwareDepartureSortKey() ?: "" },
-        )
+        val flights = group.sortedFlights()
         val firstFlight = flights.firstOrNull() ?: return null
         val lastFlight = flights.lastOrNull() ?: return null
 
@@ -50,4 +48,19 @@ class ItineraryGeneratedStopService {
             firstFlight.originAirportId
         }
     }
+
+    private fun ItineraryGroup.routeDisplayTitle(airportsById: Map<String, Airport>): String? {
+        val flights = sortedFlights()
+        val originAirportId = flights.firstOrNull()?.originAirportId ?: return null
+        val destinationAirportId = flights.lastOrNull()?.destinationAirportId ?: return null
+        val origin = airportsById[originAirportId]?.city?.takeIf(String::isNotBlank) ?: originAirportId
+        val destination = airportsById[destinationAirportId]?.city?.takeIf(String::isNotBlank) ?: destinationAirportId
+        return "$origin → $destination"
+    }
+
+    private fun ItineraryGroup.sortedFlights(): List<Flight> =
+        flights.sortedWith(
+            compareBy<Flight> { it.sortOrder ?: Int.MAX_VALUE }
+                .thenBy { it.utcAwareDepartureSortKey() ?: "" },
+        )
 }

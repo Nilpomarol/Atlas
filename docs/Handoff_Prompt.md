@@ -6,7 +6,7 @@ This is the current operational source of truth for Atlas. It records what is im
 
 When this document conflicts with a long-term specification or roadmap, follow this document and the code currently in the repository.
 
-Last updated: 2026-06-16.
+Last updated: 2026-06-17.
 
 ## Current Status
 
@@ -24,9 +24,12 @@ Last updated: 2026-06-16.
   metadata does not yet justify a Room and backup migration.
 - v5 M5 Generated Trip Story has a read-only slideshow implementation. It adds a story
   route from trip detail and uses existing trip, stop, excursion, itinerary, map, note,
-  and photo data. It supports swipe, previous/next, play/pause auto-play, progress,
-  and read-only shared viewer opening from photo slides. Automated checks pass and the
-  debug APK installs/launches; story-specific visual review remains pending.
+  and photo data. It supports left/right tap navigation, previous/next controls,
+  play/pause auto-play, progress, full-screen slides with swipe disabled, no standalone
+  itinerary slide, itinerary-derived flight slides labeled `VOL` with `Origin →
+  Destination` titles, and a story destination that bypasses the app bottom
+  navigation/scaffold padding. Automated checks pass and the debug APK installs/
+  launches; story-specific visual review remains pending.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -257,11 +260,13 @@ metadata need.
 
 M5 adds a read-only trip story route at `trips/{tripId}/story`, launched from trip
 detail with `Veure relat`. The story is a full-screen slideshow derived from existing
-data: title/stats, route map, optional itinerary context, stop intro slides, anchored
-and unanchored excursion slides, contextual photo slides, and a generated summary. It
-supports manual swiping, previous/next controls, play/pause auto-play that stops at
-the end, progress bars, and the shared viewer in read-only mode for photo detail. Its
-contract is
+data: title/stats, route map, stop intro slides, itinerary-derived flight slides
+labeled `VOL` with `Origin → Destination` titles, anchored and unanchored excursion
+slides, contextual photo slides, and a generated summary. It intentionally has no
+standalone itinerary slide. It
+supports left/right tap navigation, previous/next controls, play/pause auto-play that
+stops at the end, progress bars, full-screen slides with swipe disabled, and no app
+bottom navigation on the story destination. Its contract is
 `docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
 
 The final planned v5 step is M6 Photo UI Polish: a visual consistency pass across trip

@@ -27,6 +27,7 @@ class ItineraryGeneratedStopServiceTest {
         assertEquals("group-1", stops.single().itineraryGroupId)
         assertEquals("Tokyo", stops.single().locationName)
         assertEquals("JP", stops.single().countryIso2)
+        assertEquals("Barcelona → Tokyo", stops.single().displayTitle)
     }
 
     @Test
@@ -49,16 +50,35 @@ class ItineraryGeneratedStopServiceTest {
 
         assertEquals(listOf("Tokyo", "Tokyo"), stops.map { it.locationName })
         assertEquals(listOf("JP", "JP"), stops.map { it.countryIso2 })
+        assertEquals(listOf("Barcelona → Tokyo", "Tokyo → Barcelona"), stops.map { it.displayTitle })
+    }
+
+    @Test
+    fun groupTitleOverridesGeneratedRouteTitle() {
+        val group = group(
+            id = "group-1",
+            sortOrder = 0,
+            title = "Anada",
+            flights = listOf(flight(originAirportId = "BCN", destinationAirportId = "HND")),
+        )
+
+        val stops = service.buildGeneratedStops(
+            groups = listOf(group),
+            airportsById = airportsById,
+        )
+
+        assertEquals("Anada", stops.single().displayTitle)
     }
 
     private fun group(
         id: String,
         sortOrder: Int,
+        title: String? = null,
         flights: List<Flight>,
     ): ItineraryGroup = ItineraryGroup(
         id = id,
         itineraryId = "itinerary-1",
-        title = null,
+        title = title,
         status = TravelStatus.PLANNED,
         sortOrder = sortOrder,
         flights = flights,

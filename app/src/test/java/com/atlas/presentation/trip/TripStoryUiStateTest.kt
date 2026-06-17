@@ -3,15 +3,19 @@ package com.atlas.presentation.trip
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryType
 import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
+import com.atlas.domain.model.Flight
+import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
+import com.atlas.domain.model.TripStopSource
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -108,6 +112,55 @@ class TripStoryUiStateTest {
         assertTrue(result.slides.any { it is TripStorySlideUiState.Route })
     }
 
+    @Test
+    fun `uses itinerary route title for generated stop without display title`() {
+        val generatedStop = stop(
+            id = "itinerary-group-group-1",
+            locationName = "",
+            source = TripStopSource.ITINERARY_GROUP,
+            itineraryGroupId = "group-1",
+            displayTitle = null,
+        )
+
+        val result = buildTripStoryUiState(
+            trip = trip(),
+            stops = listOf(generatedStop),
+            countries = listOf(country("ES")),
+            excursions = emptyList(),
+            itinerary = null,
+            itineraryGroups = listOf(
+                ItineraryGroup(
+                    id = "group-1",
+                    itineraryId = "itinerary-1",
+                    title = null,
+                    status = TravelStatus.PLANNED,
+                    sortOrder = 0,
+                    flights = listOf(flight(originAirportId = "BCN", destinationAirportId = "HND")),
+                ),
+            ),
+            tripStopPhotoMap = mapOf(
+                generatedStop.id to listOf(photo("generated-photo", generatedStop.id)),
+            ),
+            excursionStopPhotoMap = emptyMap(),
+            airports = listOf(
+                airport(id = "BCN", city = "Barcelona"),
+                airport(id = "HND", city = "Tokyo"),
+            ),
+        )
+
+        val stopSlide = result.slides
+            .filterIsInstance<TripStorySlideUiState.Place>()
+            .single { it.id == "stop-itinerary-group-group-1" }
+        assertEquals("Barcelona → Tokyo", stopSlide.title)
+        assertEquals("VOL", stopSlide.eyebrow)
+        assertEquals("Barcelona → Tokyo", result.routeText)
+        assertEquals("VOL", result.viewerItems.single().contextLabel)
+        assertEquals(
+            "Barcelona → Tokyo",
+            result.slides.filterIsInstance<TripStorySlideUiState.Photo>().single().sectionLabel,
+        )
+    }
+
     private fun trip() = Trip(
         id = "trip",
         title = "Ruta",
@@ -123,16 +176,23 @@ class TripStoryUiStateTest {
     private fun stop(
         id: String,
         sortOrder: Int = 0,
+        locationName: String = id,
+        source: TripStopSource = TripStopSource.MANUAL,
+        itineraryGroupId: String? = null,
+        displayTitle: String? = null,
     ) = TripStop(
         id = id,
         tripId = "trip",
-        locationName = id,
+        locationName = locationName,
         countryIso2 = "ES",
         latitude = null,
         longitude = null,
         dateRange = null,
         notes = null,
         sortOrder = sortOrder,
+        source = source,
+        itineraryGroupId = itineraryGroupId,
+        displayTitle = displayTitle,
     )
 
     private fun excursion(
@@ -200,5 +260,40 @@ class TripStoryUiStateTest {
         filename = "$id.jpg",
         sortOrder = sortOrder,
         createdAt = "2026-06-16T00:00:00Z",
+    )
+
+    private fun flight(
+        originAirportId: String,
+        destinationAirportId: String,
+    ): Flight = Flight(
+        id = "$originAirportId-$destinationAirportId",
+        originAirportId = originAirportId,
+        destinationAirportId = destinationAirportId,
+        status = TravelStatus.PLANNED,
+        scheduledDepartureAt = null,
+        scheduledArrivalAt = null,
+        actualDepartureAt = null,
+        actualArrivalAt = null,
+        airline = null,
+        flightNumber = null,
+        aircraft = null,
+        notes = null,
+        itineraryGroupId = null,
+        sortOrder = null,
+    )
+
+    private fun airport(
+        id: String,
+        city: String,
+    ): Airport = Airport(
+        id = id,
+        iata = id,
+        icao = null,
+        name = "$city Airport",
+        city = city,
+        countryIso2 = "ES",
+        latitude = 0.0,
+        longitude = 0.0,
+        timezone = null,
     )
 }

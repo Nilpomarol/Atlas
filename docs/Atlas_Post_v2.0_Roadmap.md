@@ -249,9 +249,9 @@ A full-screen Compose slideshow containing only derived travel data:
 
 1. trip title, dates, days, stops, countries, and photo count;
 2. route map overview with country/stop context;
-3. optional itinerary context;
-4. stop intro slides with notes and photo counts;
-5. photo slides with visible stop/excursion context;
+3. stop intro slides with notes and photo counts;
+4. itinerary-derived flight slides labeled `VOL`;
+5. photo slides with visible stop/flight/excursion context;
 6. anchored excursion slides immediately after their owning stop;
 7. unanchored or missing-anchor excursions after all trip stops;
 8. compact trip statistics and closing summary.
@@ -261,8 +261,10 @@ A full-screen Compose slideshow containing only derived travel data:
 - Story order comes from existing trip, stop, excursion, itinerary, and flight order.
 - Empty sections are omitted.
 - Approximate dates remain approximate.
-- The user can swipe manually, use previous/next controls, pause/resume auto-play, and
-  open the existing read-only photo viewer from photo slides.
+- The user can tap left/right, use previous/next controls, and pause/resume auto-play.
+  Swipe gestures are disabled so auto-play and manual movement always settle on a full
+  slide.
+- Story mode hides the normal app bottom navigation and bypasses scaffold padding.
 - Story mode must work without photos.
 - No separate story database, manual slide editor, music, video rendering, or social
   sharing in the initial milestone.

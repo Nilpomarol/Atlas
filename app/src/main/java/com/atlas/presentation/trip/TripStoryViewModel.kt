@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
+import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -26,12 +27,14 @@ class TripStoryViewModel(
     excursionRepository: ExcursionRepository,
     itineraryRepository: ItineraryRepository,
     stopPhotoRepository: StopPhotoRepository,
+    airportRepository: AirportRepository,
     tripId: String,
 ) : ViewModel() {
     private val tripFlow = tripRepository.observeTrip(tripId)
     private val stopsFlow = tripRepository.observeTripStops(tripId)
     private val countriesFlow = countryRepository.observeTrackableCountries()
     private val excursionsFlow = excursionRepository.observeExcursions(tripId)
+    private val airportsFlow = airportRepository.observeAirports()
     private val contentFlow = combine(
         tripFlow,
         stopsFlow,
@@ -73,7 +76,8 @@ class TripStoryViewModel(
         contentFlow,
         itineraryFlow,
         photosFlow,
-    ) { content, itineraries, photos ->
+        airportsFlow,
+    ) { content, itineraries, photos, airports ->
         val linkedItinerary = content.trip?.let { currentTrip ->
             itineraries.itineraries.firstOrNull { it.tripId == currentTrip.id }
         }
@@ -86,6 +90,7 @@ class TripStoryViewModel(
             itineraryGroups = itineraries.itineraryGroups,
             tripStopPhotoMap = photos.tripStopPhotos,
             excursionStopPhotoMap = photos.excursionStopPhotos,
+            airports = airports,
         )
     }
         .stateIn(
@@ -100,6 +105,7 @@ class TripStoryViewModel(
         private val excursionRepository: ExcursionRepository,
         private val itineraryRepository: ItineraryRepository,
         private val stopPhotoRepository: StopPhotoRepository,
+        private val airportRepository: AirportRepository,
         private val tripId: String,
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -110,6 +116,7 @@ class TripStoryViewModel(
                 excursionRepository = excursionRepository,
                 itineraryRepository = itineraryRepository,
                 stopPhotoRepository = stopPhotoRepository,
+                airportRepository = airportRepository,
                 tripId = tripId,
             ) as T
     }

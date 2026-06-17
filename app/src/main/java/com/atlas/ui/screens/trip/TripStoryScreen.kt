@@ -3,6 +3,7 @@ package com.atlas.ui.screens.trip
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,13 +56,10 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
-import com.atlas.presentation.trip.PhotoViewerItemUiState
 import com.atlas.presentation.trip.TripStorySlideUiState
 import com.atlas.presentation.trip.TripStoryUiState
-import com.atlas.ui.components.PhotoViewerDialog
 import com.atlas.ui.theme.AtlasBackground
 import com.atlas.ui.theme.AtlasPrimary
-import com.atlas.ui.theme.AtlasSurface
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -73,7 +71,6 @@ fun TripStoryScreen(
     uiState: TripStoryUiState,
     onBackClick: () -> Unit,
 ) {
-    var selectedPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
     var autoPlay by rememberSaveable { mutableStateOf(true) }
     val slides = uiState.slides
 
@@ -91,15 +88,24 @@ fun TripStoryScreen(
         }
     }
 
-    LaunchedEffect(autoPlay, pagerState.currentPage, slides.size) {
+    LaunchedEffect(autoPlay, slides.size) {
         if (!autoPlay || slides.size < 2) return@LaunchedEffect
-        delay(AUTO_PLAY_DELAY_MS)
-        val current = pagerState.currentPage
-        if (current < slides.lastIndex) {
-            pagerState.animateScrollToPage(current + 1)
-        } else {
-            autoPlay = false
+        while (autoPlay) {
+            delay(AUTO_PLAY_DELAY_MS)
+            val current = pagerState.currentPage
+            if (current < slides.lastIndex) {
+                pagerState.animateScrollToPage(current + 1)
+            } else {
+                autoPlay = false
+                break
+            }
         }
+    }
+
+    fun goToPage(target: Int) {
+        if (target !in slides.indices || target == pagerState.currentPage) return
+        autoPlay = false
+        scope.launch { pagerState.animateScrollToPage(target) }
     }
 
     Box(
@@ -110,17 +116,21 @@ fun TripStoryScreen(
         HorizontalPager(
             state = pagerState,
             key = { page -> slides[page].id },
+            userScrollEnabled = false,
             modifier = Modifier.fillMaxSize(),
         ) { page ->
             StorySlide(
                 slide = slides[page],
                 uiState = uiState,
-                onPhotoClick = { item ->
-                    autoPlay = false
-                    selectedPhotoId = item.photo.id
-                },
             )
         }
+
+        StoryTapZones(
+            canGoBack = pagerState.currentPage > 0,
+            canGoForward = pagerState.currentPage < slides.lastIndex,
+            onPrevious = { goToPage(pagerState.currentPage - 1) },
+            onNext = { goToPage(pagerState.currentPage + 1) },
+        )
 
         StoryTopControls(
             currentPage = pagerState.currentPage,
@@ -133,31 +143,22 @@ fun TripStoryScreen(
             canGoBack = pagerState.currentPage > 0,
             canGoForward = pagerState.currentPage < slides.lastIndex,
             onPrevious = {
-                autoPlay = false
-                val target = (pagerState.currentPage - 1).coerceAtLeast(0)
-                scope.launch { pagerState.animateScrollToPage(target) }
+                goToPage(pagerState.currentPage - 1)
             },
             onNext = {
-                autoPlay = false
-                val target = (pagerState.currentPage + 1).coerceAtMost(slides.lastIndex)
-                scope.launch { pagerState.animateScrollToPage(target) }
+                goToPage(pagerState.currentPage + 1)
             },
             onPlayPause = {
-                if (!autoPlay && pagerState.currentPage == slides.lastIndex) {
-                    scope.launch { pagerState.animateScrollToPage(0) }
+                if (autoPlay) {
+                    autoPlay = false
+                } else {
+                    if (pagerState.currentPage == slides.lastIndex) {
+                        scope.launch { pagerState.scrollToPage(0) }
+                    }
+                    autoPlay = true
                 }
-                autoPlay = !autoPlay
             },
             modifier = Modifier.align(Alignment.BottomCenter),
-        )
-    }
-
-    selectedPhotoId?.let { photoId ->
-        PhotoViewerDialog(
-            items = uiState.viewerItems,
-            initialPhotoId = photoId,
-            coverPhotoFilename = uiState.trip?.coverPhotoFilename,
-            onDismiss = { selectedPhotoId = null },
         )
     }
 }
@@ -186,13 +187,12 @@ private fun LoadingStory(onBackClick: () -> Unit) {
 private fun StorySlide(
     slide: TripStorySlideUiState,
     uiState: TripStoryUiState,
-    onPhotoClick: (PhotoViewerItemUiState) -> Unit,
 ) {
     when (slide) {
         is TripStorySlideUiState.Title -> TitleSlide(slide)
         is TripStorySlideUiState.Route -> RouteSlide(slide, uiState)
         is TripStorySlideUiState.Place -> PlaceSlide(slide)
-        is TripStorySlideUiState.Photo -> PhotoSlide(slide, onPhotoClick)
+        is TripStorySlideUiState.Photo -> PhotoSlide(slide)
         is TripStorySlideUiState.Summary -> SummarySlide(slide)
     }
 }
@@ -313,17 +313,12 @@ private fun PlaceSlide(slide: TripStorySlideUiState.Place) {
 @Composable
 private fun PhotoSlide(
     slide: TripStorySlideUiState.Photo,
-    onPhotoClick: (PhotoViewerItemUiState) -> Unit,
 ) {
     val context = LocalContext.current
     val file = remember(slide.item.photo.filename) {
         File(context.filesDir, "photos/${slide.item.photo.filename}")
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable { onPhotoClick(slide.item) },
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
         SubcomposeAsyncImage(
             model = file,
             contentDescription = "Foto de ${slide.item.title}",
@@ -384,6 +379,41 @@ private fun PhotoSlide(
 }
 
 @Composable
+private fun StoryTapZones(
+    canGoBack: Boolean,
+    canGoForward: Boolean,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Row(modifier = Modifier.fillMaxSize()) {
+        val leftInteractionSource = remember { MutableInteractionSource() }
+        val rightInteractionSource = remember { MutableInteractionSource() }
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clickable(
+                    enabled = canGoBack,
+                    interactionSource = leftInteractionSource,
+                    indication = null,
+                    onClick = onPrevious,
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clickable(
+                    enabled = canGoForward,
+                    interactionSource = rightInteractionSource,
+                    indication = null,
+                    onClick = onNext,
+                ),
+        )
+    }
+}
+
+@Composable
 private fun SummarySlide(slide: TripStorySlideUiState.Summary) {
     CenterSlide {
         Text(
@@ -425,21 +455,17 @@ private fun CenterSlide(
             .background(Color.Black),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(
+        Column(
             modifier = Modifier
-                .padding(horizontal = 22.dp)
-                .then(if (contentMaxWidth) Modifier.fillMaxWidth() else Modifier),
-            shape = RoundedCornerShape(26.dp),
-            color = AtlasSurface.copy(alpha = 0.14f),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-        ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 22.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                content = content,
-            )
-        }
+                .fillMaxSize()
+                .padding(
+                    horizontal = if (contentMaxWidth) 16.dp else 28.dp,
+                    vertical = 112.dp,
+                ),
+            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            content = content,
+        )
     }
 }
 

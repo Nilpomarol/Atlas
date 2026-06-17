@@ -43,46 +43,48 @@ import com.atlas.ui.theme.AtlasSurface
 fun AtlasNavHost() {
     val navController = rememberNavController()
     val destinations = AtlasDestination.entries
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+    val isStoryRoute = currentDestination?.route == TRIP_STORY_ROUTE
 
     Scaffold(
         containerColor = AtlasBackground,
         bottomBar = {
-            NavigationBar(
-                containerColor = AtlasSurface,
-                tonalElevation = 0.dp,
-            ) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
-                destinations.forEach { destination ->
-                    NavigationBarItem(
-                        selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true,
-                        onClick = {
-                            navController.navigate(destination.route) {
-                                popUpTo(navController.graph.startDestinationId)
-                                launchSingleTop = true
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = destination.title,
-                            )
-                        },
-                        label = {
-                            Text(
-                                text = destination.title,
-                                style = MaterialTheme.typography.labelSmall,
-                            )
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = AtlasPrimary,
-                            selectedTextColor = AtlasOnSurfaceStrong,
-                            indicatorColor = AtlasAccentContainer,
-                            unselectedIconColor = AtlasOnSurfaceMuted,
-                            unselectedTextColor = AtlasOnSurfaceMuted,
-                        ),
-                    )
+            if (!isStoryRoute) {
+                NavigationBar(
+                    containerColor = AtlasSurface,
+                    tonalElevation = 0.dp,
+                ) {
+                    destinations.forEach { destination ->
+                        NavigationBarItem(
+                            selected = currentDestination?.hierarchy?.any { it.route == destination.route } == true,
+                            onClick = {
+                                navController.navigate(destination.route) {
+                                    popUpTo(navController.graph.startDestinationId)
+                                    launchSingleTop = true
+                                }
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = destination.title,
+                                )
+                            },
+                            label = {
+                                Text(
+                                    text = destination.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = AtlasPrimary,
+                                selectedTextColor = AtlasOnSurfaceStrong,
+                                indicatorColor = AtlasAccentContainer,
+                                unselectedIconColor = AtlasOnSurfaceMuted,
+                                unselectedTextColor = AtlasOnSurfaceMuted,
+                            ),
+                        )
+                    }
                 }
             }
         },
@@ -90,7 +92,7 @@ fun AtlasNavHost() {
         NavHost(
             navController = navController,
             startDestination = AtlasDestination.Dashboard.route,
-            modifier = Modifier.padding(innerPadding),
+            modifier = if (isStoryRoute) Modifier else Modifier.padding(innerPadding),
         ) {
             composable(AtlasDestination.Dashboard.route) {
                 DashboardRoute(
@@ -209,7 +211,7 @@ fun AtlasNavHost() {
                 }
             }
             composable(
-                route = "trips/{tripId}/story",
+                route = TRIP_STORY_ROUTE,
                 arguments = listOf(
                     navArgument("tripId") {
                         type = NavType.StringType
@@ -273,3 +275,5 @@ fun AtlasNavHost() {
         }
     }
 }
+
+private const val TRIP_STORY_ROUTE = "trips/{tripId}/story"

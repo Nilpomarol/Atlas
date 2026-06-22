@@ -1,5 +1,10 @@
 package com.atlas.ui.screens.stats
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -26,8 +31,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.Layers
@@ -51,10 +57,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.TextStyle
@@ -91,6 +99,7 @@ import com.atlas.presentation.stats.StatsSeasonStat
 import com.atlas.presentation.stats.StatsYearStat
 import com.atlas.ui.components.AirlineLogo
 import com.atlas.ui.components.AtlasCard
+import com.atlas.ui.components.AtlasDimens
 import com.atlas.ui.components.AtlasPage
 import com.atlas.ui.components.AtlasSectionLabel
 import com.atlas.ui.components.CountryFlag
@@ -253,8 +262,8 @@ private fun MapTab(uiState: StatsUiState, modifier: Modifier = Modifier) {
             filters = filters,
             onFiltersChange = { filters = it },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
         )
     }
 }
@@ -657,6 +666,16 @@ private fun CompactMetric(
     }
 }
 
+private enum class LegendGlyph { SolidLine, DashedLine, Dot, Ring, Swatch }
+
+private data class LegendEntry(
+    val label: String,
+    val glyph: LegendGlyph,
+    val color: Color,
+    val enabled: Boolean,
+    val onToggle: () -> Unit,
+)
+
 @Composable
 private fun MapFilterOverlay(
     filters: MapLayerFilters,
@@ -664,96 +683,154 @@ private fun MapFilterOverlay(
     modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Column(
+
+    val entries = listOf(
+        LegendEntry("Vols fets", LegendGlyph.SolidLine, AtlasPrimary, filters.completedFlights) {
+            onFiltersChange(filters.copy(completedFlights = !filters.completedFlights))
+        },
+        LegendEntry("Vols futurs", LegendGlyph.DashedLine, AtlasPlanned, filters.plannedFlights) {
+            onFiltersChange(filters.copy(plannedFlights = !filters.plannedFlights))
+        },
+        LegendEntry("Parades", LegendGlyph.Dot, AtlasVisited, filters.tripStops) {
+            onFiltersChange(filters.copy(tripStops = !filters.tripStops))
+        },
+        LegendEntry("Excursions", LegendGlyph.Ring, AtlasLived, filters.excursionStops) {
+            onFiltersChange(filters.copy(excursionStops = !filters.excursionStops))
+        },
+        LegendEntry("Visitats", LegendGlyph.Swatch, AtlasVisited, filters.countriesVisited) {
+            onFiltersChange(filters.copy(countriesVisited = !filters.countriesVisited))
+        },
+        LegendEntry("Plans/desig", LegendGlyph.Swatch, AtlasWished, filters.countriesPlanned) {
+            onFiltersChange(filters.copy(countriesPlanned = !filters.countriesPlanned))
+        },
+    )
+
+    Surface(
         modifier = modifier,
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        shape = RoundedCornerShape(topStart = AtlasDimens.CardRadius, topEnd = AtlasDimens.CardRadius),
+        color = AtlasSurface.copy(alpha = 0.97f),
+        border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        if (expanded) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = AtlasSurface.copy(alpha = 0.97f),
-                border = BorderStroke(1.dp, AtlasOutline),
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = 18.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(11.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
-                    Row {
-                        FilterToggleRow("Vols completats", AtlasPrimary, filters.completedFlights, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(completedFlights = !filters.completedFlights))
-                        }
-                        FilterToggleRow("Vols planificats", AtlasPlanned, filters.plannedFlights, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(plannedFlights = !filters.plannedFlights))
-                        }
-                    }
-                    Row {
-                        FilterToggleRow("Parades de viatge", AtlasVisited, filters.tripStops, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(tripStops = !filters.tripStops))
-                        }
-                        FilterToggleRow("Parades d'excursió", AtlasLived, filters.excursionStops, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(excursionStops = !filters.excursionStops))
-                        }
-                    }
-                    Row {
-                        FilterToggleRow("Països visitats", AtlasVisited, filters.countriesVisited, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(countriesVisited = !filters.countriesVisited))
-                        }
-                        FilterToggleRow("Plans / Desig", AtlasWished, filters.countriesPlanned, Modifier.weight(1f)) {
-                            onFiltersChange(filters.copy(countriesPlanned = !filters.countriesPlanned))
+                Icon(Icons.Filled.Layers, contentDescription = null, tint = AtlasPrimary, modifier = Modifier.size(18.dp))
+                Text(
+                    text = "Capes del mapa",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                )
+                Text(
+                    text = "${entries.count { it.enabled }}/${entries.size}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Filled.ExpandMore else Icons.Filled.ExpandLess,
+                    contentDescription = if (expanded) "Amaga les capes" else "Mostra les capes",
+                    tint = AtlasOnSurfaceSoft,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut(),
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(AtlasOutline.copy(alpha = 0.42f)),
+                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        entries.chunked(3).forEach { rowEntries ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                rowEntries.forEach { entry ->
+                                    LegendTile(entry = entry, modifier = Modifier.weight(1f))
+                                }
+                                // Pad short final rows so tiles stay the same size.
+                                repeat(3 - rowEntries.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-        Surface(
-            onClick = { expanded = !expanded },
-            shape = RoundedCornerShape(12.dp),
-            color = AtlasSurface.copy(alpha = 0.97f),
-            border = BorderStroke(1.dp, AtlasOutline),
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(Icons.Filled.Layers, contentDescription = null, tint = AtlasOnSurfaceSoft, modifier = Modifier.size(16.dp))
-                Text(
-                    text = if (expanded) "Tanca" else "Capes",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasOnSurfaceSoft,
-                )
             }
         }
     }
 }
 
 @Composable
-private fun FilterToggleRow(label: String, color: Color, enabled: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
-    Row(
-        modifier = modifier
-            .clickable(onClick = onToggle)
-            .padding(vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+private fun LegendTile(entry: LegendEntry, modifier: Modifier = Modifier) {
+    Surface(
+        onClick = entry.onToggle,
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = if (entry.enabled) entry.color.copy(alpha = 0.12f) else AtlasSurfaceSubtle.copy(alpha = 0.78f),
+        border = BorderStroke(1.dp, if (entry.enabled) entry.color.copy(alpha = 0.40f) else AtlasOutline.copy(alpha = 0.50f)),
     ) {
-        Box(
-            modifier = Modifier
-                .size(9.dp)
-                .clip(CircleShape)
-                .background(if (enabled) color else AtlasOnSurfaceFaint),
-        )
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.labelSmall,
-            color = if (enabled) AtlasOnSurfaceStrong else AtlasOnSurfaceMuted,
-        )
-        if (enabled) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
-        } else {
-            Spacer(Modifier.size(13.dp))
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 11.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            LegendGlyphView(glyph = entry.glyph, color = entry.color, enabled = entry.enabled)
+            Text(
+                text = entry.label,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (entry.enabled) AtlasOnSurfaceStrong else AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun LegendGlyphView(glyph: LegendGlyph, color: Color, enabled: Boolean) {
+    val tint = if (enabled) color else AtlasOnSurfaceFaint
+    Canvas(modifier = Modifier.size(width = 22.dp, height = 16.dp)) {
+        val cy = size.height / 2f
+        val cx = size.width / 2f
+        val inset = 1.dp.toPx()
+        when (glyph) {
+            LegendGlyph.SolidLine -> drawLine(
+                tint, Offset(inset, cy), Offset(size.width - inset, cy),
+                strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round,
+            )
+            LegendGlyph.DashedLine -> drawLine(
+                tint, Offset(inset, cy), Offset(size.width - inset, cy),
+                strokeWidth = 3.dp.toPx(), cap = StrokeCap.Round,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(5.dp.toPx(), 4.dp.toPx())),
+            )
+            LegendGlyph.Dot -> {
+                drawCircle(tint, 5.dp.toPx(), Offset(cx, cy))
+                drawCircle(Color.White.copy(alpha = if (enabled) 0.88f else 0.4f), 5.dp.toPx(), Offset(cx, cy), style = Stroke(1.4.dp.toPx()))
+            }
+            LegendGlyph.Ring -> drawCircle(tint, 4.6.dp.toPx(), Offset(cx, cy), style = Stroke(1.8.dp.toPx()))
+            LegendGlyph.Swatch -> {
+                val s = 13.dp.toPx()
+                val topLeft = Offset((size.width - s) / 2f, (size.height - s) / 2f)
+                val radius = CornerRadius(3.dp.toPx())
+                drawRoundRect(tint.copy(alpha = if (enabled) 0.72f else 0.4f), topLeft, Size(s, s), radius)
+                drawRoundRect(tint, topLeft, Size(s, s), radius, style = Stroke(1.2.dp.toPx()))
+            }
         }
     }
 }
@@ -1466,24 +1543,39 @@ private fun FlagStampCard(stamp: StatsCountryStamp) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(34.dp)
+                    .height(40.dp)
                     .align(Alignment.BottomCenter)
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.Transparent, AtlasNavy.copy(alpha = 0.85f)),
+                            listOf(
+                                Color.Transparent,
+                                AtlasNavy.copy(alpha = 0.55f),
+                                AtlasNavy.copy(alpha = 0.94f),
+                            ),
                         )
                     ),
                 contentAlignment = Alignment.BottomStart,
             ) {
-                Text(
-                    text = stamp.name,
-                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = stateColor,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(stateColor),
+                    )
+                    Text(
+                        text = stamp.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -2203,35 +2295,46 @@ private fun RecordCard(record: StatsRecord, modifier: Modifier = Modifier) {
 @Composable
 private fun BadgeCompletionCard(badges: List<StatsBadge>) {
     val unlocked = badges.count { it.unlocked }
-    val total = badges.size.coerceAtLeast(1)
+    val totalBadges = badges.size.coerceAtLeast(1)
+    val completedLevels = badges.sumOf { it.completedLevelCount }
+    val totalLevels = badges.sumOf { it.totalLevelCount }.coerceAtLeast(1)
+    val completionProgress = completedLevels.toFloat() / totalLevels
+    val unlockedProgress = unlocked.toFloat() / totalBadges
     AtlasCard {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
                 verticalAlignment = Alignment.Bottom,
                 horizontalArrangement = Arrangement.spacedBy(0.dp),
             ) {
                 Text(
-                    text = "$unlocked",
+                    text = "${(completionProgress * 100f).roundToInt()}%",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = AtlasGold,
                 )
-                Text(
-                    text = " / $total",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = AtlasOnSurfaceMuted,
-                    modifier = Modifier.padding(bottom = 3.dp),
-                )
                 Spacer(modifier = Modifier.weight(1f))
                 Text(
-                    text = "INSÍGNIES\nDESBLOQUEJADES",
+                    text = "COMPLECIÓ\nD'INSÍGNIES",
                     style = MaterialTheme.typography.labelSmall,
                     color = AtlasOnSurfaceMuted,
                     textAlign = TextAlign.End,
                     modifier = Modifier.padding(bottom = 3.dp),
                 )
             }
-            ThickProgress(value = unlocked, maxValue = total, color = AtlasGold)
+            BadgeProgressLine(
+                label = "Nivells assolits",
+                value = "$completedLevels / $totalLevels",
+                progress = completionProgress,
+                color = AtlasGold,
+                height = 14.dp,
+            )
+            BadgeProgressLine(
+                label = "Insígnies desbloquejades",
+                value = "$unlocked / $totalBadges",
+                progress = unlockedProgress,
+                color = AtlasPrimary,
+                height = 8.dp,
+            )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
@@ -2254,6 +2357,49 @@ private fun BadgeCompletionCard(badges: List<StatsBadge>) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BadgeProgressLine(
+    label: String,
+    value: String,
+    progress: Float,
+    color: Color,
+    height: Dp,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = color,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(height)
+                .clip(RoundedCornerShape(4.dp))
+                .background(AtlasSurfaceSubtle),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(color),
+            )
         }
     }
 }

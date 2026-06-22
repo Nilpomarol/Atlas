@@ -28,8 +28,13 @@ Last updated: 2026-06-17.
   play/pause auto-play, progress, full-screen slides with swipe disabled, no standalone
   itinerary slide, itinerary-derived flight slides labeled `VOL` with `Origin →
   Destination` titles, and a story destination that bypasses the app bottom
-  navigation/scaffold padding. Automated checks pass and the debug APK installs/
-  launches; story-specific visual review remains pending.
+  navigation/scaffold padding.
+- v5 M6 Final Photo UI Polish is implemented. It keeps v5 visual-only: trip records
+  and country memories now use consistent compact card headers and balanced carousel
+  gutters, the shared full-screen viewer keeps controls separate from photo context,
+  and story slides have safer narrow-screen spacing, weighted stats, and softer photo
+  caption overlays. No schema, backup, repository, or photo-file behavior changed. v5
+  Photos and Memories is complete, with M4 intentionally deferred.
 - v4.0 M1 is complete: country facts dataset, flexible fact table, importer, repository, and Room DB v22.
 - v4.0 M2 is complete and committed: Country Info screen, country photo cache, Unsplash integration, and Room DB v23.
 - Country Info redesign is complete and committed: full-bleed photo hero, highlights/KPI shelf, dissolved identity (facts redistributed), visual geography section with offline neighbors map, and all section cards (incl. the final drets/practic polish).
@@ -122,7 +127,7 @@ Cloud backup settings live in DataStore, not Room. Automatic backups:
 - Airports: 5,931 imported entries, dataset version `2026.3`.
 - Airlines: 101 entries, dataset version `2026.1`.
 - Aircraft types: 50 entries, dataset version `2026.3`.
-- Country stats: 244 countries, about 24,000 facts, 16 raw categories, dataset version `2026.2`. The importer derives ranks at import for selected unranked keys (currently `co2_per_capita` and `co2_total`, lower-is-better).
+- Country stats: 244 countries, about 24,000 facts, 16 raw categories, dataset version `2026.3`. The importer derives ranks at import for selected unranked keys (currently `co2_per_capita` and `co2_total`, lower-is-better). `2026.3` corrected the UNESCO World Heritage Site counts (from `unesco-sites-by-country-2026`) and dropped impossible HDI values (>1) for territories without an official UN HDI.
 
 Static/reference imports are versioned and must not overwrite user-created travel data.
 
@@ -269,13 +274,16 @@ stops at the end, progress bars, full-screen slides with swipe disabled, and no 
 bottom navigation on the story destination. Its contract is
 `docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
 
-The final planned v5 step is M6 Photo UI Polish: a visual consistency pass across trip
-records, country memories, viewer overlays, and trip story, with no schema or backup
-change.
+M6 completes the v5 pass with visual polish only: trip records and country memories
+share compact headers and balanced carousel gutters, the viewer context is grouped in
+the bottom overlay instead of competing with top controls, and story slides have
+adaptive centered padding, weighted stats, explicit long-text overflow limits, and a
+softer photo-caption gradient. No schema, backup, repository, or photo-file behavior
+changed.
 
-Automated `testDebugUnitTest` and `assembleDebug` pass for M5. The debug APK installs
-with `adb install -r` and launches without an immediate `com.atlas` runtime crash.
-Story-specific visual review remains pending.
+Automated `testDebugUnitTest` and `assembleDebug` pass for v5. The debug APK installs
+with `adb install -r`, launches on the connected device, and recent logcat output
+shows no `FATAL EXCEPTION` or `AndroidRuntime` crash marker after the M6 polish.
 
 Follow `docs/Atlas_Post_v2.0_Roadmap.md` for milestone boundaries and non-goals. Do not
 introduce DB v25 or backup v4 during v5 unless M4 is explicitly reopened with a

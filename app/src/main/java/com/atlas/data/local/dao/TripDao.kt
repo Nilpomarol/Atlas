@@ -41,4 +41,7 @@ interface TripDao {
 
     @Query("UPDATE trips SET cover_photo_filename = NULL WHERE cover_photo_filename = :filename")
     suspend fun clearCoverPhotoByFilename(filename: String)
+
+    @Query("UPDATE trips SET cover_photo_filename = :newFilename WHERE cover_photo_filename = :oldFilename")
+    suspend fun updateCoverPhotoFilename(oldFilename: String, newFilename: String)
 }

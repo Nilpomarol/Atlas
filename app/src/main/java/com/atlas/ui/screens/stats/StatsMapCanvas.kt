@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
@@ -47,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.stats.StatsFlightMapRoute
 import com.atlas.presentation.stats.StatsMapMarker
+import com.atlas.presentation.stats.StatsMapPoint
+import com.atlas.presentation.stats.StatsTripMapRoute
 import com.atlas.presentation.stats.StatsUiState
 import com.atlas.ui.components.geo.AtlasGeoAssetLoader
 import com.atlas.ui.components.geo.GeoCoordinate
@@ -186,7 +189,7 @@ fun StatsMapCanvas(
                             if (hit != null) {
                                 val pos = proj.projectZoomed(GeoCoordinate(hit.latitude, hit.longitude), scale, px, py)
                                 if ((pos - tapOffset).getDistance() < hitRadiusPx) {
-                                    tooltip = hit.label to tapOffset
+                                    tooltip = hit.tooltipLabel() to tapOffset
                                     return@detectTapGestures
                                 }
                             }
@@ -200,7 +203,7 @@ fun StatsMapCanvas(
                             if (hit != null) {
                                 val pos = proj.projectZoomed(GeoCoordinate(hit.latitude, hit.longitude), scale, px, py)
                                 if ((pos - tapOffset).getDistance() < hitRadiusPx) {
-                                    tooltip = hit.label to tapOffset
+                                    tooltip = hit.tooltipLabel() to tapOffset
                                     return@detectTapGestures
                                 }
                             }
@@ -273,7 +276,8 @@ fun StatsMapCanvas(
                                 in uiState.wishedIso2s -> " · Desig"
                                 else -> ""
                             }
-                            tooltip = "${hitCountry.name}$stateLabel" to tapOffset
+                            val countryName = hitCountry.iso2?.let { uiState.countryNamesByIso2[it] } ?: hitCountry.name
+                            tooltip = "$countryName$stateLabel" to tapOffset
                         }
                     }
                 }
@@ -332,6 +336,20 @@ fun StatsMapCanvas(
                         alpha = 0.90f,
                         isDashed = true,
                         proj = proj, userScale = userScale, panX = panX, panY = panY,
+                    )
+                }
+            }
+
+            // Trip routes
+            if (filters.tripStops) {
+                uiState.tripMapRoutes.forEach { route ->
+                    drawZoomedTripRoute(
+                        route = route,
+                        color = route.statusColor(),
+                        proj = proj,
+                        userScale = userScale,
+                        panX = panX,
+                        panY = panY,
                     )
                 }
             }
@@ -403,13 +421,22 @@ fun StatsMapCanvas(
 
         // Tooltip
         tooltip?.let { (label, tapOffset) ->
-            val tooltipX = (tapOffset.x - with(density) { 60.dp.toPx() })
-                .coerceIn(with(density) { 8.dp.toPx() }, canvasSize.width - with(density) { 200.dp.toPx() })
-            val tooltipY = (tapOffset.y - with(density) { 52.dp.toPx() })
-                .coerceAtLeast(with(density) { 8.dp.toPx() })
+            val marginPx = with(density) { 8.dp.toPx() }
+            val minWidthPx = with(density) { 96.dp.toPx() }
+            val maxWidthPx = with(density) { 220.dp.toPx() }
+            val estimatedWidthPx = (label.length * with(density) { 7.dp.toPx() } + with(density) { 24.dp.toPx() })
+                .coerceIn(minWidthPx, maxWidthPx)
+            val maxX = (canvasSize.width - estimatedWidthPx - marginPx).coerceAtLeast(marginPx)
+            val tooltipX = (tapOffset.x - estimatedWidthPx / 2f).coerceIn(marginPx, maxX)
+            val tooltipHeightPx = with(density) { 40.dp.toPx() }
+            val aboveY = tapOffset.y - with(density) { 48.dp.toPx() }
+            val belowY = tapOffset.y + with(density) { 18.dp.toPx() }
+            val maxY = (canvasSize.height - tooltipHeightPx - marginPx).coerceAtLeast(marginPx)
+            val tooltipY = (if (aboveY >= marginPx) aboveY else belowY).coerceIn(marginPx, maxY)
             Box(
                 modifier = Modifier
                     .offset { IntOffset(tooltipX.roundToInt(), tooltipY.roundToInt()) }
+                    .widthIn(max = 220.dp)
                     .background(AtlasSurface.copy(alpha = 0.97f), RoundedCornerShape(12.dp))
                     .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp),
@@ -485,6 +512,31 @@ private fun DrawScope.drawZoomedRouteArc(
     drawPath(path, color.copy(alpha = alpha), style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round, pathEffect = pathEffect))
 }
 
+private fun DrawScope.drawZoomedTripRoute(
+    route: StatsTripMapRoute,
+    color: Color,
+    proj: com.atlas.ui.components.geo.GeoProjection,
+    userScale: Float,
+    panX: Float,
+    panY: Float,
+) {
+    route.points.toRouteSegments(proj.centerLongitude).forEach { segment ->
+        val offsets = segment.map { point -> proj.projectZoomed(point, userScale, panX, panY) }
+        if (offsets.size < 2) return@forEach
+        val path = offsets.toSmoothedPath()
+        drawPath(
+            path = path,
+            color = Color.White.copy(alpha = 0.34f),
+            style = Stroke(5.4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+        drawPath(
+            path = path,
+            color = color.copy(alpha = 0.76f),
+            style = Stroke(2.3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+        )
+    }
+}
+
 private fun GeoPolygon.toZoomedPath(
     proj: com.atlas.ui.components.geo.GeoProjection,
     userScale: Float,
@@ -514,6 +566,52 @@ private fun GeoPolygon.toZoomedPath(
 }
 
 // ── Hit-test helpers ──────────────────────────────────────────────────────────
+
+private fun List<StatsMapPoint>.toRouteSegments(centerLongitude: Double): List<List<GeoCoordinate>> {
+    val segments = mutableListOf<List<GeoCoordinate>>()
+    var currentSegment = mutableListOf<GeoCoordinate>()
+    var previous: GeoCoordinate? = null
+    forEach { point ->
+        val coordinate = GeoCoordinate(point.latitude, point.longitude)
+        val previousPoint = previous
+        if (previousPoint != null && isAntimeridianJump(previousPoint, coordinate, centerLongitude)) {
+            if (currentSegment.size >= 2) segments += currentSegment.toList()
+            currentSegment = mutableListOf()
+        }
+        currentSegment += coordinate
+        previous = coordinate
+    }
+    if (currentSegment.size >= 2) segments += currentSegment.toList()
+    return segments
+}
+
+private fun List<Offset>.toSmoothedPath(): Path =
+    Path().apply {
+        moveTo(first().x, first().y)
+        if (size == 2) {
+            lineTo(last().x, last().y)
+            return@apply
+        }
+        for (index in 0 until lastIndex) {
+            val p0 = getOrElse(index - 1) { get(index) }
+            val p1 = get(index)
+            val p2 = get(index + 1)
+            val p3 = getOrElse(index + 2) { p2 }
+            cubicTo(
+                p1.x + (p2.x - p0.x) / 6f,
+                p1.y + (p2.y - p0.y) / 6f,
+                p2.x - (p3.x - p1.x) / 6f,
+                p2.y - (p3.y - p1.y) / 6f,
+                p2.x,
+                p2.y,
+            )
+        }
+    }
+
+private fun StatsMapMarker.tooltipLabel(): String {
+    val country = countryName?.takeIf { it.isNotBlank() } ?: return label
+    return "$label - $country"
+}
 
 private fun routeMidpoint(
     route: StatsFlightMapRoute,
@@ -552,7 +650,11 @@ private fun pointInPolygon(point: GeoCoordinate, polygon: GeoPolygon, centerLong
     return isInRing(polygon.rings[0]) && polygon.rings.drop(1).none { isInRing(it) }
 }
 
-private fun StatsMapMarker.statusColor(): Color = when (status) {
+private fun StatsMapMarker.statusColor(): Color = status.mapStatusColor()
+
+private fun StatsTripMapRoute.statusColor(): Color = status.mapStatusColor()
+
+private fun TravelStatus.mapStatusColor(): Color = when (this) {
     TravelStatus.COMPLETED -> AtlasVisited
     TravelStatus.IN_PROGRESS -> AtlasInProgress
     TravelStatus.PLANNED -> AtlasPlanned

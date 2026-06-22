@@ -208,6 +208,11 @@ class TripRepositoryImpl(
 
         database.withTransaction {
             val now = Instant.now().toString()
+            val existingSortOrders = tripStopDao.getGeneratedForGroups(groupIds)
+                .mapNotNull { existing ->
+                    existing.itineraryGroupId?.let { groupId -> groupId to existing.sortOrder }
+                }
+                .toMap()
             tripStopDao.deleteGeneratedForGroups(groupIds)
             tripStopDao.upsertAll(
                 stops.map { stop ->
@@ -220,7 +225,7 @@ class TripRepositoryImpl(
                         longitude = stop.longitude,
                         dateRange = null,
                         notes = null,
-                        sortOrder = stop.sortOrder,
+                        sortOrder = existingSortOrders[stop.itineraryGroupId] ?: stop.sortOrder,
                         source = TripStopSource.ITINERARY_GROUP,
                         itineraryGroupId = stop.itineraryGroupId,
                         isVisible = true,

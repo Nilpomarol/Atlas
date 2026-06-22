@@ -70,6 +70,7 @@ import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
 import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
+import com.atlas.domain.usecase.photo.RotateStopPhotoUseCase
 import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.status.UpdateCurrentTravelStatusesUseCase
 import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
@@ -425,6 +426,10 @@ class AtlasAppContainer(context: Context) {
     )
 
     val deleteStopPhotoUseCase = DeleteStopPhotoUseCase(
+        stopPhotoRepository = stopPhotoRepository,
+    )
+
+    val rotateStopPhotoUseCase = RotateStopPhotoUseCase(
         stopPhotoRepository = stopPhotoRepository,
     )
 

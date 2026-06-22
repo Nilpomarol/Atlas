@@ -15,14 +15,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -44,6 +46,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,11 +63,18 @@ import com.atlas.domain.util.utcAwareLayoverDurationMinutesTo
 import com.atlas.presentation.flight.FlightEditorDraftUiState
 import com.atlas.presentation.flight.FlightListItemUiState
 import com.atlas.presentation.itinerary.ItineraryDetailUiState
+import com.atlas.presentation.itinerary.itineraryCodeLabel
 import com.atlas.ui.components.AtlasPill
 import com.atlas.ui.components.FlightCard
+import com.atlas.ui.components.geo.AtlasGeoCanvas
+import com.atlas.ui.components.geo.GeoCoordinate
+import com.atlas.ui.components.geo.GeoMarker
+import com.atlas.ui.components.geo.GeoRouteSegment
+import com.atlas.ui.components.geo.GeoViewport
 import com.atlas.ui.components.tripStatusColors
 import com.atlas.ui.screens.flight.FlightEditorDialog
 import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasOnSurfaceMuted
 import com.atlas.ui.theme.AtlasOnSurfaceStrong
 import com.atlas.ui.theme.AtlasOutline
@@ -129,11 +140,23 @@ fun ItineraryDetailScreen(
     var showDeleteItineraryDialog by remember { mutableStateOf(false) }
     var groupToDelete by remember { mutableStateOf<ItineraryGroup?>(null) }
     var flightToDelete by remember { mutableStateOf<Flight?>(null) }
+    var editMode by remember { mutableStateOf(false) }
     val routeCodeLabel = remember(uiState.groups, uiState.airports) {
         buildItineraryCodeLabel(uiState.groups, uiState.airports)
     }
     val routeCityLabel = remember(uiState.groups, uiState.airports) {
         buildItineraryRouteLabel(uiState.groups, uiState.airports)
+    }
+    val flightSegments = remember(uiState.groups, uiState.airports) {
+        itineraryFlightSegments(uiState.groups, uiState.airports)
+    }
+
+    // Leaving edit mode also drops any active reorder sub-mode so the display
+    // view never gets stuck with reorder controls hidden but state active.
+    val exitEditMode = {
+        if (uiState.isGroupReorderMode) onToggleGroupReorderMode()
+        uiState.reorderingFlightsGroupId?.let { onToggleFlightReorderMode(it) }
+        editMode = false
     }
 
     Column(
@@ -145,13 +168,19 @@ fun ItineraryDetailScreen(
         ) {
             item {
                 ItineraryDetailHeader(
+                    editMode = editMode,
                     onBackClick = onBackClick,
+                    onToggleEditMode = { if (editMode) exitEditMode() else editMode = true },
                     onDeleteClick = { showDeleteItineraryDialog = true },
                 )
             }
 
             item {
-                ItineraryRouteHero(codeLabel = routeCodeLabel, cityLabel = routeCityLabel)
+                ItineraryRouteMapHero(
+                    codeLabel = routeCodeLabel,
+                    cityLabel = routeCityLabel,
+                    flightSegments = flightSegments,
+                )
             }
 
             item {
@@ -160,6 +189,7 @@ fun ItineraryDetailScreen(
 
             item {
                 ItineraryGroupsHeader(
+                    editMode = editMode,
                     groupCount = uiState.groups.size,
                     isGroupReorderMode = uiState.isGroupReorderMode,
                     onToggleGroupReorderMode = onToggleGroupReorderMode,
@@ -170,44 +200,60 @@ fun ItineraryDetailScreen(
             if (uiState.groups.isEmpty()) {
                 item {
                     Text(
-                        text = "Afegeix un grup per organitzar els vols d'aquest itinerari.",
+                        text = if (editMode) {
+                            "Afegeix un grup per organitzar els vols d'aquest itinerari."
+                        } else {
+                            "Aquest itinerari encara no té vols."
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = AtlasOnSurfaceMuted,
                     )
                 }
             }
 
-            items(uiState.groups, key = { it.id }) { group ->
-                ItineraryGroupCard(
-                    group = group,
-                    airports = uiState.airports,
-                    isGroupReorderMode = uiState.isGroupReorderMode,
-                    isFlightReorderMode = uiState.reorderingFlightsGroupId == group.id,
-                    isFirstGroup = uiState.groups.first().id == group.id,
-                    isLastGroup = uiState.groups.last().id == group.id,
-                    onDeleteGroupClick = { groupToDelete = group },
-                    onMoveGroupUp = { onMoveGroupUp(group) },
-                    onMoveGroupDown = { onMoveGroupDown(group) },
-                    onAddFlightClick = { onAddFlightToGroupClick(group.id) },
-                    onAddExistingFlightClick = { onAddExistingFlightToGroupClick(group.id) },
-                    hasSoloFlights = uiState.soloFlights.isNotEmpty(),
-                    onRemoveFlightFromItineraryClick = onRemoveFlightFromItineraryClick,
-                    onMoveFlightToGroupClick = onMoveFlightToGroupClick,
-                    hasOtherGroups = uiState.groups.size > 1,
-                    onFlightClick = { onFlightClick(it.id) },
-                    onToggleFlightReorderMode = { onToggleFlightReorderMode(group.id) },
-                    onMoveFlightUp = { flight -> onMoveFlightUp(group.id, flight) },
-                    onMoveFlightDown = { flight -> onMoveFlightDown(group.id, flight) },
-                )
+            itemsIndexed(uiState.groups, key = { _, group -> group.id }) { index, group ->
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (index > 0) {
+                        LegConnector(
+                            label = transferLabel(uiState.groups[index - 1], group, uiState.airports),
+                        )
+                    }
+                    ItineraryGroupCard(
+                        group = group,
+                        legNumber = index + 1,
+                        editMode = editMode,
+                        airports = uiState.airports,
+                        isGroupReorderMode = uiState.isGroupReorderMode,
+                        isFlightReorderMode = uiState.reorderingFlightsGroupId == group.id,
+                        isFirstGroup = index == 0,
+                        isLastGroup = index == uiState.groups.lastIndex,
+                        onDeleteGroupClick = { groupToDelete = group },
+                        onMoveGroupUp = { onMoveGroupUp(group) },
+                        onMoveGroupDown = { onMoveGroupDown(group) },
+                        onAddFlightClick = { onAddFlightToGroupClick(group.id) },
+                        onAddExistingFlightClick = { onAddExistingFlightToGroupClick(group.id) },
+                        hasSoloFlights = uiState.soloFlights.isNotEmpty(),
+                        onRemoveFlightFromItineraryClick = onRemoveFlightFromItineraryClick,
+                        onMoveFlightToGroupClick = onMoveFlightToGroupClick,
+                        hasOtherGroups = uiState.groups.size > 1,
+                        onFlightClick = { onFlightClick(it.id) },
+                        onToggleFlightReorderMode = { onToggleFlightReorderMode(group.id) },
+                        onMoveFlightUp = { flight -> onMoveFlightUp(group.id, flight) },
+                        onMoveFlightDown = { flight -> onMoveFlightDown(group.id, flight) },
+                    )
+                }
             }
 
-            item {
-                LinkedTripPanel(
-                    trip = uiState.linkedTrip,
-                    onTripClick = onTripClick,
-                    onUnlinkTripClick = onUnlinkTripClick,
-                    onAssignTripClick = onAssignTripClick,
-                )
+            if (editMode || uiState.linkedTrip != null) {
+                item {
+                    LinkedTripPanel(
+                        editMode = editMode,
+                        trip = uiState.linkedTrip,
+                        onTripClick = onTripClick,
+                        onUnlinkTripClick = onUnlinkTripClick,
+                        onAssignTripClick = onAssignTripClick,
+                    )
+                }
             }
         }
     }
@@ -346,16 +392,17 @@ fun ItineraryDetailScreen(
 
 @Composable
 private fun ItineraryDetailHeader(
+    editMode: Boolean,
     onBackClick: () -> Unit,
+    onToggleEditMode: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
-    var actionsExpanded by remember { mutableStateOf(false) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 4.dp, bottom = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Surface(
             modifier = Modifier.size(42.dp),
@@ -374,78 +421,146 @@ private fun ItineraryDetailHeader(
             }
         }
         Box(modifier = Modifier.weight(1f))
-        Box {
+        // Delete only surfaces while editing, keeping the display view chrome-free.
+        if (editMode) {
             Surface(
                 modifier = Modifier.size(42.dp),
                 shape = CircleShape,
                 color = AtlasSurface,
                 border = BorderStroke(1.dp, AtlasOutline),
+                onClick = onDeleteClick,
             ) {
-                IconButton(onClick = { actionsExpanded = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Accions", tint = AtlasOnSurfaceStrong)
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Elimina itinerari", tint = AtlasPrimary, modifier = Modifier.size(18.dp))
                 }
             }
-            MaterialTheme(
-                colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
-                shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
-            ) {
-                DropdownMenu(
-                    expanded = actionsExpanded,
-                    onDismissRequest = { actionsExpanded = false },
-                    modifier = Modifier.width(180.dp),
-                ) {
-                    DropdownMenuItem(
-                        text = {
-                            Text(
-                                "Elimina",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = AtlasPrimary,
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Filled.Delete, contentDescription = null, tint = AtlasPrimary, modifier = Modifier.size(16.dp))
-                        },
-                        onClick = { actionsExpanded = false; onDeleteClick() },
-                    )
-                }
-            }
+        }
+        EditModeToggle(editMode = editMode, onClick = onToggleEditMode)
+    }
+}
+
+@Composable
+private fun EditModeToggle(editMode: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (editMode) AtlasPrimary else AtlasSurface,
+        border = BorderStroke(1.dp, if (editMode) AtlasPrimary else AtlasOutline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                imageVector = if (editMode) Icons.Filled.Check else Icons.Filled.Edit,
+                contentDescription = null,
+                tint = if (editMode) Color.White else AtlasOnSurfaceStrong,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = if (editMode) "Fet" else "Edita",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (editMode) Color.White else AtlasOnSurfaceStrong,
+            )
         }
     }
 }
 
 @Composable
-private fun ItineraryRouteHero(codeLabel: String, cityLabel: String) {
+private fun ItineraryRouteMapHero(
+    codeLabel: String,
+    cityLabel: String,
+    flightSegments: List<Pair<GeoCoordinate, GeoCoordinate>>,
+) {
+    // One arc per flight; markers at every distinct airport the flights touch.
+    val points = remember(flightSegments) {
+        flightSegments.flatMap { listOf(it.first, it.second) }
+    }
+    val firstOrigin = flightSegments.firstOrNull()?.first
+    val lastDestination = flightSegments.lastOrNull()?.second
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         color = AtlasSurface,
         border = BorderStroke(1.dp, AtlasOutline),
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .clip(RoundedCornerShape(18.dp)),
         ) {
+            if (flightSegments.isNotEmpty()) {
+                AtlasGeoCanvas(
+                    modifier = Modifier.fillMaxWidth().height(220.dp),
+                    viewport = GeoViewport.FitPoints(
+                        points = points,
+                        minLongitudeSpanDegrees = 14.0,
+                        minLatitudeSpanDegrees = 10.0,
+                    ),
+                    routeSegments = flightSegments.map { (from, to) ->
+                        GeoRouteSegment(from = from, to = to, color = AtlasPrimary, strokeWidthDp = 2.4f)
+                    },
+                    markers = points.distinct().map { coord ->
+                        val isEndpoint = coord == firstOrigin || coord == lastDestination
+                        GeoMarker(
+                            coordinate = coord,
+                            color = AtlasNavy,
+                            radiusMultiplier = if (isEndpoint) 0.62f else 0.46f,
+                            isHollow = coord == lastDestination && coord != firstOrigin,
+                        )
+                    },
+                )
+            } else {
+                AtlasGeoCanvas(modifier = Modifier.fillMaxWidth().height(220.dp))
+            }
+
+            // Light scrim so the ink route labels stay legible over the paper map.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(118.dp)
+                    .align(Alignment.BottomStart)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, AtlasSurface.copy(alpha = 0.96f)),
+                        )
+                    ),
+            )
             Text(
                 text = "Itinerari".uppercase(),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .background(AtlasSurface.copy(alpha = 0.88f), RoundedCornerShape(999.dp))
+                    .padding(horizontal = 10.dp, vertical = 5.dp),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = AtlasOnSurfaceMuted,
             )
-            RouteLabelRow(
-                routeLabel = codeLabel,
-                textStyle = MaterialTheme.typography.headlineSmall.copy(fontSize = 27.sp),
-                textWeight = FontWeight.Medium,
-            )
-            if (cityLabel.isNotBlank() && cityLabel != codeLabel) {
-                Text(
-                    text = cityLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasOnSurfaceMuted,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                RouteLabelRow(
+                    routeLabel = codeLabel,
+                    textStyle = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
+                    textWeight = FontWeight.SemiBold,
                 )
+                if (cityLabel.isNotBlank() && cityLabel != codeLabel) {
+                    Text(
+                        text = cityLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -499,11 +614,61 @@ private fun RouteLabelRow(
 
 @Composable
 private fun LinkedTripPanel(
+    editMode: Boolean,
     trip: Trip?,
     onTripClick: (String) -> Unit,
     onUnlinkTripClick: () -> Unit,
     onAssignTripClick: () -> Unit,
 ) {
+    // Display mode: a quiet footer chip, no controls. The caller only renders this
+    // when a trip is linked, but guard defensively.
+    if (!editMode) {
+        val linked = trip ?: return
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onTripClick(linked.id) },
+            shape = RoundedCornerShape(18.dp),
+            color = AtlasSurface,
+            border = BorderStroke(1.dp, AtlasOutline),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Link,
+                    contentDescription = null,
+                    tint = AtlasOnSurfaceMuted,
+                    modifier = Modifier.size(17.dp),
+                )
+                Text(
+                    text = "Forma part de",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Text(
+                    text = linked.title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = AtlasOnSurfaceMuted,
+                    modifier = Modifier.size(17.dp),
+                )
+            }
+        }
+        return
+    }
+
     if (trip == null) {
         Surface(
             modifier = Modifier
@@ -650,6 +815,7 @@ private fun ItineraryStatCell(
 
 @Composable
 private fun ItineraryGroupsHeader(
+    editMode: Boolean,
     groupCount: Int,
     isGroupReorderMode: Boolean,
     onToggleGroupReorderMode: () -> Unit,
@@ -663,7 +829,7 @@ private fun ItineraryGroupsHeader(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
-            text = "Grups",
+            text = "Trajecte",
             style = MaterialTheme.typography.titleLarge,
             color = AtlasOnSurfaceStrong,
         )
@@ -673,7 +839,7 @@ private fun ItineraryGroupsHeader(
                 .weight(1f)
                 .background(AtlasOutline),
         )
-        if (groupCount > 1) {
+        if (editMode && groupCount > 1) {
             TextButton(onClick = onToggleGroupReorderMode, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
                 Text(
                     text = if (isGroupReorderMode) "Fet" else "Reordena",
@@ -683,7 +849,7 @@ private fun ItineraryGroupsHeader(
                 )
             }
         }
-        if (!isGroupReorderMode) {
+        if (editMode && !isGroupReorderMode) {
             TextButton(onClick = onAddGroupClick, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)) {
                 Text(
                     text = "+ Grup",
@@ -697,8 +863,38 @@ private fun ItineraryGroupsHeader(
 }
 
 @Composable
+private fun LegConnector(label: String?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .width(2.dp)
+                .height(18.dp)
+                .background(AtlasOutline),
+        )
+        if (label != null) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = AtlasOnSurfaceMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 private fun ItineraryGroupCard(
     group: ItineraryGroup,
+    legNumber: Int,
+    editMode: Boolean,
     airports: List<Airport>,
     isGroupReorderMode: Boolean,
     isFlightReorderMode: Boolean,
@@ -734,6 +930,15 @@ private fun ItineraryGroupCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
+                    text = "Tram $legNumber",
+                    modifier = Modifier
+                        .background(AtlasBackground, RoundedCornerShape(999.dp))
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = AtlasOnSurfaceMuted,
+                )
+                Text(
                     text = route.label.uppercase(),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelSmall,
@@ -746,14 +951,14 @@ private fun ItineraryGroupCard(
                     val colors = status.tripStatusColors()
                     AtlasPill(label = colors.label, colors = colors)
                 }
-                if (isGroupReorderMode) {
+                if (editMode && isGroupReorderMode) {
                     IconButton(onClick = onMoveGroupUp, enabled = !isFirstGroup, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Filled.KeyboardArrowUp, contentDescription = "Puja", tint = if (!isFirstGroup) AtlasPrimary else AtlasOnSurfaceMuted)
                     }
                     IconButton(onClick = onMoveGroupDown, enabled = !isLastGroup, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Filled.KeyboardArrowDown, contentDescription = "Baixa", tint = if (!isLastGroup) AtlasPrimary else AtlasOnSurfaceMuted)
                     }
-                } else {
+                } else if (editMode) {
                     Box {
                         IconButton(onClick = { actionsExpanded = true }, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Filled.MoreVert, contentDescription = "Accions del grup", tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
@@ -814,7 +1019,7 @@ private fun ItineraryGroupCard(
                 }
             }
 
-            if (!isGroupReorderMode) {
+            if (editMode && !isGroupReorderMode) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -1162,27 +1367,52 @@ private fun buildItineraryRouteLabel(groups: List<ItineraryGroup>, airports: Lis
     return route.ifEmpty { listOf("Sense ruta") }.joinToString(" → ")
 }
 
-private fun buildItineraryCodeLabel(groups: List<ItineraryGroup>, airports: List<Airport>): String {
-    val orderedGroups = groups.sortedBy { it.sortOrder }
-    val seenAirportIds = mutableSetOf<String>()
-    val route = mutableListOf<String>()
+// Shared with the trip itinerary panels so the route title reads identically everywhere.
+private fun buildItineraryCodeLabel(groups: List<ItineraryGroup>, airports: List<Airport>): String =
+    itineraryCodeLabel(groups, airports)
 
-    fun addAirportIfNew(airportId: String) {
-        val normalizedId = airportId.uppercase()
-        if (!seenAirportIds.add(normalizedId)) return
-        val label = airports.findAirport(airportId)?.displayCode() ?: normalizedId
-        route += label
+/** One origin→destination coordinate pair per flight in the itinerary, for the hero map. */
+private fun itineraryFlightSegments(
+    groups: List<ItineraryGroup>,
+    airports: List<Airport>,
+): List<Pair<GeoCoordinate, GeoCoordinate>> {
+    fun coordinate(airportId: String): GeoCoordinate? {
+        val airport = airports.findAirport(airportId) ?: return null
+        if (airport.latitude == 0.0 && airport.longitude == 0.0) return null
+        return GeoCoordinate(airport.latitude, airport.longitude)
     }
 
-    orderedGroups.forEach { group ->
-        val flights = group.sortedFlights()
-        val firstFlight = flights.firstOrNull() ?: return@forEach
-        val lastFlight = flights.lastOrNull() ?: return@forEach
-        addAirportIfNew(firstFlight.originAirportId)
-        addAirportIfNew(lastFlight.destinationAirportId)
+    return groups.sortedBy { it.sortOrder }.flatMap { group ->
+        group.sortedFlights().mapNotNull { flight ->
+            val from = coordinate(flight.originAirportId) ?: return@mapNotNull null
+            val to = coordinate(flight.destinationAirportId) ?: return@mapNotNull null
+            from to to
+        }
+    }
+}
+
+/**
+ * Connector text shown between two consecutive legs. A short wait (under 24h) reads as a
+ * `Transbord`; a longer wait reads as an `Estada`. The wait is the gap between the previous
+ * leg's last arrival and the next leg's first departure.
+ */
+private fun transferLabel(previous: ItineraryGroup, next: ItineraryGroup, airports: List<Airport>): String? {
+    val prevLast = previous.sortedFlights().lastOrNull() ?: return null
+    val nextFirst = next.sortedFlights().firstOrNull() ?: return null
+    val prevDestinationId = prevLast.destinationAirportId
+    val nextOriginId = nextFirst.originAirportId
+    val prevCity = airports.findAirport(prevDestinationId)?.shortLabel() ?: prevDestinationId.uppercase()
+    val nextCity = airports.findAirport(nextOriginId)?.shortLabel() ?: nextOriginId.uppercase()
+    val location = if (prevDestinationId.equals(nextOriginId, ignoreCase = true)) {
+        prevCity
+    } else {
+        "$prevCity → $nextCity"
     }
 
-    return route.ifEmpty { listOf("Sense ruta") }.joinToString(" → ")
+    val gapMinutes = prevLast.durationMinutesTo(nextFirst)?.takeIf { it >= 0 }
+    val kind = if (gapMinutes != null && gapMinutes >= 24 * 60) "Estada" else "Transbord"
+    val durationText = gapMinutes?.toGapLabel()
+    return listOfNotNull(kind, location, durationText).joinToString(" · ")
 }
 
 private fun ItineraryGroup.sortedFlights(): List<Flight> =
@@ -1215,6 +1445,15 @@ private fun Long.toDurationLabel(): String {
         hours > 0 -> "${hours} h"
         else -> "${minutes} m"
     }
+}
+
+/** Like [toDurationLabel] but rolls up into days for long inter-leg waits. */
+private fun Long.toGapLabel(): String {
+    val absolute = kotlin.math.abs(this)
+    if (absolute < 24 * 60) return absolute.toDurationLabel()
+    val days = absolute / (24 * 60)
+    val hours = (absolute % (24 * 60)) / 60
+    return if (hours > 0) "${days} d ${hours} h" else "${days} d"
 }
 
 private fun layoverLabel(flight: Flight, nextFlight: Flight?, airports: List<Airport>): String? {

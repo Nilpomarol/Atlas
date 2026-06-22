@@ -15,7 +15,7 @@ import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
-import com.atlas.domain.model.TripStopSource
+import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -24,6 +24,7 @@ import com.atlas.domain.repository.TripMapPreferencesRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
+import com.atlas.domain.usecase.photo.RotateStopPhotoUseCase
 import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
@@ -43,6 +44,7 @@ import com.atlas.domain.usecase.trip.UpdateTripStopUseCase
 import com.atlas.domain.usecase.trip.UpdateTripUseCase
 import com.atlas.domain.usecase.location.SearchLocationsUseCase
 import com.atlas.domain.validation.FlexibleDateValidator
+import com.atlas.presentation.itinerary.itineraryCodeLabel
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.date.FlexibleDateRangeDraftUiState
 import com.atlas.presentation.date.updateField
@@ -64,6 +66,7 @@ class TripDetailViewModel(
     countryRepository: CountryRepository,
     itineraryRepository: ItineraryRepository,
     excursionRepository: ExcursionRepository,
+    airportRepository: AirportRepository,
     private val deleteTripUseCase: DeleteTripUseCase,
     private val updateTripUseCase: UpdateTripUseCase,
     private val updateItineraryUseCase: UpdateItineraryUseCase,
@@ -86,6 +89,7 @@ class TripDetailViewModel(
     private val stopPhotoRepository: StopPhotoRepository,
     private val addStopPhotosUseCase: AddStopPhotosUseCase,
     private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
+    private val rotateStopPhotoUseCase: RotateStopPhotoUseCase,
     private val setTripCoverPhotoUseCase: SetTripCoverPhotoUseCase,
     private val tripId: String,
 ) : ViewModel() {
@@ -139,21 +143,35 @@ class TripDetailViewModel(
         PhotosData(tripStopPhotos, excursionStopPhotos)
     }
 
+    // Itineraries plus their route-derived display titles (see [itineraryCodeLabel]).
+    private val itineraryData = combine(
+        itineraryRepository.observeItineraries(),
+        itineraryRepository.observeAllGroups(),
+        airportRepository.observeAirports(),
+    ) { itineraries, groups, airports ->
+        val groupsByItinerary = groups.groupBy { it.itineraryId }
+        val titles = itineraries.associate { itinerary ->
+            itinerary.id to itineraryCodeLabel(groupsByItinerary[itinerary.id].orEmpty(), airports)
+        }
+        ItineraryData(itineraries, titles)
+    }
+
     val uiState: StateFlow<TripDetailUiState> = combine(
         tripContentData,
-        itineraryRepository.observeItineraries(),
+        itineraryData,
         draftData,
         tripMapPreferencesRepository.observeGeneratedStopsVisible(tripId),
         photosData,
-    ) { content, itineraries, drafts, generatedStopsVisibleOnMap, photos ->
-        val linkedItinerary = itineraries.firstOrNull { it.tripId == tripId }
+    ) { content, itineraryData, drafts, generatedStopsVisibleOnMap, photos ->
+        val linkedItinerary = itineraryData.itineraries.firstOrNull { it.tripId == tripId }
         TripDetailUiState(
             trip = content.trip,
             stops = content.stops,
             countries = content.countries,
             excursions = content.excursions,
             linkedItinerary = linkedItinerary,
-            availableItineraries = itineraries.filter { it.tripId == null },
+            availableItineraries = itineraryData.itineraries.filter { it.tripId == null },
+            itineraryTitles = itineraryData.titles,
             stopDraft = drafts.stopDraft,
             tripDraft = drafts.tripDraft,
             excursionStopDraft = drafts.excursionStopDraft,
@@ -772,6 +790,12 @@ class TripDetailViewModel(
         }
     }
 
+    fun onRotatePhoto(photo: StopPhoto) {
+        viewModelScope.launch {
+            rotateStopPhotoUseCase(photo)
+        }
+    }
+
     fun onSetCoverPhoto(photo: StopPhoto?) {
         viewModelScope.launch {
             setTripCoverPhotoUseCase(tripId, photo)
@@ -791,8 +815,6 @@ class TripDetailViewModel(
         stop: TripStop,
         offset: Int,
     ) {
-        if (stop.source != TripStopSource.MANUAL) return
-
         val stops = uiState.value.stops.toMutableList()
         val fromIndex = stops.indexOfFirst { it.id == stop.id }
         val toIndex = fromIndex + offset
@@ -851,6 +873,7 @@ class TripDetailViewModel(
         private val updateTripUseCase: UpdateTripUseCase,
         private val itineraryRepository: ItineraryRepository,
         private val excursionRepository: ExcursionRepository,
+        private val airportRepository: AirportRepository,
         private val updateItineraryUseCase: UpdateItineraryUseCase,
         private val syncGeneratedTripStopsForItineraryUseCase: SyncGeneratedTripStopsForItineraryUseCase,
         private val removeGeneratedTripStopsForItineraryUseCase: RemoveGeneratedTripStopsForItineraryUseCase,
@@ -871,6 +894,7 @@ class TripDetailViewModel(
         private val stopPhotoRepository: StopPhotoRepository,
         private val addStopPhotosUseCase: AddStopPhotosUseCase,
         private val deleteStopPhotoUseCase: DeleteStopPhotoUseCase,
+        private val rotateStopPhotoUseCase: RotateStopPhotoUseCase,
         private val setTripCoverPhotoUseCase: SetTripCoverPhotoUseCase,
         private val tripId: String,
     ) : ViewModelProvider.Factory {
@@ -880,6 +904,7 @@ class TripDetailViewModel(
                 tripRepository = tripRepository,
                 countryRepository = countryRepository,
                 excursionRepository = excursionRepository,
+                airportRepository = airportRepository,
                 deleteTripUseCase = deleteTripUseCase,
                 updateTripUseCase = updateTripUseCase,
                 itineraryRepository = itineraryRepository,
@@ -903,6 +928,7 @@ class TripDetailViewModel(
                 stopPhotoRepository = stopPhotoRepository,
                 addStopPhotosUseCase = addStopPhotosUseCase,
                 deleteStopPhotoUseCase = deleteStopPhotoUseCase,
+                rotateStopPhotoUseCase = rotateStopPhotoUseCase,
                 setTripCoverPhotoUseCase = setTripCoverPhotoUseCase,
                 tripId = tripId,
             ) as T
@@ -921,6 +947,7 @@ data class TripDetailUiState(
     val excursions: List<Excursion> = emptyList(),
     val linkedItinerary: Itinerary? = null,
     val availableItineraries: List<Itinerary> = emptyList(),
+    val itineraryTitles: Map<String, String> = emptyMap(),
     val stopDraft: TripStopDraftUiState = TripStopDraftUiState(),
     val tripDraft: TripEditorDraftUiState = TripEditorDraftUiState(),
     val excursionStopDraft: ExcursionStopDraftUiState = ExcursionStopDraftUiState(),
@@ -941,6 +968,11 @@ private data class TripContentData(
 private data class PhotosData(
     val tripStopPhotos: Map<String, List<StopPhoto>>,
     val excursionStopPhotos: Map<String, List<StopPhoto>>,
+)
+
+private data class ItineraryData(
+    val itineraries: List<Itinerary>,
+    val titles: Map<String, String>,
 )
 
 private data class TripDraftData(

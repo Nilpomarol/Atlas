@@ -85,6 +85,7 @@ fun StopDetailModal(
     onAddPhotos: (stopId: String, stopType: StopType, uris: List<Uri>) -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
     onSetCoverPhoto: (StopPhoto?) -> Unit,
+    onRotatePhoto: ((StopPhoto) -> Unit)? = null,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var viewerInitialIndex by remember { mutableIntStateOf(0) }
@@ -219,6 +220,7 @@ fun StopDetailModal(
             onDismiss = { showViewer = false },
             onOpenSource = null,
             onDeletePhoto = onDeletePhoto,
+            onRotatePhoto = onRotatePhoto,
             onSetCoverPhoto = onSetCoverPhoto,
         )
     }

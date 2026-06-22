@@ -1,5 +1,6 @@
 package com.atlas.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.RotateRight
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.AlertDialog
@@ -58,6 +60,7 @@ fun PhotoViewerDialog(
     onDismiss: () -> Unit,
     onOpenSource: ((PhotoViewerItemUiState) -> Unit)? = null,
     onDeletePhoto: ((StopPhoto) -> Unit)? = null,
+    onRotatePhoto: ((StopPhoto) -> Unit)? = null,
     onSetCoverPhoto: ((StopPhoto?) -> Unit)? = null,
 ) {
     if (items.isEmpty()) {
@@ -106,6 +109,9 @@ fun PhotoViewerDialog(
                 item = currentItem,
                 coverPhotoFilename = coverPhotoFilename,
                 onDismiss = onDismiss,
+                onRotate = onRotatePhoto?.let { rotate ->
+                    { currentItem?.let { item -> rotate(item.photo) } }
+                },
                 onDelete = onDeletePhoto?.let {
                     { currentItem?.let { item -> pendingDelete = item } }
                 },
@@ -183,6 +189,7 @@ private fun ViewerTopBar(
     item: PhotoViewerItemUiState?,
     coverPhotoFilename: String?,
     onDismiss: () -> Unit,
+    onRotate: (() -> Unit)?,
     onDelete: (() -> Unit)?,
     onSetCoverPhoto: ((StopPhoto?) -> Unit)?,
 ) {
@@ -204,39 +211,22 @@ private fun ViewerTopBar(
         }
 
         item?.let { current ->
-            val hasActions = onSetCoverPhoto != null || onDelete != null
-            Column(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(
-                        start = if (hasActions) 108.dp else 58.dp,
-                        end = if (hasActions) 108.dp else 58.dp,
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = current.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = current.contextLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.68f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
+            val hasActions = onSetCoverPhoto != null || onDelete != null || onRotate != null
             if (hasActions) {
                 val isCover = current.photo.filename == coverPhotoFilename
                 Row(
                     modifier = Modifier.align(Alignment.CenterEnd),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    onRotate?.let { rotate ->
+                        ViewerIconButton(onClick = rotate) {
+                            Icon(
+                                imageVector = Icons.Filled.RotateRight,
+                                contentDescription = "Gira la foto",
+                                tint = Color.White,
+                            )
+                        }
+                    }
                     onSetCoverPhoto?.let { setCoverPhoto ->
                         ViewerIconButton(
                             onClick = {
@@ -280,26 +270,37 @@ private fun ViewerContextBar(
             .padding(12.dp),
         shape = RoundedCornerShape(16.dp),
         color = Color.Black.copy(alpha = 0.64f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Text(
                     text = "$position / $total",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.68f),
                 )
-                item.dateText?.let { date ->
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val contextText = listOfNotNull(item.contextLabel, item.dateText)
+                    .joinToString(" · ")
+                if (contextText.isNotBlank()) {
                     Text(
-                        text = date,
+                        text = contextText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White,
+                        color = Color.White.copy(alpha = 0.72f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -329,6 +330,7 @@ private fun ViewerIconButton(
         onClick = onClick,
         shape = CircleShape,
         color = Color.Black.copy(alpha = 0.52f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
     ) {
         Box(
             modifier = Modifier.size(42.dp),

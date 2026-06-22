@@ -61,6 +61,43 @@ class StopPhotoRepositoryImpl(
             }
         }
 
+    override suspend fun rotatePhoto(photo: StopPhoto, degrees: Int): StopPhoto =
+        withContext(Dispatchers.IO) {
+            val photosDir = File(context.filesDir, "photos")
+            val oldFile = File(photosDir, photo.filename)
+            val source = BitmapFactory.decodeFile(oldFile.absolutePath) ?: return@withContext photo
+
+            val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+            val rotated = try {
+                Bitmap.createBitmap(source, 0, 0, source.width, source.height, matrix, true)
+            } catch (_: Exception) {
+                source.recycle()
+                return@withContext photo
+            }
+            if (rotated !== source) source.recycle()
+
+            // Save under a new filename so Coil (keyed by file path) loads fresh content.
+            val newFilename = "${UUID.randomUUID()}.jpg"
+            val saved = try {
+                FileOutputStream(File(photosDir, newFilename)).use { out ->
+                    rotated.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                true
+            } catch (_: Exception) {
+                false
+            }
+            rotated.recycle()
+            if (!saved) {
+                File(photosDir, newFilename).delete()
+                return@withContext photo
+            }
+
+            dao.updateFilename(photo.id, newFilename)
+            tripDao.updateCoverPhotoFilename(oldFilename = photo.filename, newFilename = newFilename)
+            oldFile.delete()
+            photo.copy(filename = newFilename)
+        }
+
     override suspend fun deletePhoto(photo: StopPhoto) = withContext(Dispatchers.IO) {
         File(context.filesDir, "photos/${photo.filename}").delete()
         tripDao.clearCoverPhotoByFilename(photo.filename)

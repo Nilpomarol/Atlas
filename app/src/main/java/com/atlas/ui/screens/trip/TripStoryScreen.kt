@@ -1,15 +1,18 @@
 package com.atlas.ui.screens.trip
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -43,7 +47,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -53,12 +60,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 import com.atlas.presentation.trip.TripStorySlideUiState
 import com.atlas.presentation.trip.TripStoryUiState
-import com.atlas.ui.theme.AtlasBackground
+import com.atlas.ui.theme.AtlasNavy
 import com.atlas.ui.theme.AtlasPrimary
 import java.io.File
 import kotlinx.coroutines.delay
@@ -189,7 +197,7 @@ private fun StorySlide(
     uiState: TripStoryUiState,
 ) {
     when (slide) {
-        is TripStorySlideUiState.Title -> TitleSlide(slide)
+        is TripStorySlideUiState.Title -> TitleSlide(slide, uiState)
         is TripStorySlideUiState.Route -> RouteSlide(slide, uiState)
         is TripStorySlideUiState.Place -> PlaceSlide(slide)
         is TripStorySlideUiState.Photo -> PhotoSlide(slide)
@@ -198,27 +206,32 @@ private fun StorySlide(
 }
 
 @Composable
-private fun TitleSlide(slide: TripStorySlideUiState.Title) {
-    CenterSlide {
-        Text(
-            text = "RELAT DEL VIATGE",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = AtlasPrimary,
-        )
+private fun TitleSlide(
+    slide: TripStorySlideUiState.Title,
+    uiState: TripStoryUiState,
+) {
+    val cover = uiState.trip?.coverPhotoFilename
+    CenterSlide(
+        background = {
+            if (cover != null) StoryCoverBackdrop(filename = cover) else StorySlideBackdrop()
+        },
+    ) {
+        StoryEyebrow(text = "RELAT DEL VIATGE")
         Text(
             text = slide.title,
             style = MaterialTheme.typography.displaySmall.copy(lineHeight = 42.sp),
             fontWeight = FontWeight.Medium,
             color = Color.White,
             textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
         )
         slide.dateText?.let {
             Text(
                 text = it.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White.copy(alpha = 0.72f),
+                color = Color.White.copy(alpha = 0.78f),
             )
         }
         StoryStats(
@@ -235,14 +248,10 @@ private fun RouteSlide(
     slide: TripStorySlideUiState.Route,
     uiState: TripStoryUiState,
 ) {
-    val mapHeight = (LocalConfiguration.current.screenHeightDp * 0.52f).dp
+    val screenHeight = LocalConfiguration.current.screenHeightDp
+    val mapHeight = (screenHeight * if (screenHeight < 700) 0.44f else 0.5f).dp
     CenterSlide(contentMaxWidth = true) {
-        Text(
-            text = "RUTA",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = AtlasPrimary,
-        )
+        StoryEyebrow(text = "RUTA")
         TripMapPreview(
             stops = uiState.mapStops,
             excursions = uiState.mapExcursions,
@@ -256,6 +265,8 @@ private fun RouteSlide(
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
             textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
         )
         if (slide.countryNames.isNotEmpty()) {
             Text(
@@ -263,6 +274,8 @@ private fun RouteSlide(
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.White.copy(alpha = 0.72f),
                 textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -271,18 +284,15 @@ private fun RouteSlide(
 @Composable
 private fun PlaceSlide(slide: TripStorySlideUiState.Place) {
     CenterSlide {
-        Text(
-            text = slide.eyebrow,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = AtlasPrimary,
-        )
+        StoryEyebrow(text = slide.eyebrow)
         Text(
             text = slide.title,
             style = MaterialTheme.typography.displaySmall.copy(lineHeight = 42.sp),
             fontWeight = FontWeight.Medium,
             color = Color.White,
             textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
         )
         slide.contextText?.let {
             Text(
@@ -290,6 +300,8 @@ private fun PlaceSlide(slide: TripStorySlideUiState.Place) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.72f),
                 textAlign = TextAlign.Center,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         slide.notes?.let {
@@ -298,6 +310,8 @@ private fun PlaceSlide(slide: TripStorySlideUiState.Place) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.White.copy(alpha = 0.76f),
                 textAlign = TextAlign.Center,
+                maxLines = 6,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (slide.photoCount > 0) {
@@ -331,7 +345,7 @@ private fun PhotoSlide(
                 else -> Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(AtlasBackground),
+                        .background(Color.Black),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -346,8 +360,15 @@ private fun PhotoSlide(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .fillMaxWidth()
-                .background(Color.Black.copy(alpha = 0.46f))
-                .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 118.dp),
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.78f),
+                        ),
+                    ),
+                )
+                .padding(start = 20.dp, end = 20.dp, top = 48.dp, bottom = 118.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
@@ -416,18 +437,15 @@ private fun StoryTapZones(
 @Composable
 private fun SummarySlide(slide: TripStorySlideUiState.Summary) {
     CenterSlide {
-        Text(
-            text = "RESUM",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = AtlasPrimary,
-        )
+        StoryEyebrow(text = "RESUM")
         Text(
             text = slide.title,
             style = MaterialTheme.typography.displaySmall.copy(lineHeight = 42.sp),
             fontWeight = FontWeight.Medium,
             color = Color.White,
             textAlign = TextAlign.Center,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
         )
         StoryStats(
             dayCountText = slide.dayCountText,
@@ -447,24 +465,115 @@ private fun SummarySlide(slide: TripStorySlideUiState.Summary) {
 @Composable
 private fun CenterSlide(
     contentMaxWidth: Boolean = false,
+    background: @Composable () -> Unit = { StorySlideBackdrop() },
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black),
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        val compact = maxHeight < 680.dp
+        background()
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
                     horizontal = if (contentMaxWidth) 16.dp else 28.dp,
-                    vertical = 112.dp,
+                    vertical = if (compact) 88.dp else 112.dp,
                 ),
-            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(
+                if (compact) 12.dp else 16.dp,
+                Alignment.CenterVertically,
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
             content = content,
+        )
+    }
+}
+
+/** Deep navy "ink" backdrop with a faint cartographer's graticule, shared by the text slides. */
+@Composable
+private fun StorySlideBackdrop() {
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            AtlasNavy.copy(alpha = 0.55f),
+                            AtlasNavy.copy(alpha = 0.12f),
+                            Color.Black,
+                            AtlasNavy.copy(alpha = 0.28f),
+                        ),
+                    ),
+                ),
+        )
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val step = 34.dp.toPx()
+            val line = Color.White.copy(alpha = 0.05f)
+            val w = 1.dp.toPx()
+            var x = 0f
+            while (x <= size.width) {
+                drawLine(line, Offset(x, 0f), Offset(x, size.height), w)
+                x += step
+            }
+            var y = 0f
+            while (y <= size.height) {
+                drawLine(line, Offset(0f, y), Offset(size.width, y), w)
+                y += step
+            }
+        }
+    }
+}
+
+/** Title-slide backdrop: the trip cover photo, softly blurred under a deep navy scrim. */
+@Composable
+private fun StoryCoverBackdrop(filename: String) {
+    val context = LocalContext.current
+    Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
+        AsyncImage(
+            model = File(context.filesDir, "photos/$filename"),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().blur(14.dp),
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.62f),
+                            AtlasNavy.copy(alpha = 0.55f),
+                            Color.Black.copy(alpha = 0.88f),
+                        ),
+                    ),
+                ),
+        )
+    }
+}
+
+/** Vermilion section eyebrow with a short accent rule, used across the text slides. */
+@Composable
+private fun StoryEyebrow(text: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Text(
+            text = text.uppercase(),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = AtlasPrimary,
+            letterSpacing = 2.sp,
+            textAlign = TextAlign.Center,
+        )
+        Box(
+            modifier = Modifier
+                .size(width = 26.dp, height = 2.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(AtlasPrimary.copy(alpha = 0.7f)),
         )
     }
 }
@@ -476,20 +585,48 @@ private fun StoryStats(
     countryCount: Int,
     photoCount: Int,
 ) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(18.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
     ) {
-        StoryStat(value = dayCountText, label = "DIES")
-        StoryStat(value = stopCount.toString(), label = "PARADES")
-        StoryStat(value = countryCount.toString(), label = "PAÏSOS")
-        StoryStat(value = photoCount.toString(), label = "FOTOS")
+        Row(
+            modifier = Modifier.height(IntrinsicSize.Min).padding(vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            StoryStat(value = dayCountText, label = "DIES", modifier = Modifier.weight(1f))
+            StoryStatDivider()
+            StoryStat(value = stopCount.toString(), label = "PARADES", modifier = Modifier.weight(1f))
+            StoryStatDivider()
+            StoryStat(value = countryCount.toString(), label = "PAÏSOS", modifier = Modifier.weight(1f))
+            StoryStatDivider()
+            StoryStat(value = photoCount.toString(), label = "FOTOS", modifier = Modifier.weight(1f))
+        }
     }
 }
 
 @Composable
-private fun StoryStat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+private fun StoryStatDivider() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .fillMaxHeight()
+            .padding(vertical = 4.dp)
+            .background(Color.White.copy(alpha = 0.12f)),
+    )
+}
+
+@Composable
+private fun StoryStat(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,

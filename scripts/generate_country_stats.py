@@ -473,7 +473,8 @@ RC_FALLBACK = {
     "gdp": lambda rc: (float(rc["gdp"]["total"]), None) if rc.get("gdp", {}).get("total") else None,
     "gdp_per_capita": lambda rc: (float(rc["gdp"]["perCapita"]), None) if rc.get("gdp", {}).get("perCapita") else None,
     "gini": _rc_gini,
-    "hdi": lambda rc: (float(rc["hdi"]), None) if isinstance(rc.get("hdi"), (int, float)) else None,
+    # HDI is bounded 0..1; drop out-of-range joins (e.g. territories with no UNDP HDI).
+    "hdi": lambda rc: (float(rc["hdi"]), None) if isinstance(rc.get("hdi"), (int, float)) and 0 < float(rc["hdi"]) <= 1 else None,
 }
 
 

@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -213,6 +215,61 @@ private fun UpcomingTripCard(trip: DashboardTripUiState, onTripClick: (String) -
                     )
                 }
             }
+        }
+    }
+}
+
+// ── Cronologia entry ──────────────────────────────────────────────────────────
+
+@Composable
+internal fun CronologiaCard(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(13.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(AtlasPrimary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Timeline,
+                    contentDescription = null,
+                    tint = AtlasPrimary,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Cronologia",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AtlasOnSurfaceStrong,
+                )
+                Text(
+                    text = "Els teus viatges any rere any",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AtlasOnSurfaceMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = AtlasOnSurfaceMuted,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

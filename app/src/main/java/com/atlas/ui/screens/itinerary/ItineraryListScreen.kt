@@ -70,7 +70,7 @@ fun ItineraryListScreen(
                 ) {
                     items(uiState.itineraries, key = { it.id }) { itinerary ->
                         ItineraryCard(
-                            itinerary = itinerary,
+                            title = uiState.itineraryTitles[itinerary.id] ?: "Itinerari",
                             onClick = { onItineraryClick(itinerary.id) },
                             onDeleteClick = { itineraryToDelete = itinerary },
                         )
@@ -139,7 +139,7 @@ private fun ItineraryListHeader(count: Int, onCreateClick: () -> Unit) {
 
 @Composable
 private fun ItineraryCard(
-    itinerary: Itinerary,
+    title: String,
     onClick: () -> Unit,
     onDeleteClick: () -> Unit,
 ) {
@@ -157,7 +157,7 @@ private fun ItineraryCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = itinerary.title.ifBlank { "Itinerari" },
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = AtlasOnSurfaceStrong,

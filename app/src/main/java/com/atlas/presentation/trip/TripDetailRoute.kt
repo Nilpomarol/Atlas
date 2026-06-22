@@ -23,6 +23,7 @@ fun TripDetailRoute(
             countryRepository = app.container.countryRepository,
             itineraryRepository = app.container.itineraryRepository,
             excursionRepository = app.container.excursionRepository,
+            airportRepository = app.container.airportRepository,
             deleteTripUseCase = app.container.deleteTripUseCase,
             updateTripUseCase = app.container.updateTripUseCase,
             updateItineraryUseCase = app.container.updateItineraryUseCase,
@@ -45,6 +46,7 @@ fun TripDetailRoute(
             stopPhotoRepository = app.container.stopPhotoRepository,
             addStopPhotosUseCase = app.container.addStopPhotosUseCase,
             deleteStopPhotoUseCase = app.container.deleteStopPhotoUseCase,
+            rotateStopPhotoUseCase = app.container.rotateStopPhotoUseCase,
             setTripCoverPhotoUseCase = app.container.setTripCoverPhotoUseCase,
             tripId = tripId,
         ),
@@ -113,6 +115,7 @@ fun TripDetailRoute(
         onSaveExcursionStopDraft = viewModel::onSaveExcursionStopDraft,
         onAddPhotos = viewModel::onAddPhotos,
         onDeletePhoto = viewModel::onDeletePhoto,
+        onRotatePhoto = viewModel::onRotatePhoto,
         onSetCoverPhoto = viewModel::onSetCoverPhoto,
     )
 }

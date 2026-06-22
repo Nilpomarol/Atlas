@@ -36,6 +36,7 @@ fun DashboardScreen(
     uiState: DashboardUiState,
     onSettingsClick: () -> Unit = {},
     onStatsClick: () -> Unit = {},
+    onTimelineClick: () -> Unit = {},
     onTripsClick: () -> Unit = {},
     onFlightsClick: () -> Unit = {},
     onTripClick: (String) -> Unit = {},
@@ -57,6 +58,7 @@ fun DashboardScreen(
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 uiState.featuredTrip?.let { InProgressTripCard(it, onTripClick) }
                 WorldStatsCard(uiState = uiState, onStatsClick = onStatsClick)
+                CronologiaCard(onClick = onTimelineClick)
 
                 if (uiState.upcomingTrips.isNotEmpty()) {
                     UpcomingTripsSection(trips = uiState.upcomingTrips, onSeeAll = onTripsClick, onTripClick = onTripClick)

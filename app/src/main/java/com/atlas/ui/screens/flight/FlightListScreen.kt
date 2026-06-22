@@ -611,7 +611,7 @@ private sealed class FlightListRecord {
 
     data class ItineraryRecord(val item: ItinerarySummaryUiState) : FlightListRecord() {
         override val key: String = "itinerary-${item.itinerary.id}"
-        override val title: String = item.itinerary.title
+        override val title: String = item.routeLabel
         override val sortKey: String? = item.sortKey
     }
 }

@@ -16,11 +16,14 @@ status remains in `docs/Handoff_Prompt.md`.
   navigation polish.
 - v4.0: country facts, Country Info, country-detail enrichment, country-list
   sorting/filtering, and final device polish.
+- v5 Photos and Memories: trip gallery, shared full-screen viewer, country memories,
+  generated trip story, and final UI polish. Optional photo metadata remains
+  intentionally deferred.
 - Backup and portability milestone: photo-inclusive `.atlasbackup` format v3,
   legacy JSON compatibility, explicit recovery, optional Drive-compatible cloud
   backup, progress and result feedback, and three-file automatic retention.
 
-## Selected Direction: v5 Photos and Memories
+## Completed Direction: v5 Photos and Memories
 
 ### Product Goal
 
@@ -234,9 +237,9 @@ possible rather than persisted as a new field.
 
 ## M5: Generated Trip Story
 
-Status: read-only slideshow implementation added on 2026-06-16. Automated checks pass
-and the debug APK installs/launches on device; story-specific visual review remains
-pending. Implementation contract: `docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
+Status: read-only slideshow implementation added on 2026-06-16 and polished through
+M6 on 2026-06-17. Implementation contract:
+`docs/Atlas_v5.0_Photo_Memories_M5_Spec.md`.
 
 ### Goal
 
@@ -277,6 +280,10 @@ A full-screen Compose slideshow containing only derived travel data:
 
 ## M6: Final Photo UI Polish
 
+Status: implemented on 2026-06-17 as a visual-only pass. `testDebugUnitTest`,
+`assembleDebug`, and connected-device install/launch smoke pass. No schema, backup,
+repository, or photo-file behavior changed.
+
 ### Goal
 
 Do a final user-facing polish pass across the v5 photo-memory surfaces after M1-M5 are
@@ -286,6 +293,12 @@ implemented and device-reviewed.
 
 - Review spacing, carousel gutters, card density, and text hierarchy across trip
   records, country memories, viewer overlays, and trip story.
+- Use compact, consistent record/memory card headers and balanced LazyRow gutters so
+  partially visible photos keep the same card margin.
+- Keep full-screen viewer controls separate from the photo context and group position,
+  title, context, and date in the bottom overlay.
+- Give story slides safer narrow-screen spacing, weighted statistics, long-text
+  overflow limits, and a softer caption gradient over photo slides.
 - Confirm Catalan labels, empty states, and action wording are consistent.
 - Verify photo-empty, photo-heavy, narrow-screen, and long-title cases.
 - Keep this polish visual-only unless a small bug is found during review.
@@ -327,7 +340,8 @@ implemented and device-reviewed.
 4. Reuse M1/M2 components and projections for M3.
 5. Defer M4 unless a concrete metadata need appears.
 6. Build M5 from existing data with no schema change.
-7. Finish with M6 UI polish after story mode is device-reviewed.
+7. Finish with M6 UI polish after story mode is device-reviewed. Completed on
+   2026-06-17.
 
 ## Later Directions
 

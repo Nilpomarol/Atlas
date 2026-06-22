@@ -198,8 +198,9 @@ class StatsViewModel(
         val yearStats = buildYearStats(trips, flights, tripStops, excursions, airportsById, itineraryGroups)
         val tripMonthStats = buildTripMonthStats(trips)
         val flightMapRoutes = buildFlightMapRoutes(flights, airportsById)
-        val tripStopMapMarkers = buildTripStopMarkers(trips, tripStopsByTripId)
-        val excursionStopMapMarkers = buildExcursionStopMarkers(excursions)
+        val tripMapRoutes = buildTripMapRoutes(trips, tripStopsByTripId)
+        val tripStopMapMarkers = buildTripStopMarkers(trips, tripStopsByTripId, countryNamesByIso2)
+        val excursionStopMapMarkers = buildExcursionStopMarkers(excursions, countryNamesByIso2)
         val delayBuckets = buildDelayBuckets(flights)
         val topDelays = buildTopDelayRecords(flights, airportsById)
         val topDelayStats = buildTopDelayStats(flights, airportsById)
@@ -275,6 +276,7 @@ class StatsViewModel(
             visitedIso2s = visitedIso2s,
             plannedIso2s = plannedIso2s,
             wishedIso2s = wishedIso2s,
+            countryNamesByIso2 = countryNamesByIso2,
             travelIdentity = buildTravelIdentity(
                 visitedCountries = visitedCount,
                 tripCount = trips.size,
@@ -320,6 +322,7 @@ class StatsViewModel(
             topAirlines = topAirlines.take(10),
             topAircraft = topAircraft.take(10),
             flightMapRoutes = flightMapRoutes,
+            tripMapRoutes = tripMapRoutes,
             tripStopMapMarkers = tripStopMapMarkers,
             excursionStopMapMarkers = excursionStopMapMarkers,
             delayBuckets = delayBuckets,
@@ -475,6 +478,7 @@ data class StatsUiState(
     val visitedIso2s: Set<String> = emptySet(),
     val plannedIso2s: Set<String> = emptySet(),
     val wishedIso2s: Set<String> = emptySet(),
+    val countryNamesByIso2: Map<String, String> = emptyMap(),
     val travelIdentity: StatsIdentity = StatsIdentity("Atlas en construcció", "Afegeix viatges, països i vols per veure el teu patró."),
     val countryRanks: List<StatsRank> = emptyList(),
     val countryStamps: List<StatsCountryStamp> = emptyList(),
@@ -510,6 +514,7 @@ data class StatsUiState(
     val topAirlines: List<StatsAirlineRank> = emptyList(),
     val topAircraft: List<StatsAircraftRank> = emptyList(),
     val flightMapRoutes: List<StatsFlightMapRoute> = emptyList(),
+    val tripMapRoutes: List<StatsTripMapRoute> = emptyList(),
     val tripStopMapMarkers: List<StatsMapMarker> = emptyList(),
     val excursionStopMapMarkers: List<StatsMapMarker> = emptyList(),
     val delayBuckets: List<StatsDelayBucket> = emptyList(),
@@ -567,11 +572,18 @@ data class StatsFlightMapRoute(
     val toCode: String = "",
 )
 
+data class StatsTripMapRoute(
+    val tripId: String,
+    val status: TravelStatus,
+    val points: List<StatsMapPoint>,
+)
+
 data class StatsMapMarker(
     val latitude: Double,
     val longitude: Double,
     val status: TravelStatus,
     val label: String,
+    val countryName: String? = null,
 )
 data class StatsDelayBucket(val label: String, val count: Int)
 data class StatsMonthStat(val month: Int, val label: String, val tripCount: Int)
@@ -588,6 +600,8 @@ data class StatsBadge(
     val unlocked: Boolean,
     val tier: BadgeTier? = null,
     val progress: Float? = null,
+    val completedLevelCount: Int = if (unlocked) 1 else 0,
+    val totalLevelCount: Int = 1,
 )
 
 enum class StatsCountryState(val priority: Int) {
@@ -778,7 +792,32 @@ private fun buildFlightMapRoutes(flights: List<Flight>, airportsById: Map<String
         .take(120)
 }
 
-private fun buildTripStopMarkers(trips: List<Trip>, tripStopsByTripId: Map<String, List<TripStop>>): List<StatsMapMarker> =
+private fun buildTripMapRoutes(trips: List<Trip>, tripStopsByTripId: Map<String, List<TripStop>>): List<StatsTripMapRoute> =
+    trips.mapNotNull { trip ->
+        val points = tripStopsByTripId[trip.id]
+            .orEmpty()
+            .sortedBy { it.sortOrder }
+            .mapNotNull { stop ->
+                val lat = stop.latitude ?: return@mapNotNull null
+                val lng = stop.longitude ?: return@mapNotNull null
+                StatsMapPoint(latitude = lat, longitude = lng)
+            }
+        if (points.size < 2) {
+            null
+        } else {
+            StatsTripMapRoute(
+                tripId = trip.id,
+                status = trip.status,
+                points = points,
+            )
+        }
+    }
+
+private fun buildTripStopMarkers(
+    trips: List<Trip>,
+    tripStopsByTripId: Map<String, List<TripStop>>,
+    countryNamesByIso2: Map<String, String>,
+): List<StatsMapMarker> =
     trips.flatMap { trip ->
         tripStopsByTripId[trip.id].orEmpty().mapNotNull { stop ->
             val lat = stop.latitude ?: return@mapNotNull null
@@ -788,11 +827,15 @@ private fun buildTripStopMarkers(trips: List<Trip>, tripStopsByTripId: Map<Strin
                 longitude = lng,
                 status = trip.status,
                 label = stop.locationName.takeIf { it.isNotBlank() } ?: "Parada",
+                countryName = countryNamesByIso2[stop.countryIso2],
             )
         }
     }
 
-private fun buildExcursionStopMarkers(excursions: List<Excursion>): List<StatsMapMarker> =
+private fun buildExcursionStopMarkers(
+    excursions: List<Excursion>,
+    countryNamesByIso2: Map<String, String>,
+): List<StatsMapMarker> =
     excursions.flatMap { excursion ->
         excursion.stops.mapNotNull { stop ->
             val lat = stop.latitude ?: return@mapNotNull null
@@ -801,6 +844,7 @@ private fun buildExcursionStopMarkers(excursions: List<Excursion>): List<StatsMa
                 latitude = lat,
                 longitude = lng,
                 status = TravelStatus.COMPLETED,
+                countryName = countryNamesByIso2[stop.countryIso2],
                 label = stop.locationName.takeIf { it.isNotBlank() } ?: "Excursió",
             )
         }
@@ -1072,6 +1116,8 @@ private fun tieredBadge(
         unlocked = currentTier != null,
         tier = currentTier,
         progress = progress,
+        completedLevelCount = (tierIndex + 1).coerceAtLeast(0),
+        totalLevelCount = thresholds.size.coerceAtLeast(1),
     )
 }
 

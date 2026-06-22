@@ -12,6 +12,7 @@ import com.atlas.ui.screens.dashboard.DashboardScreen
 fun DashboardRoute(
     onSettingsClick: () -> Unit = {},
     onStatsClick: () -> Unit = {},
+    onTimelineClick: () -> Unit = {},
     onTripsClick: () -> Unit = {},
     onFlightsClick: () -> Unit = {},
     onTripClick: (String) -> Unit = {},
@@ -37,6 +38,7 @@ fun DashboardRoute(
         uiState = uiState,
         onSettingsClick = onSettingsClick,
         onStatsClick = onStatsClick,
+        onTimelineClick = onTimelineClick,
         onTripsClick = onTripsClick,
         onFlightsClick = onFlightsClick,
         onTripClick = onTripClick,

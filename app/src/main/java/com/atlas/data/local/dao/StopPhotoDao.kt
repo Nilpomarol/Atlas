@@ -26,6 +26,9 @@ interface StopPhotoDao {
     @Delete
     suspend fun delete(entity: StopPhotoEntity)
 
+    @Query("UPDATE stop_photos SET filename = :filename WHERE id = :id")
+    suspend fun updateFilename(id: String, filename: String)
+
     @Query("SELECT * FROM stop_photos WHERE stop_id = :stopId AND stop_type = :stopType ORDER BY sort_order ASC")
     suspend fun getByStop(stopId: String, stopType: String): List<StopPhotoEntity>
 

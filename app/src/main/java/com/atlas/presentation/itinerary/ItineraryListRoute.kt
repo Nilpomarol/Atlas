@@ -15,6 +15,7 @@ fun ItineraryListRoute(onItineraryClick: (String) -> Unit) {
     val vm: ItineraryListViewModel = viewModel(
         factory = ItineraryListViewModel.Factory(
             itineraryRepository = app.container.itineraryRepository,
+            airportRepository = app.container.airportRepository,
             createItineraryUseCase = app.container.createItineraryUseCase,
             deleteItineraryUseCase = app.container.deleteItineraryUseCase,
         ),

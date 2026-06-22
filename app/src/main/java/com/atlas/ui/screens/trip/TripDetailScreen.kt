@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -70,10 +71,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -92,9 +97,12 @@ import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.model.TripStopSource
+import com.atlas.ui.components.AtlasSectionTitle
 import com.atlas.ui.components.StopDetailModal
 import com.atlas.ui.components.StopPhotoThumbnails
 import com.atlas.ui.components.PhotoViewerDialog
+import coil.compose.AsyncImage
+import java.io.File
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
@@ -190,6 +198,7 @@ fun TripDetailScreen(
     onSaveExcursionStopDraft: () -> Unit,
     onAddPhotos: (String, StopType, List<Uri>) -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
+    onRotatePhoto: (StopPhoto) -> Unit,
     onSetCoverPhoto: (StopPhoto?) -> Unit,
 ) {
     var isDeleteTripDialogOpen by remember { mutableStateOf(false) }
@@ -335,6 +344,7 @@ fun TripDetailScreen(
     if (uiState.isItineraryPickerOpen) {
         ItineraryPickerDialog(
             itineraries = uiState.availableItineraries,
+            titleFor = { itinerary -> uiState.itineraryTitles[itinerary.id] ?: "Itinerari" },
             onDismiss = onDismissItineraryPicker,
             onSelect = onLinkItinerary,
         )
@@ -416,6 +426,7 @@ fun TripDetailScreen(
                 }
             },
             onDeletePhoto = onDeletePhoto,
+            onRotatePhoto = onRotatePhoto,
             onSetCoverPhoto = onSetCoverPhoto,
         )
     }
@@ -444,6 +455,7 @@ fun TripDetailScreen(
             onAddPhotos = onAddPhotos,
             onDeletePhoto = onDeletePhoto,
             onSetCoverPhoto = onSetCoverPhoto,
+            onRotatePhoto = onRotatePhoto,
         )
     }
 
@@ -465,6 +477,7 @@ fun TripDetailScreen(
             onAddPhotos = onAddPhotos,
             onDeletePhoto = onDeletePhoto,
             onSetCoverPhoto = onSetCoverPhoto,
+            onRotatePhoto = onRotatePhoto,
         )
     }
 }
@@ -618,180 +631,300 @@ private fun TripDetailContent(
     Column(
         modifier = Modifier
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
-        // Spacer to clear the fixed overlay top bar
-        Spacer(Modifier.height(54.dp))
+        // Full-bleed cover hero (sits under the floating top bar by design).
+        TripHero(trip = trip)
 
-        TripInfoCard(
-            trip = trip,
-            stopCount = uiState.stops.size,
-            tripCountries = tripCountries,
-            onStoryClick = onStoryClick,
-        )
+        Column(
+            modifier = Modifier.padding(horizontal = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            TripOverview(
+                trip = trip,
+                stopCount = uiState.stops.size,
+                tripCountries = tripCountries,
+            )
 
-        LinkedItineraryPanel(
-            linkedItinerary = uiState.linkedItinerary,
-            availableCount = uiState.availableItineraries.size,
-            onItineraryClick = onItineraryClick,
-            onOpenItineraryPicker = onOpenItineraryPicker,
-            onUnlinkItinerary = onUnlinkItinerary,
-        )
+            TripStoryButton(onClick = onStoryClick)
 
-        // Static MapLibre map card (gestures disabled; expand icon in footer)
-        TripMapPreview(
-            stops = uiState.stops,
-            excursions = uiState.excursions,
-            mapHeight = 220.dp,
-            gesturesEnabled = false,
-            showFooter = true,
-            generatedStopsVisible = showGeneratedStopsOnMap,
-            onGeneratedStopsVisibilityChanged = onShowGeneratedStopsOnMapChanged,
-            onExpandClick = onExpandMap,
-        )
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AtlasSectionTitle(title = "Mapa")
+                // Static MapLibre map card (gestures disabled; expand icon in footer)
+                TripMapPreview(
+                    stops = uiState.stops,
+                    excursions = uiState.excursions,
+                    mapHeight = 220.dp,
+                    gesturesEnabled = false,
+                    showFooter = true,
+                    generatedStopsVisible = showGeneratedStopsOnMap,
+                    onGeneratedStopsVisibilityChanged = onShowGeneratedStopsOnMapChanged,
+                    onExpandClick = onExpandMap,
+                )
+            }
 
-        TripStopsSection(
-            stops = uiState.stops,
-            excursions = uiState.excursions,
-            countries = uiState.countries,
-            isReorderMode = isReorderMode,
-            onReorderModeChanged = onReorderModeChanged,
-            onAddStopClick = onAddStopClick,
-            onEditStop = onEditStop,
-            onMoveStopUp = onMoveStopUp,
-            onMoveStopDown = onMoveStopDown,
-            onDeleteStop = onDeleteStop,
-            onAddExcursionClick = onAddExcursionClick,
-            onDeleteExcursion = onDeleteExcursion,
-            onMoveExcursionUp = onMoveExcursionUp,
-            onMoveExcursionDown = onMoveExcursionDown,
-            onAddExcursionStopClick = onAddExcursionStopClick,
-            onEditExcursionStop = onEditExcursionStop,
-            onDeleteExcursionStop = onDeleteExcursionStop,
-            onMoveExcursionStopUp = onMoveExcursionStopUp,
-            onMoveExcursionStopDown = onMoveExcursionStopDown,
-            tripStopPhotoMap = tripStopPhotoMap,
-            excursionStopPhotoMap = excursionStopPhotoMap,
-            onStopClick = onStopClick,
-            onExcursionStopClick = onExcursionStopClick,
-        )
+            if (uiState.linkedItinerary != null || uiState.availableItineraries.isNotEmpty()) {
+                LinkedItineraryPanel(
+                    linkedItinerary = uiState.linkedItinerary,
+                    linkedItineraryTitle = uiState.linkedItinerary?.id?.let { uiState.itineraryTitles[it] },
+                    availableCount = uiState.availableItineraries.size,
+                    onItineraryClick = onItineraryClick,
+                    onOpenItineraryPicker = onOpenItineraryPicker,
+                    onUnlinkItinerary = onUnlinkItinerary,
+                )
+            }
 
-        TripPhotoGallerySection(
-            gallery = uiState.photoGallery,
-            coverPhotoFilename = trip.coverPhotoFilename,
-            onGroupClick = { group ->
-                when (group.stopType) {
-                    StopType.TRIP_STOP -> uiState.stops
-                        .firstOrNull { it.id == group.stopId }
-                        ?.let(onStopClick)
-                    StopType.EXCURSION_STOP -> uiState.excursions
-                        .asSequence()
-                        .flatMap { it.stops.asSequence() }
-                        .firstOrNull { it.id == group.stopId }
-                        ?.let(onExcursionStopClick)
-                }
-            },
-            onPhotoClick = onPhotoClick,
-        )
+            TripStopsSection(
+                stops = uiState.stops,
+                excursions = uiState.excursions,
+                countries = uiState.countries,
+                isReorderMode = isReorderMode,
+                onReorderModeChanged = onReorderModeChanged,
+                onAddStopClick = onAddStopClick,
+                onEditStop = onEditStop,
+                onMoveStopUp = onMoveStopUp,
+                onMoveStopDown = onMoveStopDown,
+                onDeleteStop = onDeleteStop,
+                onAddExcursionClick = onAddExcursionClick,
+                onDeleteExcursion = onDeleteExcursion,
+                onMoveExcursionUp = onMoveExcursionUp,
+                onMoveExcursionDown = onMoveExcursionDown,
+                onAddExcursionStopClick = onAddExcursionStopClick,
+                onEditExcursionStop = onEditExcursionStop,
+                onDeleteExcursionStop = onDeleteExcursionStop,
+                onMoveExcursionStopUp = onMoveExcursionStopUp,
+                onMoveExcursionStopDown = onMoveExcursionStopDown,
+                tripStopPhotoMap = tripStopPhotoMap,
+                excursionStopPhotoMap = excursionStopPhotoMap,
+                onStopClick = onStopClick,
+                onExcursionStopClick = onExcursionStopClick,
+            )
 
-        Spacer(Modifier.height(24.dp))
+            TripPhotoGallerySection(
+                gallery = uiState.photoGallery,
+                coverPhotoFilename = trip.coverPhotoFilename,
+                onGroupClick = { group ->
+                    when (group.stopType) {
+                        StopType.TRIP_STOP -> uiState.stops
+                            .firstOrNull { it.id == group.stopId }
+                            ?.let(onStopClick)
+                        StopType.EXCURSION_STOP -> uiState.excursions
+                            .asSequence()
+                            .flatMap { it.stops.asSequence() }
+                            .firstOrNull { it.id == group.stopId }
+                            ?.let(onExcursionStopClick)
+                    }
+                },
+                onPhotoClick = onPhotoClick,
+            )
+
+            Spacer(Modifier.height(24.dp))
+        }
     }
 }
 
 // ─────────────────────────────────────────────
-// Combined info card: title + stats + countries
+// Cover hero: photo (or navy + graticule) with title, status, dates
 // ─────────────────────────────────────────────
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TripInfoCard(
-    trip: Trip,
-    stopCount: Int,
-    tripCountries: List<TripCountryPillUiState>,
-    onStoryClick: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        color = AtlasSurface,
-        border = BorderStroke(1.dp, AtlasOutline),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 15.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(
-                        text = trip.title,
-                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp, lineHeight = 27.sp),
-                        fontWeight = FontWeight.Medium,
-                        color = AtlasOnSurfaceStrong,
-                        modifier = Modifier.weight(1f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    TripStatusPill(status = trip.status)
-                }
+private fun TripHero(trip: Trip) {
+    val context = LocalContext.current
+    val hasCover = trip.coverPhotoFilename != null
+    val heroHeight = if (hasCover) 300.dp else 200.dp
 
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(heroHeight)
+            .background(AtlasNavy),
+    ) {
+        if (hasCover) {
+            AsyncImage(
+                model = File(context.filesDir, "photos/${trip.coverPhotoFilename}"),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+        } else {
+            // Faint cartographer's graticule over the navy fallback.
+            Canvas(modifier = Modifier.matchParentSize()) {
+                val step = 30.dp.toPx()
+                val line = Color.White.copy(alpha = 0.06f)
+                val w = 1.dp.toPx()
+                var x = 0f
+                while (x <= size.width) {
+                    drawLine(line, Offset(x, 0f), Offset(x, size.height), w)
+                    x += step
+                }
+                var y = 0f
+                while (y <= size.height) {
+                    drawLine(line, Offset(0f, y), Offset(size.width, y), w)
+                    y += step
+                }
+            }
+        }
+
+        // Bottom scrim so the title stays legible over any photo.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color.Transparent,
+                        0.5f to Color.Transparent,
+                        1f to AtlasNavy.copy(alpha = if (hasCover) 0.88f else 0.35f),
+                    )
+                ),
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp, bottom = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                TripHeroStatusPill(status = trip.status)
                 trip.dateRange?.let { range ->
                     Text(
                         text = dateRangeFormatter.format(range).uppercase(),
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasOnSurfaceMuted,
-                    )
-                }
-
-                trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-                    Text(
-                        text = notes,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = AtlasOnSurfaceMuted,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White.copy(alpha = 0.92f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
+            Text(
+                text = trip.title,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                TripStatItem(value = trip.dayCountText(), label = "DIES")
-                TripStatItem(value = stopCount.toString(), label = "PARADES")
-                TripStatItem(value = tripCountries.size.toString(), label = "PAÏSOS")
-            }
+@Composable
+private fun TripHeroStatusPill(status: TravelStatus) {
+    val colors = status.tripStatusColors()
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(colors.foreground)
+            .padding(horizontal = 10.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(Color.White))
+        Text(
+            text = status.toCatalanLabel().uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color.White,
+        )
+    }
+}
 
-            if (tripCountries.isNotEmpty()) {
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    tripCountries.forEach { country ->
-                        TripCountryPill(country = country)
-                    }
-                }
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onStoryClick),
-                shape = RoundedCornerShape(999.dp),
-                color = AtlasAccentContainer,
-                border = BorderStroke(1.dp, AtlasOutline),
-            ) {
-                Text(
-                    text = "Veure relat",
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = AtlasPrimary,
+// ─────────────────────────────────────────────
+// Overview: stats ledger + country pills + notes
+// ─────────────────────────────────────────────
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TripOverview(
+    trip: Trip,
+    stopCount: Int,
+    tripCountries: List<TripCountryPillUiState>,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            color = AtlasSurface,
+            border = BorderStroke(1.dp, AtlasOutline),
+        ) {
+            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                TripStatItem(
+                    value = trip.dayCountText(),
+                    label = "DIES",
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 14.dp),
+                )
+                TripStatDivider()
+                TripStatItem(
+                    value = stopCount.toString(),
+                    label = "PARADES",
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 14.dp),
+                )
+                TripStatDivider()
+                TripStatItem(
+                    value = tripCountries.size.toString(),
+                    label = "PAÏSOS",
+                    modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 14.dp),
                 )
             }
+        }
+
+        if (tripCountries.isNotEmpty()) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                tripCountries.forEach { country ->
+                    TripCountryPill(country = country)
+                }
+            }
+        }
+
+        trip.notes?.takeIf { it.isNotBlank() }?.let { notes ->
+            Text(
+                text = notes,
+                style = MaterialTheme.typography.bodyMedium,
+                color = AtlasOnSurfaceMuted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TripStatDivider() {
+    Box(
+        modifier = Modifier
+            .width(1.dp)
+            .fillMaxHeight()
+            .padding(vertical = 12.dp)
+            .background(AtlasOutline),
+    )
+}
+
+@Composable
+private fun TripStoryButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = AtlasNavy,
+    ) {
+        Row(
+            modifier = Modifier.padding(vertical = 13.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Veure el relat",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.White,
+            )
         }
     }
 }
@@ -853,39 +986,13 @@ private fun TripCountryPill(country: TripCountryPillUiState) {
     }
 }
 
-@Composable
-private fun TripStatusPill(status: TravelStatus) {
-    val colors = status.tripStatusColors()
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(colors.container)
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(colors.foreground),
-        )
-        Text(
-            text = status.toCatalanLabel().uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = colors.foreground,
-            letterSpacing = 0.sp,
-        )
-    }
-}
-
 // ─────────────────────────────────────────────
 // Linked itinerary panel
 // ─────────────────────────────────────────────
 @Composable
 private fun LinkedItineraryPanel(
     linkedItinerary: Itinerary?,
+    linkedItineraryTitle: String?,
     availableCount: Int,
     onItineraryClick: (String) -> Unit,
     onOpenItineraryPicker: () -> Unit,
@@ -952,7 +1059,7 @@ private fun LinkedItineraryPanel(
                     color = AtlasOnSurfaceMuted,
                 )
                 Text(
-                    text = linkedItinerary.title.ifBlank { "Itinerari" },
+                    text = linkedItineraryTitle?.takeIf { it.isNotBlank() } ?: "Itinerari",
                     style = MaterialTheme.typography.headlineSmall.copy(fontSize = 23.sp, lineHeight = 25.sp),
                     fontWeight = FontWeight.SemiBold,
                     color = AtlasOnSurfaceStrong,
@@ -1010,6 +1117,7 @@ private fun LinkedCardActionChip(text: String) {
 @Composable
 private fun ItineraryPickerDialog(
     itineraries: List<Itinerary>,
+    titleFor: (Itinerary) -> String,
     onDismiss: () -> Unit,
     onSelect: (Itinerary) -> Unit,
 ) {
@@ -1044,7 +1152,7 @@ private fun ItineraryPickerDialog(
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = itinerary.title.ifBlank { "Itinerari" },
+                                    text = titleFor(itinerary),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = AtlasOnSurfaceStrong,
@@ -1382,7 +1490,7 @@ private fun TripStopCard(
             }
 
             // Actions
-            if (isReorderMode && isManual) {
+            if (isReorderMode) {
                 Column {
                     IconButton(onClick = { onMoveStopUp(stop) }, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(18.dp))

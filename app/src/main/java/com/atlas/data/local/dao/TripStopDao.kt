@@ -24,6 +24,9 @@ interface TripStopDao {
     @Query("DELETE FROM trip_stops WHERE source = 'ITINERARY_GROUP' AND itinerary_group_id IN (:groupIds)")
     suspend fun deleteGeneratedForGroups(groupIds: List<String>)
 
+    @Query("SELECT * FROM trip_stops WHERE source = 'ITINERARY_GROUP' AND itinerary_group_id IN (:groupIds)")
+    suspend fun getGeneratedForGroups(groupIds: List<String>): List<TripStopEntity>
+
     @Upsert
     suspend fun upsert(stop: TripStopEntity)
 

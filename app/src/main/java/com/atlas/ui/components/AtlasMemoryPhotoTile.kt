@@ -1,6 +1,7 @@
 package com.atlas.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +59,13 @@ fun AtlasMemoryPhotoTile(
                 else -> MissingPhotoPlaceholder()
             }
         }
+
+        // Printed-photo hairline edge, drawn over the image.
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .border(1.dp, AtlasOutline, RoundedCornerShape(12.dp)),
+        )
 
         if (isCover) {
             Surface(

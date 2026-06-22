@@ -10,6 +10,8 @@ import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.FlexibleDateFormatter
+import com.atlas.presentation.itinerary.itineraryCityLabel
+import com.atlas.presentation.itinerary.itineraryCodeLabel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -75,7 +77,6 @@ class TimelineViewModel(
         ) { countries, airports -> countries to airports },
     ) { trips, itineraries, allGroups, logs, (countries, airports) ->
         val countryByIso2 = countries.associateBy { it.iso2 }
-        val airportsById = airports.associateBy { it.id }
         val groupsByItinerary = allGroups.groupBy { it.itineraryId }
 
         val items = buildList {
@@ -96,28 +97,9 @@ class TimelineViewModel(
             }
 
             itineraries.filter { it.tripId == null }.forEach { itinerary ->
-                val groups = (groupsByItinerary[itinerary.id] ?: emptyList()).sortedBy { it.sortOrder }
-                // Build deduplicated code + city labels, same logic as buildItineraryCodeLabel /
-                // buildItineraryRouteLabel in ItineraryDetailScreen.
-                val seenIds = mutableSetOf<String>()
-                val codeParts = mutableListOf<String>()
-                val cityParts = mutableListOf<String>()
-                groups.forEach { group ->
-                    val flights = group.flights.sortedBy { it.sortOrder ?: Int.MAX_VALUE }
-                    val first = flights.firstOrNull() ?: return@forEach
-                    val last = flights.lastOrNull() ?: return@forEach
-                    listOf(first.originAirportId, last.destinationAirportId).forEach { airportId ->
-                        if (seenIds.add(airportId.uppercase())) {
-                            val airport = airportsById[airportId]
-                            codeParts += airport?.let { it.iata ?: it.icao ?: it.id.uppercase() }
-                                ?: airportId.uppercase()
-                            cityParts += airport?.let { it.city.takeIf { c -> c.isNotBlank() } ?: it.iata ?: it.icao ?: it.id.uppercase() }
-                                ?: airportId.uppercase()
-                        }
-                    }
-                }
-                val codeLabel = codeParts.ifEmpty { listOf("Itinerari") }.joinToString(" → ")
-                val cityLabel = cityParts.ifEmpty { listOf("Itinerari") }.joinToString(" → ")
+                val groups = groupsByItinerary[itinerary.id] ?: emptyList()
+                val codeLabel = itineraryCodeLabel(groups, airports)
+                val cityLabel = itineraryCityLabel(groups, airports)
                 val firstFlight = groups.flatMap { it.flights }.minByOrNull { it.scheduledDepartureAt ?: "" }
                 val sortKey = firstFlight?.scheduledDepartureAt?.take(10) ?: ""
                 val dateLabel = sortKey.ifEmpty { null }?.let { flexibleDateFormatter.formatIsoDate(it) } ?: ""

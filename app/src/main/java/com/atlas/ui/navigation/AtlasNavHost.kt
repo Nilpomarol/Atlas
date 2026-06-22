@@ -104,6 +104,7 @@ fun AtlasNavHost() {
                             restoreState = true
                         }
                     },
+                    onTimelineClick = { navController.navigate("timeline") },
                     onTripsClick = {
                         navController.navigate(AtlasDestination.Trips.route) {
                             popUpTo(navController.graph.startDestinationId) { saveState = true }

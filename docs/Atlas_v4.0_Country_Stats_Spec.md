@@ -2,9 +2,9 @@
 
 ## 0. Status & purpose
 
-* **Status:** implemented in v4.0 M1 and M2. DB v22 introduced the fact table; DB v23 added the optional country-photo cache. The current work is UI polish.
+* **Status:** implemented. DB v22 introduced the fact table; DB v23 added the optional country-photo cache. Later v4 work added country-detail landscape photos and currency-rate cache in DB v24. This document is an implementation-history contract, not the current phase plan.
 * **Goal:** a deep, flexible per-country facts dataset (~165 fields across 16 categories) powering a new Country Info screen. Catalan throughout. Global **ranks** and Catalan **tiers** on every rankable numeric metric.
-* **Current dataset:** version `2026.1`, 244 countries, about 24,000 facts, and 16 raw categories. It combines API-driven fields with the curated overrides documented below.
+* **Current dataset:** version `2026.3`, 244 countries, about 24,000 facts, and 16 raw categories. It combines API-driven fields with the curated overrides documented below.
 * **Future additions:** remaining curated fields can be added as rows with a dataset version bump and no Room schema change.
 * The implemented info screen hides empty sections/fields automatically.
 
@@ -73,7 +73,7 @@ suspend fun upsertAll(rows: List<CountryStatFactEntity>)
 * `CountryStatFact` domain model mirrors the entity.
 * `CountryStatRepository.observeByCountry(iso2): Flow<List<CountryStatFact>>` — returns all rows; the ViewModel groups by `category` for sectioned layout. A country has ≤ ~25 rows, so one query + in-memory group is fine.
 * Importer is **source-agnostic**: it reads `assets/data/country_stats.json` and upserts. v4.1 only adds rows to that JSON (or a second merged JSON).
-* Track installed version in `dataset_metadata` (name `country_stats`, version `2026.1`), same pattern as the other datasets.
+* Track installed version in `dataset_metadata` (name `country_stats`, version `2026.3`), same pattern as the other datasets.
 
 ---
 
@@ -435,11 +435,11 @@ build():
 
 ## 8. JSON output format
 
-`assets/data/country_stats.json`, dataset version `2026.1`:
+`assets/data/country_stats.json`, dataset version `2026.3`:
 
 ```json
 {
-  "version": "2026.1",
+  "version": "2026.3",
   "countries": [
     {
       "iso2": "ES",

@@ -81,7 +81,9 @@ Run relevant checks if available.
 
 ## Workflow C — Country Info screen polish
 
-Use during v4.0 polish.
+Use for Country Info maintenance or focused polish. v4.0 is complete; preserve
+the current data contract unless a new migration-safe feature explicitly requires
+more.
 
 Prompt:
 
@@ -91,7 +93,7 @@ Use atlas_ui_polish_reviewer.
 Review the Country Info screen.
 Do not edit code.
 
-Use docs/ui-polish-checklist.md and docs/Atlas_v4.0_Country_Stats_Spec.md.
+Use docs/README.md, docs/ui-polish-checklist.md, docs/Atlas_Data_Model.md, and docs/Atlas_v4.0_Country_Stats_Spec.md.
 
 Focus on:
 - dense fact readability

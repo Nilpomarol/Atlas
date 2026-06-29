@@ -2,6 +2,7 @@ package com.atlas.data.backup
 
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,6 +43,7 @@ class BackupSchemaCompatibilityTest {
 
         assertEquals(1, backup.backupVersion)
         assertNull(backup.data.trips.single().coverPhotoFilename)
+        assertFalse(backup.data.trips.single().isQuickTrip)
         assertEquals("MANUAL", backup.data.tripStops.single().source)
         assertTrue(backup.data.stopPhotos.isEmpty())
     }

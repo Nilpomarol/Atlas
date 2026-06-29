@@ -18,6 +18,7 @@ fun StatsRoute(onTimelineClick: () -> Unit) {
             flightRepository = app.container.flightRepository,
             itineraryRepository = app.container.itineraryRepository,
             excursionRepository = app.container.excursionRepository,
+            countryStatsScopePreferencesRepository = app.container.countryStatsScopePreferencesRepository,
             airportRepository = app.container.airportRepository,
             stopPhotoRepository = app.container.stopPhotoRepository,
             aircraftTypeRepository = app.container.aircraftTypeRepository,

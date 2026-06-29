@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines the architecture currently implemented by Atlas. For exact implementation status and active work, read `docs/Handoff_Prompt.md` first.
+This document defines the architecture currently implemented by Atlas. For current
+release facts and documentation status, read `docs/README.md` first.
 
 ## Platform and Stack
 
@@ -22,6 +23,9 @@ This document defines the architecture currently implemented by Atlas. For exact
 - Telephoto over Coil for full-screen photo zoom/pan and large-image rendering.
 
 Atlas does not use Hilt, Koin, Retrofit, osmdroid, or a backend.
+
+Atlas is released. Architecture changes must preserve existing user data, explicit
+Room migrations, backup/import compatibility, and stable dataset identifiers.
 
 ## Layered Architecture
 
@@ -110,7 +114,8 @@ Room database version is 24. Every schema change requires:
 - an explicit migration;
 - registration in `AtlasAppContainer`;
 - an exported Room schema;
-- preservation of existing user data.
+- preservation of existing user data;
+- backup/import review when persisted user data changes.
 
 Static/reference tables and user-created tables are separate. Dataset refreshes may replace versioned static rows but must not overwrite personal travel records.
 
@@ -171,6 +176,47 @@ WorkManager writes the normal `.atlasbackup` archive every 30 days on an unmeter
 network. The worker runs as foreground data sync for large photo archives and retains
 the three newest automatic backups. No Atlas server, Google OAuth flow, or cloud sync
 model is introduced.
+
+## Released Compatibility Rules
+
+- Do not rewrite or remove historical migrations.
+- Do not break imports from legacy v1/v2 JSON backups or v3 `.atlasbackup` files.
+- Do not change persisted field meanings without a migration and compatibility plan.
+- Do not change stable identifiers for bundled datasets unless existing user data can
+  still reconnect safely.
+- Prefer additive schema changes and derived presentation projections.
+
+## Planned Feature Architecture Notes
+
+### Country Stats Scope
+
+The planned stats-scope preference should be implemented as a stats filter over the
+existing country dataset and derived country states.
+
+- Model the scope as a domain-level enum or value object.
+- Keep exact scope membership explicit and covered by tests.
+- Store the selected scope as user preference state, likely DataStore, unless a later
+  product decision requires backup portability for this setting.
+- Apply the scope in stats use cases/ViewModels, not in Room DAOs that feed the
+  general country list.
+- Do not change `CountryStateDerivationService`; it should continue deriving states
+  across all Atlas countries and territories.
+- No Room migration or backup-format change is expected.
+
+### Quick Trip Creation
+
+The planned quick-trip flow should create ordinary records through a narrower capture
+path.
+
+- Add a use case/repository transaction for creating a trip and its first stop
+  together.
+- Reuse the existing `Trip` and `TripStop` models, flexible-date utilities, location
+  fields, and country identifiers.
+- Derive compact-card eligibility in presentation from the trip structure, initially
+  `exactly one stop`.
+- Do not add a persisted trip type for the first implementation.
+- If a future explicit display override is needed, treat it as released data: add a
+  migration, exported schema, backup compatibility review, and tests.
 
 ## Validation Strategy
 

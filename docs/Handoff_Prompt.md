@@ -1,19 +1,27 @@
-# Atlas Handoff
+# Atlas Development Handoff Snapshot
+
+> Historical/development note: this file preserves a detailed handoff snapshot from
+> active development. It is useful context, but the current long-term documentation
+> entry point is `docs/README.md`. When this file conflicts with current code,
+> exported schemas, bundled assets, or active architecture/data/backup docs, treat
+> the implementation and active docs as the source of truth.
 
 ## Purpose
 
-This is the current operational source of truth for Atlas. It records what is implemented now, the active phase, and constraints that must be preserved.
+This file records what was implemented at the time of the handoff, recent decisions,
+and constraints that must be preserved.
 
-When this document conflicts with a long-term specification or roadmap, follow this document and the code currently in the repository.
+When this document conflicts with active release documentation or current code,
+follow `docs/README.md` and the code currently in the repository.
 
-Last updated: 2026-06-17.
+Last updated: 2026-06-24.
 
 ## Current Status
 
 - Atlas is a native Android, local-first personal travel atlas.
 - v2.0, v3.0, v3.1, and v3.2 are complete.
 - v4.0 Country Depth and the backup/portability milestone are complete.
-- The selected next direction is v5 Photos and Memories. Its roadmap is defined in
+- v5 Photos and Memories is complete. Its implemented roadmap is defined in
   `docs/Atlas_Post_v2.0_Roadmap.md`.
 - v5 M1 Trip Gallery is implemented; automated checks pass and its gallery behavior
   has been confirmed on device.
@@ -46,6 +54,49 @@ Last updated: 2026-06-17.
 - Google Drive folder selection and a successful photo-inclusive upload have been verified on a device.
 - The complete backup recovery drill has passed on a device: clean reinstall, explicit
   restore, photos and trip covers, notification feedback, and automatic retention.
+
+## Next Planned Tasks
+
+### Country Stats Scope Preference
+
+Planned user-facing options:
+
+- UN 195.
+- UN + Kosovo + Taiwan 197.
+- UN + territories, meaning every country and territory available in Atlas.
+
+Design decision: this is a stats preference only. It must not hide countries or
+territories from the country list, country detail, trips, stops, excursions, flights,
+itineraries, search, maps, backups, or imports. Keep the full Atlas dataset and
+country-state derivation intact; filter only the country-based stats denominator and
+scope-aware aggregations.
+
+Implementation direction: use an explicit tested membership list for each scope and
+persist the selected scope as preference state, likely DataStore. No Room migration or
+backup-format change is expected.
+
+### Quick Trip Creation and Compact Cards
+
+Design decision: quick trips are normal trips created through a faster flow, not a new
+persisted trip type.
+
+Initial quick-create fields:
+
+- name;
+- flexible dates;
+- one location using the same system as a normal trip stop.
+
+The flow should create a normal trip plus one normal trip stop. In the trip list and
+dashboard, trips with exactly one stop should render as compact quick-trip cards.
+Opening the card should still use the normal trip detail surface, and adding more
+stops or richer trip structure should naturally make the record behave like a full
+trip.
+
+Implementation direction: prefer a use case/repository transaction that creates the
+trip and first stop together. Do not add a `trip_kind` or quick-trip flag for the
+first implementation. If explicit display override is later needed, treat it as a
+released data change requiring Room migration, exported schema, backup review, and
+compatibility tests.
 
 ## Stack and Constraints
 
@@ -235,12 +286,12 @@ Verified backup behavior:
 - automatic retention keeps the newest three Atlas cloud backups;
 - Android Auto Backup remains disabled so it cannot bypass Atlas's explicit restore.
 
-The selected next scope is **v5 Photos and Memories**. M1 is implemented: trip detail
-now derives a read-only `Records` gallery from existing trip-stop and excursion-stop
-photo flows. Groups follow deterministic trip narrative order, show location/date/
-excursion context, mark the trip cover, degrade missing files to a placeholder, and
-open the existing stop detail modal for photo actions. The implementation is specified
-in `docs/Atlas_v5.0_Photo_Memories_M1_Spec.md`.
+The implemented **v5 Photos and Memories** scope began with M1: trip detail now
+derives a read-only `Records` gallery from existing trip-stop and excursion-stop photo
+flows. Groups follow deterministic trip narrative order, show location/date/excursion
+context, mark the trip cover, degrade missing files to a placeholder, and open the
+existing stop detail modal for photo actions. The implementation is specified in
+`docs/Atlas_v5.0_Photo_Memories_M1_Spec.md`.
 
 M1 required no Room migration, repository expansion, backup-format change, or photo
 file operation. M2 now adds one shared full-screen viewer used by both trip gallery
@@ -299,7 +350,7 @@ economia, desenvolupament, infraestructura, cultura, drets, practic. Identity wa
 dissolved into the others; the standalone finances section was removed (fiscal/trade/
 investment route into economia, `desigualtat` into desenvolupament via
 `SECTION_FOR_CATEGORY`). CO2 ranks are derived at import (`co2_per_capita`,
-`co2_total`), dataset `2026.2`.
+`co2_total`), dataset `2026.3`.
 
 ### M3 — country detail enrichment (complete, committed)
 

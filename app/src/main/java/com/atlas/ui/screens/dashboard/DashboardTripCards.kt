@@ -55,7 +55,14 @@ internal fun InProgressTripCard(trip: DashboardTripUiState, onTripClick: (String
     Column(modifier = Modifier.padding(horizontal = 20.dp)) {
         AtlasSectionTitle(title = "En curs")
         Spacer(modifier = Modifier.height(10.dp))
-        Surface(
+        if (trip.isQuickTrip()) {
+            QuickDashboardTripCard(
+                trip = trip,
+                onTripClick = onTripClick,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            Surface(
             onClick = { onTripClick(trip.tripId) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
@@ -132,6 +139,93 @@ internal fun InProgressTripCard(trip: DashboardTripUiState, onTripClick: (String
 
 // ── Upcoming trips ────────────────────────────────────────────────────────────
 
+}
+
+@Composable
+private fun QuickDashboardTripCard(
+    trip: DashboardTripUiState,
+    onTripClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = trip.status.tripStatusColors()
+    val dateText = (trip.memoryDateText ?: trip.dateText ?: "Sense data").uppercase()
+    val context = LocalContext.current
+
+    Surface(
+        onClick = { onTripClick(trip.tripId) },
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(modifier = Modifier.height(96.dp)) {
+            Box(
+                modifier = Modifier
+                    .width(82.dp)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp))
+                    .background(colors.container),
+            ) {
+                if (trip.coverPhotoFilename != null) {
+                    AsyncImage(
+                        model = File(context.filesDir, "photos/${trip.coverPhotoFilename}"),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                } else {
+                    TripCardMap(trip.mapPoints, trip.stopCount, colors.foreground)
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = dateText,
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(AtlasSurfaceSubtle, RoundedCornerShape(999.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    TripStatePill(label = colors.label, color = colors.foreground)
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        text = trip.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = trip.quickTripLocationText(),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 internal fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: () -> Unit, onTripClick: (String) -> Unit) {
     Column(
@@ -150,6 +244,15 @@ internal fun UpcomingTripsSection(trips: List<DashboardTripUiState>, onSeeAll: (
 
 @Composable
 private fun UpcomingTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
+    if (trip.isQuickTrip()) {
+        QuickDashboardTripCard(
+            trip = trip,
+            onTripClick = onTripClick,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        return
+    }
+
     val colors = trip.status.tripStatusColors()
     Surface(
         onClick = { onTripClick(trip.tripId) },
@@ -291,6 +394,15 @@ internal fun RecentTripsSection(trips: List<DashboardTripUiState>, onTripClick: 
 
 @Composable
 private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> Unit) {
+    if (trip.isQuickTrip()) {
+        QuickDashboardTripCard(
+            trip = trip,
+            onTripClick = onTripClick,
+            modifier = Modifier.width(224.dp),
+        )
+        return
+    }
+
     val colors = trip.status.tripStatusColors()
     val datePillText = (trip.memoryDateText ?: trip.dateText)?.uppercase()
     val context = LocalContext.current
@@ -370,4 +482,15 @@ private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> 
             }
         }
     }
+}
+
+private fun DashboardTripUiState.isQuickTrip(): Boolean = isQuickTrip
+
+private fun DashboardTripUiState.quickTripLocationText(): String {
+    val country = flagText?.let { flag -> "$flag ${countryText.orEmpty()}".trim() } ?: countryText
+    val stopText = if (stopCount > 1) "$stopCount parades" else null
+    return listOfNotNull(
+        routeText?.takeIf { it.isNotBlank() },
+        stopText ?: country?.takeIf { it.isNotBlank() },
+    ).joinToString(" · ").ifBlank { "Sense ubicació" }
 }

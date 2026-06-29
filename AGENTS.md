@@ -12,20 +12,22 @@ The app is a personal travel atlas, not a productivity tool, social network, boo
 
 Use these documents before making product, architecture, data, or UI decisions:
 
-- `docs/Handoff_Prompt.md` — current implementation status, current constraints, recent decisions, known ground truths.
+- `docs/README.md` — documentation map, current release facts, and historical/current doc status.
+- `docs/Handoff_Prompt.md` — development handoff snapshot with useful recent decisions; not the long-term canonical doc when it conflicts with active docs or code.
 - `docs/Atlas_Product_Specification.md` — long-term product vision and domain behavior.
 - `docs/Atlas_Technical_Architecture.md` — architecture principles and layer responsibilities.
 - `docs/Atlas_Data_Model.md` — long-term conceptual data model.
 - `docs/Atlas_v4.0_Country_Stats_Spec.md` — v4.0 country info/stat facts contract.
 - `docs/Atlas - Design System.html` — visual system reference.
 
-When these documents conflict, prefer the most current operational source:
+When these documents conflict, prefer the current implementation and active release docs:
 
-1. `docs/Handoff_Prompt.md`
-2. Version-specific implementation specs
-3. Technical architecture and data model
-4. Long-term product specification
-5. Older roadmap/history documents
+1. Current code, exported Room schemas, bundled assets, and backup implementation
+2. `docs/README.md`
+3. Technical architecture, data model, and backup docs
+4. Product specification
+5. Version-specific implementation specs
+6. Development handoff and older roadmap/history documents
 
 If a conflict affects implementation, report it before changing code.
 
@@ -97,18 +99,21 @@ Rules:
 - Derived states are not source of truth unless a future cache is deliberately introduced.
 - Build only the schema required for the current version.
 
-## Current phase priorities
+## Current release priorities
 
-The current phase is v4.0 country depth and UI polish.
+Atlas has completed v5 Photos and Memories, with optional photo metadata deliberately deferred.
+The app is released, so preserve existing user data, migrations, and backup/import compatibility.
 
 Prioritize:
 
-- Country Info screen polish.
-- Country detail visual clarity.
+- Small, reviewable changes.
+- Next planned tasks: country stats scope preference and quick trip creation/compact
+  cards, as documented in `docs/Atlas_Post_v2.0_Roadmap.md`.
+- Current country, trip, flight, itinerary, photo, backup, and stats behavior.
 - Consistency with the Warm Editorial Atlas / Cartographer's Ink visual direction.
 - Reuse of shared Atlas theme tokens and components.
-- Small, reviewable changes.
 - Preserving current behavior unless explicitly asked to change it.
+- Additive or migration-safe feature work.
 
 ## Validation
 
@@ -129,7 +134,7 @@ If checks cannot be run, state that clearly and explain why.
 - Do not rename files, packages, models, or database fields for style-only reasons.
 - Keep migrations explicit and safe.
 - Preserve existing data compatibility.
-- Avoid speculative v5/v6 abstractions.
+- Avoid speculative future-version abstractions.
 
 ## Final response format
 

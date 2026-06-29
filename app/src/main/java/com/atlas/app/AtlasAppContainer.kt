@@ -14,6 +14,7 @@ import com.atlas.data.location.NominatimLocationSearchRepository
 import com.atlas.data.preferences.ApiKeyPreferencesDataSource
 import com.atlas.data.preferences.CloudBackupPreferencesDataSource
 import com.atlas.data.preferences.CountryMemoriesPreferencesDataSource
+import com.atlas.data.preferences.CountryStatsScopePreferencesDataSource
 import com.atlas.data.preferences.TripMapPreferencesDataSource
 import com.atlas.data.backup.CloudBackupExporter
 import com.atlas.data.local.database.AtlasDatabase
@@ -47,6 +48,7 @@ import com.atlas.domain.repository.CountryLandscapePhotoRepository
 import com.atlas.domain.repository.CountryPhotoRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
+import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
 import com.atlas.domain.repository.CurrencyRateRepository
 import com.atlas.domain.repository.FlightApiClient
 import com.atlas.domain.repository.ExcursionRepository
@@ -96,6 +98,7 @@ import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseC
 import com.atlas.domain.usecase.location.SearchLocationsUseCase
 import com.atlas.domain.usecase.trip.CreateTripUseCase
 import com.atlas.domain.usecase.trip.CreateTripStopUseCase
+import com.atlas.domain.usecase.trip.CreateQuickTripUseCase
 import com.atlas.domain.usecase.trip.DeleteTripUseCase
 import com.atlas.domain.usecase.trip.DeleteTripStopUseCase
 import com.atlas.domain.usecase.trip.ReorderTripStopsUseCase
@@ -139,6 +142,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_21_22)
         .addMigrations(AtlasDatabase.MIGRATION_22_23)
         .addMigrations(AtlasDatabase.MIGRATION_23_24)
+        .addMigrations(AtlasDatabase.MIGRATION_24_25)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -251,6 +255,8 @@ class AtlasAppContainer(context: Context) {
         TripMapPreferencesDataSource(applicationContext)
     val countryMemoriesPreferencesRepository: CountryMemoriesPreferencesRepository =
         CountryMemoriesPreferencesDataSource(applicationContext)
+    val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository =
+        CountryStatsScopePreferencesDataSource(applicationContext)
     private val aeroDataBoxClient = AeroDataBoxClient()
     val flightApiClient: FlightApiClient = aeroDataBoxClient
     val aircraftApiClient: AircraftApiClient = aeroDataBoxClient
@@ -281,6 +287,10 @@ class AtlasAppContainer(context: Context) {
     )
 
     val createTripUseCase = CreateTripUseCase(
+        tripRepository = tripRepository,
+    )
+
+    val createQuickTripUseCase = CreateQuickTripUseCase(
         tripRepository = tripRepository,
     )
 

@@ -6,13 +6,15 @@ This repository contains the active Codex and Claude Code setup for Atlas. The f
 
 Read these in priority order:
 
-1. `docs/Handoff_Prompt.md` - current implementation and active work.
-2. `docs/Atlas_v4.0_Country_Stats_Spec.md` - current country-facts contract.
-3. `docs/Atlas_Technical_Architecture.md` - implemented architecture and boundaries.
-4. `docs/Atlas_Data_Model.md` - implemented conceptual data model.
+1. `docs/README.md` - documentation map, current release facts, and doc status.
+2. `docs/Atlas_Technical_Architecture.md` - implemented architecture and boundaries.
+3. `docs/Atlas_Data_Model.md` - implemented conceptual data model.
+4. `docs/Atlas_Photo_Backup_Spec.md` - current backup/export/import contract.
 5. `docs/Atlas_Product_Specification.md` - long-term product direction.
 6. `docs/Atlas - Design System.html` - visual reference.
-7. `docs/Atlas_Post_v2.0_Roadmap.md` - current and future roadmap.
+7. `docs/Atlas_Post_v2.0_Roadmap.md` - completed roadmap and future directions.
+8. `docs/Handoff_Prompt.md` - historical development handoff snapshot.
+9. Version-specific implementation specs, such as `docs/Atlas_v4.0_Country_Stats_Spec.md`.
 
 Persistent agent rules live in root and nested `AGENTS.md` files. Claude wrappers import those rules through their corresponding `CLAUDE.md`.
 
@@ -65,7 +67,7 @@ Use atlas_ui_polish_reviewer.
 
 Review the Country Info screen.
 Do not edit code.
-Use docs/ui-polish-checklist.md and docs/Atlas_v4.0_Country_Stats_Spec.md.
+Use docs/ui-polish-checklist.md, docs/Atlas_Data_Model.md, and docs/Atlas_v4.0_Country_Stats_Spec.md.
 Return a prioritized polish plan.
 ```
 
@@ -82,7 +84,8 @@ More task patterns are documented in `docs/codex-workflows.md`.
 
 ## Maintenance Rules
 
-- Keep `docs/Handoff_Prompt.md` synchronized with implemented database and phase status.
+- Keep `docs/README.md`, architecture, data model, and backup docs synchronized with implemented database and release status.
+- Treat `docs/Handoff_Prompt.md` as a handoff snapshot, not the only long-term source of truth.
 - Keep agent prompts short and defer shared rules to `AGENTS.md`.
 - Keep UI-specific rules under `app/src/main/java/com/atlas/ui/`.
 - Keep data, domain, and presentation rules scoped to their matching directories.

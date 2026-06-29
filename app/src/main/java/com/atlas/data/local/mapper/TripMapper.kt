@@ -14,6 +14,7 @@ fun TripEntity.toDomain(): Trip = Trip(
     dateRange = toDateRange(),
     notes = notes,
     coverPhotoFilename = coverPhotoFilename,
+    isQuickTrip = isQuickTrip,
 )
 
 private fun TripEntity.toDateRange(): FlexibleDateRange? {

@@ -1,9 +1,13 @@
 ---
 name: project-status
-description: Current Atlas app development phase, last completed work, and next items
+description: Historical Atlas app development phase notes and old completed work
 metadata:
   type: project
 ---
+
+Historical note: this file is an old agent memory snapshot. It is not current
+project documentation. Use `docs/README.md`, `docs/Atlas_Data_Model.md`, and the
+current code/schema/assets for released-state facts.
 
 v3.2 is complete (per-stop photos, cover photos, DB v21). Navbar root-nav fix done.
 

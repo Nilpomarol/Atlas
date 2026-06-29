@@ -36,6 +36,7 @@ fun SettingsRoute(onBackClick: () -> Unit = {}) {
             cloudBackupPreferencesRepository = app.container.cloudBackupPreferencesRepository,
             cloudBackupScheduler = app.container.cloudBackupScheduler,
             apiKeyRepository = app.container.apiKeyRepository,
+            countryStatsScopePreferencesRepository = app.container.countryStatsScopePreferencesRepository,
             datasetMetadataDao = app.container.database.datasetMetadataDao(),
         ),
     )
@@ -155,6 +156,7 @@ fun SettingsRoute(onBackClick: () -> Unit = {}) {
         onDismissMessage = viewModel::clearMessage,
         onSaveRapidApiKey = viewModel::saveRapidApiKey,
         onSaveUnsplashKey = viewModel::saveUnsplashKey,
+        onCountryStatsScopeChange = viewModel::setCountryStatsScope,
     )
 }
 

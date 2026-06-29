@@ -1,6 +1,7 @@
 package com.atlas.ui.screens.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material.icons.filled.Image
@@ -37,6 +39,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
@@ -57,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.atlas.domain.model.CountryStatsScope
 import com.atlas.domain.repository.BackupImportPreview
 import com.atlas.presentation.settings.DatasetVersionInfo
 import com.atlas.presentation.settings.SettingsUiState
@@ -90,6 +94,7 @@ fun SettingsScreen(
     onDismissMessage: () -> Unit,
     onSaveRapidApiKey: (String) -> Unit,
     onSaveUnsplashKey: (String) -> Unit,
+    onCountryStatsScopeChange: (CountryStatsScope) -> Unit,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -137,6 +142,14 @@ fun SettingsScreen(
 
             // ── API key ──────────────────────────────────────────────────────
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                AtlasSectionLabel("Estadístiques")
+                CountryStatsScopeCard(
+                    selectedScope = uiState.countryStatsScope,
+                    onScopeChange = onCountryStatsScopeChange,
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 AtlasSectionLabel("Integracions")
                 ApiKeyCard(savedKey = rapidApiKey, onSave = onSaveRapidApiKey)
                 UnsplashKeyCard(savedKey = unsplashKey, onSave = onSaveUnsplashKey)
@@ -165,6 +178,105 @@ fun SettingsScreen(
 }
 
 // ── Backup card ───────────────────────────────────────────────────────────────
+
+@Composable
+private fun CountryStatsScopeCard(
+    selectedScope: CountryStatsScope,
+    onScopeChange: (CountryStatsScope) -> Unit,
+) {
+    AtlasCard(modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+        Column {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AtlasNavy),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Public,
+                        contentDescription = null,
+                        tint = AtlasSurface,
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = "Abast del recompte",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceStrong,
+                    )
+                    Text(
+                        text = "NOMÉS AFECTA LES ESTADÍSTIQUES",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceMuted,
+                    )
+                }
+            }
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
+            CountryStatsScope.values().forEachIndexed { index, scope ->
+                CountryStatsScopeRow(
+                    scope = scope,
+                    selected = scope == selectedScope,
+                    onClick = { onScopeChange(scope) },
+                )
+                if (index < CountryStatsScope.values().lastIndex) {
+                    Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CountryStatsScopeRow(
+    scope: CountryStatsScope,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                text = scope.settingsTitle(),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = AtlasOnSurfaceStrong,
+            )
+            Text(
+                text = scope.settingsDescription(),
+                style = MaterialTheme.typography.bodySmall,
+                color = AtlasOnSurfaceMuted,
+            )
+        }
+    }
+}
+
+private fun CountryStatsScope.settingsTitle(): String = when (this) {
+    CountryStatsScope.UN_195 -> "ONU 195"
+    CountryStatsScope.UN_PLUS_KOSOVO_TAIWAN_197 -> "ONU + Kosovo + Taiwan 197"
+    CountryStatsScope.ALL_ATLAS -> "ONU + territoris"
+}
+
+private fun CountryStatsScope.settingsDescription(): String = when (this) {
+    CountryStatsScope.UN_195 -> "Membres de l'ONU, Vaticà i Palestina."
+    CountryStatsScope.UN_PLUS_KOSOVO_TAIWAN_197 -> "Afegeix Kosovo i Taiwan al recompte."
+    CountryStatsScope.ALL_ATLAS -> "Tots els països i territoris disponibles a Atlas."
+}
 
 @Composable
 private fun BackupCard(isBusy: Boolean, onExportClick: () -> Unit, onImportClick: () -> Unit) {

@@ -1,157 +1,196 @@
-# Atlas — Photo-Inclusive Backup Spec
+# Atlas Backup, Export, and Import Contract
 
-Last updated: 2026-06-14.
+Last updated: 2026-06-24.
 
 ## Purpose
 
-Make Atlas backups include the user's photos so a backup/restore is a complete,
-self-contained copy of personal travel data. This is the next milestone after
-v4.0 and the first concrete piece of the roadmap's **Portability** direction.
+Atlas is a released, local-first app. Backup and restore must protect the user's
+personal travel history, including app-private photos, without requiring a backend or
+platform auto-restore.
 
-This document is the source of truth for the work. Update
-`docs/Handoff_Prompt.md` when implemented status changes.
+This document describes the current implemented contract. It is not a proposal.
 
-## Implementation Status
+## Current Implementation
 
-Implemented on 2026-06-14 with the `.atlasbackup` extension.
+- Backup format version: **3**.
+- Export file extension: `.atlasbackup`.
+- Container: standard ZIP archive.
+- Payload entry: `atlas-backup.json`.
+- Photo entries: `photos/<uuid>.jpg`.
+- Legacy imports: v1/v2 JSON backups remain supported.
+- Android Auto Backup is disabled; explicit Atlas backup/import is the supported
+  portability path.
+- Optional cloud backup writes the same `.atlasbackup` archive through the Android
+  Storage Access Framework. It does not introduce a second data model or a cloud sync
+  protocol.
 
-- Backup schema v3 includes stop-photo rows and trip cover filenames.
-- Exports stream a ZIP containing `atlas-backup.json` and referenced user photos.
-- Imports accept both `.atlasbackup` ZIP files and legacy v1/v2 JSON files.
-- ZIP entries, filenames, duplicates, counts, and expanded sizes are validated.
-- Missing photo files remove their rows and clear affected trip covers.
-- Photo-directory replacement is rollback-capable if the Room transaction fails.
-- Automated unit tests and the debug build pass. Manual device QA remains.
+Implemented code lives in:
 
-## Current State (baseline)
+- `data/repository/BackupRepositoryImpl.kt`
+- `data/backup/AtlasBackupV1.kt`
+- `data/backup/AtlasBackupV2.kt`
+- `data/backup/AtlasBackupV3.kt`
+- `data/backup/BackupArchive.kt`
+- `data/backup/BackupValidation.kt`
+- `data/backup/BackupMappers.kt`
+- `data/backup/BackupPhotoSanitizer.kt`
 
-- `BackupRepository` is string-based: `exportBackupJson(): String`,
-  `previewImport(json)`, `importBackupJson(json)`.
-- `SettingsRoute` writes the JSON to a SAF `CreateDocument("application/json")`
-  document (`atlas-backup-DATE.json`) and reads back via `OpenDocument`.
-- Backup format version is **2**; v1 imports through defaults.
-- **Photos are not in the backup at all** — not the binaries *and not the rows*:
-  - `AtlasBackupDataV2` has no `stopPhotos` field.
-  - The trip backup mapper does not carry `cover_photo_filename`.
-- User photos live at `filesDir/photos/<uuid>.jpg` (downscaled to ≤1920 px,
-  JPEG-80 on capture). `stop_photos` rows reference those filenames; a trip cover
-  photo references one of the same filenames.
-- External photo caches live elsewhere: `filesDir/country_photos` (portrait,
-  Country Info) and `filesDir/country_landscape_photos` (detail hero), plus the
-  `currency_rates` cache. These are re-fetchable.
-
-## Goals
-
-- A backup is a complete, restorable copy of all user-created data, including
-  photos and trip cover references.
-- Old JSON backups still import (no photos).
-- No new third-party dependencies; local-first; old-backup compatibility and
-  stable identifiers preserved.
-
-## Non-Goals
-
-- Backing up re-fetchable caches (country portrait/landscape photos, currency
-  rates). They regenerate from the network; including them would bloat the file
-  and risk restoring stale data.
-- Cloud synchronization remains a separate non-goal. Opt-in periodic cloud backup
-  was implemented later as a transport for the same `.atlasbackup` archive.
-
-## Design
-
-### Container: ZIP archive
-
-Switch the export from a single JSON text document to a ZIP archive built with
-`java.util.zip` (JDK built-in — no new dependency). Base64-in-JSON is rejected:
-it inflates size ~33 % and forces the whole payload into memory.
-
-Archive layout:
+## Archive Layout
 
 ```text
-atlas-backup.json     payload (schema v3)
-photos/<uuid>.jpg     one entry per referenced user photo, streamed
+atlas-backup.json
+photos/<uuid>.jpg
 ```
 
-### What is included / excluded
+The archive is streamed with JDK ZIP APIs. Photo binaries are not base64-encoded into
+JSON.
 
-- Include: `stop_photos` rows + their binary files from `filesDir/photos`. Trip
-  cover photos come along for free (a cover references one of those filenames).
-- Exclude: country portrait photos, country landscape photos, currency rates.
+## Backup v3 Payload
 
-### Schema: backup v3 (back-compatible)
+`atlas-backup.json` uses `AtlasBackupV3`:
 
-- Add `stopPhotos: List<StopPhotoBackup>` to the backup data
-  (`id, stopId, stopType, filename, sortOrder, createdAt`).
-- Add `coverPhotoFilename` to the trip backup model.
-- Bump `BACKUP_VERSION` to 3. v1/v2 JSON still imports (defaults, no photos).
-
-### Export flow
-
-1. Repo builds the JSON payload (now including `stop_photos` rows).
-2. Repo writes a ZIP to the provided `OutputStream`: the json entry first, then
-   streams each photo file that is actually referenced by a row (orphan files in
-   `filesDir/photos` are skipped).
-3. `SettingsRoute`: `CreateDocument("application/zip")`, filename
-   `atlas-backup-DATE.atlasbackup`.
-
-### Import flow (preserves preview → confirm UX)
-
-1. UI copies the chosen document to a temp file in `cacheDir` (so it can be read
-   for both preview and confirm).
-2. Detect container by magic bytes (`PK\x03\x04`): ZIP → parse
-   `atlas-backup.json` and stage `photos/*` into a temp dir; plain JSON → the
-   existing path, no photos (legacy).
-3. Preview reports counts, now including photos.
-4. On confirm, stage photo files first. During the Room transaction, replace the
-   structured rows and swap the staged directory into `filesDir/photos`. If the
-   transaction or swap fails, restore the previous photo directory before
-   returning the error. This avoids committed rows pointing at a failed media
-   replacement.
-
-### Interface change (data layer; no Android types leak)
-
-```kotlin
-interface BackupRepository {
-    suspend fun exportBackup(output: OutputStream)
-    suspend fun previewImport(file: File): BackupImportPreview
-    suspend fun importBackup(file: File): BackupImportPreview
-}
+```text
+backupVersion
+createdAt
+countryDatasetVersion
+airportDatasetVersion
+data
 ```
 
-- UI stages the SAF stream to a temp `File` and passes that in; SAF/`Uri`
-  handling stays in `SettingsRoute`.
-- `BackupRepositoryImpl` gains the photos directory (inject `Context` or the
-  `File`, consistent with the other repositories).
-- `BackupImportPreview` gains a photo count.
+`data` currently includes:
 
-### Edge cases
+- country user states
+- country logs
+- trips, including `coverPhotoFilename`
+- trip stops
+- flights
+- itineraries
+- itinerary groups
+- excursions
+- excursion stops
+- stop photos
 
-- Photo row whose file is missing from the archive → skip the row and clear any
-  cover reference, so there are no dangling/broken images.
-- Import is a full replace: existing `filesDir/photos` are cleared and restored
-  from the archive, via temp-staging so an aborted import preserves current
-  media.
-- Stream throughout; never hold the whole archive in memory.
-- Photo filenames are UUIDs, so no collisions.
+`stopPhotos` rows carry:
 
-## Resolved Decision
+```text
+id
+stopId
+stopType
+filename
+sortOrder
+createdAt
+```
 
-- **File extension:** `.atlasbackup`. The file remains a standard ZIP archive and
-  can still be inspected with ZIP tools.
+## Included Data
 
-## Implementation Phases (complete)
+Backups include user-created travel data and referenced user photo files:
 
-1. **Schema + rows:** v3 models/mappers (`stopPhotos`, trip cover filename),
-   include `stop_photos` in export/import row logic, version bump. Unit-tested.
-2. **Zip container:** stream-based `exportBackup`/`importBackup` with
-   legacy-JSON fallback; interface change to streams/`File`; wire `SettingsRoute`
-   to zip output and temp-file staging.
-3. **Restore + edge cases:** photo extraction into `filesDir/photos`,
-   missing-file handling, preview photo counts, device QA.
+- wished/currently-living country state
+- country visit/lived logs
+- trips, trip stops, excursions, and excursion stops
+- flights and itineraries
+- stop-photo rows
+- referenced files from `filesDir/photos`
+- trip cover filename references, when valid
 
-## Validation
+## Excluded Data
 
-- Unit tests: v3 round-trip mappers; zip read/write; legacy-JSON detection;
-  missing-photo-file handling.
-- `assembleDebug` for the wiring/UI.
-- Manual device QA: export a backup with photos, wipe/reinstall, import, confirm
-  photos and trip covers are restored; import an old `.json` backup successfully.
+Backups intentionally exclude replaceable or static data:
+
+- bundled countries, airports, airlines, aircraft types, and country facts datasets
+- dataset rows installed from assets
+- country portrait photo cache
+- country landscape photo cache
+- currency-rate cache
+- API keys and integration preferences
+- cloud backup settings/status
+
+Reference data is reinstalled from bundled assets. Replaceable caches can be
+refreshed. Personal travel records use stable identifiers where possible so dataset
+updates do not overwrite user-created history.
+
+## Export Rules
+
+1. Build the v3 JSON payload from current Room rows.
+2. Include only stop-photo rows whose referenced files exist.
+3. Clear invalid trip cover references through the same sanitization logic.
+4. Write `atlas-backup.json`.
+5. Stream each referenced photo file under `photos/`.
+
+The current UI exports with MIME type `application/zip` and the filename pattern:
+
+```text
+atlas-backup-DATE.atlasbackup
+```
+
+## Import Rules
+
+1. The UI copies the selected SAF document to a temporary file.
+2. `BackupArchive` detects ZIP vs legacy JSON by magic bytes.
+3. ZIP archives must contain exactly one `atlas-backup.json` payload and only valid
+   `photos/<uuid>.jpg` photo entries.
+4. JSON is decoded with known backup models and validated.
+5. v1/v2 JSON imports are accepted through default values; they contain no photo
+   files.
+6. v3 imports validate relationships, enum values, date ranges, country ISO2 values,
+   photo filename shape, duplicate IDs, and archive size limits.
+7. Photo rows whose files are absent from the archive are sanitized out, and affected
+   cover references are cleared.
+8. Import is a full replace of user-created rows.
+9. Photo files are staged before the Room transaction. If the transaction or photo
+   directory swap fails, the previous photo directory is restored.
+
+## Safety Limits
+
+The archive reader rejects invalid or risky inputs, including:
+
+- duplicate ZIP entries
+- unknown ZIP entries
+- absolute paths, backslashes, or `..` path traversal
+- non-UUID photo filenames
+- non-JPG photo filenames
+- duplicate photo filenames
+- excessive JSON, photo, total expanded size, or photo-entry count
+- malformed JSON
+- unsupported backup versions
+
+## Optional Cloud Backup
+
+Cloud backup is an opt-in transport for the same v3 archive:
+
+- the user chooses a document-provider folder;
+- Atlas persists folder access through SAF;
+- WorkManager can run monthly backups on an unmetered network with battery/storage
+  constraints;
+- automatic retention keeps the newest three automatic backups;
+- manual exports are not deleted by automatic retention.
+
+No Google Drive SDK, account model, backend, or continuous sync protocol is part of
+the current implementation.
+
+## Compatibility Rules
+
+- Do not break v1/v2 JSON import compatibility.
+- Do not break v3 `.atlasbackup` import compatibility.
+- A future backup v4 must preserve defaults for older imports and keep v3 files
+  importable.
+- Adding persisted user data requires a backup review and round-trip tests.
+- Changing photo ownership, filenames, or directory behavior requires explicit
+  migration and restore testing.
+- Do not include replaceable caches unless there is a concrete product reason and a
+  compatibility plan.
+
+## Validation Expectations
+
+For backup-related changes, run or update focused tests for:
+
+- schema compatibility;
+- v3 mapper round-trips;
+- v1/v2 legacy imports;
+- ZIP archive validation;
+- missing-photo sanitization;
+- photo directory rollback behavior;
+- cloud backup retention logic, when affected.
+
+Also run the smallest relevant Android build/check and manually review restore flows
+when file handling changes.

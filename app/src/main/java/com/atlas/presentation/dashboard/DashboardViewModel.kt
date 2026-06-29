@@ -16,6 +16,7 @@ import com.atlas.domain.util.utcAwareSortKey
 import com.atlas.presentation.trip.TripStopMapPoint
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
+import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
@@ -39,6 +40,7 @@ class DashboardViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     excursionRepository: ExcursionRepository,
+    countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
     airportRepository: AirportRepository,
     countryStateDerivationService: CountryStateDerivationService,
     private val flexibleDateFormatter: FlexibleDateFormatter,
@@ -73,7 +75,8 @@ class DashboardViewModel(
         tripData,
         flightData,
         excursionData,
-    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), excursions ->
+        countryStatsScopePreferencesRepository.observeScope(),
+    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), excursions, statsScope ->
         val userStatesByIso2 = userStates.associateBy { it.countryIso2 }
         val logsByIso2 = logs.groupBy { it.countryIso2 }
         val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
@@ -94,22 +97,24 @@ class DashboardViewModel(
                 airportCountryIso2ById = airportCountryIso2ById,
             )
         }
+        val scopedCountryStates = countryStates.filter { (country, _) -> statsScope.includes(country) }
+        val scopedCountries = scopedCountryStates.map { it.first }
 
         val currentlyLivingIso2 = userStates.firstOrNull { it.currentlyLiving }?.countryIso2
         val currentTrip = trips.firstOrNull { it.status == TravelStatus.IN_PROGRESS }
 
-        val livingIso2s = countryStates.filter { it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
-        val livedIso2s = countryStates.filter { it.second.lived && !it.second.currentlyLiving }.mapNotNull { it.first.iso2 }.toSet()
-        val visitedIso2s = countryStates.filter { it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
-        val plannedIso2s = countryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
-        val wishedIso2s = countryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.mapNotNull { it.first.iso2 }.toSet()
+        val livingIso2s = scopedCountryStates.filter { it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
+        val livedIso2s = scopedCountryStates.filter { it.second.lived && !it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
+        val visitedIso2s = scopedCountryStates.filter { it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
+        val plannedIso2s = scopedCountryStates.filter { it.second.planned && !it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
+        val wishedIso2s = scopedCountryStates.filter { it.second.wished && !it.second.planned && !it.second.visited && !it.second.lived }.map { it.first.iso2 }.toSet()
 
-        val visitedCount = countryStates.count { it.second.visited }
+        val visitedCount = scopedCountryStates.count { it.second.visited }
 
         // Country markers for the world map: labeled for living/lived, plain for visited
         val highlightedCountryMarkers = buildList {
-            for (country in countries) {
-                val iso2 = country.iso2 ?: continue
+            for (country in scopedCountries) {
+                val iso2 = country.iso2
                 val lat = country.latitude ?: continue
                 val lng = country.longitude ?: continue
                 when {
@@ -200,26 +205,26 @@ class DashboardViewModel(
         val daysTraveled = completedTripDays.sum()
         val avgTripLengthDays = completedTripDays.takeIf { it.isNotEmpty() }?.average()
 
-        val worldPercentage = if (countries.isNotEmpty()) {
-            visitedCount.toFloat() / countries.size.toFloat() * 100f
+        val worldPercentage = if (scopedCountries.isNotEmpty()) {
+            visitedCount.toFloat() / scopedCountries.size.toFloat() * 100f
         } else 0f
 
         DashboardUiState(
             visitedCount = visitedCount,
-            wishedCount = countryStates.count { it.second.wished },
-            plannedCount = countryStates.count { it.second.planned },
-            livedCount = countryStates.count { it.second.lived },
+            wishedCount = scopedCountryStates.count { it.second.wished },
+            plannedCount = scopedCountryStates.count { it.second.planned },
+            livedCount = scopedCountryStates.count { it.second.lived },
             livingIso2s = livingIso2s,
             livedIso2s = livedIso2s,
             visitedIso2s = visitedIso2s,
             plannedIso2s = plannedIso2s,
             wishedIso2s = wishedIso2s,
-            visitedContinentCount = countryStates
+            visitedContinentCount = scopedCountryStates
                 .filter { it.second.visited || it.second.lived }
                 .map { it.first.continent }
                 .distinct()
                 .size,
-            trackableCountryCount = countries.size,
+            trackableCountryCount = scopedCountries.size,
             worldPercentage = worldPercentage,
             tripCount = trips.size,
             flightCount = flights.size,
@@ -313,6 +318,7 @@ class DashboardViewModel(
                     TripStopMapPoint(latitude = lat, longitude = lng)
                 },
             coverPhotoFilename = coverPhotoFilename,
+            isQuickTrip = isQuickTrip,
         )
     }
 
@@ -322,6 +328,7 @@ class DashboardViewModel(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
         private val excursionRepository: ExcursionRepository,
+        private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
         private val airportRepository: AirportRepository,
         private val countryStateDerivationService: CountryStateDerivationService,
         private val flexibleDateFormatter: FlexibleDateFormatter,
@@ -334,6 +341,7 @@ class DashboardViewModel(
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
                 excursionRepository = excursionRepository,
+                countryStatsScopePreferencesRepository = countryStatsScopePreferencesRepository,
                 airportRepository = airportRepository,
                 countryStateDerivationService = countryStateDerivationService,
                 flexibleDateFormatter = flexibleDateFormatter,
@@ -387,6 +395,7 @@ data class DashboardTripUiState(
     val countryIso2s: List<String> = emptyList(),
     val mapPoints: List<TripStopMapPoint> = emptyList(),
     val coverPhotoFilename: String? = null,
+    val isQuickTrip: Boolean = false,
 )
 
 data class DashboardFlightUiState(

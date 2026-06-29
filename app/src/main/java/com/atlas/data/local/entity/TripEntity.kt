@@ -42,4 +42,6 @@ data class TripEntity(
     val updatedAt: String,
     @ColumnInfo(name = "cover_photo_filename")
     val coverPhotoFilename: String? = null,
+    @ColumnInfo(name = "is_quick_trip")
+    val isQuickTrip: Boolean = false,
 )

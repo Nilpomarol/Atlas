@@ -21,6 +21,19 @@ interface TripRepository {
         notes: String?,
     )
 
+    suspend fun createTripWithInitialStop(
+        title: String,
+        status: TravelStatus,
+        dateRange: FlexibleDateRange?,
+        notes: String?,
+        isQuickTrip: Boolean,
+        locationName: String,
+        countryIso2: String,
+        latitude: Double?,
+        longitude: Double?,
+        stopNotes: String?,
+    ): String
+
     suspend fun updateTrip(trip: Trip)
     suspend fun updateTripStatus(id: String, status: TravelStatus, updatedAt: String)
     suspend fun deleteTrip(trip: Trip)

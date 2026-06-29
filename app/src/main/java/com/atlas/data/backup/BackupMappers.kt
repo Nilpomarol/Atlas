@@ -109,6 +109,7 @@ fun TripEntity.toBackupV3(): BackupTripV3 =
         datePrecision = datePrecision,
         notes = notes,
         coverPhotoFilename = coverPhotoFilename,
+        isQuickTrip = isQuickTrip,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
@@ -129,6 +130,7 @@ fun BackupTripV3.toEntity(): TripEntity =
         createdAt = createdAt,
         updatedAt = updatedAt,
         coverPhotoFilename = coverPhotoFilename,
+        isQuickTrip = isQuickTrip,
     )
 
 fun TripStopEntity.toBackupV1(): BackupTripStopV1 =

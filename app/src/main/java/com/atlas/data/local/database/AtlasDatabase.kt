@@ -66,7 +66,7 @@ import com.atlas.data.local.entity.TripStopEntity
         CountryLandscapePhotoEntity::class,
         CurrencyRateEntity::class,
     ],
-    version = 24,
+    version = 25,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -867,6 +867,14 @@ abstract class AtlasDatabase : RoomDatabase() {
                         PRIMARY KEY(`currency_code`)
                     )
                     """.trimIndent(),
+                )
+            }
+        }
+
+        val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `trips` ADD COLUMN `is_quick_trip` INTEGER NOT NULL DEFAULT 0",
                 )
             }
         }

@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Place
@@ -144,6 +145,7 @@ fun TripDetailScreen(
     onBackClick: () -> Unit,
     onDeleteTrip: () -> Unit,
     onEditTripClick: () -> Unit,
+    onToggleQuickTrip: () -> Unit,
     onDismissTripDraft: () -> Unit,
     onTripTitleChanged: (String) -> Unit,
     onTripStatusChanged: (TravelStatus) -> Unit,
@@ -264,8 +266,10 @@ fun TripDetailScreen(
         TripDetailTopBar(
             onBackClick = onBackClick,
             onEditTripClick = onEditTripClick,
+            onToggleQuickTripClick = onToggleQuickTrip,
             onDeleteTripClick = { isDeleteTripDialogOpen = true },
             actionsEnabled = trip != null,
+            isQuickTrip = trip?.isQuickTrip == true,
         )
     }
 
@@ -489,8 +493,10 @@ fun TripDetailScreen(
 private fun TripDetailTopBar(
     onBackClick: () -> Unit,
     onEditTripClick: () -> Unit,
+    onToggleQuickTripClick: () -> Unit,
     onDeleteTripClick: () -> Unit,
     actionsEnabled: Boolean,
+    isQuickTrip: Boolean,
 ) {
     var actionsExpanded by remember { mutableStateOf(false) }
 
@@ -542,7 +548,7 @@ private fun TripDetailTopBar(
                     DropdownMenu(
                         expanded = actionsExpanded,
                         onDismissRequest = { actionsExpanded = false },
-                        modifier = Modifier.width(190.dp),
+                        modifier = Modifier.width(230.dp),
                     ) {
                         DropdownMenuItem(
                             text = {
@@ -557,6 +563,24 @@ private fun TripDetailTopBar(
                                 Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(16.dp))
                             },
                             onClick = { actionsExpanded = false; onEditTripClick() },
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    if (isQuickTrip) {
+                                        "Mostra com a viatge normal"
+                                    } else {
+                                        "Mostra com a viatge ràpid"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AtlasOnSurfaceStrong,
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Map, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(16.dp))
+                            },
+                            onClick = { actionsExpanded = false; onToggleQuickTripClick() },
                         )
                         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                         DropdownMenuItem(

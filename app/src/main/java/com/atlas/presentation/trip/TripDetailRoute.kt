@@ -61,6 +61,7 @@ fun TripDetailRoute(
             onBackClick()
         },
         onEditTripClick = viewModel::onEditTripClick,
+        onToggleQuickTrip = viewModel::onToggleQuickTrip,
         onDismissTripDraft = viewModel::onDismissTripDraft,
         onTripTitleChanged = viewModel::onTripTitleChanged,
         onTripStatusChanged = viewModel::onTripStatusChanged,

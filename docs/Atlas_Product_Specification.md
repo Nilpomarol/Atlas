@@ -8,7 +8,8 @@ It describes what the full application should become. It is not the source of tr
 
 Use:
 
-- `docs/Handoff_Prompt.md` for implemented behavior and active work;
+- `docs/README.md` for current release facts and documentation status;
+- `docs/Handoff_Prompt.md` for historical development handoff context;
 - `docs/Atlas_Technical_Architecture.md` for current architecture;
 - `docs/Atlas_Data_Model.md` for the implemented conceptual data model;
 - this document for long-term product direction.
@@ -387,6 +388,31 @@ Show strict country counts separately from total tracked entities.
 
 This avoids future regret. If Atlas starts with a wider classified dataset, the app can always filter down. If it starts with only strict sovereign countries, adding territories later would affect stats, maps, airport mapping, backup compatibility, and user expectations.
 
+### 4.1 Planned Stats Scope Preference
+
+Atlas should let the user choose the country-counting scope used by personal
+statistics:
+
+```text
+UN 195
+UN + Kosovo + Taiwan 197
+UN + territories
+```
+
+This is a statistics preference, not a dataset filter. The full Atlas country and
+territory dataset should remain visible and usable in country lists, country detail,
+trips, stops, excursions, flights, itineraries, search, maps, backups, and imports.
+
+Design rules:
+
+- Do not delete, hide, or reinterpret user records when the scope changes.
+- Country state derivation remains the same; only the stats denominator and
+  scope-aware aggregations change.
+- Show excluded visited territories as outside the selected stats scope where useful.
+- Keep the exact ISO2 membership of the 195 and 197 scopes explicit and tested.
+- Default behavior should preserve the released app's current broad tracking unless
+  a deliberate migration decision says otherwise.
+
 ---
 
 ## 5. Main Product Domains
@@ -655,6 +681,38 @@ Optional fields:
 - future slideshow/story mode data
 
 ---
+
+### 7.1.1 Planned Quick Trip Creation
+
+Atlas should support fast trip capture for simple, short, or low-detail travel. This
+should be a faster way to create an ordinary trip, not a separate trip type.
+
+Initial quick-trip fields:
+
+- trip name;
+- flexible dates;
+- one location using the same location, country/territory, and optional coordinate
+  model as a normal trip stop.
+
+Creation result:
+
+- one normal trip;
+- one normal trip stop.
+
+Presentation rule:
+
+- trips with exactly one stop may appear as compact quick-trip cards in the trip list
+  and dashboard;
+- opening the compact card still opens the normal trip detail;
+- adding more stops or richer trip data should naturally make the record behave like a
+  full trip.
+
+Photos should remain optional. The initial quick-create flow does not need to attach
+photos; if photo support is added later, it should reuse the existing stop-photo
+system after the first stop exists.
+
+Do not introduce a persisted `quick trip` type unless future design needs explicit
+manual compact/full display control.
 
 ### 7.2 Trip Status
 
@@ -1376,6 +1434,24 @@ The bundled dataset may preformat Catalan display values. Distribution facts may
 
 ---
 
+### 12.4 Planned Stats Scope Behavior
+
+Country-based personal stats should use the selected stats scope from section 4.1.
+The scope changes the denominator and scope-aware aggregations, not the underlying
+travel records.
+
+Examples:
+
+- percentage of selected scope visited;
+- selected-scope continent totals;
+- selected-scope country counts;
+- secondary count for visited territories outside the selected scope.
+
+Trip counts, flight counts, photo counts, distance, timeline entries, and stored
+country states should not change when the stats scope changes.
+
+---
+
 ## 13. Photos and Memories
 
 ### 13.1 Purpose
@@ -1420,22 +1496,27 @@ Stop-photo files live in app-private storage. Country photos are replaceable ext
 
 ### 13.3 Story / Slideshow Mode
 
-A future story mode could transform trips into visual narratives.
+Atlas includes a read-only trip story mode. It transforms existing trip, stop,
+excursion, itinerary, flight, note, map, and photo data into a full-screen visual
+slideshow.
 
-Possible elements:
+Story mode is a derived presentation feature:
 
-- trip title slide
-- route map
-- timeline
-- stop-by-stop sections
-- excursion sections
-- photos
-- notes
-- country facts
-- flight route intro/outro
-- statistics summary
+- no separate story table;
+- no manual slide editor;
+- no media export pipeline;
+- no social sharing model;
+- no schema or backup format requirement beyond the existing travel/photo data.
 
-This should be treated as a future visual feature, not a core data requirement.
+Implemented story elements include:
+
+- trip title and summary stats;
+- route map overview;
+- stop intro slides;
+- itinerary-derived flight slides;
+- anchored and unanchored excursion slides;
+- contextual photo slides;
+- closing summary.
 
 ---
 
@@ -1443,15 +1524,20 @@ This should be treated as a future visual feature, not a core data requirement.
 
 ### 14.1 Backup Philosophy
 
-Atlas should support JSON backup/import for user-created data.
+Atlas supports explicit backup/import for user-created data.
 
-The backup system should protect user ownership and make the app safe to use long-term without cloud dependency.
+The backup system protects user ownership and makes the app safe to use long-term
+without cloud dependency.
 
-Backup format:
+Current backup format:
 
 ```text
-JSON
+.atlasbackup ZIP
+  atlas-backup.json
+  photos/<uuid>.jpg
 ```
+
+The JSON payload is backup format v3. Legacy v1/v2 JSON backups remain importable.
 
 CSV export may be added later but is not central to the product.
 
@@ -1470,10 +1556,10 @@ Backups should include user-created data:
 - trip stops
 - excursions
 - excursion stops
-- cached places if useful
-- photo references
+- stop-photo rows
+- referenced user photo files
+- trip cover references
 - notes
-- user settings related to tracking
 
 Backups do not need to include bundled static reference datasets by default:
 
@@ -1487,14 +1573,20 @@ Example:
 
 ```json
 {
-  "backupVersion": 1,
+  "backupVersion": 3,
   "createdAt": "2026-05-29T00:00:00Z",
-  "countryDatasetVersion": "2026.1",
-  "airportDatasetVersion": "2026.1",
-  "countryStatsDatasetVersion": "2026.1",
-  "data": {}
+  "countryDatasetVersion": "2026.2",
+  "airportDatasetVersion": "2026.3",
+  "data": {
+    "trips": [],
+    "tripStops": [],
+    "stopPhotos": []
+  }
 }
 ```
+
+Backups intentionally exclude replaceable caches and settings such as country photo
+caches, currency-rate cache, API keys, and cloud backup preferences.
 
 ---
 
@@ -1512,11 +1604,19 @@ Important concerns:
 - changed static dataset IDs
 - photo URI availability
 - partial import failures
+- backward compatibility with previously exported backups
 
 Recommended approach:
 
 ```text
 Use stable external identifiers such as ISO codes and IATA codes in backup payloads, not only internal database IDs.
+```
+
+Released-project rule:
+
+```text
+Do not break old Room migrations or existing backup/import compatibility. Future
+persisted fields and serialized formats must be additive or migration-safe.
 ```
 
 ---

@@ -40,6 +40,7 @@ data class BackupTripV3(
     val datePrecision: String? = null,
     val notes: String? = null,
     val coverPhotoFilename: String? = null,
+    val isQuickTrip: Boolean = false,
     val createdAt: String,
     val updatedAt: String,
 )

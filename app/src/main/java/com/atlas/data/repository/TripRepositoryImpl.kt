@@ -67,8 +67,71 @@ class TripRepositoryImpl(
                 notes = notes,
                 createdAt = now,
                 updatedAt = now,
+                isQuickTrip = false,
             ),
         )
+    }
+
+    override suspend fun createTripWithInitialStop(
+        title: String,
+        status: TravelStatus,
+        dateRange: FlexibleDateRange?,
+        notes: String?,
+        isQuickTrip: Boolean,
+        locationName: String,
+        countryIso2: String,
+        latitude: Double?,
+        longitude: Double?,
+        stopNotes: String?,
+    ): String {
+        val now = Instant.now().toString()
+        val tripId = UUID.randomUUID().toString()
+        database.withTransaction {
+            tripDao.upsert(
+                TripEntity(
+                    id = tripId,
+                    title = title,
+                    status = status.name,
+                    startYear = dateRange?.start?.year,
+                    startMonth = dateRange?.start?.month,
+                    startDay = dateRange?.start?.day,
+                    endYear = dateRange?.end?.year,
+                    endMonth = dateRange?.end?.month,
+                    endDay = dateRange?.end?.day,
+                    datePrecision = dateRange?.precision?.name,
+                    notes = notes,
+                    createdAt = now,
+                    updatedAt = now,
+                    isQuickTrip = isQuickTrip,
+                ),
+            )
+            tripStopDao.upsert(
+                TripStopEntity(
+                    id = UUID.randomUUID().toString(),
+                    tripId = tripId,
+                    locationName = locationName,
+                    countryIso2 = countryIso2,
+                    latitude = latitude,
+                    longitude = longitude,
+                    startYear = dateRange?.start?.year,
+                    startMonth = dateRange?.start?.month,
+                    startDay = dateRange?.start?.day,
+                    endYear = dateRange?.end?.year,
+                    endMonth = dateRange?.end?.month,
+                    endDay = dateRange?.end?.day,
+                    datePrecision = dateRange?.precision?.name,
+                    notes = stopNotes,
+                    sortOrder = 0,
+                    source = TripStopSource.MANUAL.name,
+                    itineraryGroupId = null,
+                    isVisible = true,
+                    displayTitle = null,
+                    createdAt = now,
+                    updatedAt = now,
+                ),
+            )
+        }
+        return tripId
     }
 
     override suspend fun updateTrip(trip: Trip) {
@@ -89,6 +152,7 @@ class TripRepositoryImpl(
                 createdAt = now,
                 updatedAt = now,
                 coverPhotoFilename = trip.coverPhotoFilename,
+                isQuickTrip = trip.isQuickTrip,
             ),
         )
     }
@@ -121,6 +185,8 @@ class TripRepositoryImpl(
                 notes = trip.notes,
                 createdAt = "",
                 updatedAt = "",
+                coverPhotoFilename = trip.coverPhotoFilename,
+                isQuickTrip = trip.isQuickTrip,
             ),
         )
     }

@@ -1,10 +1,10 @@
-# Atlas Current Roadmap
+# Atlas Implemented Roadmap and Future Directions
 
 ## Purpose
 
-This roadmap starts from the implemented and device-verified baseline. It defines
-the selected next product direction and its milestone boundaries. Exact operational
-status remains in `docs/Handoff_Prompt.md`.
+This roadmap starts from the implemented and device-verified baseline. It records
+completed milestone history and later directions. Exact current release facts live in
+`docs/README.md`.
 
 ## Completed Baseline
 
@@ -342,6 +342,108 @@ implemented and device-reviewed.
 6. Build M5 from existing data with no schema change.
 7. Finish with M6 UI polish after story mode is device-reviewed. Completed on
    2026-06-17.
+
+## Next Planned Work
+
+### N1: Country Stats Scope Preference
+
+Status: planned.
+
+#### Goal
+
+Give the user control over the denominator used by country-based statistics without
+changing the underlying country/territory dataset or hiding travel records.
+
+#### Scope Options
+
+- `UN 195`: countries counted by the user-facing UN scope.
+- `UN + Kosovo + Taiwan 197`: the UN 195 scope plus Kosovo and Taiwan.
+- `UN + territories`: every country and territory available in Atlas. This matches
+  the current broad Atlas tracking model.
+
+The implementation must define the exact ISO2 membership of each scope in code and
+tests. Do not infer the 195/197 lists from labels at runtime.
+
+#### Product Rules
+
+- The preference affects country-based stats only.
+- Country list, country detail, trips, stops, excursions, flights, itineraries,
+  search, maps used for travel records, and backups must continue to support all
+  Atlas countries and territories.
+- Existing users should not lose data or see records disappear when switching scope.
+- Stats should make excluded visited territories understandable, for example with a
+  secondary count outside the selected scope.
+- The default should preserve current released behavior unless a separate migration
+  decision is made.
+
+#### Architecture Direction
+
+- Prefer a small domain enum such as `CountryStatsScope`.
+- Store the selected scope as a preference, likely in DataStore, not Room.
+- Filter only the country set consumed by stats calculations and presentation.
+- Keep country state derivation centralized in `CountryStateDerivationService`;
+  scope selection should not change how visited/planned/lived states are derived.
+- Add focused tests for scope membership, denominators, percentages, continent
+  breakdowns, and out-of-scope visited places.
+
+#### Data Impact
+
+- Expected: no Room migration and no backup-format change.
+- If the preference is stored in DataStore, it remains local UI/settings state and
+  must not affect existing backup/import compatibility.
+
+### N2: Quick Trip Creation and Compact Cards
+
+Status: planned.
+
+#### Goal
+
+Reduce friction for short/simple travel memories by letting the user create a normal
+trip and its first stop in one quick flow.
+
+#### Product Decision
+
+Quick trips are not a new trip type. They are normal trips created through a faster
+capture path and displayed compactly when their structure is simple.
+
+#### Initial Quick-Creation Fields
+
+- Trip name.
+- Flexible trip dates.
+- One location using the same location/country/coordinate model as a trip stop.
+
+The flow should create:
+
+1. a normal `Trip`;
+2. one normal `TripStop` attached to that trip.
+
+#### Compact Presentation Rules
+
+- In the trip list and dashboard, a trip with exactly one stop should render as a
+  compact quick-trip card.
+- The compact card is a presentation choice, not proof of a different persisted data
+  type.
+- Opening the card should still lead to the normal trip detail surface.
+- Adding more stops or richer trip structure should naturally make the trip behave
+  like a full trip.
+
+#### Architecture Direction
+
+- Prefer a new use case/repository transaction that creates the trip and first stop
+  together.
+- Reuse existing trip, stop, date, country, coordinate, map, photo, stats, and backup
+  models.
+- Do not add a `trip_kind`, `quick_trip`, or similar persisted field for the first
+  implementation unless compact-card control proves impossible without it.
+- If an explicit persisted override is introduced later, it requires a Room migration,
+  exported schema update, backup review, and compatibility tests.
+- Photos should not be required for quick creation. If photos are added later, attach
+  them through the existing stop-photo system after the stop exists.
+
+#### Data Impact
+
+- Expected: no new Room entity, no trip-type column, and no backup-format change.
+- Quick-created records must export/import as ordinary trips and trip stops.
 
 ## Later Directions
 

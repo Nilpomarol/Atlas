@@ -2,16 +2,15 @@ package com.atlas.domain.usecase.status
 
 import com.atlas.domain.model.DatePrecision
 import com.atlas.domain.model.FlexibleDate
+import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import java.time.LocalDate
 
 object TravelStatusRefreshPolicy {
-    fun refreshedTripStatus(trip: Trip, today: LocalDate): TravelStatus? {
-        if (trip.status != TravelStatus.PLANNED && trip.status != TravelStatus.IN_PROGRESS) return null
-
-        val range = trip.dateRange ?: return null
+    fun inferredTripStatus(dateRange: FlexibleDateRange?, today: LocalDate): TravelStatus {
+        val range = dateRange ?: return TravelStatus.PLANNED
         val startDate = range.start?.startBoundary()
         val endDate = (range.end ?: range.start)?.endBoundary()
 
@@ -19,11 +18,26 @@ object TravelStatusRefreshPolicy {
             return TravelStatus.COMPLETED
         }
 
-        if (trip.status == TravelStatus.PLANNED && startDate != null && !today.isBefore(startDate)) {
+        if (startDate != null && !today.isBefore(startDate)) {
             return TravelStatus.IN_PROGRESS
         }
 
-        return null
+        return TravelStatus.PLANNED
+    }
+
+    fun refreshedTripStatus(trip: Trip, today: LocalDate): TravelStatus? {
+        if (trip.status != TravelStatus.PLANNED && trip.status != TravelStatus.IN_PROGRESS) return null
+
+        val range = trip.dateRange ?: return null
+        return when (inferredTripStatus(range, today)) {
+            TravelStatus.COMPLETED -> TravelStatus.COMPLETED
+            TravelStatus.IN_PROGRESS -> if (trip.status == TravelStatus.PLANNED) {
+                TravelStatus.IN_PROGRESS
+            } else {
+                null
+            }
+            else -> null
+        }
     }
 
     fun refreshedFlightStatus(flight: Flight, today: LocalDate): TravelStatus? {

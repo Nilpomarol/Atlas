@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.atlas.core.constants.DatasetConstants
 import com.atlas.data.local.dao.DatasetMetadataDao
+import com.atlas.domain.model.CountryStatsScope
 import com.atlas.domain.repository.ApiKeyRepository
 import com.atlas.domain.repository.BackupImportPreview
 import com.atlas.domain.repository.BackupRepository
 import com.atlas.domain.repository.CloudBackupPreferencesRepository
 import com.atlas.domain.repository.CloudBackupScheduler
 import com.atlas.domain.repository.CloudBackupWorkStatus
+import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
 import java.io.File
 import java.io.OutputStream
 import java.time.Instant
@@ -43,6 +45,7 @@ data class SettingsUiState(
     val pendingImportPreview: BackupImportPreview? = null,
     val datasetVersions: List<DatasetVersionInfo> = emptyList(),
     val cloudBackup: CloudBackupUiState = CloudBackupUiState(),
+    val countryStatsScope: CountryStatsScope = CountryStatsScope.ALL_ATLAS,
 )
 
 class SettingsViewModel(
@@ -50,6 +53,7 @@ class SettingsViewModel(
     private val cloudBackupPreferencesRepository: CloudBackupPreferencesRepository,
     private val cloudBackupScheduler: CloudBackupScheduler,
     private val apiKeyRepository: ApiKeyRepository,
+    private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
     private val datasetMetadataDao: DatasetMetadataDao,
 ) : ViewModel() {
 
@@ -69,6 +73,11 @@ class SettingsViewModel(
             val rows = datasetMetadataDao.getAll()
             val versions = rows.map { DatasetVersionInfo(it.key.toDatasetDisplayName(), it.version) }
             mutableUiState.update { it.copy(datasetVersions = versions) }
+        }
+        viewModelScope.launch {
+            countryStatsScopePreferencesRepository.observeScope().collect { scope ->
+                mutableUiState.update { it.copy(countryStatsScope = scope) }
+            }
         }
         viewModelScope.launch {
             cloudBackupPreferencesRepository.observeSettings().collect { settings ->
@@ -110,6 +119,12 @@ class SettingsViewModel(
 
     fun saveUnsplashKey(key: String) {
         viewModelScope.launch { apiKeyRepository.saveUnsplashKey(key) }
+    }
+
+    fun setCountryStatsScope(scope: CountryStatsScope) {
+        viewModelScope.launch {
+            countryStatsScopePreferencesRepository.setScope(scope)
+        }
     }
 
     fun configureCloudBackup(folderUri: String, folderName: String) {
@@ -234,6 +249,7 @@ class SettingsViewModel(
         private val cloudBackupPreferencesRepository: CloudBackupPreferencesRepository,
         private val cloudBackupScheduler: CloudBackupScheduler,
         private val apiKeyRepository: ApiKeyRepository,
+        private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
         private val datasetMetadataDao: DatasetMetadataDao,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T =
@@ -242,6 +258,7 @@ class SettingsViewModel(
                 cloudBackupPreferencesRepository = cloudBackupPreferencesRepository,
                 cloudBackupScheduler = cloudBackupScheduler,
                 apiKeyRepository = apiKeyRepository,
+                countryStatsScopePreferencesRepository = countryStatsScopePreferencesRepository,
                 datasetMetadataDao = datasetMetadataDao,
             ) as T
     }

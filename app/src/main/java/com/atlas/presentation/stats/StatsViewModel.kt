@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.atlas.domain.model.Airport
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryLog
+import com.atlas.domain.model.CountryStatsScope
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
@@ -24,6 +25,7 @@ import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
+import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
 import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.CountryStateDerivationService
@@ -50,6 +52,7 @@ class StatsViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     excursionRepository: ExcursionRepository,
+    countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
     airportRepository: AirportRepository,
     stopPhotoRepository: StopPhotoRepository,
     private val aircraftTypeRepository: AircraftTypeRepository,
@@ -117,16 +120,19 @@ class StatsViewModel(
         StatsSourceData(countries, trips, flights, excursions, photos)
     }
 
-    val uiState: StateFlow<StatsUiState> = sourceData
-        .mapLatest { data -> buildUiState(data) }
+    val uiState: StateFlow<StatsUiState> = combine(
+        sourceData,
+        countryStatsScopePreferencesRepository.observeScope(),
+    ) { data, statsScope -> data to statsScope }
+        .mapLatest { (data, statsScope) -> buildUiState(data, statsScope) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = StatsUiState(),
         )
 
-    private suspend fun buildUiState(data: StatsSourceData): StatsUiState {
-        val countries = data.countryData.countries
+    private suspend fun buildUiState(data: StatsSourceData, statsScope: CountryStatsScope): StatsUiState {
+        val allCountries = data.countryData.countries
         val trips = data.tripData.trips
         val tripStops = data.tripData.stops
         val flights = data.flightData.flights
@@ -141,13 +147,13 @@ class StatsViewModel(
         val photos = data.photos
 
         val airportsById = airports.associateBy { it.id }
-        val countriesByIso2 = countries.associateBy { it.iso2 }
-        val countryNamesByIso2 = countries.associate { it.iso2 to it.nameCa }
+        val countriesByIso2 = allCountries.associateBy { it.iso2 }
+        val countryNamesByIso2 = allCountries.associate { it.iso2 to it.nameCa }
         val airportCountryIso2ById = airports.associate { it.id to it.countryIso2 }
         val logsByIso2 = data.countryData.logs.groupBy { it.countryIso2 }
         val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
 
-        val countryStates = countries.map { country ->
+        val allCountryStates = allCountries.map { country ->
             country to countryStateDerivationService.derive(
                 countryIso2 = country.iso2,
                 userState = data.countryData.userStatesByIso2[country.iso2],
@@ -160,6 +166,8 @@ class StatsViewModel(
                 airportCountryIso2ById = airportCountryIso2ById,
             )
         }
+        val countryStates = allCountryStates.filter { (country, _) -> statsScope.includes(country) }
+        val countries = countryStates.map { it.first }
 
         val livingIso2s = countryStates.filter { it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
         val livedIso2s = countryStates.filter { it.second.lived && !it.second.currentlyLiving }.map { it.first.iso2 }.toSet()
@@ -169,7 +177,7 @@ class StatsViewModel(
 
         val visitedCount = countryStates.count { it.second.visited }
         val worldPercentage = if (countries.isEmpty()) 0f else visitedCount.toFloat() / countries.size.toFloat() * 100f
-        val currentLivingMapCenter = countryStates.firstOrNull { it.second.currentlyLiving }?.first?.toMapPoint()
+        val currentLivingMapCenter = allCountryStates.firstOrNull { it.second.currentlyLiving }?.first?.toMapPoint()
 
         val completedTrips = trips.filter { it.status == TravelStatus.COMPLETED }
         val completedFlights = flights.filter { it.status == TravelStatus.COMPLETED }
@@ -439,6 +447,7 @@ class StatsViewModel(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
         private val excursionRepository: ExcursionRepository,
+        private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
         private val airportRepository: AirportRepository,
         private val stopPhotoRepository: StopPhotoRepository,
         private val aircraftTypeRepository: AircraftTypeRepository,
@@ -453,6 +462,7 @@ class StatsViewModel(
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
                 excursionRepository = excursionRepository,
+                countryStatsScopePreferencesRepository = countryStatsScopePreferencesRepository,
                 airportRepository = airportRepository,
                 stopPhotoRepository = stopPhotoRepository,
                 aircraftTypeRepository = aircraftTypeRepository,

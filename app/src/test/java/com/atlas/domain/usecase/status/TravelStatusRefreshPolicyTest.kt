@@ -13,6 +13,35 @@ import org.junit.Test
 
 class TravelStatusRefreshPolicyTest {
     @Test
+    fun inferredTripStatusDefaultsToPlannedWithoutDates() {
+        assertEquals(
+            TravelStatus.PLANNED,
+            TravelStatusRefreshPolicy.inferredTripStatus(null, LocalDate.of(2026, 6, 8)),
+        )
+    }
+
+    @Test
+    fun inferredTripStatusUsesCurrentDateBoundaries() {
+        val dateRange = range(
+            start = FlexibleDate(2026, 6, 8, DatePrecision.DAY),
+            end = FlexibleDate(2026, 6, 10, DatePrecision.DAY),
+        )
+
+        assertEquals(
+            TravelStatus.PLANNED,
+            TravelStatusRefreshPolicy.inferredTripStatus(dateRange, LocalDate.of(2026, 6, 7)),
+        )
+        assertEquals(
+            TravelStatus.IN_PROGRESS,
+            TravelStatusRefreshPolicy.inferredTripStatus(dateRange, LocalDate.of(2026, 6, 8)),
+        )
+        assertEquals(
+            TravelStatus.COMPLETED,
+            TravelStatusRefreshPolicy.inferredTripStatus(dateRange, LocalDate.of(2026, 6, 11)),
+        )
+    }
+
+    @Test
     fun plannedTripStartsOnStartBoundary() {
         val trip = trip(
             status = TravelStatus.PLANNED,

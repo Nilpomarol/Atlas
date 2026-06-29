@@ -316,9 +316,17 @@ class TripDetailViewModel(
                     dateRange = dateRange,
                     notes = draft.notes,
                     coverPhotoFilename = draft.coverPhotoFilename,
+                    isQuickTrip = draft.isQuickTrip,
                 ),
             )
             onDismissTripDraft()
+        }
+    }
+
+    fun onToggleQuickTrip() {
+        val trip = uiState.value.trip ?: return
+        viewModelScope.launch {
+            updateTripUseCase(trip.copy(isQuickTrip = !trip.isQuickTrip))
         }
     }
 

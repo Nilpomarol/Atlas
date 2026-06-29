@@ -4,7 +4,7 @@
 
 This document describes the data model currently implemented by Atlas. It is conceptual and intentionally omits field-by-field duplication that belongs in Kotlin entities and exported Room schemas.
 
-Read `docs/Handoff_Prompt.md` first for the current database version and active phase.
+Read `docs/README.md` first for the current release facts and documentation map.
 
 ## Core Principles
 
@@ -18,7 +18,7 @@ Read `docs/Handoff_Prompt.md` first for the current database version and active 
 
 ## Current Database
 
-Room database version: **23**.
+Room database version: **24**.
 
 ### Static and Reference Data
 
@@ -35,6 +35,8 @@ Static dataset updates may replace these reference rows according to importer ru
 
 - `AircraftEntity`: tail-number cache for aircraft lookup results.
 - `CountryPhotoEntity`: one cached country photo record per ISO2, including file/source/author metadata and fetch time.
+- `CountryLandscapePhotoEntity`: replaceable landscape photo cache for country detail heroes.
+- `CurrencyRateEntity`: replaceable EUR exchange-rate cache for the country detail converter.
 
 Caches are replaceable and are not the source of truth for personal travel history.
 
@@ -106,6 +108,13 @@ fetched_at
 
 The image file lives under app-private storage. Refresh is lazy and failure preserves the previous file and row.
 
+`CountryLandscapePhotoEntity` stores a JSON list of landscape photo metadata per ISO2.
+Landscape files live under app-private storage and can be refreshed or regenerated
+without changing personal travel history.
+
+`CurrencyRateEntity` stores the latest cached EUR rate by ISO 4217 currency code and
+fetch time. It is excluded from backups because it is replaceable runtime cache data.
+
 ## Flexible Dates
 
 Atlas supports:
@@ -141,6 +150,23 @@ Country tracking state is computed by `CountryStateDerivationService` from:
 - itinerary groups and generated itinerary stops.
 
 The result is not stored as a single source-of-truth column.
+
+The planned country stats scope preference should not change this derivation model.
+It should filter stats presentation/calculation only, while derivation continues to
+consider the full Atlas country/territory dataset.
+
+## Planned Quick Trip Data Decision
+
+Quick trip creation should initially use the existing data model:
+
+- create a normal `TripEntity`;
+- create one normal `TripStopEntity`;
+- display the trip compactly when presentation detects exactly one stop.
+
+Do not add a persisted quick-trip type or flag for the first implementation. If later
+manual compact/full display control is required, adding a stored field must follow
+the released-app rules: Room migration, exported schema, backup review, and
+compatibility tests.
 
 ## Relationships and Deletion
 
@@ -179,4 +205,8 @@ Backup changes must not depend on the installed version of a replaceable static 
 - SQLite table rebuilds are used when constraints cannot be added safely with `ALTER TABLE`.
 - Entity changes require a new database version, migration, exported schema, and wiring update.
 - Flexible fact additions should use dataset rows instead of schema expansion.
+- Released data compatibility is mandatory: do not remove persisted fields, rewrite
+  stable identifiers, or break old backups without an explicit compatibility path.
+- Optional photo metadata remains deferred. Reopening it would require DB v25, backup
+  v4, defaults for old imports, and focused migration/backup tests.
 

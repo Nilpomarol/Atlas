@@ -30,6 +30,7 @@ class BackupMappersTest {
             createdAt = "2026-05-30T00:00:00Z",
             updatedAt = "2026-05-30T01:00:00Z",
             coverPhotoFilename = "11111111-1111-1111-1111-111111111111.jpg",
+            isQuickTrip = true,
         )
 
         assertEquals(entity, entity.toBackupV3().toEntity())

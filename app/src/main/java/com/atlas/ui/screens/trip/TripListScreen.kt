@@ -28,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.atlas.domain.model.DatePrecision
+import com.atlas.domain.model.LocationSearchResult
 import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripListItemUiState
@@ -80,13 +83,27 @@ fun TripListScreen(
     uiState: TripListUiState,
     onTripClick: (String) -> Unit,
     onCreateTripClick: () -> Unit,
+    onCreateQuickTripClick: () -> Unit,
     onDismissDraft: () -> Unit,
+    onDismissQuickDraft: () -> Unit,
     onTitleChanged: (String) -> Unit,
     onStatusChanged: (TravelStatus) -> Unit,
-    onDatePrecisionChanged: (com.atlas.domain.model.DatePrecision) -> Unit,
+    onDatePrecisionChanged: (DatePrecision) -> Unit,
     onDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
     onNotesChanged: (String) -> Unit,
     onSaveDraft: () -> Unit,
+    onQuickTitleChanged: (String) -> Unit,
+    onQuickStatusChanged: (TravelStatus) -> Unit,
+    onQuickDatePrecisionChanged: (DatePrecision) -> Unit,
+    onQuickDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
+    onQuickLocationSearchQueryChanged: (String) -> Unit,
+    onQuickLocationSearchResultSelected: (LocationSearchResult) -> Unit,
+    onUseManualQuickLocationClick: () -> Unit,
+    onQuickLocationNameChanged: (String) -> Unit,
+    onQuickCountryChanged: (String) -> Unit,
+    onQuickLatitudeChanged: (String) -> Unit,
+    onQuickLongitudeChanged: (String) -> Unit,
+    onSaveQuickDraft: () -> Unit,
 ) {
     var selectedStatus by remember { mutableStateOf<TravelStatus?>(null) }
     val filteredTrips = uiState.tripItems.filter { item ->
@@ -100,6 +117,7 @@ fun TripListScreen(
                 selectedStatus = selectedStatus,
                 onSelectedStatusChanged = { selectedStatus = it },
                 onCreateTripClick = onCreateTripClick,
+                onCreateQuickTripClick = onCreateQuickTripClick,
             )
 
             if (filteredTrips.isEmpty()) {
@@ -118,10 +136,17 @@ fun TripListScreen(
                         items = filteredTrips,
                         key = { item -> item.trip.id },
                     ) { item ->
-                        TripCard(
-                            item = item,
-                            onClick = { onTripClick(item.trip.id) },
-                        )
+                        if (item.isQuickTrip) {
+                            QuickTripCard(
+                                item = item,
+                                onClick = { onTripClick(item.trip.id) },
+                            )
+                        } else {
+                            TripCard(
+                                item = item,
+                                onClick = { onTripClick(item.trip.id) },
+                            )
+                        }
                     }
                 }
             }
@@ -140,6 +165,26 @@ fun TripListScreen(
             onSave = onSaveDraft,
         )
     }
+
+    if (uiState.quickDraft.isOpen) {
+        QuickTripDialog(
+            draft = uiState.quickDraft,
+            countries = uiState.countries,
+            onDismiss = onDismissQuickDraft,
+            onTitleChanged = onQuickTitleChanged,
+            onStatusChanged = onQuickStatusChanged,
+            onDatePrecisionChanged = onQuickDatePrecisionChanged,
+            onDateFieldChanged = onQuickDateFieldChanged,
+            onLocationSearchQueryChanged = onQuickLocationSearchQueryChanged,
+            onLocationSearchResultSelected = onQuickLocationSearchResultSelected,
+            onUseManualLocationClick = onUseManualQuickLocationClick,
+            onLocationNameChanged = onQuickLocationNameChanged,
+            onCountryChanged = onQuickCountryChanged,
+            onLatitudeChanged = onQuickLatitudeChanged,
+            onLongitudeChanged = onQuickLongitudeChanged,
+            onSave = onSaveQuickDraft,
+        )
+    }
 }
 
 @Composable
@@ -148,6 +193,7 @@ private fun TripListHeader(
     selectedStatus: TravelStatus?,
     onSelectedStatusChanged: (TravelStatus?) -> Unit,
     onCreateTripClick: () -> Unit,
+    onCreateQuickTripClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -169,21 +215,37 @@ private fun TripListHeader(
                     color = AtlasOnSurfaceMuted,
                 )
             }
-            Button(
-                onClick = onCreateTripClick,
-                shape = RoundedCornerShape(13.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AtlasNavy,
-                    contentColor = AtlasSurface,
-                ),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Text(text = "Nou", modifier = Modifier.padding(start = 4.dp))
+                OutlinedButton(
+                    onClick = onCreateQuickTripClick,
+                    shape = RoundedCornerShape(13.dp),
+                    border = BorderStroke(1.dp, AtlasOutline),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = AtlasNavy,
+                    ),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    Text(text = "Ràpid", fontWeight = FontWeight.Bold)
+                }
+                Button(
+                    onClick = onCreateTripClick,
+                    shape = RoundedCornerShape(13.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = AtlasNavy,
+                        contentColor = AtlasSurface,
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Text(text = "Nou", modifier = Modifier.padding(start = 4.dp))
+                }
             }
         }
 
@@ -270,6 +332,108 @@ private fun EmptyTripList(onCreateTripClick: () -> Unit) {
             shape = RoundedCornerShape(13.dp),
         ) {
             Text(text = "Crea viatge")
+        }
+    }
+}
+
+@Composable
+private fun QuickTripCard(
+    item: TripListItemUiState,
+    onClick: () -> Unit,
+) {
+    val trip = item.trip
+    val colors = trip.status.tripStatusColors()
+    val dateText = item.datePillText ?: "Sense data"
+    val locationText = item.quickLocationText()
+    val context = LocalContext.current
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        color = AtlasSurface,
+        border = BorderStroke(1.dp, AtlasOutline),
+    ) {
+        Row(modifier = Modifier.height(96.dp)) {
+            Box(
+                modifier = Modifier
+                    .width(88.dp)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(topStart = 18.dp, bottomStart = 18.dp))
+                    .background(colors.container),
+            ) {
+                if (item.coverPhotoFilename != null) {
+                    AsyncImage(
+                        model = File(context.filesDir, "photos/${item.coverPhotoFilename}"),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    TripCardMap(
+                        mapPoints = item.mapPoints,
+                        stopCount = item.stopCount,
+                        routeColor = colors.foreground,
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(horizontal = 13.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = dateText.uppercase(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(AtlasSurfaceSubtle, RoundedCornerShape(999.dp))
+                            .padding(horizontal = 9.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    TripStatePill(label = colors.label, color = colors.foreground)
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                    Text(
+                        text = trip.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = AtlasOnSurfaceStrong,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Map,
+                            contentDescription = null,
+                            tint = AtlasPrimary,
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Text(
+                            text = locationText,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = AtlasOnSurfaceMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -541,6 +705,21 @@ private fun TripListItemUiState.routeText(): String? {
     val first = firstStopName?.takeIf { it.isNotBlank() } ?: return null
     val last = lastStopName?.takeIf { it.isNotBlank() } ?: return first
     return if (first == last) first else "$first → $last"
+}
+
+private fun TripListItemUiState.quickLocationText(): String {
+    val place = routeText() ?: firstStopName?.takeIf { it.isNotBlank() }
+    val country = singleStopCountryName?.takeIf { it.isNotBlank() } ?: singleStopCountryIso2
+    val flag = singleStopFlag?.takeIf { it.isNotBlank() }
+    val context = if (stopCount > 1) {
+        "$stopCount parades"
+    } else {
+        listOfNotNull(flag, country).joinToString(" ").takeIf { it.isNotBlank() } ?: countryText
+    }
+    return listOfNotNull(
+        place,
+        context,
+    ).joinToString(" · ").ifBlank { "Sense ubicació" }
 }
 
 fun TravelStatus.toCatalanLabel(): String = when (this) {

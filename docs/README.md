@@ -1,6 +1,6 @@
 # Atlas Documentation Index
 
-Last updated: 2026-06-24.
+Last updated: 2026-08-11.
 
 This repository is a released Android project. The source of truth is the current
 code, exported Room schemas, bundled assets, and backup implementation. Documentation
@@ -27,6 +27,30 @@ must describe the implementation as it exists, not the other way around.
 
 ## Next Planned Work
 
+### Active UI Rework Program
+
+The primary UI initiative is a separate, new implementation governed by:
+
+1. `docs/Atlas_UI_Rework_Implementation_Plan.md`
+2. `docs/Atlas_UI_Rework_Foundation.md`
+3. Approved concepts under `docs/ui-rework/`
+
+For UI decisions, these documents supersede the legacy screens, legacy
+navigation, the old design-system reference, and the UI polish checklist. The
+legacy UI is not a design or layout reference. Existing code remains the source
+of truth for data, domain behavior, backup/import, and compatibility.
+
+The rework foundation, app shell, Home idle vertical slice, and context-aware
+Home are implemented and accepted as of 2026-08-11. The current
+`com.atlas.ui.rework` Home code is authoritative and should not be redesigned
+while implementing another destination. The next rework phase is **Countries**:
+start with a read-only hierarchy/state analysis, then build the new Countries
+list and country detail by reusing the accepted rework map, theme, cards,
+navigation, and capture foundations. Legacy Countries screens are not layout
+references.
+
+### Other planned product work
+
 - Country stats scope preference: let the user choose whether country-based stats use
   the UN 195 list, UN + Kosovo + Taiwan 197 list, or all Atlas countries and
   territories. This should affect stats only; country lists, country detail, trips,
@@ -42,12 +66,16 @@ must describe the implementation as it exists, not the other way around.
 Read these for current implementation decisions:
 
 1. `docs/README.md` - documentation map and current release facts.
-2. `docs/Atlas_Technical_Architecture.md` - implemented architecture and layer boundaries.
-3. `docs/Atlas_Data_Model.md` - current conceptual data model, Room version, migration rules, and backup model.
-4. `docs/Atlas_Photo_Backup_Spec.md` - current backup/export/import contract.
-5. `docs/Atlas_Product_Specification.md` - product identity and long-term domain behavior.
-6. `docs/Atlas_Post_v2.0_Roadmap.md` - completed milestone history and later directions.
-7. `docs/ui-polish-checklist.md` and `docs/Atlas - Design System.html` - visual review references.
+2. `docs/Atlas_UI_Rework_Implementation_Plan.md` - mandatory plan for the new UI.
+3. `docs/Atlas_UI_Rework_Foundation.md` - rework product and visual foundation.
+4. `docs/Atlas_Technical_Architecture.md` - implemented architecture and layer boundaries.
+5. `docs/Atlas_Data_Model.md` - current conceptual data model, Room version, migration rules, and backup model.
+6. `docs/Atlas_Photo_Backup_Spec.md` - current backup/export/import contract.
+7. `docs/Atlas_Product_Specification.md` - product identity and long-term domain behavior.
+8. `docs/Atlas_Post_v2.0_Roadmap.md` - completed milestone history and later directions.
+
+`docs/ui-polish-checklist.md` and `docs/Atlas - Design System.html` apply only
+to explicitly requested legacy maintenance. They are not rework references.
 
 ## Implementation-History Documents
 

@@ -1,5 +1,23 @@
 # Atlas UI Instructions
 
+## Active rework mode — mandatory
+
+The active UI task is a new implementation, not a polish pass. Read and follow
+`docs/Atlas_UI_Rework_Implementation_Plan.md` before making UI changes.
+
+New UI work **MUST** be created under `com.atlas.ui.rework`. The legacy UI in
+this package remains temporary executable code only and must not be consulted
+as a visual, layout, navigation, component, information-hierarchy, or
+interaction reference.
+
+Do not edit legacy screens in place to implement the rework. Do not copy them as
+starting points. Do not preserve their structure for parity. Reuse underlying
+presentation/domain/data behavior, not their UI decisions.
+
+The legacy-specific guidance later in this file applies only to maintenance of
+legacy screens when a task explicitly requests it. It does not constrain the
+new rework visual system.
+
 ## Scope
 
 This package contains Atlas UI code:
@@ -30,6 +48,10 @@ Core direction:
 - Screens should feel personal, visual, calm, and premium without becoming overloaded.
 
 ## Current app theme ground truths
+
+This section describes the legacy theme. It is not the rework theme contract.
+The rework must define its own semantic foundation from the approved concepts.
+Fonts or tokens may be adopted only through an explicit rework decision.
 
 - Use shared Atlas theme tokens.
 - Do not recreate local screen palettes.
@@ -72,7 +94,10 @@ Avoid one-off spacing values unless the design intent is clear.
 
 ## Component rules
 
-Before adding a new component, check whether an existing component already covers the pattern.
+For rework code, first check the new `ui.rework` foundation and approved
+external libraries. Legacy components are not candidates for automatic reuse;
+adopt one only after explicitly verifying that its semantics and API match the
+rework plan.
 
 Common component families:
 
@@ -133,6 +158,9 @@ Use the shared styled overflow menu wrapper. Do not use raw `DropdownMenu` / `Dr
 - Keep provider-specific map code isolated.
 
 ## UI polish completion checklist
+
+This checklist applies to legacy maintenance. Rework completion and review are
+defined by `docs/Atlas_UI_Rework_Implementation_Plan.md`.
 
 Before finishing a UI task, verify:
 

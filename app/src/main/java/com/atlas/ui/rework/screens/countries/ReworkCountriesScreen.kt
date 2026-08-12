@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,18 +65,21 @@ fun ReworkCountriesScreen(
     val allCountries = state.allCountries
     val visited = allCountries.count { it.trackingState.visited || it.trackingState.lived || it.trackingState.currentlyLiving }
     Box(modifier = Modifier.fillMaxSize().background(colors.surface)) {
-        Column(modifier = Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 112.dp)) {
-            Row(
+        LazyColumn(modifier = Modifier.fillMaxSize().statusBarsPadding(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 112.dp)) {
+            item {
+                Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
-            ) {
+                ) {
                 Column(Modifier.weight(1f)) {
                     Text("PAÏSOS", style = AtlasReworkTheme.typography.label, color = colors.accent)
                     Text("El teu arxiu", style = AtlasReworkTheme.typography.display, color = colors.ink)
                 }
                 Text("$visited/${state.totalCountryCount}", style = AtlasReworkTheme.typography.data, color = colors.ink)
+                }
             }
-            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            item {
+                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ReworkSearchField(value = state.searchQuery, onValueChange = onSearchChanged)
                 CountryListControls(
                     filter = state.selectedFilter,
@@ -85,18 +90,19 @@ fun ReworkCountriesScreen(
                     onSortDirectionToggled = onSortDirectionToggled,
                 )
                 Text("${state.countries.size} països", style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
-                state.countries
-                    .groupBy { it.country.continent }
-                    .toSortedMap(compareBy(::continentOrder))
-                    .forEach { (continent, countries) ->
-                        Text(continent.toCatalanContinent(), style = AtlasReworkTheme.typography.label, color = colors.accent, modifier = Modifier.padding(top = 8.dp, bottom = 1.dp))
-                        countries.forEach { item -> CountryRow(item, onClick = { onCountryOpened(item.country.iso2) }) }
-                    }
-                if (state.countries.isEmpty()) {
-                    ReworkFloatingCard(Modifier.fillMaxWidth()) {
-                        Text("No hem trobat cap país amb aquests criteris.", style = AtlasReworkTheme.typography.body, color = colors.inkMuted)
-                    }
                 }
+            }
+            val groups = state.countries.groupBy { it.country.continent }.toSortedMap(compareBy(::continentOrder))
+            groups.forEach { (continent, countries) ->
+                item(key = "continent-$continent") {
+                    Text(continent.toCatalanContinent(), style = AtlasReworkTheme.typography.label, color = colors.accent, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 6.dp))
+                }
+                items(countries, key = { it.country.iso2 }) { item ->
+                    CountryRow(item, onClick = { onCountryOpened(item.country.iso2) }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp))
+                }
+            }
+            if (state.countries.isEmpty()) {
+                item { ReworkFloatingCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) { Text("No hem trobat cap país amb aquests criteris.", style = AtlasReworkTheme.typography.body, color = colors.inkMuted) } }
             }
         }
     }
@@ -221,9 +227,9 @@ private fun CompactMenuButton(label: String, value: String, onClick: () -> Unit)
         Text(label, Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = AtlasReworkTheme.typography.label, color = if (selected) colors.surfaceStrong else colors.ink)
     }
 }
-@Composable private fun CountryRow(item: CountryListItemUiState, onClick: () -> Unit) {
+@Composable private fun CountryRow(item: CountryListItemUiState, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AtlasReworkTheme.colors
-    ReworkFloatingCard(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    ReworkFloatingCard(modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(item.country.flagEmoji.orEmpty(), style = AtlasReworkTheme.typography.title)
             Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) {

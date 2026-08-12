@@ -63,6 +63,10 @@ private const val SouthernLatitude = -60.0
 private const val MinimumCameraScale = 1f
 private const val MaximumCameraScale = 8f
 
+/** Geometry is static bundled reference data; retain it across destination changes. */
+@Volatile
+private var cachedWorldGeometry: WorldGeometry? = null
+
 private val northernMercatorY = projectLatitude(NorthernLatitude)
 private val southernMercatorY = projectLatitude(SouthernLatitude)
 
@@ -90,15 +94,17 @@ fun AtlasWorldMap(
     val grainLight = Color(0xFFF3EAD4)
     val grainSepia = Color(0xFF3A2E18)
 
-    var sourceGeometry by remember { mutableStateOf<WorldGeometry?>(null) }
+    var sourceGeometry by remember { mutableStateOf(cachedWorldGeometry) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
     var cameraScale by remember { mutableFloatStateOf(MinimumCameraScale) }
     var cameraOffset by remember { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(Unit) {
-        sourceGeometry = withContext(Dispatchers.IO) {
-            context.assets.open(CountriesAsset).bufferedReader().use { reader ->
-                parseWorldGeometry(FeatureCollection.fromJson(reader.readText()))
+        if (sourceGeometry == null) {
+            sourceGeometry = withContext(Dispatchers.IO) {
+                cachedWorldGeometry ?: context.assets.open(CountriesAsset).bufferedReader().use { reader ->
+                    parseWorldGeometry(FeatureCollection.fromJson(reader.readText())).also { cachedWorldGeometry = it }
+                }
             }
         }
     }

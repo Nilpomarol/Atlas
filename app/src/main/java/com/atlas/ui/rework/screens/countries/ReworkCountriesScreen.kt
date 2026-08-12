@@ -1,5 +1,6 @@
 package com.atlas.ui.rework.screens.countries
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -12,40 +13,48 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.presentation.country.CountryDetailUiState
 import com.atlas.presentation.country.CountryListFilter
 import com.atlas.presentation.country.CountryListItemUiState
 import com.atlas.presentation.country.CountryListUiState
 import com.atlas.presentation.country.CountrySort
+import com.atlas.ui.rework.components.ReworkDropdownDivider
+import com.atlas.ui.rework.components.ReworkDropdownItem
+import com.atlas.ui.rework.components.ReworkDropdownMenu
 import com.atlas.ui.rework.components.ReworkFloatingCard
 import com.atlas.ui.rework.foundation.AtlasReworkTheme
 import com.atlas.ui.rework.map.AtlasWorldLandAspectRatio
@@ -64,6 +73,8 @@ fun ReworkCountriesScreen(
     val colors = AtlasReworkTheme.colors
     val allCountries = state.allCountries
     val visited = allCountries.count { it.trackingState.visited || it.trackingState.lived || it.trackingState.currentlyLiving }
+    // Session-remembered collapse state, keyed by continent. Absent = expanded.
+    val collapsedContinents = remember { mutableStateMapOf<String, Boolean>() }
     Box(modifier = Modifier.fillMaxSize().background(colors.surface)) {
         LazyColumn(modifier = Modifier.fillMaxSize().statusBarsPadding(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 112.dp)) {
             item {
@@ -93,12 +104,25 @@ fun ReworkCountriesScreen(
                 }
             }
             val groups = state.countries.groupBy { it.country.continent }.toSortedMap(compareBy(::continentOrder))
-            groups.forEach { (continent, countries) ->
+            groups.entries.forEachIndexed { groupIndex, (continent, countries) ->
+                val collapsed = collapsedContinents[continent] == true
                 item(key = "continent-$continent") {
-                    Text(continent.toCatalanContinent(), style = AtlasReworkTheme.typography.label, color = colors.accent, modifier = Modifier.padding(start = 16.dp, top = 18.dp, bottom = 6.dp))
+                    ContinentHeader(
+                        title = continent.toCatalanContinent(),
+                        count = countries.size,
+                        collapsed = collapsed,
+                        showTopDivider = groupIndex > 0,
+                        onToggle = { collapsedContinents[continent] = !collapsed },
+                    )
                 }
-                items(countries, key = { it.country.iso2 }) { item ->
-                    CountryRow(item, onClick = { onCountryOpened(item.country.iso2) }, modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp))
+                if (!collapsed) {
+                    itemsIndexed(countries, key = { _, item -> item.country.iso2 }) { index, item ->
+                        CompactCountryRow(
+                            item = item,
+                            onClick = { onCountryOpened(item.country.iso2) },
+                            showDivider = index < countries.lastIndex,
+                        )
+                    }
                 }
             }
             if (state.countries.isEmpty()) {
@@ -184,10 +208,11 @@ private fun CountryListControls(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.weight(1f)) {
             CompactMenuButton("Filtra", filter.label) { filterExpanded = true }
-            DropdownMenu(expanded = filterExpanded, onDismissRequest = { filterExpanded = false }) {
+            ReworkDropdownMenu(expanded = filterExpanded, onDismissRequest = { filterExpanded = false }) {
                 CountryListFilter.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label, style = AtlasReworkTheme.typography.body) },
+                    ReworkDropdownItem(
+                        label = option.label,
+                        selected = option == filter,
                         onClick = { onFilterSelected(option); filterExpanded = false },
                     )
                 }
@@ -195,15 +220,18 @@ private fun CountryListControls(
         }
         Box(Modifier.weight(1f)) {
             CompactMenuButton("Ordena", "${sort.label} ${if (ascending) "↑" else "↓"}") { orderExpanded = true }
-            DropdownMenu(expanded = orderExpanded, onDismissRequest = { orderExpanded = false }) {
+            ReworkDropdownMenu(expanded = orderExpanded, onDismissRequest = { orderExpanded = false }) {
                 CountrySort.entries.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label, style = AtlasReworkTheme.typography.body) },
+                    ReworkDropdownItem(
+                        label = option.label,
+                        selected = option == sort,
+                        trailing = if (option == sort) (if (ascending) "↑" else "↓") else null,
                         onClick = { onSortSelected(option); orderExpanded = false },
                     )
                 }
-                DropdownMenuItem(
-                    text = { Text(if (ascending) "Canvia a descendent" else "Canvia a ascendent", style = AtlasReworkTheme.typography.body) },
+                ReworkDropdownDivider()
+                ReworkDropdownItem(
+                    label = if (ascending) "Canvia a descendent" else "Canvia a ascendent",
                     onClick = { onSortDirectionToggled(); orderExpanded = false },
                 )
             }
@@ -214,10 +242,34 @@ private fun CountryListControls(
 @Composable
 private fun CompactMenuButton(label: String, value: String, onClick: () -> Unit) {
     val colors = AtlasReworkTheme.colors
-    Surface(shape = RoundedCornerShape(12.dp), color = colors.surfaceStrong, border = androidx.compose.foundation.BorderStroke(1.dp, colors.border), onClick = onClick) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 8.dp)) {
-            Text(label.uppercase(), style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
-            Text(value, style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val shape = RoundedCornerShape(12.dp)
+    Surface(
+        modifier = Modifier.shadow(6.dp, shape, ambientColor = colors.shadow, spotColor = colors.shadow),
+        shape = shape,
+        color = colors.surfaceStrong,
+        border = androidx.compose.foundation.BorderStroke(1.dp, colors.border),
+        onClick = onClick,
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(colors.surfaceStrong, colors.surface)))
+                .padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(label.uppercase(), style = AtlasReworkTheme.typography.label, color = colors.accent)
+                Text(value, style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier
+                    .size(28.dp)
+                    .background(colors.accent.copy(alpha = 0.10f), RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = null, tint = colors.accent, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -227,16 +279,63 @@ private fun CompactMenuButton(label: String, value: String, onClick: () -> Unit)
         Text(label, Modifier.padding(horizontal = 12.dp, vertical = 8.dp), style = AtlasReworkTheme.typography.label, color = if (selected) colors.surfaceStrong else colors.ink)
     }
 }
-@Composable private fun CountryRow(item: CountryListItemUiState, onClick: () -> Unit, modifier: Modifier = Modifier) {
+@Composable private fun ContinentHeader(
+    title: String,
+    count: Int,
+    collapsed: Boolean,
+    showTopDivider: Boolean,
+    onToggle: () -> Unit,
+) {
     val colors = AtlasReworkTheme.colors
-    ReworkFloatingCard(modifier.fillMaxWidth().clickable(onClick = onClick)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(item.country.flagEmoji.orEmpty(), style = AtlasReworkTheme.typography.title)
-            Spacer(Modifier.width(12.dp)); Column(Modifier.weight(1f)) {
-                Text(item.country.nameCa, style = AtlasReworkTheme.typography.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    val chevronRotation by animateFloatAsState(targetValue = if (collapsed) 0f else 180f, label = "continentChevron")
+    Column {
+        if (showTopDivider) {
+            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(colors.border))
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title.uppercase(), style = AtlasReworkTheme.typography.label, color = colors.accent, modifier = Modifier.weight(1f))
+            Text(count.toString(), style = AtlasReworkTheme.typography.data, color = colors.inkMuted)
+            Spacer(Modifier.width(6.dp))
+            Icon(
+                Icons.Rounded.KeyboardArrowDown,
+                contentDescription = if (collapsed) "Desplega $title" else "Replega $title",
+                tint = colors.inkMuted,
+                modifier = Modifier.size(20.dp).rotate(chevronRotation),
+            )
+        }
+    }
+}
+
+@Composable private fun CompactCountryRow(item: CountryListItemUiState, onClick: () -> Unit, showDivider: Boolean) {
+    val colors = AtlasReworkTheme.colors
+    Column(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(item.country.flagEmoji.orEmpty(), style = AtlasReworkTheme.typography.title.copy(fontSize = 20.sp, lineHeight = 22.sp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    item.country.nameCa,
+                    style = AtlasReworkTheme.typography.title.copy(fontSize = 17.sp, lineHeight = 20.sp),
+                    color = colors.ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Text(item.trackingState.relationshipSummary(), style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
             }
+            Spacer(Modifier.width(10.dp))
             Text(item.sortValueLabel ?: item.country.iso2, style = AtlasReworkTheme.typography.data, color = colors.accent)
+        }
+        if (showDivider) {
+            Box(Modifier.fillMaxWidth().padding(start = 48.dp, end = 16.dp).height(1.dp).background(colors.border))
         }
     }
 }

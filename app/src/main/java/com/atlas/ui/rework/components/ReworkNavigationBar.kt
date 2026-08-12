@@ -43,7 +43,9 @@ fun ReworkNavigationBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            ReworkDestination.entries.forEach { destination ->
+            ReworkDestination.entries
+                .filter { it != ReworkDestination.CountryDetail && it != ReworkDestination.TripDetail }
+                .forEach { destination ->
                 val active = destination == selected
                 Column(
                     modifier = Modifier

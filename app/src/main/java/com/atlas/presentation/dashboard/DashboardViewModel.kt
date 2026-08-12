@@ -226,6 +226,8 @@ class DashboardViewModel(
                 .size,
             trackableCountryCount = scopedCountries.size,
             worldPercentage = worldPercentage,
+            countryNamesByIso2 = countryNamesByIso2,
+            countryFlagsByIso2 = countryFlagsByIso2,
             tripCount = trips.size,
             flightCount = flights.size,
             flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 },
@@ -299,6 +301,7 @@ class DashboardViewModel(
             status = status,
             dateText = dateRange?.let(flexibleDateFormatter::format),
             dayCount = dayCount(),
+            daysUntilStart = daysUntilStart(),
             memoryDateText = dateRange?.toRecentTripPillDateText(),
             stopCount = stops.size,
             routeText = when {
@@ -362,6 +365,8 @@ data class DashboardUiState(
     val visitedContinentCount: Int = 0,
     val trackableCountryCount: Int = 0,
     val worldPercentage: Float = 0f,
+    val countryNamesByIso2: Map<String, String> = emptyMap(),
+    val countryFlagsByIso2: Map<String, String?> = emptyMap(),
     val tripCount: Int = 0,
     val flightCount: Int = 0,
     val flownDistanceKm: Double = 0.0,
@@ -396,6 +401,7 @@ data class DashboardTripUiState(
     val mapPoints: List<TripStopMapPoint> = emptyList(),
     val coverPhotoFilename: String? = null,
     val isQuickTrip: Boolean = false,
+    val daysUntilStart: Int? = null,
 )
 
 data class DashboardFlightUiState(
@@ -428,6 +434,12 @@ private fun Trip.dayCount(): Int? {
     val start = range.start?.toLocalDateOrNull() ?: return null
     val end = range.end?.toLocalDateOrNull() ?: start
     return ChronoUnit.DAYS.between(start, end).coerceAtLeast(0).toInt() + 1
+}
+
+private fun Trip.daysUntilStart(): Int? {
+    val start = dateRange?.start?.toLocalDateOrNull() ?: return null
+    val days = ChronoUnit.DAYS.between(LocalDate.now(), start)
+    return if (days >= 0) days.toInt() else null
 }
 
 private fun parseDurationMinutes(depStr: String?, arrStr: String?): Long {

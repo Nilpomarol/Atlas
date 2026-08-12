@@ -11,22 +11,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.atlas.app.AtlasAppContainer
 import com.atlas.presentation.dashboard.DashboardUiState
 import com.atlas.ui.rework.components.ReworkFloatingCard
 import com.atlas.ui.rework.foundation.AtlasReworkTheme
+import com.atlas.ui.rework.screens.countries.ReworkCountriesRoute
+import com.atlas.ui.rework.screens.countries.ReworkCountryDetailRoute
 import com.atlas.ui.rework.screens.home.ReworkHomeScreen
 
 @Composable
 fun AtlasReworkNavHost(
     navController: NavHostController,
+    container: AtlasAppContainer,
     homeState: DashboardUiState,
     selectedCountryIso2: String?,
     onCountrySelected: (String) -> Unit,
     onCountrySelectionCleared: () -> Unit,
     captureExpanded: Boolean,
     onCaptureRequested: () -> Unit,
+    onCaptureForCountry: (String) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -41,21 +48,53 @@ fun AtlasReworkNavHost(
                 onCountrySelectionCleared = onCountrySelectionCleared,
                 captureExpanded = captureExpanded,
                 onCaptureRequested = onCaptureRequested,
+                onTripOpened = { tripId -> navController.navigate(ReworkDestination.tripDetailRoute(tripId)) },
             )
         }
-        ReworkDestination.entries.filterNot { it == ReworkDestination.Home }.forEach { destination ->
-            composable(destination.route) { ReworkPlaceholder(destination) }
+        composable(ReworkDestination.Countries.route) {
+            ReworkCountriesRoute(
+                container = container,
+                onCountryOpened = { iso2 -> navController.navigate(ReworkDestination.countryDetailRoute(iso2)) },
+            )
         }
+        composable(
+            route = ReworkDestination.CountryDetail.route,
+            arguments = listOf(navArgument("iso2") { type = NavType.StringType }),
+        ) { entry ->
+            ReworkCountryDetailRoute(
+                container = container,
+                iso2 = entry.arguments?.getString("iso2").orEmpty(),
+                onBack = { navController.popBackStack() },
+                onCaptureRequested = onCaptureForCountry,
+            )
+        }
+        composable(
+            route = ReworkDestination.TripDetail.route,
+            arguments = listOf(navArgument("tripId") { type = NavType.StringType }),
+        ) {
+            // Route + tripId argument are wired now; the trip page content lands in the
+            // Phase 5 Trips vertical slice. `it.arguments?.getString("tripId")` is ready.
+            ReworkPlaceholder(ReworkDestination.TripDetail)
+        }
+        ReworkDestination.entries
+            .filter {
+                it !in setOf(
+                    ReworkDestination.Home,
+                    ReworkDestination.Countries,
+                    ReworkDestination.CountryDetail,
+                    ReworkDestination.TripDetail,
+                )
+            }
+            .forEach { destination ->
+                composable(destination.route) { ReworkPlaceholder(destination) }
+            }
     }
 }
 
 @Composable
 private fun ReworkPlaceholder(destination: ReworkDestination) {
     val colors = AtlasReworkTheme.colors
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         ReworkFloatingCard(modifier = Modifier.padding(horizontal = 28.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(destination.label, style = AtlasReworkTheme.typography.display, color = colors.ink)

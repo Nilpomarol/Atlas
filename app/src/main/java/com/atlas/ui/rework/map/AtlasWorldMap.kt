@@ -19,11 +19,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.lerp
@@ -73,6 +73,7 @@ internal val AtlasWorldLandAspectRatio: Float
 fun AtlasWorldMap(
     countries: AtlasWorldMapCountries,
     initialLandTopPx: Float,
+    selectedCountryIso2: String? = null,
     cameraResetRequest: Int = 0,
     modifier: Modifier = Modifier,
     onCountrySelected: (String) -> Unit = {},
@@ -85,9 +86,9 @@ fun AtlasWorldMap(
     val currentClearSelectionHandler by rememberUpdatedState(onSelectionCleared)
     val sideMarginPx = with(density) { 8.dp.toPx() }
     val minimumVisiblePx = with(density) { 48.dp.toPx() }
-    val borderWidthPx = with(density) { 0.8.dp.toPx() }
-    val countryTextureSpacingPx = with(density) { 8.dp.toPx() }
-    val countryTextureStrokePx = with(density) { 0.4.dp.toPx() }
+    val borderWidthPx = with(density) { 0.5.dp.toPx() }
+    val grainLight = Color(0xFFF3EAD4)
+    val grainSepia = Color(0xFF3A2E18)
 
     var sourceGeometry by remember { mutableStateOf<WorldGeometry?>(null) }
     var viewportSize by remember { mutableStateOf(IntSize.Zero) }
@@ -159,14 +160,16 @@ fun AtlasWorldMap(
             },
     ) {
         drawRect(colors.mapWater)
-        grain.forEach { mark ->
-            drawCircle(
-                color = if (mark.light) Color.White else colors.ink,
-                alpha = mark.alpha,
-                radius = mark.radius,
-                center = Offset(mark.x * size.width, mark.y * size.height),
-            )
-        }
+        drawRect(
+            brush = Brush.verticalGradient(
+                colorStops = arrayOf(
+                    0f to colors.mapVignette.copy(alpha = 0.10f),
+                    0.14f to Color.Transparent,
+                    0.70f to Color.Transparent,
+                    1f to colors.mapVignette.copy(alpha = 0.16f),
+                ),
+            ),
+        )
 
         val mapGeometry = geometry ?: return@Canvas
         translate(left = cameraOffset.x, top = cameraOffset.y) {
@@ -177,26 +180,15 @@ fun AtlasWorldMap(
                         color = countryColor(country.iso2, countries, colors.mapLand, colors.living, colors.lived, colors.visited, colors.planned, colors.wished),
                     )
                 }
-                mapGeometry.countries
-                    .filter { country -> isRegisteredCountry(country.iso2, countries) }
-                    .forEach { country ->
-                        val spacing = countryTextureSpacingPx / cameraScale
-                        val strokeWidth = countryTextureStrokePx / cameraScale
-                        val diagonalSpan = country.bounds.height
-                        clipPath(country.path) {
-                            var startX = country.bounds.left - diagonalSpan
-                            while (startX <= country.bounds.right) {
-                                drawLine(
-                                    color = colors.surfaceStrong,
-                                    alpha = 0.075f,
-                                    start = Offset(startX, country.bounds.bottom),
-                                    end = Offset(startX + diagonalSpan, country.bounds.top),
-                                    strokeWidth = strokeWidth,
-                                )
-                                startX += spacing
-                            }
-                        }
+                selectedCountryIso2?.let { selectedIso2 ->
+                    mapGeometry.countries.firstOrNull { it.iso2 == selectedIso2 }?.let { country ->
+                        drawPath(
+                            path = country.path,
+                            color = colors.accent,
+                            style = Stroke(width = 2.4f * borderWidthPx / cameraScale),
+                        )
                     }
+                }
                 mapGeometry.countries.forEach { country ->
                     drawPath(
                         path = country.path,
@@ -205,6 +197,15 @@ fun AtlasWorldMap(
                     )
                 }
             }
+        }
+
+        grain.forEach { mark ->
+            drawCircle(
+                color = if (mark.light) grainLight else grainSepia,
+                alpha = mark.alpha,
+                radius = mark.radius,
+                center = Offset(mark.x * size.width, mark.y * size.height),
+            )
         }
     }
 }
@@ -228,16 +229,7 @@ private fun countryColor(
         in countries.wished -> wished
         else -> default
     }
-    return if (relationshipColor == default) default else lerp(default, relationshipColor, 0.86f)
-}
-
-private fun isRegisteredCountry(iso2: String?, countries: AtlasWorldMapCountries): Boolean {
-    if (iso2 == null) return false
-    return iso2 in countries.living ||
-        iso2 in countries.lived ||
-        iso2 in countries.visited ||
-        iso2 in countries.planned ||
-        iso2 in countries.wished
+    return if (relationshipColor == default) default else lerp(default, relationshipColor, 0.66f)
 }
 
 private data class WorldGeometry(val countries: List<NormalizedCountry>)
@@ -394,12 +386,12 @@ private data class GrainMark(
 
 private fun createSeaGrain(): List<GrainMark> {
     val random = Random(8142)
-    return List(680) {
+    return List(1500) {
         GrainMark(
             x = random.nextFloat(),
             y = random.nextFloat(),
-            radius = random.nextFloat() * 2f + 0.75f,
-            alpha = random.nextFloat() * 0.06f + 0.035f,
+            radius = random.nextFloat() * 1.4f + 0.5f,
+            alpha = random.nextFloat() * 0.09f + 0.055f,
             light = random.nextBoolean(),
         )
     }

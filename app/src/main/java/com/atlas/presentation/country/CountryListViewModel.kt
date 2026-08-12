@@ -123,6 +123,7 @@ class CountryListViewModel(
 
         CountryListUiState(
             countries = labeled,
+            allCountries = countryRows,
             searchQuery = query,
             selectedFilter = filter,
             selectedSort = sort,
@@ -242,6 +243,8 @@ internal fun String.foldAccents(): String =
 
 data class CountryListUiState(
     val countries: List<CountryListItemUiState> = emptyList(),
+    /** The unfiltered tracking set used by map surfaces and progress summaries. */
+    val allCountries: List<CountryListItemUiState> = emptyList(),
     val searchQuery: String = "",
     val selectedFilter: CountryListFilter = CountryListFilter.All,
     val selectedSort: CountrySort = CountrySort.Name,

@@ -35,6 +35,7 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
             ?: ReworkDestination.Home
         var captureExpanded by remember { mutableStateOf(false) }
         var selectedCountryIso2 by remember { mutableStateOf<String?>(null) }
+        var captureCountryIso2 by remember { mutableStateOf<String?>(null) }
 
         val dashboardViewModel: DashboardViewModel = viewModel(
             factory = DashboardViewModel.Factory(
@@ -54,12 +55,20 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
         Box(Modifier.fillMaxSize()) {
             AtlasReworkNavHost(
                 navController = navController,
+                container = container,
                 homeState = homeState,
                 selectedCountryIso2 = selectedCountryIso2,
                 onCountrySelected = { selectedCountryIso2 = it },
                 onCountrySelectionCleared = { selectedCountryIso2 = null },
                 captureExpanded = captureExpanded,
-                onCaptureRequested = { captureExpanded = !captureExpanded },
+                onCaptureRequested = {
+                    captureCountryIso2 = null
+                    captureExpanded = !captureExpanded
+                },
+                onCaptureForCountry = { iso2 ->
+                    captureCountryIso2 = iso2
+                    captureExpanded = true
+                },
             )
 
             ReworkNavigationBar(
@@ -87,8 +96,11 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
 
             if (captureExpanded) {
                 ReworkCaptureOverlay(
-                    context = CaptureContext(countryIso2 = selectedCountryIso2),
-                    onDismiss = { captureExpanded = false },
+                    context = CaptureContext(countryIso2 = captureCountryIso2 ?: selectedCountryIso2),
+                    onDismiss = {
+                        captureExpanded = false
+                        captureCountryIso2 = null
+                    },
                 )
             }
         }

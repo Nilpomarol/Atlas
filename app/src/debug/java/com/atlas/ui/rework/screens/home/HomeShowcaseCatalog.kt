@@ -125,10 +125,11 @@ private fun establishedTravelerState(): DashboardUiState {
                 id = "demo-upcoming-trip",
                 title = "Montanya",
                 status = TravelStatus.PLANNED,
-                dateText = "12–23 ag. 2026",
+                dateText = "2–13 set. 2026",
                 routeText = "Ljubljana · Dolomites · Venècia",
                 countryText = "Eslovènia · Àustria · Itàlia",
                 stopCount = 6,
+                daysUntilStart = 21,
             ),
         ),
         recentCompletedTrips = listOf(
@@ -155,6 +156,7 @@ private fun trip(
     countryText: String,
     stopCount: Int,
     memoryDateText: String? = null,
+    daysUntilStart: Int? = null,
 ): DashboardTripUiState = DashboardTripUiState(
     tripId = id,
     title = title,
@@ -167,4 +169,5 @@ private fun trip(
     countryText = countryText,
     flagText = null,
     countryIso2s = emptyList(),
+    daysUntilStart = daysUntilStart,
 )

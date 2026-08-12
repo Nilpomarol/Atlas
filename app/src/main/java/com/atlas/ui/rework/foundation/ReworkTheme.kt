@@ -16,9 +16,9 @@ import com.atlas.R
 
 @Immutable
 data class ReworkColors(
-    val mapWater: Color = Color(0xFFABC4BF),
+    val mapWater: Color = Color(0xFF012E5D),
     val mapLand: Color = Color(0xFFE9E2D2),
-    val mapBorder: Color = Color(0xFF5F7F7A),
+    val mapBorder: Color = Color(0xFF6E5B3C),
     val surface: Color = Color(0xFFF8F2E7),
     val surfaceStrong: Color = Color(0xFFFFFBF2),
     val ink: Color = Color(0xFF182C2A),
@@ -31,6 +31,7 @@ data class ReworkColors(
     val wished: Color = Color(0xFF7A549C),
     val border: Color = Color(0x33213632),
     val shadow: Color = Color(0x3D102825),
+    val mapVignette: Color = Color(0xFF0E211E),
 )
 
 @Immutable

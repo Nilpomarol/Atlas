@@ -2,12 +2,14 @@ package com.atlas.ui.rework.screens.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -42,6 +44,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.atlas.domain.model.TravelStatus
 import com.atlas.presentation.dashboard.DashboardFlightUiState
@@ -64,6 +67,7 @@ fun ReworkHomeScreen(
     onCountrySelectionCleared: () -> Unit,
     captureExpanded: Boolean,
     onCaptureRequested: () -> Unit,
+    onTripOpened: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = AtlasReworkTheme.colors
@@ -139,7 +143,7 @@ fun ReworkHomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = landBottom, bottom = 112.dp)
+                .padding(top = landBottom + 16.dp, bottom = 112.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = AtlasReworkTheme.dimensions.screenPadding),
         ) {
@@ -157,15 +161,11 @@ fun ReworkHomeScreen(
             }
 
             displayedCountryIso2?.let { iso2 ->
-                ReworkFloatingCard(modifier = Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            Text("PAÍS SELECCIONAT", style = AtlasReworkTheme.typography.label, color = colors.accent)
-                            Text(iso2, style = AtlasReworkTheme.typography.title)
-                        }
-                        Text("Obre el país  →", style = AtlasReworkTheme.typography.data, color = colors.inkMuted)
-                    }
-                }
+                SelectedCountryCard(
+                    iso2 = iso2,
+                    name = displayedState.countryNamesByIso2[iso2] ?: iso2,
+                    flag = displayedState.countryFlagsByIso2[iso2].orEmpty(),
+                )
                 Spacer(Modifier.height(AtlasReworkTheme.dimensions.cardGap))
             }
 
@@ -182,7 +182,7 @@ fun ReworkHomeScreen(
             val recentFlight = displayedState.recentFlights.firstOrNull()
             if (recentTrip != null || recentFlight != null) {
                 Spacer(Modifier.height(AtlasReworkTheme.dimensions.cardGap))
-                RecentCard(recentTrip, recentFlight)
+                RecentCard(recentTrip, recentFlight, onTripOpened)
             }
 
             Spacer(Modifier.height(AtlasReworkTheme.dimensions.cardGap))
@@ -206,6 +206,25 @@ fun ReworkHomeScreen(
 }
 
 @Composable
+private fun SelectedCountryCard(iso2: String, name: String, flag: String) {
+    val colors = AtlasReworkTheme.colors
+    ReworkFloatingCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (flag.isNotEmpty()) {
+                Text(flag, style = AtlasReworkTheme.typography.title)
+                Spacer(Modifier.width(12.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text("PAÍS SELECCIONAT", style = AtlasReworkTheme.typography.label, color = colors.accent)
+                Text(name, style = AtlasReworkTheme.typography.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(iso2, style = AtlasReworkTheme.typography.data, color = colors.inkMuted)
+            }
+            Text("Obre  →", style = AtlasReworkTheme.typography.data, color = colors.accent)
+        }
+    }
+}
+
+@Composable
 private fun MapLegendItem(
     color: Color,
     count: Int,
@@ -220,7 +239,7 @@ private fun MapLegendItem(
     ) {
         Text(
             count.toString(),
-            style = AtlasReworkTheme.typography.title,
+            style = AtlasReworkTheme.typography.title.copy(fontSize = 15.sp, lineHeight = 17.sp),
             color = if (outlined) colors.mapBorder else color,
         )
         Text(label, style = AtlasReworkTheme.typography.label, color = colors.inkMuted, maxLines = 2)
@@ -230,7 +249,7 @@ private fun MapLegendItem(
 @Composable
 private fun MapLegendVerticalRule() {
     val colors = AtlasReworkTheme.colors
-    Box(Modifier.width(1.dp).height(46.dp).background(colors.border))
+    Box(Modifier.width(1.dp).height(34.dp).background(colors.border))
 }
 
 @Composable
@@ -419,19 +438,32 @@ private fun TrackingCard(state: DashboardUiState) {
             state.wishedIso2s
         ).size
     val unrecordedCountryCount = (state.trackableCountryCount - coloredCountryCount).coerceAtLeast(0)
-    ReworkFloatingCard(modifier = Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(13.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    ReworkFloatingCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 13.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+            Text("EL TEU MAPA", style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
+            Row(verticalAlignment = Alignment.Bottom) {
                 Column(Modifier.weight(1f)) {
-                    Text("EL TEU MAPA", style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
-                    Text(
-                        if (state.visitedCount == 0) "Comença el teu atlas" else "${state.worldPercentage.roundToInt()}% del món explorat",
-                        style = AtlasReworkTheme.typography.title,
-                        color = colors.ink,
-                    )
+                    if (state.visitedCount == 0) {
+                        Text(
+                            "Comença",
+                            style = AtlasReworkTheme.typography.display.copy(fontSize = 34.sp, lineHeight = 36.sp),
+                            color = colors.ink,
+                        )
+                        Text("el teu atlas", style = AtlasReworkTheme.typography.body, color = colors.inkMuted)
+                    } else {
+                        Text(
+                            "${state.worldPercentage.roundToInt()}%",
+                            style = AtlasReworkTheme.typography.display.copy(fontSize = 40.sp, lineHeight = 42.sp),
+                            color = colors.ink,
+                        )
+                        Text("del món explorat", style = AtlasReworkTheme.typography.body, color = colors.inkMuted)
+                    }
                 }
-                Metric(state.visitedCount.toString(), "territoris")
-                Spacer(Modifier.width(18.dp))
+                Metric("${state.visitedCount}/${state.trackableCountryCount}", "territoris")
+                Spacer(Modifier.width(16.dp))
                 Metric(state.visitedContinentCount.toString(), "continents")
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
@@ -487,7 +519,32 @@ private fun JourneyCard(trip: DashboardTripUiState) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text("→", style = AtlasReworkTheme.typography.title, color = colors.accent)
+            Spacer(Modifier.width(12.dp))
+            val days = trip.daysUntilStart
+            if (days != null) {
+                TripCountdown(days)
+            } else {
+                Text("→", style = AtlasReworkTheme.typography.title, color = colors.accent)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TripCountdown(days: Int) {
+    val colors = AtlasReworkTheme.colors
+    Column(horizontalAlignment = Alignment.End) {
+        when (days) {
+            0 -> Text("Avui", style = AtlasReworkTheme.typography.title, color = colors.accent)
+            1 -> Text("Demà", style = AtlasReworkTheme.typography.title, color = colors.accent)
+            else -> {
+                Text(
+                    days.toString(),
+                    style = AtlasReworkTheme.typography.title.copy(fontSize = 26.sp),
+                    color = colors.accent,
+                )
+                Text("dies", style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
+            }
         }
     }
 }
@@ -505,17 +562,27 @@ private fun EmptyJourneyCard() {
 }
 
 @Composable
-private fun RecentCard(trip: DashboardTripUiState?, flight: DashboardFlightUiState?) {
+private fun RecentCard(
+    trip: DashboardTripUiState?,
+    flight: DashboardFlightUiState?,
+    onTripOpened: (String) -> Unit,
+) {
     val colors = AtlasReworkTheme.colors
     val title = trip?.title ?: flight?.title.orEmpty()
     val meta = trip?.memoryDateText ?: flight?.dateText
-    ReworkFloatingCard(modifier = Modifier.fillMaxWidth()) {
+    val label = if (trip != null) "ÚLTIM VIATGE" else "ÚLTIM VOL"
+    val clickModifier = if (trip != null) Modifier.clickable { onTripOpened(trip.tripId) } else Modifier
+    ReworkFloatingCard(modifier = Modifier.fillMaxWidth().then(clickModifier)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("DARRER RECORD", style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
+                Text(label, style = AtlasReworkTheme.typography.label, color = colors.inkMuted)
                 Text(title, style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), maxLines = 1)
             }
             meta?.let { Text(it, style = AtlasReworkTheme.typography.data, color = colors.inkMuted) }
+            if (trip != null) {
+                Spacer(Modifier.width(10.dp))
+                Text("→", style = AtlasReworkTheme.typography.title, color = colors.accent)
+            }
         }
     }
 }

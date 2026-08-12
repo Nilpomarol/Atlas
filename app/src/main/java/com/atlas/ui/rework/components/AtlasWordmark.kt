@@ -7,7 +7,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,13 +39,8 @@ fun AtlasWordmark(modifier: Modifier = Modifier) {
                 fontSize = 25.sp,
                 fontWeight = FontWeight.ExtraBold,
                 letterSpacing = 1.1.sp,
-                shadow = Shadow(
-                    color = colors.surfaceStrong.copy(alpha = 0.9f),
-                    offset = androidx.compose.ui.geometry.Offset.Zero,
-                    blurRadius = 8f,
-                ),
             ),
-            color = colors.ink,
+            color = colors.surfaceStrong,
         )
     }
 }

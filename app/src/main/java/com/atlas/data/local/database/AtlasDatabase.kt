@@ -885,6 +885,18 @@ abstract class AtlasDatabase : RoomDatabase() {
          */
         val MIGRATION_25_26 = object : Migration(25, 26) {
             override fun migrate(db: SupportSQLiteDatabase) {
+                // Repair itineraries stranded by a deleted trip. `itineraries.trip_id` has
+                // no foreign key, and until the delete path was fixed nothing cleared it,
+                // leaving a link that backup validation rejects on import.
+                db.execSQL(
+                    """
+                    UPDATE `itineraries`
+                    SET `trip_id` = NULL
+                    WHERE `trip_id` IS NOT NULL
+                      AND `trip_id` NOT IN (SELECT `id` FROM `trips`)
+                    """.trimIndent(),
+                )
+
                 db.execSQL("ALTER TABLE `trip_stops` ADD COLUMN `parent_stop_id` TEXT")
                 db.execSQL("ALTER TABLE `trip_stops` ADD COLUMN `side_trip_label` TEXT")
                 db.execSQL(

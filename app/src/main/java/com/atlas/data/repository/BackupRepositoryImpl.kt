@@ -5,6 +5,7 @@ import com.atlas.core.constants.DatasetConstants
 import com.atlas.data.backup.AtlasBackupV4
 import com.atlas.data.backup.AtlasBackupDataV4
 import com.atlas.data.backup.collapseLegacyExcursions
+import com.atlas.data.backup.withRepairedTripLinks
 import com.atlas.data.backup.toV4
 import com.atlas.data.backup.toBackupV4
 import com.atlas.data.backup.BackupArchive
@@ -128,7 +129,9 @@ class BackupRepositoryImpl(
 
     private suspend fun prepareImport(file: File): PreparedImport {
         val archive = BackupArchive.read(file)
-        val decoded = decode(archive.jsonPayload)
+        // Repair before validating: an archive written by an older build can carry a
+        // dangling trip link that validation would otherwise reject outright.
+        val decoded = decode(archive.jsonPayload).withRepairedTripLinks()
         val validCountryIso2 = database.countryDao().getAllIso2().toSet()
         validator.validate(backup = decoded, validCountryIso2 = validCountryIso2)
         val sanitized = decoded.withAvailablePhotos(archive.photoEntryNames.keys)

@@ -35,6 +35,24 @@ cleared, so a trip kept rendering compactly after the user added more stops.
 Migration 25 → 26 removes the column. Compactness is derived again, and there is no
 user-facing trip type.
 
+### Fixed: itineraries stranded by a deleted trip
+
+`itineraries.trip_id` carries no foreign key, and nothing cleared it when a trip was
+deleted. The itinerary was left pointing at a trip that no longer existed, which:
+
+- stranded it — only itineraries with a null `trip_id` can be linked to a trip; and
+- made the next backup **unimportable**, because backup validation rejects an
+  itinerary linked to a missing trip while export performs no validation.
+
+Three fixes, all in place:
+
+- `TripRepositoryImpl.deleteTrip` detaches linked itineraries in the same transaction;
+- migration 25 → 26 repairs any link already dangling;
+- backup import repairs a dangling link instead of refusing the archive, so an
+  already-broken backup still restores.
+
+Any new write path that deletes a trip must keep the detach step.
+
 ### Trip model: excursions collapsed into nested stops
 
 Migration 25 → 26 also removes the `excursions` and `excursion_stops` tables. A place

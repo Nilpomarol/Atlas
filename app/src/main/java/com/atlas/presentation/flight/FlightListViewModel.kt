@@ -9,6 +9,7 @@ import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlightApiResult
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.model.itineraryDisplayStatus
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.repository.AirlineRepository
 import com.atlas.domain.repository.AirportRepository
@@ -631,18 +632,4 @@ private fun ItineraryGroup.sortedFlights(): List<Flight> =
             .thenBy { it.utcAwareDepartureSortKey() ?: "" },
     )
 
-private fun List<ItineraryGroup>.displayStatus(): TravelStatus {
-    val statuses = flatMap { group ->
-        buildList {
-            group.status?.let(::add)
-            addAll(group.flights.map { it.status })
-        }
-    }
-    return when {
-        statuses.isEmpty() -> TravelStatus.UNKNOWN
-        statuses.all { it == TravelStatus.COMPLETED } -> TravelStatus.COMPLETED
-        statuses.any { it == TravelStatus.IN_PROGRESS } -> TravelStatus.IN_PROGRESS
-        statuses.any { it == TravelStatus.PLANNED } -> TravelStatus.PLANNED
-        else -> TravelStatus.UNKNOWN
-    }
-}
+private fun List<ItineraryGroup>.displayStatus(): TravelStatus = itineraryDisplayStatus()

@@ -110,7 +110,9 @@ class ItineraryDetailViewModel(
         itineraryRepository.observeGroups(itineraryId),
         tripRepository.observeTrips(),
         airportRepository.observeAirports(),
-    ) { itinerary, groups, trips, airports ->
+        itineraryRepository.observeItineraries(),
+    ) { itinerary, groups, trips, airports, allItineraries ->
+        val linkedTripIds = allItineraries.mapNotNullTo(mutableSetOf()) { it.tripId }
         val airlineNamesByCode = groups
             .flatMap { it.flights }
             .mapNotNull { it.airline?.trim()?.takeIf { airline -> airline.isNotBlank() } }
@@ -125,7 +127,13 @@ class ItineraryDetailViewModel(
             linkedTrip = itinerary?.tripId?.let { tripId -> trips.firstOrNull { it.id == tripId } },
             airports = airports,
             airlineNamesByCode = airlineNamesByCode,
-            availableTrips = trips,
+            // A trip holds at most one itinerary, so trips already spoken for are not
+            // offered. Without this the trip ends up with legs it cannot account for:
+            // the second itinerary still generates route stops while the trip page,
+            // which resolves its link with firstOrNull, shows only the first.
+            availableTrips = trips.filter { trip ->
+                trip.id !in linkedTripIds || trip.id == itinerary?.tripId
+            },
         )
     }
 

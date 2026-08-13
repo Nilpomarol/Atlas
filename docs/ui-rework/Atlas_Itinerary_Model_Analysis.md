@@ -1,6 +1,6 @@
 # Itinerary model — read-only analysis
 
-Status: **Analysis complete, recommendation pending decision**
+Status: **Analysis complete. §3.1 and §3.2 fixed 2026-08-13; container removal deferred to Phase 6.**
 Created: 2026-08-13
 Purpose: unblock the rework Trip Detail spec, which cannot be written until it is
 settled how flights attach to a trip.
@@ -51,7 +51,7 @@ trip.
 
 ## 3. Defects found
 
-### 3.1 A trip can hold more than one itinerary — reachable from the UI
+### 3.1 A trip can hold more than one itinerary — reachable from the UI — FIXED
 
 `ItineraryDetailViewModel` offers **every** trip when linking:
 
@@ -75,7 +75,7 @@ Consequences when it happens:
 The spec rule "a trip can have zero or one linked itinerary" is unenforced at every
 level: no unique index, no domain validation, no UI guard on the itinerary side.
 
-### 3.2 `ItineraryGroup.status` is read three different ways
+### 3.2 `ItineraryGroup.status` is read three different ways — FIXED
 
 The column is nullable and its meaning is not agreed:
 
@@ -141,8 +141,22 @@ worth removing eventually, but not worth a second released-data migration immedi
 after the trip-model collapse — especially since the screens that render it are legacy
 and Phase 6 deletes them. Removing the table is far cheaper once nothing renders it.
 
-The correctness defects in §3.1 and §3.2 are worth fixing now regardless of which
-option is eventually taken; neither needs a schema change.
+The correctness defects in §3.1 and §3.2 were fixed on 2026-08-13, without a schema
+change and independently of which option is eventually taken:
+
+- the itinerary-side trip picker no longer offers trips that already hold an itinerary,
+  and backup import drops duplicate links beyond the first;
+- group status now has one definition in the domain, `ItineraryGroup.effectiveStatus`
+  for derivation and `displayStatus` for screens, with the private copies in
+  `CountryStateDerivationService`, `DashboardViewModel` and `FlightListViewModel`
+  removed.
+
+**Still unguarded: the write path.** Nothing in the domain refuses a second link if a
+caller bypasses the picker. The guard belongs with whatever rebuilds trip-to-flight
+linking in the rework, and the Trip Detail spec must carry that requirement.
+
+§3.3, the initial placement of generated legs, is unchanged and is a Trip Detail
+concern rather than a data one.
 
 ## 6. Consequence for the Trip Detail spec
 

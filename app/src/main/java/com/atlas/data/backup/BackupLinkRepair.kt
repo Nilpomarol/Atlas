@@ -14,18 +14,21 @@ package com.atlas.data.backup
  */
 fun AtlasBackupV4.withRepairedTripLinks(): AtlasBackupV4 {
     val tripIds = data.trips.mapTo(mutableSetOf()) { it.id }
-    val dangling = data.itineraries.any { it.tripId != null && it.tripId !in tripIds }
-    if (!dangling) return this
+    val claimedTripIds = mutableSetOf<String>()
+    var repaired = false
 
-    return copy(
-        data = data.copy(
-            itineraries = data.itineraries.map { itinerary ->
-                if (itinerary.tripId != null && itinerary.tripId !in tripIds) {
-                    itinerary.copy(tripId = null)
-                } else {
-                    itinerary
-                }
-            },
-        ),
-    )
+    val itineraries = data.itineraries.map { itinerary ->
+        val tripId = itinerary.tripId ?: return@map itinerary
+        // A trip holds at most one itinerary. Beyond the first, later links are dropped
+        // rather than left to generate route stops the trip page cannot account for.
+        val keep = tripId in tripIds && claimedTripIds.add(tripId)
+        if (keep) {
+            itinerary
+        } else {
+            repaired = true
+            itinerary.copy(tripId = null)
+        }
+    }
+
+    return if (repaired) copy(data = data.copy(itineraries = itineraries)) else this
 }

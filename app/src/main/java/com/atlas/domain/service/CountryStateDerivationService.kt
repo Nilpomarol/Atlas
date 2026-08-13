@@ -6,6 +6,7 @@ import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.CountryUserState
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.ItineraryGroup
+import com.atlas.domain.model.effectiveStatus
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
@@ -110,13 +111,6 @@ class CountryStateDerivationService {
         }
     }
 
-    private fun ItineraryGroup.effectiveStatus(): TravelStatus? =
-        status ?: when {
-            flights.isEmpty() -> null
-            flights.any { it.status == TravelStatus.COMPLETED } -> TravelStatus.COMPLETED
-            flights.all { it.status == TravelStatus.PLANNED } -> TravelStatus.PLANNED
-            else -> null
-        }
 
     private fun ItineraryGroup.derivedFlight(
         isLastGroup: Boolean,

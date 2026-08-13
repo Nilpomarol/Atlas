@@ -40,6 +40,20 @@ interface ItineraryDao {
     @Query("SELECT * FROM itinerary_groups ORDER BY itinerary_id ASC, sort_order ASC")
     suspend fun getAllGroups(): List<ItineraryGroupEntity>
 
+    /**
+     * Detaches itineraries from a deleted trip. `trip_id` carries no foreign key, so
+     * without this the link dangles and the itinerary can never be reattached — and the
+     * next backup fails referential validation on import.
+     */
+    @Query("UPDATE itineraries SET trip_id = NULL, updated_at = :updatedAt WHERE trip_id = :tripId")
+    suspend fun clearTripLink(tripId: String, updatedAt: String)
+
+    @Query("SELECT COUNT(*) FROM itineraries WHERE trip_id IS NOT NULL AND trip_id NOT IN (SELECT id FROM trips)")
+    suspend fun countOrphanedTripLinks(): Int
+
+    @Query("UPDATE itineraries SET trip_id = NULL WHERE trip_id IS NOT NULL AND trip_id NOT IN (SELECT id FROM trips)")
+    suspend fun clearOrphanedTripLinks(): Int
+
     @Query("DELETE FROM itineraries")
     suspend fun deleteAll()
 

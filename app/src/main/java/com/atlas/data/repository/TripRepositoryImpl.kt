@@ -23,6 +23,7 @@ class TripRepositoryImpl(
 ) : TripRepository {
     private val tripDao = database.tripDao()
     private val tripStopDao = database.tripStopDao()
+    private val itineraryDao = database.itineraryDao()
 
     override fun observeTrips(): Flow<List<Trip>> =
         tripDao.observeTrips().map { trips ->
@@ -165,7 +166,11 @@ class TripRepositoryImpl(
         tripDao.clearCoverPhotoByFilename(filename)
     }
 
-    override suspend fun deleteTrip(trip: Trip) {
+    override suspend fun deleteTrip(trip: Trip) = database.withTransaction {
+        // A linked itinerary outlives its trip: `itineraries.trip_id` has no foreign key,
+        // so it must be detached here. Leaving it dangling strands the itinerary and makes
+        // the next backup unimportable.
+        itineraryDao.clearTripLink(tripId = trip.id, updatedAt = Instant.now().toString())
         tripDao.delete(
             TripEntity(
                 id = trip.id,

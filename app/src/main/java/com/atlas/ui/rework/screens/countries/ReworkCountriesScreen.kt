@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,15 +38,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.presentation.country.CountryDetailUiState
 import com.atlas.presentation.country.CountryListFilter
@@ -57,9 +63,9 @@ import com.atlas.ui.rework.components.ReworkDropdownItem
 import com.atlas.ui.rework.components.ReworkDropdownMenu
 import com.atlas.ui.rework.components.ReworkFloatingCard
 import com.atlas.ui.rework.foundation.AtlasReworkTheme
-import com.atlas.ui.rework.map.AtlasWorldLandAspectRatio
-import com.atlas.ui.rework.map.AtlasWorldMap
 import com.atlas.ui.rework.map.AtlasWorldMapCountries
+import com.atlas.ui.rework.map.CountryLocatorMap
+import java.io.File
 
 @Composable
 fun ReworkCountriesScreen(
@@ -133,7 +139,7 @@ fun ReworkCountriesScreen(
 }
 
 @Composable
-fun ReworkCountryDetailScreen(state: CountryDetailUiState, onBack: () -> Unit, onCaptureRequested: () -> Unit) {
+fun ReworkCountryDetailScreen(state: CountryDetailUiState, onBack: () -> Unit) {
     val country = state.country
     val colors = AtlasReworkTheme.colors
     if (country == null) {
@@ -142,43 +148,274 @@ fun ReworkCountryDetailScreen(state: CountryDetailUiState, onBack: () -> Unit, o
         }
         return
     }
-    Box(Modifier.fillMaxSize().background(colors.mapWater)) {
-        AtlasWorldMap(
-            countries = AtlasWorldMapCountries(
-                living = if (state.trackingState.currentlyLiving) setOf(country.iso2) else emptySet(),
-                lived = if (state.trackingState.lived) setOf(country.iso2) else emptySet(),
-                visited = if (state.trackingState.visited) setOf(country.iso2) else emptySet(),
-                planned = if (state.trackingState.planned) setOf(country.iso2) else emptySet(),
-                wished = if (state.trackingState.wished) setOf(country.iso2) else emptySet(),
-            ),
-            selectedCountryIso2 = country.iso2,
-            initialLandTopPx = with(LocalDensity.current) { 56.dp.toPx() },
-            modifier = Modifier.fillMaxSize(),
-        )
-        Column(Modifier.fillMaxSize().statusBarsPadding().verticalScroll(rememberScrollState()).padding(bottom = 112.dp)) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = RoundedCornerShape(12.dp), color = colors.surfaceStrong, onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Torna", modifier = Modifier.padding(10.dp), tint = colors.ink)
+    val context = LocalContext.current
+    val heroModel = rememberLandscapeHeroModel(country.iso2, state.landscapePhotoFilename)
+    val heroHeight = (LocalConfiguration.current.screenHeightDp * 0.42f).dp
+    val mapCountries = AtlasWorldMapCountries(
+        living = if (state.trackingState.currentlyLiving) setOf(country.iso2) else emptySet(),
+        lived = if (state.trackingState.lived) setOf(country.iso2) else emptySet(),
+        visited = if (state.trackingState.visited) setOf(country.iso2) else emptySet(),
+        planned = if (state.trackingState.planned) setOf(country.iso2) else emptySet(),
+        wished = if (state.trackingState.wished) setOf(country.iso2) else emptySet(),
+    )
+
+    Box(Modifier.fillMaxSize().background(colors.backdrop)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 120.dp),
+        ) {
+            // Hero image that bleeds into the dark page backdrop (no hard band edge).
+            Box(Modifier.fillMaxWidth().height(heroHeight)) {
+                if (heroModel != null) {
+                    AsyncImage(
+                        model = heroModel,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(colors.mapWater, colors.backdrop))))
                 }
-                Spacer(Modifier.width(12.dp))
-                Text("PAÍS", style = AtlasReworkTheme.typography.label, color = colors.accent)
+                Box(
+                    Modifier.fillMaxSize().background(
+                        Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = 0.36f),
+                            0.26f to Color.Transparent,
+                            0.55f to Color.Transparent,
+                            0.80f to colors.backdrop.copy(alpha = 0.65f),
+                            1f to colors.backdrop,
+                        ),
+                    ),
+                )
+                Row(
+                    Modifier.fillMaxWidth().statusBarsPadding().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Surface(shape = RoundedCornerShape(12.dp), color = colors.surfaceStrong, onClick = onBack, shadowElevation = 6.dp) {
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Torna", modifier = Modifier.padding(10.dp), tint = colors.ink)
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Text(country.iso2, style = AtlasReworkTheme.typography.data, color = Color.White.copy(alpha = 0.85f))
+                }
+                Column(
+                    Modifier.align(Alignment.BottomStart).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(country.flagEmoji.orEmpty(), style = AtlasReworkTheme.typography.title)
+                    Text(country.nameCa, style = AtlasReworkTheme.typography.display, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
             }
-            Spacer(Modifier.height(176.dp * AtlasWorldLandAspectRatio))
-            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                ReworkFloatingCard(Modifier.fillMaxWidth()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(country.flagEmoji.orEmpty(), style = AtlasReworkTheme.typography.title)
-                        Text(country.nameCa, style = AtlasReworkTheme.typography.display)
-                        Text(state.trackingState.relationshipSummary(), style = AtlasReworkTheme.typography.body, color = colors.inkMuted)
-                        StateLedger(state.trackingState)
-                        Surface(shape = RoundedCornerShape(12.dp), color = colors.accent, onClick = onCaptureRequested) {
-                            Text("Registra en aquest país", modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp), style = AtlasReworkTheme.typography.label, color = Color.White)
+
+            // Content over the dark backdrop. Order places the relationship (tracking)
+            // centrally — after locating the country, before the reference data.
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SituationCard(country, mapCountries)
+                TrackingCard(state)
+                if (state.kpiStats.isNotEmpty() || state.currencyCode != null) StatsCurrencyCard(state)
+                HistoryMemoriesCard(state, context)
+            }
+        }
+    }
+}
+
+/**
+ * Resolves the landscape hero image, preferring the user's cached/API photo, then the
+ * bundled offline pack for the country, then null (caller shows a gradient fallback).
+ * Keeps the app from *requiring* an image API at runtime.
+ *
+ * The bundled pack ships up to [MAX_HERO_VARIANTS] photos per country
+ * (`<iso2>_0.webp` … `<iso2>_k.webp`); we rotate through them deterministically by
+ * date, so the hero changes about once a day.
+ */
+@Composable
+private fun rememberLandscapeHeroModel(iso2: String, cacheFilename: String?): Any? {
+    val context = LocalContext.current
+    return remember(iso2, cacheFilename) {
+        // 1) User's cached / API-refreshed photo wins.
+        val cached = cacheFilename
+            ?.let { File(context.filesDir, "country_landscape_photos/$it") }
+            ?.takeIf { it.exists() }
+        if (cached != null) return@remember cached
+
+        val iso = iso2.lowercase()
+        fun assetExists(path: String) = runCatching { context.assets.open(path).close() }.isSuccess
+
+        // 2) Bundled rotating pack: pick one variant per day (tolerant of index gaps).
+        val variants = (0 until MAX_HERO_VARIANTS)
+            .map { "country_landscape_photos/${iso}_$it.webp" }
+            .filter { assetExists(it) }
+        if (variants.isNotEmpty()) {
+            val index = (java.time.LocalDate.now().toEpochDay() % variants.size).toInt()
+            return@remember "file:///android_asset/${variants[index]}"
+        }
+
+        // 3) Legacy single-file name, for safety.
+        listOf("country_landscape_photos/$iso.webp", "country_landscape_photos/$iso.jpg")
+            .firstOrNull { assetExists(it) }
+            ?.let { "file:///android_asset/$it" }
+    }
+}
+
+private const val MAX_HERO_VARIANTS = 8
+
+@Composable private fun TrackingCard(state: CountryDetailUiState) {
+    val colors = AtlasReworkTheme.colors
+    ReworkFloatingCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("LA TEVA RELACIÓ", style = AtlasReworkTheme.typography.label, color = colors.accent)
+            Text(state.trackingState.relationshipSummary(), style = AtlasReworkTheme.typography.title, color = colors.ink)
+            if (state.trackingState.hasAnyRelationship()) StateLedger(state.trackingState)
+        }
+    }
+}
+
+@Composable private fun SituationCard(
+    country: com.atlas.domain.model.Country,
+    mapCountries: AtlasWorldMapCountries,
+) {
+    val colors = AtlasReworkTheme.colors
+    ReworkFloatingCard(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+        Box(Modifier.fillMaxWidth().height(190.dp)) {
+            CountryLocatorMap(
+                iso2 = country.iso2,
+                countries = mapCountries,
+                capitalLatitude = country.capitalLatitude,
+                capitalLongitude = country.capitalLongitude,
+                capitalName = country.capitalNameCa,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Text(
+                "SITUACIÓ",
+                modifier = Modifier
+                    .padding(12.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(colors.surfaceStrong.copy(alpha = 0.9f))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                style = AtlasReworkTheme.typography.label,
+                color = colors.accent,
+            )
+            // Continent context overlaid on the bottom of the map. The capital is named
+            // by the pin above, so it is not repeated here.
+            Text(
+                buildString {
+                    append(country.continent.toCatalanContinent())
+                    country.subregion?.takeIf { it.isNotBlank() }?.let { append(" · $it") }
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.72f))))
+                    .padding(start = 14.dp, end = 14.dp, top = 26.dp, bottom = 12.dp),
+                style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable private fun StatsCurrencyCard(state: CountryDetailUiState) {
+    val colors = AtlasReworkTheme.colors
+    ReworkFloatingCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Text("DADES DEL PAÍS", style = AtlasReworkTheme.typography.label, color = colors.accent)
+            if (state.kpiStats.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    state.kpiStats.chunked(2).forEach { rowStats ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            rowStats.forEach { kpi ->
+                                // Each stat is at most two rows: value(+unit), then label(+tier).
+                                Column(Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.Bottom) {
+                                        Text(kpi.value, style = AtlasReworkTheme.typography.title, color = colors.ink)
+                                        kpi.unit?.let {
+                                            Spacer(Modifier.width(3.dp))
+                                            Text(it, style = AtlasReworkTheme.typography.label, color = colors.inkMuted, modifier = Modifier.padding(bottom = 3.dp))
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(kpi.label, style = AtlasReworkTheme.typography.label, color = colors.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        kpi.tier?.takeIf { it.isNotBlank() }?.let {
+                                            Spacer(Modifier.width(5.dp))
+                                            Text("· $it", style = AtlasReworkTheme.typography.data.copy(fontSize = 11.sp), color = colors.accent, maxLines = 1)
+                                        }
+                                    }
+                                }
+                            }
+                            if (rowStats.size == 1) Spacer(Modifier.weight(1f))
                         }
                     }
                 }
-                EvidenceCard(state)
-                if (state.kpiStats.isNotEmpty()) ReferenceCard(state)
             }
+            val currencyCode = state.currencyCode
+            if (currencyCode != null) {
+                Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(state.currencyName ?: currencyCode, style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.ink)
+                        state.rateAge?.let { Text("Actualitzat $it", style = AtlasReworkTheme.typography.label, color = colors.inkMuted) }
+                    }
+                    state.eurRate?.let { rate ->
+                        Text("1 € = ${formatRate(rate)} $currencyCode", style = AtlasReworkTheme.typography.data, color = colors.accent)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable private fun HistoryMemoriesCard(state: CountryDetailUiState, context: android.content.Context) {
+    val colors = AtlasReworkTheme.colors
+    val evidence = state.logs.size + state.tripSummaries.size + state.airTravelSummaries.size
+    ReworkFloatingCard(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("LA TEVA PETJADA", style = AtlasReworkTheme.typography.label, color = colors.accent)
+            if (evidence == 0 && state.memories.photoCount == 0) {
+                Text("Encara no hi ha cap registre. Comença a construir la teva relació amb aquest país.", style = AtlasReworkTheme.typography.body, color = colors.inkMuted)
+            } else {
+                if (state.memories.photoCount > 0) {
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        state.memories.viewerItems.take(12).forEach { item ->
+                            AsyncImage(
+                                model = File(context.filesDir, "photos/${item.photo.filename}"),
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(88.dp).clip(RoundedCornerShape(10.dp)).background(colors.surface),
+                            )
+                        }
+                    }
+                }
+                state.tripSummaries.forEach { HistoryRow("VIATGE", it.title, it.dateRangeText) }
+                state.airTravelSummaries.forEach { HistoryRow(it.label.uppercase(), it.title, it.dateText) }
+                state.logs.forEach { HistoryRow("REGISTRE", it.type.toCatalanLog(), it.notes?.takeIf(String::isNotBlank)) }
+            }
+        }
+    }
+}
+
+@Composable private fun HistoryRow(label: String, title: String, meta: String?) {
+    val colors = AtlasReworkTheme.colors
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            modifier = Modifier
+                .clip(RoundedCornerShape(5.dp))
+                .background(colors.accent.copy(alpha = 0.12f))
+                .padding(horizontal = 6.dp, vertical = 3.dp),
+            style = AtlasReworkTheme.typography.data.copy(fontSize = 10.sp),
+            color = colors.accent,
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(title, style = AtlasReworkTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.ink, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+        meta?.let {
+            Spacer(Modifier.width(8.dp))
+            Text(it, style = AtlasReworkTheme.typography.label, color = colors.inkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -343,18 +580,6 @@ private fun CompactMenuButton(label: String, value: String, onClick: () -> Unit)
     val labels = listOfNotNull(if (state.currentlyLiving) "HI VIUS" else null, if (state.lived) "HI HAS VISCUT" else null, if (state.visited) "VISITAT" else null, if (state.planned) "PLANEJAT" else null, if (state.wished) "DESITJAT" else null)
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) { labels.forEach { FilterChip(it, true, {}) } }
 }
-@Composable private fun EvidenceCard(state: CountryDetailUiState) {
-    val colors = AtlasReworkTheme.colors
-    ReworkFloatingCard(Modifier.fillMaxWidth()) { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("LA TEVA PETJADA", style = AtlasReworkTheme.typography.label, color = colors.accent)
-        val evidence = state.logs.size + state.tripSummaries.size + state.airTravelSummaries.size
-        Text(if (evidence == 0) "Encara no hi ha cap registre." else "$evidence registres expliquen la teva relació.", style = AtlasReworkTheme.typography.title)
-        state.tripSummaries.take(3).forEach { Text("Viatge · ${it.title}", style = AtlasReworkTheme.typography.body) }
-        state.airTravelSummaries.take(3).forEach { Text("Vol · ${it.title}", style = AtlasReworkTheme.typography.body) }
-        state.logs.take(3).forEach { Text("Registre · ${it.type.name.lowercase()}", style = AtlasReworkTheme.typography.body) }
-    } }
-}
-@Composable private fun ReferenceCard(state: CountryDetailUiState) { val colors = AtlasReworkTheme.colors; ReworkFloatingCard(Modifier.fillMaxWidth()) { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text("CONTEXT DEL PAÍS", style = AtlasReworkTheme.typography.label, color = colors.accent); Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) { state.kpiStats.take(3).forEach { Column { Text(it.value, style = AtlasReworkTheme.typography.title); Text(it.label, style = AtlasReworkTheme.typography.label, color = colors.inkMuted) } } } } } }
 private fun continentOrder(continent: String): Int = when (continent) {
     "Europe" -> 0
     "Africa" -> 1
@@ -376,3 +601,18 @@ private fun String.toCatalanContinent(): String = when (this) {
     else -> this
 }
 private fun CountryTrackingState.relationshipSummary(): String = when { currentlyLiving -> "Hi vius ara"; lived -> "Hi has viscut"; visited -> "L'has visitat"; planned -> "El tens planejat"; wished -> "El vols visitar"; else -> "Encara sense registre" }
+
+private fun CountryTrackingState.hasAnyRelationship(): Boolean =
+    currentlyLiving || lived || visited || planned || wished
+
+private fun CountryLogType.toCatalanLog(): String = when (this) {
+    CountryLogType.VISIT -> "Visita"
+    CountryLogType.LIVED -> "Residència"
+    else -> name.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+private fun formatRate(rate: Double): String = when {
+    rate >= 100 -> "%.0f".format(rate)
+    rate >= 1 -> "%.2f".format(rate)
+    else -> "%.4f".format(rate)
+}

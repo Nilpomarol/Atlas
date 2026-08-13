@@ -32,6 +32,8 @@ data class ReworkColors(
     val border: Color = Color(0x33213632),
     val shadow: Color = Color(0x3D102825),
     val mapVignette: Color = Color(0xFF0E211E),
+    /** Dark page backdrop used where a hero image should bleed into the background. */
+    val backdrop: Color = Color(0xFF12191B),
 )
 
 @Immutable

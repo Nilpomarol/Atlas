@@ -22,6 +22,7 @@ import com.atlas.ui.rework.foundation.AtlasReworkTheme
 import com.atlas.ui.rework.screens.countries.ReworkCountriesRoute
 import com.atlas.ui.rework.screens.countries.ReworkCountryDetailRoute
 import com.atlas.ui.rework.screens.home.ReworkHomeScreen
+import com.atlas.ui.rework.screens.trips.ReworkTripDetailRoute
 import com.atlas.ui.rework.screens.trips.ReworkTripsRoute
 
 @Composable
@@ -76,10 +77,14 @@ fun AtlasReworkNavHost(
         composable(
             route = ReworkDestination.TripDetail.route,
             arguments = listOf(navArgument("tripId") { type = NavType.StringType }),
-        ) {
-            // Route + tripId argument are wired now; the trip page content lands in the
-            // Phase 5 Trips vertical slice. `it.arguments?.getString("tripId")` is ready.
-            ReworkPlaceholder(ReworkDestination.TripDetail)
+        ) { entry ->
+            ReworkTripDetailRoute(
+                container = container,
+                tripId = entry.arguments?.getString("tripId").orEmpty(),
+                onBack = { navController.popBackStack() },
+                // The story slideshow is reused from the existing implementation.
+                onStoryOpened = {},
+            )
         }
         ReworkDestination.entries
             .filter {

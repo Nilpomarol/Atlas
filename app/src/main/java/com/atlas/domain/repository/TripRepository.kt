@@ -26,7 +26,6 @@ interface TripRepository {
         status: TravelStatus,
         dateRange: FlexibleDateRange?,
         notes: String?,
-        isQuickTrip: Boolean,
         locationName: String,
         countryIso2: String,
         latitude: Double?,
@@ -53,6 +52,9 @@ interface TripRepository {
     suspend fun updateTripStop(stop: TripStop)
     suspend fun reorderTripStops(stops: List<TripStop>)
     suspend fun deleteTripStop(stop: TripStop)
+
+    /** Ids of the places nested under [parentStopId], for cascading cleanup. */
+    suspend fun childStopIds(parentStopId: String): List<String>
     suspend fun replaceGeneratedItineraryGroupStops(
         tripId: String,
         groupIds: List<String>,

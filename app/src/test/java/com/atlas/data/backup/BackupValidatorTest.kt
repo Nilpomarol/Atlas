@@ -196,19 +196,19 @@ class BackupValidatorTest {
         countryUserStates: List<BackupCountryUserStateV1> = listOf(validCountryUserState()),
         countryLogs: List<BackupCountryLogV1> = listOf(validCountryLog()),
         trips: List<BackupTripV3> = listOf(validTrip()),
-        tripStops: List<BackupTripStopV2> = listOf(validTripStop()),
+        tripStops: List<BackupTripStopV4> = listOf(validTripStop()),
         flights: List<BackupFlightV2> = emptyList(),
         itineraries: List<BackupItineraryV2> = emptyList(),
         itineraryGroups: List<BackupItineraryGroupV2> = emptyList(),
         excursions: List<BackupExcursionV2> = emptyList(),
         excursionStops: List<BackupExcursionStopV2> = emptyList(),
         stopPhotos: List<StopPhotoBackup> = emptyList(),
-    ): AtlasBackupV3 =
-        AtlasBackupV3(
+    ): AtlasBackupV4 =
+        AtlasBackupV4(
             backupVersion = 3,
             createdAt = "2026-05-30T00:00:00Z",
             countryDatasetVersion = "test",
-            data = AtlasBackupDataV3(
+            data = AtlasBackupDataV4(
                 countryUserStates = countryUserStates,
                 countryLogs = countryLogs,
                 trips = trips,
@@ -232,7 +232,7 @@ class BackupValidatorTest {
         BackupTripV3(id = "trip-1", title = "Viatge", status = "COMPLETED", startYear = 2026, datePrecision = "YEAR", createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
 
     private fun validTripStop() =
-        BackupTripStopV2(id = "stop-1", tripId = "trip-1", locationName = "Andorra la Vella", countryIso2 = "AD", sortOrder = 0, createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
+        BackupTripStopV4(id = "stop-1", tripId = "trip-1", locationName = "Andorra la Vella", countryIso2 = "AD", sortOrder = 0, createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")
 
     private fun validFlight(groupId: String? = null) =
         BackupFlightV2(id = "flight-1", originAirportId = "BCN", destinationAirportId = "NRT", status = "COMPLETED", itineraryGroupId = groupId, createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z")

@@ -19,7 +19,6 @@ fun CountryListRoute(
             tripRepository = app.container.tripRepository,
             flightRepository = app.container.flightRepository,
             itineraryRepository = app.container.itineraryRepository,
-            excursionRepository = app.container.excursionRepository,
             airportRepository = app.container.airportRepository,
             countryStatRepository = app.container.countryStatRepository,
             countryStateDerivationService = app.container.countryStateDerivationService,

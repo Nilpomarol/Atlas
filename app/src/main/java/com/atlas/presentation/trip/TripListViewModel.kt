@@ -16,7 +16,7 @@ import com.atlas.domain.repository.TripRepository
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.domain.usecase.location.SearchLocationsUseCase
 import com.atlas.domain.usecase.status.TravelStatusRefreshPolicy
-import com.atlas.domain.usecase.trip.CreateQuickTripUseCase
+import com.atlas.domain.usecase.trip.CreateTripWithFirstStopUseCase
 import com.atlas.domain.usecase.trip.CreateTripUseCase
 import com.atlas.domain.usecase.trip.UpdateTripUseCase
 import com.atlas.domain.validation.FlexibleDateValidator
@@ -38,7 +38,7 @@ class TripListViewModel(
     tripRepository: TripRepository,
     countryRepository: CountryRepository,
     private val createTripUseCase: CreateTripUseCase,
-    private val createQuickTripUseCase: CreateQuickTripUseCase,
+    private val createTripWithFirstStopUseCase: CreateTripWithFirstStopUseCase,
     private val updateTripUseCase: UpdateTripUseCase,
     private val searchLocationsUseCase: SearchLocationsUseCase,
     private val flexibleDateValidator: FlexibleDateValidator,
@@ -318,7 +318,6 @@ class TripListViewModel(
                         dateRange = dateRange,
                         notes = currentDraft.notes,
                         coverPhotoFilename = currentDraft.coverPhotoFilename,
-                        isQuickTrip = currentDraft.isQuickTrip,
                     ),
                 )
             }
@@ -365,7 +364,7 @@ class TripListViewModel(
         }
 
         viewModelScope.launch {
-            createQuickTripUseCase(
+            createTripWithFirstStopUseCase(
                 title = title,
                 status = currentDraft.status,
                 dateRange = dateRange,
@@ -382,7 +381,7 @@ class TripListViewModel(
         private val tripRepository: TripRepository,
         private val countryRepository: CountryRepository,
         private val createTripUseCase: CreateTripUseCase,
-        private val createQuickTripUseCase: CreateQuickTripUseCase,
+        private val createTripWithFirstStopUseCase: CreateTripWithFirstStopUseCase,
         private val updateTripUseCase: UpdateTripUseCase,
         private val searchLocationsUseCase: SearchLocationsUseCase,
         private val flexibleDateValidator: FlexibleDateValidator,
@@ -394,7 +393,7 @@ class TripListViewModel(
                 tripRepository = tripRepository,
                 countryRepository = countryRepository,
                 createTripUseCase = createTripUseCase,
-                createQuickTripUseCase = createQuickTripUseCase,
+                createTripWithFirstStopUseCase = createTripWithFirstStopUseCase,
                 updateTripUseCase = updateTripUseCase,
                 searchLocationsUseCase = searchLocationsUseCase,
                 flexibleDateValidator = flexibleDateValidator,
@@ -424,7 +423,8 @@ data class TripListItemUiState(
     val coverPhotoFilename: String? = null,
     val datePillText: String? = null,
 ) {
-    val isQuickTrip: Boolean = trip.isQuickTrip
+    /** A trip with a single place renders compactly; derived, never stored. */
+    val isSinglePlace: Boolean = stopCount == 1
 }
 
 data class QuickTripDraftUiState(

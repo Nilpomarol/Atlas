@@ -17,7 +17,6 @@ import com.atlas.presentation.trip.TripStopMapPoint
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
@@ -39,7 +38,6 @@ class DashboardViewModel(
     tripRepository: TripRepository,
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
-    excursionRepository: ExcursionRepository,
     countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
     airportRepository: AirportRepository,
     countryStateDerivationService: CountryStateDerivationService,
@@ -68,15 +66,13 @@ class DashboardViewModel(
         Triple(flights, itineraryGroups, airports)
     }
 
-    private val excursionData = excursionRepository.observeExcursions()
 
     val uiState: StateFlow<DashboardUiState> = combine(
         countryData,
         tripData,
         flightData,
-        excursionData,
         countryStatsScopePreferencesRepository.observeScope(),
-    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), excursions, statsScope ->
+    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), statsScope ->
         val userStatesByIso2 = userStates.associateBy { it.countryIso2 }
         val logsByIso2 = logs.groupBy { it.countryIso2 }
         val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
@@ -93,7 +89,6 @@ class DashboardViewModel(
                 tripStops = stopsByIso2[country.iso2].orEmpty(),
                 flights = flights,
                 itineraryGroups = itineraryGroups,
-                excursions = excursions,
                 airportCountryIso2ById = airportCountryIso2ById,
             )
         }
@@ -321,7 +316,6 @@ class DashboardViewModel(
                     TripStopMapPoint(latitude = lat, longitude = lng)
                 },
             coverPhotoFilename = coverPhotoFilename,
-            isQuickTrip = isQuickTrip,
         )
     }
 
@@ -330,7 +324,6 @@ class DashboardViewModel(
         private val tripRepository: TripRepository,
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
-        private val excursionRepository: ExcursionRepository,
         private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
         private val airportRepository: AirportRepository,
         private val countryStateDerivationService: CountryStateDerivationService,
@@ -343,7 +336,6 @@ class DashboardViewModel(
                 tripRepository = tripRepository,
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
-                excursionRepository = excursionRepository,
                 countryStatsScopePreferencesRepository = countryStatsScopePreferencesRepository,
                 airportRepository = airportRepository,
                 countryStateDerivationService = countryStateDerivationService,
@@ -400,7 +392,6 @@ data class DashboardTripUiState(
     val countryIso2s: List<String> = emptyList(),
     val mapPoints: List<TripStopMapPoint> = emptyList(),
     val coverPhotoFilename: String? = null,
-    val isQuickTrip: Boolean = false,
     val daysUntilStart: Int? = null,
 )
 

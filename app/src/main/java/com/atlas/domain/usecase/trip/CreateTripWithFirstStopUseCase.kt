@@ -4,7 +4,7 @@ import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.repository.TripRepository
 
-class CreateQuickTripUseCase(
+class CreateTripWithFirstStopUseCase(
     private val tripRepository: TripRepository,
 ) {
     suspend operator fun invoke(
@@ -21,7 +21,6 @@ class CreateQuickTripUseCase(
             status = status,
             dateRange = dateRange,
             notes = null,
-            isQuickTrip = true,
             locationName = locationName.trim(),
             countryIso2 = countryIso2.trim().uppercase(),
             latitude = latitude,

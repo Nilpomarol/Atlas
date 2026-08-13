@@ -18,7 +18,7 @@ fun TripListRoute(
             tripRepository = app.container.tripRepository,
             countryRepository = app.container.countryRepository,
             createTripUseCase = app.container.createTripUseCase,
-            createQuickTripUseCase = app.container.createQuickTripUseCase,
+            createTripWithFirstStopUseCase = app.container.createTripWithFirstStopUseCase,
             updateTripUseCase = app.container.updateTripUseCase,
             searchLocationsUseCase = app.container.searchLocationsUseCase,
             flexibleDateValidator = app.container.flexibleDateValidator,

@@ -2,8 +2,11 @@ package com.atlas.data.repository
 
 import androidx.room.withTransaction
 import com.atlas.core.constants.DatasetConstants
-import com.atlas.data.backup.AtlasBackupDataV3
-import com.atlas.data.backup.AtlasBackupV3
+import com.atlas.data.backup.AtlasBackupV4
+import com.atlas.data.backup.AtlasBackupDataV4
+import com.atlas.data.backup.collapseLegacyExcursions
+import com.atlas.data.backup.toV4
+import com.atlas.data.backup.toBackupV4
 import com.atlas.data.backup.BackupArchive
 import com.atlas.data.backup.BackupArchiveContents
 import com.atlas.data.backup.BackupValidationException
@@ -33,6 +36,11 @@ class BackupRepositoryImpl(
     private val photosDirectory: File,
     private val validator: BackupValidator = BackupValidator(),
 ) : BackupRepository {
+    private companion object {
+        const val LEGACY_EXCURSION_STOP_TYPE = "EXCURSION_STOP"
+        const val TRIP_STOP_TYPE = "TRIP_STOP"
+    }
+
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = false
@@ -41,7 +49,7 @@ class BackupRepositoryImpl(
 
     override suspend fun exportBackup(output: OutputStream) = withContext(Dispatchers.IO) {
         val backup = buildBackup()
-        val jsonPayload = json.encodeToString(AtlasBackupV3.serializer(), backup)
+        val jsonPayload = json.encodeToString(AtlasBackupV4.serializer(), backup)
         val photoFiles = backup.data.stopPhotos
             .associate { photo -> photo.filename to File(photosDirectory, photo.filename) }
         BackupArchive.write(
@@ -87,29 +95,27 @@ class BackupRepositoryImpl(
         prepared.backup.toPreview()
     }
 
-    private suspend fun buildBackup(): AtlasBackupV3 {
+    private suspend fun buildBackup(): AtlasBackupV4 {
         val backup = database.withTransaction {
             val countryDatasetVersion = database.datasetMetadataDao()
                 .getByKey(DatasetConstants.COUNTRIES_KEY)?.version ?: DatasetConstants.COUNTRIES_VERSION
             val airportDatasetVersion = database.datasetMetadataDao()
                 .getByKey(DatasetConstants.AIRPORTS_KEY)?.version ?: DatasetConstants.AIRPORTS_VERSION
 
-            AtlasBackupV3(
+            AtlasBackupV4(
                 backupVersion = BackupValidator.BACKUP_VERSION,
                 createdAt = Instant.now().toString(),
                 countryDatasetVersion = countryDatasetVersion,
                 airportDatasetVersion = airportDatasetVersion,
-                data = AtlasBackupDataV3(
+                data = AtlasBackupDataV4(
                     countryUserStates = database.countryUserStateDao().getAll().map { it.toBackupV1() },
                     countryLogs = database.countryLogDao().getAll().map { it.toBackupV1() },
                     trips = database.tripDao().getAll().map { it.toBackupV3() },
-                    tripStops = database.tripStopDao().getAll().map { it.toBackupV2() },
+                    tripStops = database.tripStopDao().getAll().map { it.toBackupV4() },
                     places = emptyList(),
                     flights = database.flightDao().getAll().map { it.toBackupV2() },
                     itineraries = database.itineraryDao().getAll().map { it.toBackupV2() },
                     itineraryGroups = database.itineraryDao().getAllGroups().map { it.toBackupV2() },
-                    excursions = database.excursionDao().getAll().map { it.toBackupV2() },
-                    excursionStops = database.excursionDao().getAllStops().map { it.toBackupV2() },
                     stopPhotos = database.stopPhotoDao().getAll().map { it.toBackupV3() },
                 ),
             )
@@ -130,11 +136,10 @@ class BackupRepositoryImpl(
         return PreparedImport(backup = sanitized, archive = archive)
     }
 
-    private suspend fun replaceDatabaseRows(backup: AtlasBackupV3) {
+    private suspend fun replaceDatabaseRows(backup: AtlasBackupV4) {
         database.stopPhotoDao().deleteAll()
         database.flightDao().deleteAll()
         database.itineraryDao().deleteAll()
-        database.excursionDao().deleteAll()
         database.tripStopDao().deleteAll()
         database.tripDao().deleteAll()
         database.countryLogDao().deleteAll()
@@ -143,18 +148,34 @@ class BackupRepositoryImpl(
         database.countryUserStateDao().upsertAll(backup.data.countryUserStates.map { it.toEntity() })
         database.countryLogDao().upsertAll(backup.data.countryLogs.map { it.toEntity() })
         database.tripDao().upsertAll(backup.data.trips.map { it.toEntity() })
-        database.tripStopDao().upsertAll(backup.data.tripStops.map { it.toEntity() })
+        database.tripStopDao().upsertAll(collapsedTripStops(backup).map { it.toEntity() })
         backup.data.itineraries.forEach { database.itineraryDao().upsertItinerary(it.toEntity()) }
         database.itineraryDao().upsertGroups(backup.data.itineraryGroups.map { it.toEntity() })
         database.flightDao().upsertAll(backup.data.flights.map { it.toEntity() })
-        backup.data.excursions.forEach { database.excursionDao().upsertExcursion(it.toEntity()) }
-        backup.data.excursionStops.forEach { database.excursionDao().upsertStop(it.toEntity()) }
-        database.stopPhotoDao().upsertAll(backup.data.stopPhotos.map { it.toEntity() })
+        database.stopPhotoDao().upsertAll(
+            backup.data.stopPhotos.map { photo ->
+                // Legacy archives point photos at excursion stops. Those stops keep their
+                // ids as nested trip stops, so only the discriminator needs rewriting.
+                val entity = photo.toEntity()
+                if (entity.stopType == LEGACY_EXCURSION_STOP_TYPE) {
+                    entity.copy(stopType = TRIP_STOP_TYPE)
+                } else {
+                    entity
+                }
+            },
+        )
     }
 
-    private fun decode(rawJson: String): AtlasBackupV3 =
+    /** Merges any legacy excursion content in [backup] into the unified stop list. */
+    private fun collapsedTripStops(backup: AtlasBackupV4) = collapseLegacyExcursions(
+        tripStops = backup.data.tripStops,
+        excursions = backup.data.excursions,
+        excursionStops = backup.data.excursionStops,
+    )
+
+    private fun decode(rawJson: String): AtlasBackupV4 =
         try {
-            json.decodeFromString(AtlasBackupV3.serializer(), rawJson)
+            json.decodeFromString(AtlasBackupV4.serializer(), rawJson)
         } catch (_: SerializationException) {
             throw BackupValidationException("El fitxer no és una còpia JSON vàlida d'Atlas.")
         } catch (_: IllegalArgumentException) {
@@ -232,7 +253,7 @@ class BackupRepositoryImpl(
         runCatching { directory.deleteRecursively() }
     }
 
-    private fun AtlasBackupV3.toPreview(): BackupImportPreview =
+    private fun AtlasBackupV4.toPreview(): BackupImportPreview =
         BackupImportPreview(
             countryUserStateCount = data.countryUserStates.size,
             countryLogCount = data.countryLogs.size,
@@ -245,7 +266,7 @@ class BackupRepositoryImpl(
         )
 
     private data class PreparedImport(
-        val backup: AtlasBackupV3,
+        val backup: AtlasBackupV4,
         val archive: BackupArchiveContents,
     )
 

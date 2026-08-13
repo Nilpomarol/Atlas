@@ -484,7 +484,7 @@ private fun RecentTripCard(trip: DashboardTripUiState, onTripClick: (String) -> 
     }
 }
 
-private fun DashboardTripUiState.isQuickTrip(): Boolean = isQuickTrip
+private fun DashboardTripUiState.isQuickTrip(): Boolean = stopCount == 1
 
 private fun DashboardTripUiState.quickTripLocationText(): String {
     val country = flagText?.let { flag -> "$flag ${countryText.orEmpty()}".trim() } ?: countryText

@@ -4,7 +4,6 @@ import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.model.CountryUserState
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
@@ -21,13 +20,14 @@ class CountryStateDerivationService {
         tripStops: List<TripStop> = emptyList(),
         flights: List<Flight> = emptyList(),
         itineraryGroups: List<ItineraryGroup> = emptyList(),
-        excursions: List<Excursion> = emptyList(),
         airportCountryIso2ById: Map<String, String> = emptyMap(),
     ): CountryTrackingState {
         val currentlyLiving = userState?.currentlyLiving == true
         val hasLivedLog = logs.any { it.type == CountryLogType.LIVED }
         val hasVisitLog = logs.any { it.type == CountryLogType.VISIT }
         val tripsById = trips.associateBy { it.id }
+        // Nested stops (formerly excursion stops) are ordinary trip stops and count exactly
+        // like main-route stops, so no separate side-trip branch is needed here.
         val matchingStops = tripStops.filter { stop ->
             countryIso2 == null || stop.countryIso2 == countryIso2
         }
@@ -36,18 +36,6 @@ class CountryStateDerivationService {
         }
         val hasVisitedStop = matchingStops.any { stop ->
             val status = tripsById[stop.tripId]?.status
-            status == TravelStatus.IN_PROGRESS || status == TravelStatus.COMPLETED
-        }
-        val matchingExcursionStops = excursions.flatMap { excursion ->
-            excursion.stops.map { stop -> excursion to stop }
-        }.filter { (_, stop) ->
-            countryIso2 == null || stop.countryIso2 == countryIso2
-        }
-        val hasPlannedExcursionStop = matchingExcursionStops.any { (excursion, _) ->
-            tripsById[excursion.tripId]?.status == TravelStatus.PLANNED
-        }
-        val hasVisitedExcursionStop = matchingExcursionStops.any { (excursion, _) ->
-            val status = tripsById[excursion.tripId]?.status
             status == TravelStatus.IN_PROGRESS || status == TravelStatus.COMPLETED
         }
         val soloFlights = flights.filter { it.itineraryGroupId == null }
@@ -78,7 +66,6 @@ class CountryStateDerivationService {
             hasVisitLog ||
             hasLivedLog ||
             hasVisitedStop ||
-            hasVisitedExcursionStop ||
             hasVisitedSoloFlight ||
             hasVisitedItineraryGroup
 
@@ -87,7 +74,7 @@ class CountryStateDerivationService {
             currentlyLiving = currentlyLiving,
             lived = lived,
             visited = visited,
-            planned = hasPlannedStop || hasPlannedExcursionStop || hasPlannedSoloFlight || hasPlannedItineraryGroup,
+            planned = hasPlannedStop || hasPlannedSoloFlight || hasPlannedItineraryGroup,
             neverVisited = !visited && !lived,
         )
     }

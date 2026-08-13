@@ -254,7 +254,6 @@ private fun RouteSlide(
         StoryEyebrow(text = "RUTA")
         TripMapPreview(
             stops = uiState.mapStops,
-            excursions = uiState.mapExcursions,
             mapHeight = mapHeight,
             gesturesEnabled = false,
             showFooter = false,

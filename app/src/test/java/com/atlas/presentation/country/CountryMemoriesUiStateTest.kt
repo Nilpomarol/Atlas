@@ -1,8 +1,6 @@
 package com.atlas.presentation.country
 
 import com.atlas.domain.model.DatePrecision
-import com.atlas.domain.model.Excursion
-import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.StopPhoto
@@ -28,13 +26,11 @@ class CountryMemoriesUiStateTest {
             countryIso2 = "ES",
             trips = listOf(olderTrip, recentTrip),
             tripStops = listOf(olderStop, recentStop, recentOtherCountry),
-            excursions = emptyList(),
-            tripStopPhotoMap = mapOf(
+            stopPhotoMap = mapOf(
                 recentStop.id to listOf(photo("recent-photo", recentStop.id)),
                 recentOtherCountry.id to listOf(photo("fr-photo", recentOtherCountry.id)),
                 olderStop.id to listOf(photo("older-photo", olderStop.id)),
             ),
-            excursionStopPhotoMap = emptyMap(),
         )
 
         assertEquals(listOf("recent", "older"), result.trips.map { it.tripId })
@@ -55,12 +51,10 @@ class CountryMemoriesUiStateTest {
             countryIso2 = "ES",
             trips = listOf(trip),
             tripStops = listOf(secondStop, firstStop),
-            excursions = emptyList(),
-            tripStopPhotoMap = mapOf(
+            stopPhotoMap = mapOf(
                 firstStop.id to listOf(photo("first-photo", firstStop.id)),
                 secondStop.id to listOf(photo("second-photo", secondStop.id)),
             ),
-            excursionStopPhotoMap = emptyMap(),
         )
 
         assertEquals(1, result.trips.size)
@@ -72,50 +66,32 @@ class CountryMemoriesUiStateTest {
     }
 
     @Test
-    fun `includes matching excursion photos in the same trip narrative sequence`() {
+    fun `includes nested stop photos in the same trip narrative sequence`() {
         val trip = trip("trip", "Ruta")
         val tripStop = tripStop("stop", trip.id, "ES")
-        val excursionStop = excursionStop("excursion-stop", "excursion", "ES")
-        val excursion = Excursion(
-            id = "excursion",
-            tripId = trip.id,
-            anchorTripStopId = tripStop.id,
-            title = "Costa",
-            notes = null,
-            sortOrder = 0,
-            stops = listOf(excursionStop),
-        )
+        val nested = nestedStop("nested-stop", trip.id, tripStop.id, "Costa", "ES")
 
         val result = buildCountryMemoriesUiState(
             countryIso2 = "es",
             trips = listOf(trip),
-            tripStops = listOf(tripStop),
-            excursions = listOf(excursion),
-            tripStopPhotoMap = mapOf(
+            tripStops = listOf(tripStop, nested),
+            stopPhotoMap = mapOf(
                 tripStop.id to listOf(photo("trip-photo", tripStop.id)),
-            ),
-            excursionStopPhotoMap = mapOf(
-                excursionStop.id to listOf(
-                    photo(
-                        id = "excursion-photo",
-                        stopId = excursionStop.id,
-                        stopType = StopType.EXCURSION_STOP,
-                    ),
-                ),
+                nested.id to listOf(photo("nested-photo", nested.id)),
             ),
         )
 
         assertEquals(
-            listOf("trip-photo", "excursion-photo"),
+            listOf("trip-photo", "nested-photo"),
             result.viewerItems.map { it.photo.id },
         )
         assertEquals(1, result.trips.size)
         assertEquals(
-            StopType.EXCURSION_STOP,
+            StopType.TRIP_STOP,
             result.trips.single().items.last().stopType,
         )
         assertEquals(
-            "VIATGE · Ruta · EXCURSIÓ · Costa",
+            "VIATGE · Ruta · SORTIDA · Costa",
             result.trips.single().items.last().contextLabel,
         )
         assertEquals("trip", result.viewerItems.last().tripId)
@@ -129,9 +105,7 @@ class CountryMemoriesUiStateTest {
             countryIso2 = "ES",
             trips = listOf(trip),
             tripStops = listOf(tripStop("stop", trip.id, "ES")),
-            excursions = emptyList(),
-            tripStopPhotoMap = emptyMap(),
-            excursionStopPhotoMap = emptyMap(),
+            stopPhotoMap = emptyMap(),
         )
 
         assertTrue(result.trips.isEmpty())
@@ -171,20 +145,24 @@ class CountryMemoriesUiStateTest {
         sortOrder = sortOrder,
     )
 
-    private fun excursionStop(
+    private fun nestedStop(
         id: String,
-        excursionId: String,
+        tripId: String,
+        parentStopId: String,
+        label: String?,
         countryIso2: String,
-    ) = ExcursionStop(
+    ) = TripStop(
         id = id,
-        excursionId = excursionId,
+        tripId = tripId,
+        parentStopId = parentStopId,
+        sideTripLabel = label,
         locationName = id,
         countryIso2 = countryIso2,
         latitude = null,
         longitude = null,
         dateRange = null,
         notes = null,
-        sortOrder = 0,
+        sortOrder = 1,
     )
 
     private fun photo(

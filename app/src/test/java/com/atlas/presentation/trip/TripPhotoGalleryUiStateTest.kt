@@ -1,7 +1,5 @@
 package com.atlas.presentation.trip
 
-import com.atlas.domain.model.Excursion
-import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TripStop
@@ -11,40 +9,25 @@ import org.junit.Test
 class TripPhotoGalleryUiStateTest {
 
     @Test
-    fun `orders trip stops photos and anchored excursions narratively`() {
+    fun `orders main stops and their nested places narratively`() {
         val firstStop = tripStop(id = "stop-a", sortOrder = 10)
         val secondStop = tripStop(id = "stop-b", sortOrder = 20)
-        val excursionStop = excursionStop(id = "excursion-stop")
+        val nested = nestedStop(id = "nested-stop", parentStopId = firstStop.id, label = "Kamakura")
 
         val result = buildTripPhotoGalleryUiState(
-            stops = listOf(secondStop, firstStop),
-            excursions = listOf(
-                excursion(
-                    id = "excursion",
-                    anchorTripStopId = firstStop.id,
-                    stops = listOf(excursionStop),
-                ),
-            ),
-            tripStopPhotoMap = mapOf(
+            stops = listOf(secondStop, nested, firstStop),
+            stopPhotoMap = mapOf(
                 firstStop.id to listOf(
                     photo(id = "photo-2", stopId = firstStop.id, sortOrder = 20),
                     photo(id = "photo-1", stopId = firstStop.id, sortOrder = 10),
                 ),
+                nested.id to listOf(photo(id = "photo-3", stopId = nested.id)),
                 secondStop.id to listOf(photo(id = "photo-4", stopId = secondStop.id)),
-            ),
-            excursionStopPhotoMap = mapOf(
-                excursionStop.id to listOf(
-                    photo(
-                        id = "photo-3",
-                        stopId = excursionStop.id,
-                        stopType = StopType.EXCURSION_STOP,
-                    ),
-                ),
             ),
         )
 
         assertEquals(
-            listOf("stop-a", "excursion-stop", "stop-b"),
+            listOf("stop-a", "nested-stop", "stop-b"),
             result.groups.map { it.stopId },
         )
         assertEquals(listOf("photo-1", "photo-2"), result.groups.first().photos.map { it.id })
@@ -52,46 +35,36 @@ class TripPhotoGalleryUiStateTest {
             listOf("photo-1", "photo-2", "photo-3", "photo-4"),
             result.viewerItems.map { it.photo.id },
         )
-        assertEquals("EXCURSIÓ · excursion", result.viewerItems[2].contextLabel)
+        assertEquals("SORTIDA · Kamakura", result.viewerItems[2].contextLabel)
         assertEquals(4, result.photoCount)
     }
 
     @Test
-    fun `appends unanchored and missing-anchor excursions without dropping photos`() {
-        val unanchoredStop = excursionStop(id = "unanchored-stop")
-        val orphanStop = excursionStop(id = "orphan-stop")
+    fun `labels a nested stop without a side-trip label`() {
+        val parent = tripStop(id = "parent")
+        val nested = nestedStop(id = "nested", parentStopId = parent.id, label = null)
 
         val result = buildTripPhotoGalleryUiState(
-            stops = listOf(tripStop(id = "trip-stop")),
-            excursions = listOf(
-                excursion(
-                    id = "orphan",
-                    sortOrder = 20,
-                    anchorTripStopId = "missing-stop",
-                    stops = listOf(orphanStop),
-                ),
-                excursion(
-                    id = "unanchored",
-                    sortOrder = 10,
-                    anchorTripStopId = null,
-                    stops = listOf(unanchoredStop),
-                ),
-            ),
-            tripStopPhotoMap = emptyMap(),
-            excursionStopPhotoMap = mapOf(
-                unanchoredStop.id to listOf(
-                    photo("photo-a", unanchoredStop.id, StopType.EXCURSION_STOP),
-                ),
-                orphanStop.id to listOf(
-                    photo("photo-b", orphanStop.id, StopType.EXCURSION_STOP),
-                ),
+            stops = listOf(parent, nested),
+            stopPhotoMap = mapOf(nested.id to listOf(photo("photo-a", nested.id))),
+        )
+
+        assertEquals("SORTIDA", result.groups.single().contextLabel)
+    }
+
+    @Test
+    fun `appends nested stops whose parent is missing without dropping photos`() {
+        val orphan = nestedStop(id = "orphan-stop", parentStopId = "missing-stop", sortOrder = 20)
+
+        val result = buildTripPhotoGalleryUiState(
+            stops = listOf(tripStop(id = "trip-stop"), orphan),
+            stopPhotoMap = mapOf(
+                "trip-stop" to listOf(photo("photo-a", "trip-stop")),
+                orphan.id to listOf(photo("photo-b", orphan.id)),
             ),
         )
 
-        assertEquals(
-            listOf("unanchored-stop", "orphan-stop"),
-            result.groups.map { it.stopId },
-        )
+        assertEquals(listOf("trip-stop", "orphan-stop"), result.groups.map { it.stopId })
         assertEquals(2, result.photoCount)
     }
 
@@ -99,9 +72,7 @@ class TripPhotoGalleryUiStateTest {
     fun `omits groups without photos`() {
         val result = buildTripPhotoGalleryUiState(
             stops = listOf(tripStop(id = "empty-stop")),
-            excursions = emptyList(),
-            tripStopPhotoMap = emptyMap(),
-            excursionStopPhotoMap = emptyMap(),
+            stopPhotoMap = emptyMap(),
         )
 
         assertEquals(emptyList<TripPhotoGroupUiState>(), result.groups)
@@ -123,27 +94,16 @@ class TripPhotoGalleryUiStateTest {
         sortOrder = sortOrder,
     )
 
-    private fun excursion(
+    private fun nestedStop(
         id: String,
+        parentStopId: String,
+        label: String? = null,
         sortOrder: Int = 0,
-        anchorTripStopId: String?,
-        stops: List<ExcursionStop>,
-    ) = Excursion(
+    ) = TripStop(
         id = id,
         tripId = "trip",
-        anchorTripStopId = anchorTripStopId,
-        title = id,
-        notes = null,
-        sortOrder = sortOrder,
-        stops = stops,
-    )
-
-    private fun excursionStop(
-        id: String,
-        sortOrder: Int = 0,
-    ) = ExcursionStop(
-        id = id,
-        excursionId = "excursion",
+        parentStopId = parentStopId,
+        sideTripLabel = label,
         locationName = id,
         countryIso2 = "FR",
         latitude = null,

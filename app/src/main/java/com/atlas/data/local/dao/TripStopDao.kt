@@ -81,6 +81,12 @@ interface TripStopDao {
     @Delete
     suspend fun delete(stop: TripStopEntity)
 
+    @Query("SELECT id FROM trip_stops WHERE parent_stop_id = :parentStopId")
+    suspend fun getChildStopIds(parentStopId: String): List<String>
+
+    @Query("DELETE FROM trip_stops WHERE parent_stop_id = :parentStopId")
+    suspend fun deleteChildren(parentStopId: String)
+
     @Query("DELETE FROM trip_stops")
     suspend fun deleteAll()
 }

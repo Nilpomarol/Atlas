@@ -10,6 +10,8 @@ import com.atlas.domain.model.TripStopSource
 fun TripStopEntity.toDomain(): TripStop = TripStop(
     id = id,
     tripId = tripId,
+    parentStopId = parentStopId,
+    sideTripLabel = sideTripLabel,
     locationName = locationName,
     countryIso2 = countryIso2,
     latitude = latitude,
@@ -29,6 +31,8 @@ fun TripStop.toEntity(
 ): TripStopEntity = TripStopEntity(
     id = id,
     tripId = tripId,
+    parentStopId = parentStopId,
+    sideTripLabel = sideTripLabel,
     locationName = locationName,
     countryIso2 = countryIso2,
     latitude = latitude,

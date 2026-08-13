@@ -29,7 +29,6 @@ import com.atlas.data.repository.CountryRepositoryImpl
 import com.atlas.data.repository.CountryStatRepositoryImpl
 import com.atlas.data.repository.CurrencyRateRepositoryImpl
 import com.atlas.data.repository.BackupRepositoryImpl
-import com.atlas.data.repository.ExcursionRepositoryImpl
 import com.atlas.data.repository.FlightRepositoryImpl
 import com.atlas.data.repository.ItineraryRepositoryImpl
 import com.atlas.data.repository.TripRepositoryImpl
@@ -51,7 +50,6 @@ import com.atlas.domain.repository.CountryStatRepository
 import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
 import com.atlas.domain.repository.CurrencyRateRepository
 import com.atlas.domain.repository.FlightApiClient
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.LocationSearchRepository
@@ -68,19 +66,11 @@ import com.atlas.domain.usecase.country.SetCurrentlyLivingCountryUseCase
 import com.atlas.domain.usecase.country.ToggleWishedCountryUseCase
 import com.atlas.domain.usecase.country.UpdateCountryLogUseCase
 import com.atlas.domain.usecase.airport.SearchAirportsUseCase
-import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
 import com.atlas.domain.usecase.photo.AddStopPhotosUseCase
 import com.atlas.domain.usecase.photo.DeleteStopPhotoUseCase
 import com.atlas.domain.usecase.photo.RotateStopPhotoUseCase
 import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.status.UpdateCurrentTravelStatusesUseCase
-import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
-import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
-import com.atlas.domain.usecase.excursion.ReorderExcursionsUseCase
-import com.atlas.domain.usecase.excursion.UpdateExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.UpdateExcursionUseCase
 import com.atlas.domain.usecase.flight.CreateFlightUseCase
 import com.atlas.domain.usecase.flight.DeleteFlightUseCase
 import com.atlas.domain.usecase.flight.LookupFlightUseCase
@@ -98,7 +88,7 @@ import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseC
 import com.atlas.domain.usecase.location.SearchLocationsUseCase
 import com.atlas.domain.usecase.trip.CreateTripUseCase
 import com.atlas.domain.usecase.trip.CreateTripStopUseCase
-import com.atlas.domain.usecase.trip.CreateQuickTripUseCase
+import com.atlas.domain.usecase.trip.CreateTripWithFirstStopUseCase
 import com.atlas.domain.usecase.trip.DeleteTripUseCase
 import com.atlas.domain.usecase.trip.DeleteTripStopUseCase
 import com.atlas.domain.usecase.trip.ReorderTripStopsUseCase
@@ -143,6 +133,7 @@ class AtlasAppContainer(context: Context) {
         .addMigrations(AtlasDatabase.MIGRATION_22_23)
         .addMigrations(AtlasDatabase.MIGRATION_23_24)
         .addMigrations(AtlasDatabase.MIGRATION_24_25)
+        .addMigrations(AtlasDatabase.MIGRATION_25_26)
         .build()
 
     private val countryDatasetImporter = CountryDatasetImporter(
@@ -220,10 +211,6 @@ class AtlasAppContainer(context: Context) {
         database = database,
     )
 
-    val excursionRepository: ExcursionRepository = ExcursionRepositoryImpl(
-        database = database,
-    )
-
     val stopPhotoRepository: StopPhotoRepository = StopPhotoRepositoryImpl(
         context = applicationContext,
         dao = database.stopPhotoDao(),
@@ -290,7 +277,7 @@ class AtlasAppContainer(context: Context) {
         tripRepository = tripRepository,
     )
 
-    val createQuickTripUseCase = CreateQuickTripUseCase(
+    val createTripWithFirstStopUseCase = CreateTripWithFirstStopUseCase(
         tripRepository = tripRepository,
     )
 
@@ -398,38 +385,13 @@ class AtlasAppContainer(context: Context) {
         flightRepository = flightRepository,
     )
 
-    val createExcursionUseCase = CreateExcursionUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val updateExcursionUseCase = UpdateExcursionUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val deleteExcursionUseCase = DeleteExcursionUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val reorderExcursionsUseCase = ReorderExcursionsUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val createExcursionStopUseCase = CreateExcursionStopUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val updateExcursionStopUseCase = UpdateExcursionStopUseCase(
-        excursionRepository = excursionRepository,
-    )
 
-    val deleteExcursionStopUseCase = DeleteExcursionStopUseCase(
-        excursionRepository = excursionRepository,
-        stopPhotoRepository = stopPhotoRepository,
-    )
 
-    val reorderExcursionStopsUseCase = ReorderExcursionStopsUseCase(
-        excursionRepository = excursionRepository,
-    )
 
     val addStopPhotosUseCase = AddStopPhotosUseCase(
         stopPhotoRepository = stopPhotoRepository,

@@ -1,6 +1,5 @@
 package com.atlas.presentation.trip
 
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.model.TripStop
@@ -49,77 +48,64 @@ data class TripPhotoGroupUiState(
     val photos: List<StopPhoto>,
 )
 
+/**
+ * Walks the trip in narrative order: each main-route stop, then the places visited from
+ * it. Nested stops whose parent is missing fall back to the end of the walk.
+ */
 internal fun buildTripPhotoGalleryUiState(
     stops: List<TripStop>,
-    excursions: List<Excursion>,
-    tripStopPhotoMap: Map<String, List<StopPhoto>>,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    stopPhotoMap: Map<String, List<StopPhoto>>,
     dateFormatter: FlexibleDateFormatter = FlexibleDateFormatter(),
 ): TripPhotoGalleryUiState {
+    val ordered = stops.sortedWith(compareBy(TripStop::sortOrder, TripStop::id))
+    val mainStops = ordered.filter { it.parentStopId == null }
+    val mainStopIds = mainStops.mapTo(mutableSetOf()) { it.id }
+    val childrenByParent = ordered
+        .filter { it.parentStopId != null }
+        .groupBy { it.parentStopId }
+
     val groups = buildList {
-        val orderedStops = stops.sortedWith(compareBy(TripStop::sortOrder, TripStop::id))
-        val orderedExcursions = excursions.sortedWith(compareBy(Excursion::sortOrder, Excursion::id))
-        val stopIds = orderedStops.mapTo(mutableSetOf()) { it.id }
-        val anchoredExcursions = orderedExcursions.groupBy { it.anchorTripStopId }
-
-        orderedStops.forEach { stop ->
-            tripStopPhotoMap[stop.id]
-                .toOrderedPhotos()
-                .takeIf { it.isNotEmpty() }
-                ?.let { photos ->
-                    add(
-                        TripPhotoGroupUiState(
-                            tripId = stop.tripId,
-                            stopId = stop.id,
-                            stopType = StopType.TRIP_STOP,
-                            title = stop.displayTitle?.takeIf(String::isNotBlank) ?: stop.locationName,
-                            contextLabel = "PARADA",
-                            countryIso2 = stop.countryIso2.takeIf(String::isNotBlank),
-                            dateText = stop.dateRange?.let(dateFormatter::format),
-                            photos = photos,
-                        ),
-                    )
-                }
-
-            anchoredExcursions[stop.id].orEmpty().forEach { excursion ->
-                addExcursionGroups(excursion, excursionStopPhotoMap, dateFormatter)
+        mainStops.forEach { stop ->
+            addStopGroup(stop, stopPhotoMap, dateFormatter)
+            childrenByParent[stop.id].orEmpty().forEach { child ->
+                addStopGroup(child, stopPhotoMap, dateFormatter)
             }
         }
 
-        orderedExcursions
-            .filter { it.anchorTripStopId == null || it.anchorTripStopId !in stopIds }
-            .forEach { excursion ->
-                addExcursionGroups(excursion, excursionStopPhotoMap, dateFormatter)
-            }
+        ordered
+            .filter { it.parentStopId != null && it.parentStopId !in mainStopIds }
+            .forEach { orphan -> addStopGroup(orphan, stopPhotoMap, dateFormatter) }
     }
 
     return TripPhotoGalleryUiState(groups = groups)
 }
 
-private fun MutableList<TripPhotoGroupUiState>.addExcursionGroups(
-    excursion: Excursion,
+private fun MutableList<TripPhotoGroupUiState>.addStopGroup(
+    stop: TripStop,
     photoMap: Map<String, List<StopPhoto>>,
     dateFormatter: FlexibleDateFormatter,
 ) {
-    excursion.stops
-        .sortedWith(compareBy({ it.sortOrder }, { it.id }))
-        .forEach { stop ->
-            val photos = photoMap[stop.id].toOrderedPhotos()
-            if (photos.isEmpty()) return@forEach
+    val photos = photoMap[stop.id].toOrderedPhotos()
+    if (photos.isEmpty()) return
 
-            add(
-                TripPhotoGroupUiState(
-                    tripId = excursion.tripId,
-                    stopId = stop.id,
-                    stopType = StopType.EXCURSION_STOP,
-                    title = stop.locationName,
-                    contextLabel = "EXCURSIÓ · ${excursion.title}",
-                    countryIso2 = stop.countryIso2.takeIf(String::isNotBlank),
-                    dateText = stop.dateRange?.let(dateFormatter::format),
-                    photos = photos,
-                ),
-            )
-        }
+    add(
+        TripPhotoGroupUiState(
+            tripId = stop.tripId,
+            stopId = stop.id,
+            stopType = StopType.TRIP_STOP,
+            title = stop.displayTitle?.takeIf(String::isNotBlank) ?: stop.locationName,
+            contextLabel = stop.contextLabel(),
+            countryIso2 = stop.countryIso2.takeIf(String::isNotBlank),
+            dateText = stop.dateRange?.let(dateFormatter::format),
+            photos = photos,
+        ),
+    )
+}
+
+private fun TripStop.contextLabel(): String = when {
+    parentStopId == null -> "PARADA"
+    !sideTripLabel.isNullOrBlank() -> "SORTIDA · $sideTripLabel"
+    else -> "SORTIDA"
 }
 
 private fun List<StopPhoto>?.toOrderedPhotos(): List<StopPhoto> =

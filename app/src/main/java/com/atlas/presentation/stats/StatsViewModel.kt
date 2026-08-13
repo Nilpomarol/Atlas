@@ -8,7 +8,6 @@ import com.atlas.domain.model.Country
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryStatsScope
 import com.atlas.domain.model.CountryTrackingState
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.Itinerary
@@ -22,7 +21,6 @@ import com.atlas.domain.model.TripStop
 import com.atlas.domain.repository.AircraftTypeRepository
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.CountryStatsScopePreferencesRepository
@@ -51,7 +49,6 @@ class StatsViewModel(
     tripRepository: TripRepository,
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
-    excursionRepository: ExcursionRepository,
     countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
     airportRepository: AirportRepository,
     stopPhotoRepository: StopPhotoRepository,
@@ -69,7 +66,6 @@ class StatsViewModel(
 
     private val tripStopsFlow = tripRepository.observeTripStops()
     private val tripsFlow = tripRepository.observeTrips()
-    private val excursionsFlow = excursionRepository.observeExcursions()
 
     private val tripData = combine(
         tripsFlow,
@@ -95,29 +91,14 @@ class StatsViewModel(
             .map { photos -> photos.groupBy { it.stopId } }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private val excursionStopPhotosFlow = excursionsFlow.flatMapLatest { excursions ->
-        val ids = excursions.flatMap { it.stops }.map { it.id }
-        if (ids.isEmpty()) flowOf(emptyMap())
-        else stopPhotoRepository.observeByStopIds(ids, StopType.EXCURSION_STOP)
-            .map { photos -> photos.groupBy { it.stopId } }
-    }
-
-    private val photosData = combine(
-        tripStopPhotosFlow,
-        excursionStopPhotosFlow,
-    ) { tripStopPhotos, excursionStopPhotos ->
-        PhotosData(tripStopPhotos, excursionStopPhotos)
-    }
 
     private val sourceData = combine(
         countryData,
         tripData,
         flightData,
-        excursionsFlow,
-        photosData,
-    ) { countries, trips, flights, excursions, photos ->
-        StatsSourceData(countries, trips, flights, excursions, photos)
+        tripStopPhotosFlow,
+    ) { countries, trips, flights, photos ->
+        StatsSourceData(countries, trips, flights, photos)
     }
 
     val uiState: StateFlow<StatsUiState> = combine(
@@ -143,7 +124,6 @@ class StatsViewModel(
         // the trip stops already represent that activity. Only standalone itinerary groups count.
         val tripLinkedItineraryIds = itineraries.filter { it.tripId != null }.mapTo(mutableSetOf()) { it.id }
         val standaloneItineraryGroups = itineraryGroups.filter { it.itineraryId !in tripLinkedItineraryIds }
-        val excursions = data.excursions
         val photos = data.photos
 
         val airportsById = airports.associateBy { it.id }
@@ -162,7 +142,6 @@ class StatsViewModel(
                 tripStops = stopsByIso2[country.iso2].orEmpty(),
                 flights = flights,
                 itineraryGroups = itineraryGroups,
-                excursions = excursions,
                 airportCountryIso2ById = airportCountryIso2ById,
             )
         }
@@ -185,9 +164,12 @@ class StatsViewModel(
         val flownDistanceKm = flights.sumOf { it.distanceKm ?: 0.0 }
         val tripDays = completedTrips.mapNotNull { it.dayCount() }
         val tripStopsByTripId = tripStops.groupBy { it.tripId }
-        val excursionsByTripId = excursions.groupBy { it.tripId }
-        val tripPhotoCountByTripId = buildTripPhotoCountByTripId(trips, tripStopsByTripId, excursionsByTripId, photos)
-        val tripCountryCountByTripId = buildTripCountryCountByTripId(trips, tripStopsByTripId, excursionsByTripId)
+        // Route lines and main markers follow the main route only; counts include the
+        // places visited from those stops.
+        val mainStopsByTripId = tripStops.filter { it.parentStopId == null }.groupBy { it.tripId }
+        val nestedStops = tripStops.filter { it.parentStopId != null }
+        val tripPhotoCountByTripId = buildTripPhotoCountByTripId(trips, tripStopsByTripId, photos)
+        val tripCountryCountByTripId = buildTripCountryCountByTripId(trips, tripStopsByTripId)
 
         val topCountryRanks = buildCountryRanks(
             countries = countries,
@@ -203,12 +185,12 @@ class StatsViewModel(
         val topAirports = buildTopAirports(flights, airportsById)
         val topAirlines = buildTopAirlines(flights)
         val topAircraft = resolveTopAircraft(flights)
-        val yearStats = buildYearStats(trips, flights, tripStops, excursions, airportsById, itineraryGroups)
+        val yearStats = buildYearStats(trips, flights, tripStops, airportsById, itineraryGroups)
         val tripMonthStats = buildTripMonthStats(trips)
         val flightMapRoutes = buildFlightMapRoutes(flights, airportsById)
-        val tripMapRoutes = buildTripMapRoutes(trips, tripStopsByTripId)
-        val tripStopMapMarkers = buildTripStopMarkers(trips, tripStopsByTripId, countryNamesByIso2)
-        val excursionStopMapMarkers = buildExcursionStopMarkers(excursions, countryNamesByIso2)
+        val tripMapRoutes = buildTripMapRoutes(trips, mainStopsByTripId)
+        val tripStopMapMarkers = buildTripStopMarkers(trips, mainStopsByTripId, countryNamesByIso2)
+        val excursionStopMapMarkers = buildNestedStopMarkers(nestedStops, countryNamesByIso2)
         val delayBuckets = buildDelayBuckets(flights)
         val topDelays = buildTopDelayRecords(flights, airportsById)
         val topDelayStats = buildTopDelayStats(flights, airportsById)
@@ -265,7 +247,7 @@ class StatsViewModel(
             topRoutes = topRoutes,
             topAirports = topAirports.take(10),
         )
-        val geographicRecords = buildGeographicRecords(tripStops, excursions)
+        val geographicRecords = buildGeographicRecords(tripStops)
         val recordCards = (countryRecords + tripRecords + flightRecords + geographicRecords).distinctBy { it.title to it.detail }
 
         return StatsUiState(
@@ -305,12 +287,12 @@ class StatsViewModel(
             plannedTripCount = trips.count { it.status == TravelStatus.PLANNED },
             inProgressTripCount = trips.count { it.status == TravelStatus.IN_PROGRESS },
             tripStopCount = tripStops.size,
-            excursionCount = excursions.size,
-            excursionStopCount = excursions.sumOf { it.stops.size },
-            totalStopCount = tripStops.size + excursions.sumOf { it.stops.size },
+            excursionCount = nestedStops.size,
+            excursionStopCount = nestedStops.size,
+            totalStopCount = tripStops.size,
             daysTraveled = tripDays.sum(),
             avgTripLengthDays = tripDays.takeIf { it.isNotEmpty() }?.average(),
-            photoCount = photos.totalCount,
+            photoCount = photos.values.sumOf { it.size },
             tripVisuals = tripVisuals,
             tripMonthStats = tripMonthStats,
             tripSeasonStats = buildTripSeasonStats(trips),
@@ -357,11 +339,11 @@ class StatsViewModel(
                 flightCount = flights.size,
                 intercontinentalFlightCount = intercontinentalFlights,
                 earthLoops = flownDistanceKm / EARTH_CIRCUMFERENCE_KM,
-                photoCount = photos.totalCount,
+                photoCount = photos.values.sumOf { it.size },
                 topRoutes = topRoutes,
                 completedTrips = completedTrips.size,
                 daysTraveled = tripDays.sum(),
-                totalStopCount = tripStops.size + excursions.sumOf { it.stops.size },
+                totalStopCount = tripStops.size,
                 worldPercentage = worldPercentage,
                 yearStats = yearStats,
                 nightFlightCount = nightFlightCount,
@@ -446,7 +428,6 @@ class StatsViewModel(
         private val tripRepository: TripRepository,
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
-        private val excursionRepository: ExcursionRepository,
         private val countryStatsScopePreferencesRepository: CountryStatsScopePreferencesRepository,
         private val airportRepository: AirportRepository,
         private val stopPhotoRepository: StopPhotoRepository,
@@ -461,7 +442,6 @@ class StatsViewModel(
                 tripRepository = tripRepository,
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
-                excursionRepository = excursionRepository,
                 countryStatsScopePreferencesRepository = countryStatsScopePreferencesRepository,
                 airportRepository = airportRepository,
                 stopPhotoRepository = stopPhotoRepository,
@@ -626,8 +606,7 @@ private data class StatsSourceData(
     val countryData: CountryData,
     val tripData: TripData,
     val flightData: FlightData,
-    val excursions: List<Excursion>,
-    val photos: PhotosData,
+    val photos: Map<String, List<StopPhoto>>,
 )
 
 private data class CountryData(
@@ -644,14 +623,6 @@ private data class FlightData(
     val itineraries: List<Itinerary>,
     val airports: List<Airport>,
 )
-
-private data class PhotosData(
-    val tripStopPhotosByStopId: Map<String, List<StopPhoto>>,
-    val excursionStopPhotosByStopId: Map<String, List<StopPhoto>>,
-) {
-    val totalCount: Int
-        get() = tripStopPhotosByStopId.values.sumOf { it.size } + excursionStopPhotosByStopId.values.sumOf { it.size }
-}
 
 private const val EARTH_CIRCUMFERENCE_KM = 40_075.0
 private const val MOON_DISTANCE_KM = 384_400.0
@@ -725,28 +696,18 @@ private fun buildContinentStats(
 private fun buildTripPhotoCountByTripId(
     trips: List<Trip>,
     tripStopsByTripId: Map<String, List<TripStop>>,
-    excursionsByTripId: Map<String, List<Excursion>>,
-    photos: PhotosData,
+    photos: Map<String, List<StopPhoto>>,
 ): Map<String, Int> = trips.associate { trip ->
-    val tripStopPhotoCount = tripStopsByTripId[trip.id].orEmpty().sumOf { stop ->
-        photos.tripStopPhotosByStopId[stop.id].orEmpty().size
+    trip.id to tripStopsByTripId[trip.id].orEmpty().sumOf { stop ->
+        photos[stop.id].orEmpty().size
     }
-    val excursionPhotoCount = excursionsByTripId[trip.id].orEmpty().flatMap { it.stops }.sumOf { stop ->
-        photos.excursionStopPhotosByStopId[stop.id].orEmpty().size
-    }
-    trip.id to tripStopPhotoCount + excursionPhotoCount
 }
 
 private fun buildTripCountryCountByTripId(
     trips: List<Trip>,
     tripStopsByTripId: Map<String, List<TripStop>>,
-    excursionsByTripId: Map<String, List<Excursion>>,
 ): Map<String, Int> = trips.associate { trip ->
-    val countries = buildSet {
-        tripStopsByTripId[trip.id].orEmpty().forEach { add(it.countryIso2) }
-        excursionsByTripId[trip.id].orEmpty().flatMap { it.stops }.forEach { add(it.countryIso2) }
-    }
-    trip.id to countries.size
+    trip.id to tripStopsByTripId[trip.id].orEmpty().mapTo(mutableSetOf()) { it.countryIso2 }.size
 }
 
 private fun buildTopRoutes(flights: List<Flight>, airportsById: Map<String, Airport>): List<StatsRouteRank> =
@@ -842,29 +803,26 @@ private fun buildTripStopMarkers(
         }
     }
 
-private fun buildExcursionStopMarkers(
-    excursions: List<Excursion>,
+private fun buildNestedStopMarkers(
+    nestedStops: List<TripStop>,
     countryNamesByIso2: Map<String, String>,
 ): List<StatsMapMarker> =
-    excursions.flatMap { excursion ->
-        excursion.stops.mapNotNull { stop ->
-            val lat = stop.latitude ?: return@mapNotNull null
-            val lng = stop.longitude ?: return@mapNotNull null
-            StatsMapMarker(
-                latitude = lat,
-                longitude = lng,
-                status = TravelStatus.COMPLETED,
-                countryName = countryNamesByIso2[stop.countryIso2],
-                label = stop.locationName.takeIf { it.isNotBlank() } ?: "Excursió",
-            )
-        }
+    nestedStops.mapNotNull { stop ->
+        val lat = stop.latitude ?: return@mapNotNull null
+        val lng = stop.longitude ?: return@mapNotNull null
+        StatsMapMarker(
+            latitude = lat,
+            longitude = lng,
+            status = TravelStatus.COMPLETED,
+            countryName = countryNamesByIso2[stop.countryIso2],
+            label = stop.locationName.takeIf { it.isNotBlank() } ?: "Sortida",
+        )
     }
 
 private fun buildYearStats(
     trips: List<Trip>,
     flights: List<Flight>,
     tripStops: List<TripStop>,
-    excursions: List<Excursion>,
     airportsById: Map<String, Airport>,
     itineraryGroups: List<  ItineraryGroup>,
 ): List<StatsYearStat> {
@@ -877,15 +835,6 @@ private fun buildYearStats(
     tripStops.forEach { stop ->
         val year = stop.dateRange?.primaryYear() ?: tripYearById[stop.tripId] ?: return@forEach
         countriesByYear.getOrPut(year) { mutableSetOf() }.add(stop.countryIso2)
-    }
-
-    // Excursion stops: prefer the stop's own date, fall back to parent trip year.
-    excursions.forEach { excursion ->
-        val tripYear = tripYearById[excursion.tripId]
-        excursion.stops.forEach { stop ->
-            val year = stop.dateRange?.primaryYear() ?: tripYear ?: return@forEach
-            countriesByYear.getOrPut(year) { mutableSetOf() }.add(stop.countryIso2)
-        }
     }
 
     // Standalone flights: only count the destination country (not origin, no layovers).
@@ -1062,9 +1011,8 @@ private fun buildFlightRecords(
     )
 }
 
-private fun buildGeographicRecords(tripStops: List<TripStop>, excursions: List<Excursion>): List<StatsRecord> {
-    val stops = tripStops.map { it.locationName to (it.latitude to it.longitude) } +
-        excursions.flatMap { excursion -> excursion.stops.map { it.locationName to (it.latitude to it.longitude) } }
+private fun buildGeographicRecords(tripStops: List<TripStop>): List<StatsRecord> {
+    val stops = tripStops.map { it.locationName to (it.latitude to it.longitude) }
     val withLat = stops.mapNotNull { (name, coords) -> coords.first?.let { Triple(name, it, coords.second) } }
     val withLng = stops.mapNotNull { (name, coords) -> coords.second?.let { Triple(name, coords.first, it) } }
     return listOfNotNull(

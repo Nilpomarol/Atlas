@@ -2,7 +2,7 @@ package com.atlas.data.backup
 
 import com.atlas.domain.model.StopType
 
-fun AtlasBackupV3.withAvailablePhotos(availableFilenames: Set<String>): AtlasBackupV3 {
+fun AtlasBackupV4.withAvailablePhotos(availableFilenames: Set<String>): AtlasBackupV4 {
     val availableRows = data.stopPhotos.filter { it.filename in availableFilenames }
     val tripIdByTripStopId = data.tripStops.associate { it.id to it.tripId }
     val tripIdByExcursionId = data.excursions.associate { it.id to it.tripId }

@@ -7,5 +7,4 @@ data class Trip(
     val dateRange: FlexibleDateRange?,
     val notes: String?,
     val coverPhotoFilename: String? = null,
-    val isQuickTrip: Boolean = false,
 )

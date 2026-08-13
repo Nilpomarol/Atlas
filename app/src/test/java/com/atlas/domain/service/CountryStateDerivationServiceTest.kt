@@ -3,8 +3,6 @@ package com.atlas.domain.service
 import com.atlas.domain.model.CountryLog
 import com.atlas.domain.model.CountryLogType
 import com.atlas.domain.model.CountryUserState
-import com.atlas.domain.model.Excursion
-import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.ItineraryGroup
 import com.atlas.domain.model.TravelStatus
@@ -337,12 +335,12 @@ class CountryStateDerivationServiceTest {
     }
 
     @Test
-    fun completedParentTripExcursionStopMarksCountryVisited() {
+    fun completedParentTripNestedStopMarksCountryVisited() {
         val state = service.derive(
             countryIso2 = COUNTRY_ISO2,
             userState = null,
             trips = listOf(trip(status = TravelStatus.COMPLETED)),
-            excursions = listOf(excursion(countryIso2 = COUNTRY_ISO2)),
+            tripStops = listOf(nestedStop(countryIso2 = COUNTRY_ISO2)),
         )
 
         assertTrue(state.visited)
@@ -415,26 +413,19 @@ class CountryStateDerivationServiceTest {
         flights = flights,
     )
 
-    private fun excursion(countryIso2: String): Excursion = Excursion(
-        id = "excursion-id",
+    /** A place visited from another stop — formerly modelled as an excursion stop. */
+    private fun nestedStop(countryIso2: String): TripStop = TripStop(
+        id = "nested-stop-id",
         tripId = TRIP_ID,
-        anchorTripStopId = null,
-        title = "Nara",
+        parentStopId = "stop-id",
+        sideTripLabel = "Nara",
+        locationName = "Nara",
+        countryIso2 = countryIso2,
+        latitude = null,
+        longitude = null,
+        dateRange = null,
         notes = null,
         sortOrder = 0,
-        stops = listOf(
-            ExcursionStop(
-                id = "excursion-stop-id",
-                excursionId = "excursion-id",
-                locationName = "Nara",
-                countryIso2 = countryIso2,
-                latitude = null,
-                longitude = null,
-                dateRange = null,
-                notes = null,
-                sortOrder = 0,
-            ),
-        ),
     )
 
     private companion object {

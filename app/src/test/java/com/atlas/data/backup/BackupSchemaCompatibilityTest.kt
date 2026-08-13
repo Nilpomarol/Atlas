@@ -13,7 +13,7 @@ class BackupSchemaCompatibilityTest {
     @Test
     fun v1JsonDecodesWithPhotoDefaults() {
         val backup = json.decodeFromString(
-            AtlasBackupV3.serializer(),
+            AtlasBackupV4.serializer(),
             """
             {
               "backupVersion": 1,
@@ -51,7 +51,7 @@ class BackupSchemaCompatibilityTest {
     @Test
     fun v2JsonDecodesWithPhotoDefaults() {
         val backup = json.decodeFromString(
-            AtlasBackupV3.serializer(),
+            AtlasBackupV4.serializer(),
             """
             {
               "backupVersion": 2,

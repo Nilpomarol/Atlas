@@ -118,11 +118,13 @@ Read these for current implementation decisions:
 2. `docs/Atlas_UI_Rework_Implementation_Plan.md` - mandatory plan for the new UI.
 3. `docs/Atlas_UI_Rework_Foundation.md` - rework product and visual foundation.
 4. `docs/Atlas_Trip_Model_Rework_Spec.md` - approved trip/stop model collapse, migration 25 → 26, and backup v4.
-5. `docs/Atlas_Technical_Architecture.md` - implemented architecture and layer boundaries.
-6. `docs/Atlas_Data_Model.md` - current conceptual data model, Room version, migration rules, and backup model.
-7. `docs/Atlas_Photo_Backup_Spec.md` - current backup/export/import contract.
-8. `docs/Atlas_Product_Specification.md` - product identity and long-term domain behavior.
-9. `docs/Atlas_Post_v2.0_Roadmap.md` - completed milestone history and later directions.
+5. `docs/ui-rework/Atlas_Trip_Detail_Spec.md` - rework Trip Detail hierarchy and editing model.
+6. `docs/ui-rework/Atlas_Itinerary_Model_Analysis.md` - how flights attach to a trip, and why the container stays until Phase 6.
+7. `docs/Atlas_Technical_Architecture.md` - implemented architecture and layer boundaries.
+8. `docs/Atlas_Data_Model.md` - current conceptual data model, Room version, migration rules, and backup model.
+9. `docs/Atlas_Photo_Backup_Spec.md` - current backup/export/import contract.
+10. `docs/Atlas_Product_Specification.md` - product identity and long-term domain behavior.
+11. `docs/Atlas_Post_v2.0_Roadmap.md` - completed milestone history and later directions.
 
 `docs/ui-polish-checklist.md` and `docs/Atlas - Design System.html` apply only
 to explicitly requested legacy maintenance. They are not rework references.

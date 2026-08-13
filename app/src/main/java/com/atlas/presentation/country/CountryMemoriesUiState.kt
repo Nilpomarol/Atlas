@@ -1,6 +1,5 @@
 package com.atlas.presentation.country
 
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
@@ -32,9 +31,7 @@ internal fun buildCountryMemoriesUiState(
     countryIso2: String,
     trips: List<Trip>,
     tripStops: List<TripStop>,
-    excursions: List<Excursion>,
-    tripStopPhotoMap: Map<String, List<StopPhoto>>,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
+    stopPhotoMap: Map<String, List<StopPhoto>>,
     dateFormatter: FlexibleDateFormatter = FlexibleDateFormatter(),
 ): CountryMemoriesUiState {
     val memoryTrips = trips
@@ -46,9 +43,7 @@ internal fun buildCountryMemoriesUiState(
         .mapNotNull { trip ->
             val items = buildTripPhotoGalleryUiState(
                 stops = tripStops.filter { it.tripId == trip.id },
-                excursions = excursions.filter { it.tripId == trip.id },
-                tripStopPhotoMap = tripStopPhotoMap,
-                excursionStopPhotoMap = excursionStopPhotoMap,
+                stopPhotoMap = stopPhotoMap,
                 dateFormatter = dateFormatter,
             ).groups
                 .filter { group -> group.countryIso2.equals(countryIso2, ignoreCase = true) }

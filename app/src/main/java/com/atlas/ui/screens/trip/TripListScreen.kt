@@ -136,7 +136,7 @@ fun TripListScreen(
                         items = filteredTrips,
                         key = { item -> item.trip.id },
                     ) { item ->
-                        if (item.isQuickTrip) {
+                        if (item.isSinglePlace) {
                             QuickTripCard(
                                 item = item,
                                 onClick = { onTripClick(item.trip.id) },

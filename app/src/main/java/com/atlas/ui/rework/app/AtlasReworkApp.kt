@@ -48,7 +48,6 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
                 tripRepository = container.tripRepository,
                 flightRepository = container.flightRepository,
                 itineraryRepository = container.itineraryRepository,
-                excursionRepository = container.excursionRepository,
                 countryStatsScopePreferencesRepository = container.countryStatsScopePreferencesRepository,
                 airportRepository = container.airportRepository,
                 countryStateDerivationService = container.countryStateDerivationService,

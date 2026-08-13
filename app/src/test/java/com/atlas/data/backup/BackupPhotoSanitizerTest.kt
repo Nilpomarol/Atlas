@@ -27,11 +27,11 @@ class BackupPhotoSanitizerTest {
         assertEquals(filename, sanitized.data.trips.single().coverPhotoFilename)
     }
 
-    private fun backupWithPhoto(filename: String): AtlasBackupV3 =
-        AtlasBackupV3(
+    private fun backupWithPhoto(filename: String): AtlasBackupV4 =
+        AtlasBackupV4(
             backupVersion = 3,
             createdAt = "2026-06-14T00:00:00Z",
-            data = AtlasBackupDataV3(
+            data = AtlasBackupDataV4(
                 trips = listOf(
                     BackupTripV3(
                         id = "trip-1",
@@ -43,7 +43,7 @@ class BackupPhotoSanitizerTest {
                     ),
                 ),
                 tripStops = listOf(
-                    BackupTripStopV2(
+                    BackupTripStopV4(
                         id = "stop-1",
                         tripId = "trip-1",
                         locationName = "Barcelona",

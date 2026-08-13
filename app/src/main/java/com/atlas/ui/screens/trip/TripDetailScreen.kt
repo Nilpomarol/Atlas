@@ -88,8 +88,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.DatePrecision
-import com.atlas.domain.model.Excursion
-import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
 import com.atlas.domain.model.StopPhoto
@@ -107,7 +105,6 @@ import java.io.File
 import com.atlas.domain.service.FlexibleDateFormatter
 import com.atlas.presentation.date.FlexibleDateRangeDraftField
 import com.atlas.presentation.trip.TripDetailUiState
-import com.atlas.presentation.trip.ExcursionStopDraftUiState
 import com.atlas.presentation.trip.TripStopDraftUiState
 import com.atlas.ui.components.date.FlexibleDateRangeField
 import com.atlas.ui.components.tripStatusColors
@@ -145,7 +142,6 @@ fun TripDetailScreen(
     onBackClick: () -> Unit,
     onDeleteTrip: () -> Unit,
     onEditTripClick: () -> Unit,
-    onToggleQuickTrip: () -> Unit,
     onDismissTripDraft: () -> Unit,
     onTripTitleChanged: (String) -> Unit,
     onTripStatusChanged: (TravelStatus) -> Unit,
@@ -177,27 +173,6 @@ fun TripDetailScreen(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onAddExcursionClick: (String?) -> Unit,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
-    onDismissExcursionStopDraft: () -> Unit,
-    onExcursionStopLocationSearchQueryChanged: (String) -> Unit,
-    onExcursionStopLocationSearchResultSelected: (LocationSearchResult) -> Unit,
-    onUseManualExcursionStopEntryClick: () -> Unit,
-    onExcursionStopLocationNameChanged: (String) -> Unit,
-    onExcursionStopCountryChanged: (String) -> Unit,
-    onExcursionStopLatitudeChanged: (String) -> Unit,
-    onExcursionStopLongitudeChanged: (String) -> Unit,
-    onExcursionStopDatePrecisionChanged: (DatePrecision) -> Unit,
-    onExcursionStopDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
-    onExcursionStopNotesChanged: (String) -> Unit,
-    onSaveExcursionStopDraft: () -> Unit,
     onAddPhotos: (String, StopType, List<Uri>) -> Unit,
     onDeletePhoto: (StopPhoto) -> Unit,
     onRotatePhoto: (StopPhoto) -> Unit,
@@ -205,12 +180,9 @@ fun TripDetailScreen(
 ) {
     var isDeleteTripDialogOpen by remember { mutableStateOf(false) }
     var pendingDeleteStop by remember { mutableStateOf<TripStop?>(null) }
-    var pendingDeleteExcursion by remember { mutableStateOf<Excursion?>(null) }
-    var pendingDeleteExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var isReorderMode by remember { mutableStateOf(false) }
     var showMapModal by remember { mutableStateOf(false) }
     var selectedStop by remember { mutableStateOf<TripStop?>(null) }
-    var selectedExcursionStop by remember { mutableStateOf<ExcursionStop?>(null) }
     var selectedTripPhotoId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val trip = uiState.trip
@@ -245,19 +217,8 @@ fun TripDetailScreen(
                 onMoveStopUp = onMoveStopUp,
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = { pendingDeleteStop = it },
-                onAddExcursionClick = onAddExcursionClick,
-                onDeleteExcursion = { pendingDeleteExcursion = it },
-                onMoveExcursionUp = onMoveExcursionUp,
-                onMoveExcursionDown = onMoveExcursionDown,
-                onAddExcursionStopClick = onAddExcursionStopClick,
-                onEditExcursionStop = onEditExcursionStop,
-                onDeleteExcursionStop = { pendingDeleteExcursionStop = it },
-                onMoveExcursionStopUp = onMoveExcursionStopUp,
-                onMoveExcursionStopDown = onMoveExcursionStopDown,
                 tripStopPhotoMap = uiState.tripStopPhotoMap,
-                excursionStopPhotoMap = uiState.excursionStopPhotoMap,
                 onStopClick = { selectedStop = it },
-                onExcursionStopClick = { selectedExcursionStop = it },
                 onPhotoClick = { selectedTripPhotoId = it.id },
             )
         }
@@ -266,10 +227,8 @@ fun TripDetailScreen(
         TripDetailTopBar(
             onBackClick = onBackClick,
             onEditTripClick = onEditTripClick,
-            onToggleQuickTripClick = onToggleQuickTrip,
             onDeleteTripClick = { isDeleteTripDialogOpen = true },
             actionsEnabled = trip != null,
-            isQuickTrip = trip?.isQuickTrip == true,
         )
     }
 
@@ -287,7 +246,6 @@ fun TripDetailScreen(
             ) {
                 TripMapPreview(
                     stops = uiState.stops,
-                    excursions = uiState.excursions,
                     mapHeight = (screenHeightDp * 0.72f).dp,
                     generatedStopsVisible = uiState.generatedStopsVisibleOnMap,
                     onGeneratedStopsVisibilityChanged = onShowGeneratedStopsOnMapChanged,
@@ -354,24 +312,6 @@ fun TripDetailScreen(
         )
     }
 
-    if (uiState.excursionStopDraft.isOpen) {
-        ExcursionStopDialog(
-            draft = uiState.excursionStopDraft,
-            countries = uiState.countries,
-            onDismiss = onDismissExcursionStopDraft,
-            onLocationSearchQueryChanged = onExcursionStopLocationSearchQueryChanged,
-            onLocationSearchResultSelected = onExcursionStopLocationSearchResultSelected,
-            onUseManualEntryClick = onUseManualExcursionStopEntryClick,
-            onLocationNameChanged = onExcursionStopLocationNameChanged,
-            onCountryChanged = onExcursionStopCountryChanged,
-            onLatitudeChanged = onExcursionStopLatitudeChanged,
-            onLongitudeChanged = onExcursionStopLongitudeChanged,
-            onDatePrecisionChanged = onExcursionStopDatePrecisionChanged,
-            onDateFieldChanged = onExcursionStopDateFieldChanged,
-            onNotesChanged = onExcursionStopNotesChanged,
-            onSave = onSaveExcursionStopDraft,
-        )
-    }
 
     if (isDeleteTripDialogOpen && uiState.trip != null) {
         ConfirmDeleteDialog(
@@ -391,23 +331,7 @@ fun TripDetailScreen(
         )
     }
 
-    pendingDeleteExcursion?.let { excursion ->
-        ConfirmDeleteDialog(
-            title = "Eliminar excursió?",
-            body = "S'eliminarà \"${excursion.title}\" i totes les seves parades. Aquesta acció no es pot desfer.",
-            onDismiss = { pendingDeleteExcursion = null },
-            onConfirm = { pendingDeleteExcursion = null; onDeleteExcursion(excursion) },
-        )
-    }
 
-    pendingDeleteExcursionStop?.let { stop ->
-        ConfirmDeleteDialog(
-            title = "Eliminar parada d'excursió?",
-            body = "S'eliminarà \"${stop.locationName}\" de l'excursio. Aquesta acció no es pot desfer.",
-            onDismiss = { pendingDeleteExcursionStop = null },
-            onConfirm = { pendingDeleteExcursionStop = null; onDeleteExcursionStop(stop) },
-        )
-    }
 
     selectedTripPhotoId?.let { photoId ->
         PhotoViewerDialog(
@@ -417,17 +341,7 @@ fun TripDetailScreen(
             onDismiss = { selectedTripPhotoId = null },
             onOpenSource = { item ->
                 selectedTripPhotoId = null
-                when (item.stopType) {
-                    StopType.TRIP_STOP -> {
-                        selectedStop = uiState.stops.firstOrNull { it.id == item.stopId }
-                    }
-                    StopType.EXCURSION_STOP -> {
-                        selectedExcursionStop = uiState.excursions
-                            .asSequence()
-                            .flatMap { it.stops.asSequence() }
-                            .firstOrNull { it.id == item.stopId }
-                    }
-                }
+                selectedStop = uiState.stops.firstOrNull { it.id == item.stopId }
             },
             onDeletePhoto = onDeletePhoto,
             onRotatePhoto = onRotatePhoto,
@@ -463,27 +377,6 @@ fun TripDetailScreen(
         )
     }
 
-    selectedExcursionStop?.let { stop ->
-        val countryName = uiState.countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
-        val photos = uiState.excursionStopPhotoMap[stop.id] ?: emptyList()
-        StopDetailModal(
-            title = stop.locationName,
-            locationName = stop.locationName,
-            metaLine = buildExcursionStopMetaLine(stop, countryName),
-            notes = stop.notes,
-            photos = photos,
-            stopId = stop.id,
-            stopType = StopType.EXCURSION_STOP,
-            coverPhotoFilename = uiState.trip?.coverPhotoFilename,
-            onDismiss = { selectedExcursionStop = null },
-            onEditStop = { selectedExcursionStop = null; onEditExcursionStop(stop) },
-            onDeleteStop = { selectedExcursionStop = null; pendingDeleteExcursionStop = stop },
-            onAddPhotos = onAddPhotos,
-            onDeletePhoto = onDeletePhoto,
-            onSetCoverPhoto = onSetCoverPhoto,
-            onRotatePhoto = onRotatePhoto,
-        )
-    }
 }
 
 // ─────────────────────────────────────────────
@@ -493,10 +386,8 @@ fun TripDetailScreen(
 private fun TripDetailTopBar(
     onBackClick: () -> Unit,
     onEditTripClick: () -> Unit,
-    onToggleQuickTripClick: () -> Unit,
     onDeleteTripClick: () -> Unit,
     actionsEnabled: Boolean,
-    isQuickTrip: Boolean,
 ) {
     var actionsExpanded by remember { mutableStateOf(false) }
 
@@ -564,24 +455,6 @@ private fun TripDetailTopBar(
                             },
                             onClick = { actionsExpanded = false; onEditTripClick() },
                         )
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    if (isQuickTrip) {
-                                        "Mostra com a viatge normal"
-                                    } else {
-                                        "Mostra com a viatge ràpid"
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = AtlasOnSurfaceStrong,
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Map, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(16.dp))
-                            },
-                            onClick = { actionsExpanded = false; onToggleQuickTripClick() },
-                        )
                         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
                         DropdownMenuItem(
                             text = {
@@ -625,19 +498,8 @@ private fun TripDetailContent(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onAddExcursionClick: (String?) -> Unit,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
     tripStopPhotoMap: Map<String, List<StopPhoto>>,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
     onStopClick: (TripStop) -> Unit,
-    onExcursionStopClick: (ExcursionStop) -> Unit,
     onPhotoClick: (StopPhoto) -> Unit,
 ) {
     val tripCountries = uiState.stops
@@ -678,7 +540,6 @@ private fun TripDetailContent(
                 // Static MapLibre map card (gestures disabled; expand icon in footer)
                 TripMapPreview(
                     stops = uiState.stops,
-                    excursions = uiState.excursions,
                     mapHeight = 220.dp,
                     gesturesEnabled = false,
                     showFooter = true,
@@ -701,7 +562,6 @@ private fun TripDetailContent(
 
             TripStopsSection(
                 stops = uiState.stops,
-                excursions = uiState.excursions,
                 countries = uiState.countries,
                 isReorderMode = isReorderMode,
                 onReorderModeChanged = onReorderModeChanged,
@@ -710,35 +570,17 @@ private fun TripDetailContent(
                 onMoveStopUp = onMoveStopUp,
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = onDeleteStop,
-                onAddExcursionClick = onAddExcursionClick,
-                onDeleteExcursion = onDeleteExcursion,
-                onMoveExcursionUp = onMoveExcursionUp,
-                onMoveExcursionDown = onMoveExcursionDown,
-                onAddExcursionStopClick = onAddExcursionStopClick,
-                onEditExcursionStop = onEditExcursionStop,
-                onDeleteExcursionStop = onDeleteExcursionStop,
-                onMoveExcursionStopUp = onMoveExcursionStopUp,
-                onMoveExcursionStopDown = onMoveExcursionStopDown,
                 tripStopPhotoMap = tripStopPhotoMap,
-                excursionStopPhotoMap = excursionStopPhotoMap,
                 onStopClick = onStopClick,
-                onExcursionStopClick = onExcursionStopClick,
             )
 
             TripPhotoGallerySection(
                 gallery = uiState.photoGallery,
                 coverPhotoFilename = trip.coverPhotoFilename,
                 onGroupClick = { group ->
-                    when (group.stopType) {
-                        StopType.TRIP_STOP -> uiState.stops
-                            .firstOrNull { it.id == group.stopId }
-                            ?.let(onStopClick)
-                        StopType.EXCURSION_STOP -> uiState.excursions
-                            .asSequence()
-                            .flatMap { it.stops.asSequence() }
-                            .firstOrNull { it.id == group.stopId }
-                            ?.let(onExcursionStopClick)
-                    }
+                    uiState.stops
+                        .firstOrNull { it.id == group.stopId }
+                        ?.let(onStopClick)
                 },
                 onPhotoClick = onPhotoClick,
             )
@@ -1200,13 +1042,10 @@ private fun ItineraryPickerDialog(
 // Stops section
 // ─────────────────────────────────────────────
 
-private val ExcursionColor = Color(0xFF7C3AED)
-private val ExcursionContainerColor = Color(0xFFF5F3FF)
 
 @Composable
 private fun TripStopsSection(
     stops: List<TripStop>,
-    excursions: List<Excursion>,
     countries: List<Country>,
     isReorderMode: Boolean,
     onReorderModeChanged: (Boolean) -> Unit,
@@ -1215,21 +1054,10 @@ private fun TripStopsSection(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onAddExcursionClick: (String?) -> Unit,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
     tripStopPhotoMap: Map<String, List<StopPhoto>>,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
     onStopClick: (TripStop) -> Unit,
-    onExcursionStopClick: (ExcursionStop) -> Unit,
 ) {
-    val totalTimelineItems = stops.size + excursions.size
+    val totalTimelineItems = stops.size
 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // Header row
@@ -1270,31 +1098,19 @@ private fun TripStopsSection(
             }
         }
 
-        if (stops.isEmpty() && excursions.isEmpty()) {
+        if (stops.isEmpty()) {
             EmptyStopsState(onAddStopClick = onAddStopClick)
         } else {
             TripStopsTimeline(
                 stops = stops,
-                excursions = excursions,
                 countries = countries,
                 isReorderMode = isReorderMode,
                 onEditStop = onEditStop,
                 onMoveStopUp = onMoveStopUp,
                 onMoveStopDown = onMoveStopDown,
                 onDeleteStop = onDeleteStop,
-                onDeleteExcursion = onDeleteExcursion,
-                onMoveExcursionUp = onMoveExcursionUp,
-                onMoveExcursionDown = onMoveExcursionDown,
-                onAddExcursionClick = onAddExcursionClick,
-                onAddExcursionStopClick = onAddExcursionStopClick,
-                onEditExcursionStop = onEditExcursionStop,
-                onDeleteExcursionStop = onDeleteExcursionStop,
-                onMoveExcursionStopUp = onMoveExcursionStopUp,
-                onMoveExcursionStopDown = onMoveExcursionStopDown,
                 tripStopPhotoMap = tripStopPhotoMap,
-                excursionStopPhotoMap = excursionStopPhotoMap,
                 onStopClick = onStopClick,
-                onExcursionStopClick = onExcursionStopClick,
             )
         }
     }
@@ -1303,33 +1119,19 @@ private fun TripStopsSection(
 @Composable
 private fun TripStopsTimeline(
     stops: List<TripStop>,
-    excursions: List<Excursion>,
     countries: List<Country>,
     isReorderMode: Boolean,
     onEditStop: (TripStop) -> Unit,
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionClick: (String?) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
     tripStopPhotoMap: Map<String, List<StopPhoto>>,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>>,
     onStopClick: (TripStop) -> Unit,
-    onExcursionStopClick: (ExcursionStop) -> Unit,
 ) {
-    val excursionsByAnchor = excursions.groupBy { it.anchorTripStopId }
 
     Column {
         stops.forEachIndexed { index, stop ->
-            val anchored = excursionsByAnchor[stop.id].orEmpty()
-            val hasLineBelow = index < stops.lastIndex || anchored.isNotEmpty() || !excursionsByAnchor[null].isNullOrEmpty()
+            val hasLineBelow = index < stops.lastIndex
             val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
 
             Row(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -1347,7 +1149,7 @@ private fun TripStopsTimeline(
                     }
                 }
                 Spacer(Modifier.width(12.dp))
-                // Right side: stop card + anchored excursions
+                // Right side: stop card
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Spacer(Modifier.height(3.dp))
                     val stopPhotos = tripStopPhotoMap[stop.id] ?: emptyList()
@@ -1361,61 +1163,13 @@ private fun TripStopsTimeline(
                         onMoveStopUp = onMoveStopUp,
                         onMoveStopDown = onMoveStopDown,
                         onDeleteStop = onDeleteStop,
-                        onAddExcursionClick = { onAddExcursionClick(stop.id) },
                         previewPhotos = stopPhotos.take(4),
                         photoCount = stopPhotos.size,
                         onStopClick = { onStopClick(stop) },
                     )
-                    anchored.forEach { excursion ->
-                        val excursionIndex = excursions.indexOf(excursion)
-                        ExcursionTimelineCard(
-                            excursion = excursion,
-                            countries = countries,
-                            isReorderMode = isReorderMode,
-                            canMoveUp = excursionIndex > 0,
-                            canMoveDown = excursionIndex < excursions.lastIndex,
-                            onDeleteExcursion = onDeleteExcursion,
-                            onMoveExcursionUp = onMoveExcursionUp,
-                            onMoveExcursionDown = onMoveExcursionDown,
-                            onAddExcursionStopClick = onAddExcursionStopClick,
-                            onEditExcursionStop = onEditExcursionStop,
-                            onDeleteExcursionStop = onDeleteExcursionStop,
-                            onMoveExcursionStopUp = onMoveExcursionStopUp,
-                            onMoveExcursionStopDown = onMoveExcursionStopDown,
-                            excursionStopPhotoMap = excursionStopPhotoMap,
-                            onExcursionStopClick = onExcursionStopClick,
-                        )
-                    }
                     Spacer(Modifier.height(1.dp))
                 }
             }
-        }
-
-        // Unanchored excursions (no circle, just aligned card)
-        excursionsByAnchor[null].orEmpty().forEach { excursion ->
-            val excursionIndex = excursions.indexOf(excursion)
-            Row {
-                Spacer(Modifier.width(30.dp + 12.dp)) // align with card column
-                ExcursionTimelineCard(
-                    modifier = Modifier.weight(1f),
-                    excursion = excursion,
-                    countries = countries,
-                    isReorderMode = isReorderMode,
-                    canMoveUp = excursionIndex > 0,
-                    canMoveDown = excursionIndex < excursions.lastIndex,
-                    onDeleteExcursion = onDeleteExcursion,
-                    onMoveExcursionUp = onMoveExcursionUp,
-                    onMoveExcursionDown = onMoveExcursionDown,
-                    onAddExcursionStopClick = onAddExcursionStopClick,
-                    onEditExcursionStop = onEditExcursionStop,
-                    onDeleteExcursionStop = onDeleteExcursionStop,
-                    onMoveExcursionStopUp = onMoveExcursionStopUp,
-                    onMoveExcursionStopDown = onMoveExcursionStopDown,
-                    excursionStopPhotoMap = excursionStopPhotoMap,
-                    onExcursionStopClick = onExcursionStopClick,
-                )
-            }
-            Spacer(Modifier.height(4.dp))
         }
     }
 }
@@ -1450,7 +1204,6 @@ private fun TripStopCard(
     onMoveStopUp: (TripStop) -> Unit,
     onMoveStopDown: (TripStop) -> Unit,
     onDeleteStop: (TripStop) -> Unit,
-    onAddExcursionClick: () -> Unit,
     previewPhotos: List<StopPhoto> = emptyList(),
     photoCount: Int = 0,
     onStopClick: () -> Unit = {},
@@ -1526,7 +1279,6 @@ private fun TripStopCard(
             } else if (!isReorderMode && isManual) {
                 StopOverflowMenu(
                     onEdit = { onEditStop(stop) },
-                    onAddExcursion = onAddExcursionClick,
                     onDelete = { onDeleteStop(stop) },
                 )
             }
@@ -1602,309 +1354,8 @@ private fun StopThumbnail(
 @Composable
 private fun StopOverflowMenu(
     onEdit: () -> Unit,
-    onAddExcursion: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Filled.MoreVert, "Accions", tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
-        }
-        MaterialTheme(
-            colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
-            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
-        ) {
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(160.dp)) {
-                DropdownMenuItem(
-                    text = { Text("Edita", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
-                    leadingIcon = { Icon(Icons.Filled.Edit, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
-                    onClick = { expanded = false; onEdit() },
-                )
-                DropdownMenuItem(
-                    text = { Text("Afegeix excursió", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasOnSurfaceStrong) },
-                    leadingIcon = { Icon(Icons.Filled.Add, null, tint = AtlasOnSurfaceStrong, modifier = Modifier.size(15.dp)) },
-                    onClick = { expanded = false; onAddExcursion() },
-                )
-                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AtlasOutline))
-                DropdownMenuItem(
-                    text = { Text("Elimina", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasError) },
-                    leadingIcon = { Icon(Icons.Filled.Delete, null, tint = AtlasError, modifier = Modifier.size(15.dp)) },
-                    onClick = { expanded = false; onDelete() },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TypeBadge(label: String, color: Color, background: Color) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100.dp))
-            .background(background)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-    ) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = color)
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ExcursionTimelineCard(
-    excursion: Excursion,
-    countries: List<Country>,
-    isReorderMode: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onDeleteExcursion: (Excursion) -> Unit,
-    onMoveExcursionUp: (Excursion) -> Unit,
-    onMoveExcursionDown: (Excursion) -> Unit,
-    onAddExcursionStopClick: (String) -> Unit,
-    onEditExcursionStop: (ExcursionStop) -> Unit,
-    onDeleteExcursionStop: (ExcursionStop) -> Unit,
-    onMoveExcursionStopUp: (String, ExcursionStop) -> Unit,
-    onMoveExcursionStopDown: (String, ExcursionStop) -> Unit,
-    excursionStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
-    onExcursionStopClick: (ExcursionStop) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val sortedStops = excursion.stops.sortedBy { it.sortOrder }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(AtlasSurface)
-            .drawBehind {
-                drawRoundRect(
-                    color = ExcursionColor.copy(alpha = 0.34f),
-                    cornerRadius = CornerRadius(14.dp.toPx(), 14.dp.toPx()),
-                    style = Stroke(
-                        width = 1.dp.toPx(),
-                        pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx())),
-                    ),
-                )
-            }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(9.dp),
-    ) {
-        // Header row: EXCURSIÓ badge + overflow/reorder
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(ExcursionColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            ) {
-                Text("EXCURSIÓ", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            if (isReorderMode) {
-                Row {
-                    IconButton(onClick = { onMoveExcursionUp(excursion) }, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline)
-                    }
-                    IconButton(onClick = { onMoveExcursionDown(excursion) }, enabled = canMoveDown, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline)
-                    }
-                }
-            } else {
-                ExcursionOverflowMenu(onDelete = { onDeleteExcursion(excursion) })
-            }
-        }
-
-        if (sortedStops.isNotEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                sortedStops.forEachIndexed { index, stop ->
-                    val countryName = countries.firstOrNull { it.iso2 == stop.countryIso2 }?.nameCa ?: stop.countryIso2.orEmpty()
-                    val stopPhotos = excursionStopPhotoMap[stop.id] ?: emptyList()
-                    ExcursionStopCard(
-                        stop = stop,
-                        countryName = countryName,
-                        isReorderMode = isReorderMode,
-                        canMoveUp = index > 0,
-                        canMoveDown = index < sortedStops.lastIndex,
-                        onEdit = { onEditExcursionStop(stop) },
-                        onDelete = { onDeleteExcursionStop(stop) },
-                        onMoveUp = { onMoveExcursionStopUp(excursion.id, stop) },
-                        onMoveDown = { onMoveExcursionStopDown(excursion.id, stop) },
-                        previewPhotos = stopPhotos.take(4),
-                        photoCount = stopPhotos.size,
-                        onStopClick = { onExcursionStopClick(stop) },
-                    )
-                }
-            }
-        }
-
-        if (!isReorderMode) {
-            TextButton(onClick = { onAddExcursionStopClick(excursion.id) }, modifier = Modifier.height(28.dp), contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) {
-                Text("+ Afegeix parada", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = ExcursionColor)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExcursionStopChip(
-    index: Int,
-    stop: ExcursionStop,
-    isReorderMode: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(AtlasSurface)
-            .border(1.dp, AtlasOutline, RoundedCornerShape(999.dp))
-            .clickable(onClick = onEdit)
-            .padding(start = 9.dp, top = 5.dp, end = if (isReorderMode) 3.dp else 10.dp, bottom = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        Text(
-            text = index.toString(),
-            style = MaterialTheme.typography.labelSmall.copy(fontFamily = AtlasMono),
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceMuted,
-        )
-        Text(
-            text = stop.locationName,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = AtlasOnSurfaceStrong,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (isReorderMode) {
-            Row(horizontalArrangement = Arrangement.spacedBy(0.dp)) {
-                IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(22.dp)) {
-                    Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(15.dp))
-                }
-                IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(22.dp)) {
-                    Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(15.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExcursionStopCard(
-    stop: ExcursionStop,
-    countryName: String,
-    isReorderMode: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
-    previewPhotos: List<StopPhoto> = emptyList(),
-    photoCount: Int = 0,
-    onStopClick: () -> Unit = {},
-) {
-    val hasPhotos = previewPhotos.isNotEmpty()
-
-    Surface(
-        onClick = onStopClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(13.dp),
-        color = AtlasSurface,
-        border = BorderStroke(1.dp, AtlasOutline),
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(11.dp),
-        ) {
-            if (hasPhotos) {
-                StopPhotoThumbnails(
-                    photos = previewPhotos,
-                    photoCount = photoCount,
-                    size = 46.dp,
-                )
-            } else {
-                StopThumbnail(
-                    modifier = Modifier.size(46.dp),
-                    accent = ExcursionColor,
-                )
-            }
-
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = stop.locationName,
-                        style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, lineHeight = 18.sp),
-                        fontWeight = FontWeight.SemiBold,
-                        color = AtlasOnSurfaceStrong,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
-                Text(
-                    text = buildExcursionStopMetaLine(stop, countryName),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = AtlasMono,
-                        fontSize = 10.sp,
-                        lineHeight = 13.sp,
-                    ),
-                    fontWeight = FontWeight.SemiBold,
-                    color = AtlasOnSurfaceMuted,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            // Actions
-            if (isReorderMode) {
-                Column {
-                    IconButton(onClick = onMoveUp, enabled = canMoveUp, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.KeyboardArrowUp, "Mou amunt", tint = if (canMoveUp) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(18.dp))
-                    }
-                    IconButton(onClick = onMoveDown, enabled = canMoveDown, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Filled.KeyboardArrowDown, "Mou avall", tint = if (canMoveDown) AtlasOnSurfaceStrong else AtlasOutline, modifier = Modifier.size(18.dp))
-                    }
-                }
-            } else {
-                ExcursionStopOverflowMenu(onEdit = onEdit, onDelete = onDelete)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExcursionOverflowMenu(onDelete: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        IconButton(onClick = { expanded = true }, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Filled.MoreVert, "Accions", tint = AtlasOnSurfaceMuted, modifier = Modifier.size(16.dp))
-        }
-        MaterialTheme(
-            colorScheme = MaterialTheme.colorScheme.copy(surfaceContainer = AtlasSurface),
-            shapes = MaterialTheme.shapes.copy(extraSmall = RoundedCornerShape(14.dp)),
-        ) {
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.width(160.dp)) {
-                DropdownMenuItem(
-                    text = { Text("Elimina", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = AtlasError) },
-                    leadingIcon = { Icon(Icons.Filled.Delete, null, tint = AtlasError, modifier = Modifier.size(15.dp)) },
-                    onClick = { expanded = false; onDelete() },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExcursionStopOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }, modifier = Modifier.size(32.dp)) {
@@ -1930,6 +1381,20 @@ private fun ExcursionStopOverflowMenu(onEdit: () -> Unit, onDelete: () -> Unit) 
         }
     }
 }
+
+@Composable
+private fun TypeBadge(label: String, color: Color, background: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(100.dp))
+            .background(background)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold, color = color)
+    }
+}
+
+
 
 @Composable
 private fun EmptyStopsState(onAddStopClick: () -> Unit) {
@@ -1949,89 +1414,6 @@ private fun EmptyStopsState(onAddStopClick: () -> Unit) {
 // ─────────────────────────────────────────────
 // Dialogs (unchanged from original)
 // ─────────────────────────────────────────────
-@Composable
-private fun ExcursionStopDialog(
-    draft: ExcursionStopDraftUiState,
-    countries: List<Country>,
-    onDismiss: () -> Unit,
-    onLocationSearchQueryChanged: (String) -> Unit,
-    onLocationSearchResultSelected: (LocationSearchResult) -> Unit,
-    onUseManualEntryClick: () -> Unit,
-    onLocationNameChanged: (String) -> Unit,
-    onCountryChanged: (String) -> Unit,
-    onLatitudeChanged: (String) -> Unit,
-    onLongitudeChanged: (String) -> Unit,
-    onDatePrecisionChanged: (DatePrecision) -> Unit,
-    onDateFieldChanged: (FlexibleDateRangeDraftField, String) -> Unit,
-    onNotesChanged: (String) -> Unit,
-    onSave: () -> Unit,
-) {
-    val hasCoordinates = draft.latitude.isNotBlank() && draft.longitude.isNotBlank()
-    val selectedCountry = countries.firstOrNull { it.iso2 == draft.countryIso2 }
-    val showManualFields = draft.isManualEntryVisible
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(22.dp),
-        containerColor = AtlasSurface,
-        title = {
-            Text(
-                text = if (draft.stopId == null) "Afegeix parada d'excursio" else "Edita parada d'excursio",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
-                color = AtlasOnSurfaceStrong,
-            )
-        },
-        text = {
-            Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = draft.locationSearchQuery,
-                    onValueChange = onLocationSearchQueryChanged,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    label = { Text("Cerca un lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) },
-                    placeholder = { Text("Nom o adreça...", color = AtlasOnSurfaceMuted) },
-                    leadingIcon = {
-                        if (draft.isSearchingLocation) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = AtlasPrimary)
-                        else Icon(Icons.Filled.Search, null, tint = AtlasOnSurfaceMuted, modifier = Modifier.size(18.dp))
-                    },
-                    shape = RoundedCornerShape(14.dp),
-                )
-                draft.locationSearchError?.let { Text(it, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = AtlasError) }
-                if (draft.locationSearchResults.isNotEmpty()) {
-                    Column(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(AtlasBackground).border(1.dp, AtlasOutline, RoundedCornerShape(12.dp))) {
-                        draft.locationSearchResults.forEach { result -> LocationSearchResultRow(result = result, onClick = { onLocationSearchResultSelected(result) }) }
-                    }
-                }
-                if (draft.locationName.isNotBlank()) {
-                    SelectedLocationSummary(locationName = draft.locationName, countryName = selectedCountry?.nameCa ?: draft.countryIso2, hasCoordinates = hasCoordinates, showEditDetails = !showManualFields, onEditDetailsClick = onUseManualEntryClick)
-                }
-                if (!showManualFields && draft.locationName.isBlank()) {
-                    TextButton(onClick = onUseManualEntryClick, modifier = Modifier.height(32.dp), colors = ButtonDefaults.textButtonColors(contentColor = AtlasPrimary), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
-                        Text("Entrada manual", fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
-                    }
-                }
-                if (showManualFields) {
-                    DialogSectionLabel("Detalls manuals")
-                    OutlinedTextField(value = draft.locationName, onValueChange = onLocationNameChanged, modifier = Modifier.fillMaxWidth(), singleLine = true, label = { Text("Nom del lloc", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, shape = RoundedCornerShape(14.dp))
-                    CountryDropdown(countries = countries, selectedIso2 = draft.countryIso2, onCountryChanged = onCountryChanged)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(value = draft.latitude, onValueChange = onLatitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Latitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
-                        OutlinedTextField(value = draft.longitude, onValueChange = onLongitudeChanged, modifier = Modifier.weight(1f), singleLine = true, label = { Text("Longitud", fontWeight = FontWeight.Bold, fontSize = 12.sp) }, placeholder = { Text("Opcional", color = AtlasOnSurfaceMuted) }, shape = RoundedCornerShape(14.dp))
-                    }
-                }
-                Text("Dades de cerca OpenStreetMap contributors", style = MaterialTheme.typography.labelSmall, color = AtlasOnSurfaceMuted)
-                DialogSectionLabel("Data")
-                FlexibleDateRangeField(draft = draft.dateRange, onPrecisionChanged = onDatePrecisionChanged, onFieldChanged = onDateFieldChanged, showHint = false)
-                OutlinedTextField(value = draft.notes, onValueChange = onNotesChanged, modifier = Modifier.fillMaxWidth(), label = { Text("Notes", fontWeight = FontWeight.Bold) }, shape = RoundedCornerShape(14.dp), minLines = 1, maxLines = 3)
-                draft.validationError?.let { Text(it, color = AtlasError, fontWeight = FontWeight.SemiBold) }
-            }
-        },
-        confirmButton = { CompactTripDialogActionButton(onClick = onSave) { Text("Desa", fontWeight = FontWeight.ExtraBold, color = AtlasPrimary) } },
-        dismissButton = { CompactTripDialogActionButton(onClick = onDismiss) { Text("Cancel.la", fontWeight = FontWeight.Bold, color = AtlasOnSurfaceMuted) } },
-    )
-}
-
 @Composable
 private fun TripStopDialog(
     draft: TripStopDraftUiState,
@@ -2203,18 +1585,6 @@ private fun ConfirmDeleteDialog(title: String, body: String, onDismiss: () -> Un
 }
 
 private fun TripStop.hasCoordinates(): Boolean = latitude != null && longitude != null
-
-private fun buildExcursionStopMetaLine(stop: ExcursionStop, countryName: String): String = buildString {
-    if (countryName.isNotBlank()) append(countryName)
-    stop.dateRange?.let { range ->
-        if (isNotEmpty()) append(" · ")
-        append(dateRangeFormatter.format(range))
-    }
-    if (stop.latitude != null && stop.longitude != null) {
-        if (isNotEmpty()) append(" · ")
-        append("%.2f, %.2f".format(stop.latitude, stop.longitude))
-    }
-}
 
 private fun buildStopMetaLine(stop: TripStop, countryName: String): String = buildString {
     if (countryName.isNotBlank()) append(countryName)

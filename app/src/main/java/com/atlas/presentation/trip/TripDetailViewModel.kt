@@ -6,8 +6,6 @@ import androidx.lifecycle.viewModelScope
 import android.net.Uri
 import com.atlas.domain.model.Country
 import com.atlas.domain.model.DatePrecision
-import com.atlas.domain.model.Excursion
-import com.atlas.domain.model.ExcursionStop
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.LocationSearchResult
@@ -17,7 +15,6 @@ import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.TripMapPreferencesRepository
@@ -29,13 +26,6 @@ import com.atlas.domain.usecase.photo.SetTripCoverPhotoUseCase
 import com.atlas.domain.usecase.itinerary.UpdateItineraryUseCase
 import com.atlas.domain.usecase.itinerary.RemoveGeneratedTripStopsForItineraryUseCase
 import com.atlas.domain.usecase.itinerary.SyncGeneratedTripStopsForItineraryUseCase
-import com.atlas.domain.usecase.excursion.CreateExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.CreateExcursionUseCase
-import com.atlas.domain.usecase.excursion.DeleteExcursionStopUseCase
-import com.atlas.domain.usecase.excursion.DeleteExcursionUseCase
-import com.atlas.domain.usecase.excursion.ReorderExcursionStopsUseCase
-import com.atlas.domain.usecase.excursion.ReorderExcursionsUseCase
-import com.atlas.domain.usecase.excursion.UpdateExcursionStopUseCase
 import com.atlas.domain.usecase.trip.CreateTripStopUseCase
 import com.atlas.domain.usecase.trip.DeleteTripUseCase
 import com.atlas.domain.usecase.trip.DeleteTripStopUseCase
@@ -65,7 +55,6 @@ class TripDetailViewModel(
     tripRepository: TripRepository,
     countryRepository: CountryRepository,
     itineraryRepository: ItineraryRepository,
-    excursionRepository: ExcursionRepository,
     airportRepository: AirportRepository,
     private val deleteTripUseCase: DeleteTripUseCase,
     private val updateTripUseCase: UpdateTripUseCase,
@@ -77,13 +66,6 @@ class TripDetailViewModel(
     private val reorderTripStopsUseCase: ReorderTripStopsUseCase,
     private val deleteTripStopUseCase: DeleteTripStopUseCase,
     private val searchLocationsUseCase: SearchLocationsUseCase,
-    private val createExcursionUseCase: CreateExcursionUseCase,
-    private val deleteExcursionUseCase: DeleteExcursionUseCase,
-    private val reorderExcursionsUseCase: ReorderExcursionsUseCase,
-    private val createExcursionStopUseCase: CreateExcursionStopUseCase,
-    private val updateExcursionStopUseCase: UpdateExcursionStopUseCase,
-    private val deleteExcursionStopUseCase: DeleteExcursionStopUseCase,
-    private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
     private val flexibleDateValidator: FlexibleDateValidator,
     private val tripMapPreferencesRepository: TripMapPreferencesRepository,
     private val stopPhotoRepository: StopPhotoRepository,
@@ -96,26 +78,22 @@ class TripDetailViewModel(
     private val stopDraft = MutableStateFlow(TripStopDraftUiState())
     private val tripDraft = MutableStateFlow(TripEditorDraftUiState())
     private var stopLocationSearchJob: Job? = null
-    private var excursionStopLocationSearchJob: Job? = null
-    private val excursionStopDraft = MutableStateFlow(ExcursionStopDraftUiState())
     private val isItineraryPickerOpen = MutableStateFlow(false)
 
     private val tripContentData = combine(
         tripRepository.observeTrip(tripId),
         tripRepository.observeTripStops(tripId),
         countryRepository.observeTrackableCountries(),
-        excursionRepository.observeExcursions(tripId),
-    ) { trip, stops, countries, excursions ->
-        TripContentData(trip, stops, countries, excursions)
+    ) { trip, stops, countries ->
+        TripContentData(trip, stops, countries)
     }
 
     private val draftData = combine(
         stopDraft,
         tripDraft,
-        excursionStopDraft,
         isItineraryPickerOpen,
-    ) { stopDraft, tripDraft, excursionStopDraft, isItineraryPickerOpen ->
-        TripDraftData(stopDraft, tripDraft, excursionStopDraft, isItineraryPickerOpen)
+    ) { stopDraft, tripDraft, isItineraryPickerOpen ->
+        TripDraftData(stopDraft, tripDraft, isItineraryPickerOpen)
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -128,20 +106,8 @@ class TripDetailViewModel(
         }
 
     @Suppress("UNCHECKED_CAST")
-    private val excursionStopPhotosFlow = excursionRepository.observeExcursions(tripId)
-        .flatMapLatest { excursions ->
-            val ids = excursions.flatMap { it.stops }.map { it.id }
-            if (ids.isEmpty()) flowOf(emptyMap())
-            else stopPhotoRepository.observeByStopIds(ids, StopType.EXCURSION_STOP)
-                .map { photos -> photos.groupBy { it.stopId } }
-        }
 
-    private val photosData = combine(
-        tripStopPhotosFlow,
-        excursionStopPhotosFlow,
-    ) { tripStopPhotos, excursionStopPhotos ->
-        PhotosData(tripStopPhotos, excursionStopPhotos)
-    }
+    private val photosData = tripStopPhotosFlow
 
     // Itineraries plus their route-derived display titles (see [itineraryCodeLabel]).
     private val itineraryData = combine(
@@ -168,22 +134,17 @@ class TripDetailViewModel(
             trip = content.trip,
             stops = content.stops,
             countries = content.countries,
-            excursions = content.excursions,
             linkedItinerary = linkedItinerary,
             availableItineraries = itineraryData.itineraries.filter { it.tripId == null },
             itineraryTitles = itineraryData.titles,
             stopDraft = drafts.stopDraft,
             tripDraft = drafts.tripDraft,
-            excursionStopDraft = drafts.excursionStopDraft,
             isItineraryPickerOpen = drafts.isItineraryPickerOpen,
             generatedStopsVisibleOnMap = generatedStopsVisibleOnMap,
-            tripStopPhotoMap = photos.tripStopPhotos,
-            excursionStopPhotoMap = photos.excursionStopPhotos,
+            tripStopPhotoMap = photos,
             photoGallery = buildTripPhotoGalleryUiState(
                 stops = content.stops,
-                excursions = content.excursions,
-                tripStopPhotoMap = photos.tripStopPhotos,
-                excursionStopPhotoMap = photos.excursionStopPhotos,
+                stopPhotoMap = photos,
             ),
         )
     }
@@ -316,17 +277,9 @@ class TripDetailViewModel(
                     dateRange = dateRange,
                     notes = draft.notes,
                     coverPhotoFilename = draft.coverPhotoFilename,
-                    isQuickTrip = draft.isQuickTrip,
                 ),
             )
             onDismissTripDraft()
-        }
-    }
-
-    fun onToggleQuickTrip() {
-        val trip = uiState.value.trip ?: return
-        viewModelScope.launch {
-            updateTripUseCase(trip.copy(isQuickTrip = !trip.isQuickTrip))
         }
     }
 
@@ -535,241 +488,26 @@ class TripDetailViewModel(
         }
     }
 
-    fun onAddExcursionClick(anchorTripStopId: String? = null) {
-        val trip = uiState.value.trip ?: return
 
-        viewModelScope.launch {
-            createExcursionUseCase(
-                tripId = trip.id,
-                anchorTripStopId = anchorTripStopId,
-                title = DEFAULT_EXCURSION_TITLE,
-                notes = null,
-            )
-        }
-    }
 
-    fun onDeleteExcursion(excursion: Excursion) {
-        viewModelScope.launch { deleteExcursionUseCase(excursion) }
-    }
 
-    fun onMoveExcursionUp(excursion: Excursion) {
-        moveExcursion(excursion, -1)
-    }
 
-    fun onMoveExcursionDown(excursion: Excursion) {
-        moveExcursion(excursion, 1)
-    }
 
-    fun onAddExcursionStopClick(excursionId: String) {
-        val firstCountryIso2 = uiState.value.countries.firstOrNull()?.iso2.orEmpty()
-        excursionStopDraft.update {
-            ExcursionStopDraftUiState(
-                isOpen = true,
-                excursionId = excursionId,
-                countryIso2 = firstCountryIso2,
-            )
-        }
-    }
 
-    fun onEditExcursionStop(stop: ExcursionStop) {
-        excursionStopDraft.update { ExcursionStopDraftUiState.fromStop(stop) }
-    }
 
-    fun onDismissExcursionStopDraft() {
-        excursionStopLocationSearchJob?.cancel()
-        excursionStopDraft.update { ExcursionStopDraftUiState() }
-    }
 
-    fun onExcursionStopLocationSearchQueryChanged(query: String) {
-        excursionStopDraft.update {
-            it.copy(
-                locationSearchQuery = query,
-                locationSearchError = null,
-                locationSearchResults = emptyList(),
-                isSearchingLocation = false,
-            )
-        }
-        excursionStopLocationSearchJob?.cancel()
-        if (query.trim().length < 3) return
-        excursionStopLocationSearchJob = viewModelScope.launch {
-            delay(400)
-            val trimmed = query.trim()
-            excursionStopDraft.update { it.copy(isSearchingLocation = true) }
-            runCatching { searchLocationsUseCase(trimmed) }
-                .onSuccess { results ->
-                    excursionStopDraft.update {
-                        it.copy(
-                            isSearchingLocation = false,
-                            locationSearchResults = results,
-                            lastLocationSearchQuery = trimmed,
-                            isManualEntryVisible = results.isEmpty(),
-                            locationSearchError = if (results.isEmpty()) {
-                                "No s'ha trobat cap lloc. Pots afegir-lo manualment."
-                            } else {
-                                null
-                            },
-                        )
-                    }
-                }
-                .onFailure { error ->
-                    excursionStopDraft.update {
-                        it.copy(
-                            isSearchingLocation = false,
-                            locationSearchError = error.message ?: "La cerca no està disponible ara mateix.",
-                        )
-                    }
-                }
-        }
-    }
 
-    fun onExcursionStopLocationSearchResultSelected(result: LocationSearchResult) {
-        val supportedCountryIso2 = result.countryIso2
-            ?.takeIf { iso2 -> uiState.value.countries.any { it.iso2 == iso2 } }
 
-        excursionStopDraft.update {
-            it.copy(
-                locationName = result.name,
-                countryIso2 = supportedCountryIso2 ?: it.countryIso2,
-                latitude = result.latitude.toString(),
-                longitude = result.longitude.toString(),
-                locationSearchQuery = result.name,
-                locationSearchResults = emptyList(),
-                isManualEntryVisible = supportedCountryIso2 == null,
-                locationSearchError = if (supportedCountryIso2 == null) {
-                    "S'han omplert nom i coordenades. Revisa el pais manualment."
-                } else {
-                    null
-                },
-                validationError = null,
-            )
-        }
-    }
 
-    fun onUseManualExcursionStopEntryClick() {
-        excursionStopDraft.update {
-            it.copy(
-                isManualEntryVisible = true,
-                locationSearchResults = emptyList(),
-                locationSearchError = null,
-                validationError = null,
-            )
-        }
-    }
 
-    fun onExcursionStopLocationNameChanged(locationName: String) {
-        excursionStopDraft.update { it.copy(locationName = locationName, validationError = null) }
-    }
 
-    fun onExcursionStopCountryChanged(countryIso2: String) {
-        excursionStopDraft.update { it.copy(countryIso2 = countryIso2, validationError = null) }
-    }
 
-    fun onExcursionStopLatitudeChanged(latitude: String) {
-        excursionStopDraft.update { it.copy(latitude = latitude, validationError = null) }
-    }
 
-    fun onExcursionStopLongitudeChanged(longitude: String) {
-        excursionStopDraft.update { it.copy(longitude = longitude, validationError = null) }
-    }
 
-    fun onExcursionStopDatePrecisionChanged(precision: DatePrecision) {
-        excursionStopDraft.update {
-            it.copy(
-                dateRange = it.dateRange.copy(precision = precision),
-                validationError = null,
-            )
-        }
-    }
 
-    fun onExcursionStopDateFieldChanged(
-        field: FlexibleDateRangeDraftField,
-        value: String,
-    ) {
-        excursionStopDraft.update {
-            it.copy(
-                dateRange = it.dateRange.updateField(field, value),
-                validationError = null,
-            )
-        }
-    }
 
-    fun onExcursionStopNotesChanged(notes: String) {
-        excursionStopDraft.update { it.copy(notes = notes) }
-    }
 
-    fun onSaveExcursionStopDraft() {
-        val draft = excursionStopDraft.value
-        val locationName = draft.locationName.trim()
-        val latitude = draft.latitude.trim().ifBlank { null }?.toDoubleOrNull()
-        val longitude = draft.longitude.trim().ifBlank { null }?.toDoubleOrNull()
-        val dateRange = draft.dateRange.toDateRange()
 
-        if (locationName.isBlank()) {
-            excursionStopDraft.update { it.copy(validationError = "El nom del lloc es obligatori.") }
-            return
-        }
-        if (draft.countryIso2.isBlank()) {
-            excursionStopDraft.update { it.copy(validationError = "Cal seleccionar un pais o territori.") }
-            return
-        }
-        if ((draft.latitude.isNotBlank() && latitude == null) || (draft.longitude.isNotBlank() && longitude == null)) {
-            excursionStopDraft.update { it.copy(validationError = "Les coordenades han de ser numeros valids.") }
-            return
-        }
-        if ((draft.latitude.isBlank() && draft.longitude.isNotBlank()) || (draft.latitude.isNotBlank() && draft.longitude.isBlank())) {
-            excursionStopDraft.update { it.copy(validationError = "Informa latitud i longitud, o deixa totes dues buides.") }
-            return
-        }
-        if (dateRange == null && draft.dateRange.hasAnyInput()) {
-            excursionStopDraft.update { it.copy(validationError = "Revisa la data de la parada: falta algun camp o el format no es valid.") }
-            return
-        }
-        if (dateRange != null && !flexibleDateValidator.isValid(dateRange)) {
-            excursionStopDraft.update { it.copy(validationError = "Revisa la data de la parada: el rang o la precisio no son valids.") }
-            return
-        }
-
-        viewModelScope.launch {
-            if (draft.stopId == null) {
-                createExcursionStopUseCase(
-                    excursionId = draft.excursionId,
-                    locationName = locationName,
-                    countryIso2 = draft.countryIso2,
-                    latitude = latitude,
-                    longitude = longitude,
-                    dateRange = dateRange,
-                    notes = draft.notes,
-                )
-            } else {
-                updateExcursionStopUseCase(
-                    ExcursionStop(
-                        id = draft.stopId,
-                        excursionId = draft.excursionId,
-                        locationName = locationName,
-                        countryIso2 = draft.countryIso2,
-                        latitude = latitude,
-                        longitude = longitude,
-                        dateRange = dateRange,
-                        notes = draft.notes,
-                        sortOrder = draft.sortOrder,
-                    ),
-                )
-            }
-            onDismissExcursionStopDraft()
-        }
-    }
-
-    fun onDeleteExcursionStop(stop: ExcursionStop) {
-        viewModelScope.launch { deleteExcursionStopUseCase(stop) }
-    }
-
-    fun onMoveExcursionStopUp(excursionId: String, stop: ExcursionStop) {
-        moveExcursionStop(excursionId, stop, -1)
-    }
-
-    fun onMoveExcursionStopDown(excursionId: String, stop: ExcursionStop) {
-        moveExcursionStop(excursionId, stop, 1)
-    }
 
     fun onMoveStopUp(stop: TripStop) {
         moveStop(stop = stop, offset = -1)
@@ -836,51 +574,12 @@ class TripDetailViewModel(
         }
     }
 
-    private fun moveExcursion(
-        excursion: Excursion,
-        offset: Int,
-    ) {
-        val excursions = uiState.value.excursions.toMutableList()
-        val fromIndex = excursions.indexOfFirst { it.id == excursion.id }
-        val toIndex = fromIndex + offset
-        if (fromIndex !in excursions.indices || toIndex !in excursions.indices) return
-
-        val moved = excursions.removeAt(fromIndex)
-        excursions.add(toIndex, moved)
-
-        viewModelScope.launch {
-            reorderExcursionsUseCase(excursions)
-        }
-    }
-
-    private fun moveExcursionStop(
-        excursionId: String,
-        stop: ExcursionStop,
-        offset: Int,
-    ) {
-        val stops = uiState.value.excursions
-            .firstOrNull { it.id == excursionId }
-            ?.stops
-            ?.toMutableList() ?: return
-        val fromIndex = stops.indexOfFirst { it.id == stop.id }
-        val toIndex = fromIndex + offset
-        if (fromIndex !in stops.indices || toIndex !in stops.indices) return
-
-        val moved = stops.removeAt(fromIndex)
-        stops.add(toIndex, moved)
-
-        viewModelScope.launch {
-            reorderExcursionStopsUseCase(stops)
-        }
-    }
-
     class Factory(
         private val tripRepository: TripRepository,
         private val countryRepository: CountryRepository,
         private val deleteTripUseCase: DeleteTripUseCase,
         private val updateTripUseCase: UpdateTripUseCase,
         private val itineraryRepository: ItineraryRepository,
-        private val excursionRepository: ExcursionRepository,
         private val airportRepository: AirportRepository,
         private val updateItineraryUseCase: UpdateItineraryUseCase,
         private val syncGeneratedTripStopsForItineraryUseCase: SyncGeneratedTripStopsForItineraryUseCase,
@@ -890,13 +589,6 @@ class TripDetailViewModel(
         private val reorderTripStopsUseCase: ReorderTripStopsUseCase,
         private val deleteTripStopUseCase: DeleteTripStopUseCase,
         private val searchLocationsUseCase: SearchLocationsUseCase,
-        private val createExcursionUseCase: CreateExcursionUseCase,
-        private val deleteExcursionUseCase: DeleteExcursionUseCase,
-        private val reorderExcursionsUseCase: ReorderExcursionsUseCase,
-        private val createExcursionStopUseCase: CreateExcursionStopUseCase,
-        private val updateExcursionStopUseCase: UpdateExcursionStopUseCase,
-        private val deleteExcursionStopUseCase: DeleteExcursionStopUseCase,
-        private val reorderExcursionStopsUseCase: ReorderExcursionStopsUseCase,
         private val flexibleDateValidator: FlexibleDateValidator,
         private val tripMapPreferencesRepository: TripMapPreferencesRepository,
         private val stopPhotoRepository: StopPhotoRepository,
@@ -911,7 +603,6 @@ class TripDetailViewModel(
             return TripDetailViewModel(
                 tripRepository = tripRepository,
                 countryRepository = countryRepository,
-                excursionRepository = excursionRepository,
                 airportRepository = airportRepository,
                 deleteTripUseCase = deleteTripUseCase,
                 updateTripUseCase = updateTripUseCase,
@@ -924,13 +615,6 @@ class TripDetailViewModel(
                 reorderTripStopsUseCase = reorderTripStopsUseCase,
                 deleteTripStopUseCase = deleteTripStopUseCase,
                 searchLocationsUseCase = searchLocationsUseCase,
-                createExcursionUseCase = createExcursionUseCase,
-                deleteExcursionUseCase = deleteExcursionUseCase,
-                reorderExcursionsUseCase = reorderExcursionsUseCase,
-                createExcursionStopUseCase = createExcursionStopUseCase,
-                updateExcursionStopUseCase = updateExcursionStopUseCase,
-                deleteExcursionStopUseCase = deleteExcursionStopUseCase,
-                reorderExcursionStopsUseCase = reorderExcursionStopsUseCase,
                 flexibleDateValidator = flexibleDateValidator,
                 tripMapPreferencesRepository = tripMapPreferencesRepository,
                 stopPhotoRepository = stopPhotoRepository,
@@ -944,7 +628,6 @@ class TripDetailViewModel(
     }
 
     private companion object {
-        const val DEFAULT_EXCURSION_TITLE = "Excursió"
     }
 }
 
@@ -952,17 +635,14 @@ data class TripDetailUiState(
     val trip: Trip? = null,
     val stops: List<TripStop> = emptyList(),
     val countries: List<Country> = emptyList(),
-    val excursions: List<Excursion> = emptyList(),
     val linkedItinerary: Itinerary? = null,
     val availableItineraries: List<Itinerary> = emptyList(),
     val itineraryTitles: Map<String, String> = emptyMap(),
     val stopDraft: TripStopDraftUiState = TripStopDraftUiState(),
     val tripDraft: TripEditorDraftUiState = TripEditorDraftUiState(),
-    val excursionStopDraft: ExcursionStopDraftUiState = ExcursionStopDraftUiState(),
     val isItineraryPickerOpen: Boolean = false,
     val generatedStopsVisibleOnMap: Boolean = true,
     val tripStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
-    val excursionStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
     val photoGallery: TripPhotoGalleryUiState = TripPhotoGalleryUiState(),
 )
 
@@ -970,13 +650,8 @@ private data class TripContentData(
     val trip: Trip?,
     val stops: List<TripStop>,
     val countries: List<Country>,
-    val excursions: List<Excursion>,
 )
 
-private data class PhotosData(
-    val tripStopPhotos: Map<String, List<StopPhoto>>,
-    val excursionStopPhotos: Map<String, List<StopPhoto>>,
-)
 
 private data class ItineraryData(
     val itineraries: List<Itinerary>,
@@ -986,43 +661,5 @@ private data class ItineraryData(
 private data class TripDraftData(
     val stopDraft: TripStopDraftUiState,
     val tripDraft: TripEditorDraftUiState,
-    val excursionStopDraft: ExcursionStopDraftUiState,
     val isItineraryPickerOpen: Boolean,
 )
-
-data class ExcursionStopDraftUiState(
-    val isOpen: Boolean = false,
-    val stopId: String? = null,
-    val excursionId: String = "",
-    val locationName: String = "",
-    val countryIso2: String = "",
-    val latitude: String = "",
-    val longitude: String = "",
-    val dateRange: FlexibleDateRangeDraftUiState = FlexibleDateRangeDraftUiState(),
-    val locationSearchQuery: String = "",
-    val locationSearchResults: List<LocationSearchResult> = emptyList(),
-    val isSearchingLocation: Boolean = false,
-    val isManualEntryVisible: Boolean = false,
-    val locationSearchError: String? = null,
-    val lastLocationSearchQuery: String? = null,
-    val notes: String = "",
-    val sortOrder: Int = 0,
-    val validationError: String? = null,
-) {
-    companion object {
-        fun fromStop(stop: ExcursionStop): ExcursionStopDraftUiState = ExcursionStopDraftUiState(
-            isOpen = true,
-            stopId = stop.id,
-            excursionId = stop.excursionId,
-            locationName = stop.locationName,
-            countryIso2 = stop.countryIso2,
-            latitude = stop.latitude?.toString().orEmpty(),
-            longitude = stop.longitude?.toString().orEmpty(),
-            dateRange = FlexibleDateRangeDraftUiState.fromDateRange(stop.dateRange),
-            locationSearchQuery = stop.locationName,
-            isManualEntryVisible = stop.latitude == null || stop.longitude == null,
-            notes = stop.notes.orEmpty(),
-            sortOrder = stop.sortOrder,
-        )
-    }
-}

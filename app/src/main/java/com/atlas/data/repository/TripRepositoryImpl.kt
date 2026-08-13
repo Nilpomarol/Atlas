@@ -67,7 +67,6 @@ class TripRepositoryImpl(
                 notes = notes,
                 createdAt = now,
                 updatedAt = now,
-                isQuickTrip = false,
             ),
         )
     }
@@ -77,7 +76,6 @@ class TripRepositoryImpl(
         status: TravelStatus,
         dateRange: FlexibleDateRange?,
         notes: String?,
-        isQuickTrip: Boolean,
         locationName: String,
         countryIso2: String,
         latitude: Double?,
@@ -102,7 +100,6 @@ class TripRepositoryImpl(
                     notes = notes,
                     createdAt = now,
                     updatedAt = now,
-                    isQuickTrip = isQuickTrip,
                 ),
             )
             tripStopDao.upsert(
@@ -152,7 +149,6 @@ class TripRepositoryImpl(
                 createdAt = now,
                 updatedAt = now,
                 coverPhotoFilename = trip.coverPhotoFilename,
-                isQuickTrip = trip.isQuickTrip,
             ),
         )
     }
@@ -186,7 +182,6 @@ class TripRepositoryImpl(
                 createdAt = "",
                 updatedAt = "",
                 coverPhotoFilename = trip.coverPhotoFilename,
-                isQuickTrip = trip.isQuickTrip,
             ),
         )
     }
@@ -262,8 +257,15 @@ class TripRepositoryImpl(
     }
 
     override suspend fun deleteTripStop(stop: TripStop) {
-        tripStopDao.delete(stop.toEntity(createdAt = "", updatedAt = ""))
+        // `parent_stop_id` carries no foreign key, so the cascade is enforced here.
+        database.withTransaction {
+            tripStopDao.deleteChildren(stop.id)
+            tripStopDao.delete(stop.toEntity(createdAt = "", updatedAt = ""))
+        }
     }
+
+    override suspend fun childStopIds(parentStopId: String): List<String> =
+        tripStopDao.getChildStopIds(parentStopId)
 
     override suspend fun replaceGeneratedItineraryGroupStops(
         tripId: String,

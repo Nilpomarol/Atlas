@@ -16,7 +16,6 @@ import com.atlas.data.local.dao.CurrencyRateDao
 import com.atlas.data.local.dao.CountryUserStateDao
 import com.atlas.data.local.dao.DatasetMetadataDao
 import com.atlas.data.local.dao.AirportDao
-import com.atlas.data.local.dao.ExcursionDao
 import com.atlas.data.local.dao.FlightDao
 import com.atlas.data.local.dao.ItineraryDao
 import com.atlas.data.local.dao.TripDao
@@ -26,8 +25,6 @@ import com.atlas.data.local.entity.AircraftEntity
 import com.atlas.data.local.entity.AircraftTypeEntity
 import com.atlas.data.local.entity.AirlineEntity
 import com.atlas.data.local.entity.AirportEntity
-import com.atlas.data.local.entity.ExcursionEntity
-import com.atlas.data.local.entity.ExcursionStopEntity
 import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
@@ -58,15 +55,13 @@ import com.atlas.data.local.entity.TripStopEntity
         FlightEntity::class,
         ItineraryEntity::class,
         ItineraryGroupEntity::class,
-        ExcursionEntity::class,
-        ExcursionStopEntity::class,
         StopPhotoEntity::class,
         CountryStatFactEntity::class,
         CountryPhotoEntity::class,
         CountryLandscapePhotoEntity::class,
         CurrencyRateEntity::class,
     ],
-    version = 25,
+    version = 26,
     exportSchema = true,
 )
 abstract class AtlasDatabase : RoomDatabase() {
@@ -82,7 +77,6 @@ abstract class AtlasDatabase : RoomDatabase() {
     abstract fun aircraftDao(): AircraftDao
     abstract fun flightDao(): FlightDao
     abstract fun itineraryDao(): ItineraryDao
-    abstract fun excursionDao(): ExcursionDao
     abstract fun stopPhotoDao(): StopPhotoDao
     abstract fun countryStatFactDao(): CountryStatFactDao
     abstract fun countryPhotoDao(): CountryPhotoDao
@@ -876,6 +870,219 @@ abstract class AtlasDatabase : RoomDatabase() {
                 db.execSQL(
                     "ALTER TABLE `trips` ADD COLUMN `is_quick_trip` INTEGER NOT NULL DEFAULT 0",
                 )
+            }
+        }
+
+        /**
+         * Collapses excursions into nested trip stops and drops the quick-trip flag.
+         *
+         * Excursion stops keep their original ids, so `stop_photos` rows stay valid and no
+         * photo file is touched — only their `stop_type` discriminator is rewritten.
+         *
+         * `parent_stop_id` deliberately carries no foreign key, matching how `stop_photos`
+         * already references stops. Parent/child integrity is enforced in the repository,
+         * which keeps imports independent of row order.
+         */
+        val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `trip_stops` ADD COLUMN `parent_stop_id` TEXT")
+                db.execSQL("ALTER TABLE `trip_stops` ADD COLUMN `side_trip_label` TEXT")
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_trip_stops_parent_stop_id` ON `trip_stops` (`parent_stop_id`)",
+                )
+
+                // An excursion with no stops has only its title/notes to lose, so fold that
+                // text into the stop it was anchored to before the table goes away.
+                db.execSQL(
+                    """
+                    UPDATE `trip_stops`
+                    SET `notes` = TRIM(
+                        COALESCE(`notes` || char(10) || char(10), '') || (
+                            SELECT group_concat(
+                                `e`.`title` || COALESCE(char(10) || `e`.`notes`, ''),
+                                char(10) || char(10)
+                            )
+                            FROM `excursions` `e`
+                            WHERE `e`.`anchor_trip_stop_id` = `trip_stops`.`id`
+                              AND NOT EXISTS (
+                                  SELECT 1 FROM `excursion_stops` `es`
+                                  WHERE `es`.`excursion_id` = `e`.`id`
+                              )
+                        )
+                    )
+                    WHERE EXISTS (
+                        SELECT 1 FROM `excursions` `e`
+                        WHERE `e`.`anchor_trip_stop_id` = `trip_stops`.`id`
+                          AND NOT EXISTS (
+                              SELECT 1 FROM `excursion_stops` `es`
+                              WHERE `es`.`excursion_id` = `e`.`id`
+                          )
+                    )
+                    """.trimIndent(),
+                )
+
+                // Excursion stops become trip stops. Anchored ones nest under their anchor;
+                // unanchored ones become main-route stops. Ids are preserved verbatim.
+                db.execSQL(
+                    """
+                    INSERT INTO `trip_stops` (
+                        `id`,
+                        `trip_id`,
+                        `parent_stop_id`,
+                        `side_trip_label`,
+                        `location_name`,
+                        `country_iso2`,
+                        `latitude`,
+                        `longitude`,
+                        `start_year`,
+                        `start_month`,
+                        `start_day`,
+                        `end_year`,
+                        `end_month`,
+                        `end_day`,
+                        `date_precision`,
+                        `notes`,
+                        `sort_order`,
+                        `source`,
+                        `itinerary_group_id`,
+                        `is_visible`,
+                        `display_title`,
+                        `created_at`,
+                        `updated_at`
+                    )
+                    SELECT
+                        `es`.`id`,
+                        `e`.`trip_id`,
+                        `e`.`anchor_trip_stop_id`,
+                        `e`.`title`,
+                        `es`.`location_name`,
+                        `es`.`country_iso2`,
+                        `es`.`latitude`,
+                        `es`.`longitude`,
+                        `es`.`start_year`,
+                        `es`.`start_month`,
+                        `es`.`start_day`,
+                        `es`.`end_year`,
+                        `es`.`end_month`,
+                        `es`.`end_day`,
+                        `es`.`date_precision`,
+                        `es`.`notes`,
+                        (`e`.`sort_order` * 100) + `es`.`sort_order`,
+                        'MANUAL',
+                        NULL,
+                        1,
+                        NULL,
+                        `es`.`created_at`,
+                        `es`.`updated_at`
+                    FROM `excursion_stops` `es`
+                    JOIN `excursions` `e` ON `e`.`id` = `es`.`excursion_id`
+                    """.trimIndent(),
+                )
+
+                // Excursion notes belong to the side trip as a whole; attach them once, to
+                // its first stop, rather than repeating them on every sibling.
+                db.execSQL(
+                    """
+                    UPDATE `trip_stops`
+                    SET `notes` = TRIM(
+                        COALESCE(`notes` || char(10) || char(10), '') || (
+                            SELECT `e`.`notes`
+                            FROM `excursions` `e`
+                            JOIN `excursion_stops` `es` ON `es`.`excursion_id` = `e`.`id`
+                            WHERE `es`.`id` = `trip_stops`.`id`
+                        )
+                    )
+                    WHERE `id` IN (
+                        SELECT `es`.`id`
+                        FROM `excursion_stops` `es`
+                        JOIN `excursions` `e` ON `e`.`id` = `es`.`excursion_id`
+                        WHERE `e`.`notes` IS NOT NULL
+                          AND TRIM(`e`.`notes`) <> ''
+                          AND `es`.`rowid` = (
+                              SELECT MIN(`es2`.`rowid`)
+                              FROM `excursion_stops` `es2`
+                              WHERE `es2`.`excursion_id` = `es`.`excursion_id`
+                                AND `es2`.`sort_order` = (
+                                    SELECT MIN(`es3`.`sort_order`)
+                                    FROM `excursion_stops` `es3`
+                                    WHERE `es3`.`excursion_id` = `es`.`excursion_id`
+                                )
+                          )
+                    )
+                    """.trimIndent(),
+                )
+
+                // Ids did not change, so photos only need their discriminator rewritten.
+                db.execSQL(
+                    "UPDATE `stop_photos` SET `stop_type` = 'TRIP_STOP' WHERE `stop_type` = 'EXCURSION_STOP'",
+                )
+
+                db.execSQL("DROP TABLE `excursion_stops`")
+                db.execSQL("DROP TABLE `excursions`")
+
+                // Rebuild `trips` without `is_quick_trip`; SQLite cannot drop a column
+                // reliably across supported Android versions.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `trips_new` (
+                        `id` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `status` TEXT NOT NULL,
+                        `start_year` INTEGER,
+                        `start_month` INTEGER,
+                        `start_day` INTEGER,
+                        `end_year` INTEGER,
+                        `end_month` INTEGER,
+                        `end_day` INTEGER,
+                        `date_precision` TEXT,
+                        `notes` TEXT,
+                        `created_at` TEXT NOT NULL,
+                        `updated_at` TEXT NOT NULL,
+                        `cover_photo_filename` TEXT,
+                        PRIMARY KEY(`id`)
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    INSERT INTO `trips_new` (
+                        `id`,
+                        `title`,
+                        `status`,
+                        `start_year`,
+                        `start_month`,
+                        `start_day`,
+                        `end_year`,
+                        `end_month`,
+                        `end_day`,
+                        `date_precision`,
+                        `notes`,
+                        `created_at`,
+                        `updated_at`,
+                        `cover_photo_filename`
+                    )
+                    SELECT
+                        `id`,
+                        `title`,
+                        `status`,
+                        `start_year`,
+                        `start_month`,
+                        `start_day`,
+                        `end_year`,
+                        `end_month`,
+                        `end_day`,
+                        `date_precision`,
+                        `notes`,
+                        `created_at`,
+                        `updated_at`,
+                        `cover_photo_filename`
+                    FROM `trips`
+                    """.trimIndent(),
+                )
+                db.execSQL("DROP TABLE `trips`")
+                db.execSQL("ALTER TABLE `trips_new` RENAME TO `trips`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_trips_status` ON `trips` (`status`)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_trips_title` ON `trips` (`title`)")
             }
         }
     }

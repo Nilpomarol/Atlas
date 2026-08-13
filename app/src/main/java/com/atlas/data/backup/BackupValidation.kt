@@ -15,7 +15,7 @@ class BackupValidator(
     private val flexibleDateValidator: FlexibleDateValidator = FlexibleDateValidator(),
 ) {
     fun validate(
-        backup: AtlasBackupV3,
+        backup: AtlasBackupV4,
         validCountryIso2: Set<String>,
     ) {
         requireBackup(backup.backupVersion in 1..BACKUP_VERSION) {
@@ -236,6 +236,6 @@ class BackupValidator(
     }
 
     companion object {
-        const val BACKUP_VERSION = 3
+        const val BACKUP_VERSION = 4
     }
 }

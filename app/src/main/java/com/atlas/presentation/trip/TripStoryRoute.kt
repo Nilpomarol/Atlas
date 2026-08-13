@@ -19,7 +19,6 @@ fun TripStoryRoute(
         factory = TripStoryViewModel.Factory(
             tripRepository = app.container.tripRepository,
             countryRepository = app.container.countryRepository,
-            excursionRepository = app.container.excursionRepository,
             itineraryRepository = app.container.itineraryRepository,
             stopPhotoRepository = app.container.stopPhotoRepository,
             airportRepository = app.container.airportRepository,

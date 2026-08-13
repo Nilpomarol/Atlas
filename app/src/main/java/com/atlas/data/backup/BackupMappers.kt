@@ -2,8 +2,6 @@ package com.atlas.data.backup
 
 import com.atlas.data.local.entity.CountryLogEntity
 import com.atlas.data.local.entity.CountryUserStateEntity
-import com.atlas.data.local.entity.ExcursionEntity
-import com.atlas.data.local.entity.ExcursionStopEntity
 import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
@@ -109,7 +107,6 @@ fun TripEntity.toBackupV3(): BackupTripV3 =
         datePrecision = datePrecision,
         notes = notes,
         coverPhotoFilename = coverPhotoFilename,
-        isQuickTrip = isQuickTrip,
         createdAt = createdAt,
         updatedAt = updatedAt,
     )
@@ -130,7 +127,6 @@ fun BackupTripV3.toEntity(): TripEntity =
         createdAt = createdAt,
         updatedAt = updatedAt,
         coverPhotoFilename = coverPhotoFilename,
-        isQuickTrip = isQuickTrip,
     )
 
 fun TripStopEntity.toBackupV1(): BackupTripStopV1 =
@@ -201,6 +197,46 @@ fun BackupTripStopV2.toEntity(): TripStopEntity =
         createdAt = createdAt, updatedAt = updatedAt,
     )
 
+fun BackupTripStopV2.toV4(): BackupTripStopV4 =
+    BackupTripStopV4(
+        id = id, tripId = tripId, locationName = locationName, countryIso2 = countryIso2,
+        latitude = latitude, longitude = longitude,
+        startYear = startYear, startMonth = startMonth, startDay = startDay,
+        endYear = endYear, endMonth = endMonth, endDay = endDay,
+        datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
+        source = source, itineraryGroupId = itineraryGroupId,
+        isVisible = isVisible, displayTitle = displayTitle,
+        createdAt = createdAt, updatedAt = updatedAt,
+    )
+
+fun TripStopEntity.toBackupV4(): BackupTripStopV4 =
+    BackupTripStopV4(
+        id = id, tripId = tripId,
+        parentStopId = parentStopId, sideTripLabel = sideTripLabel,
+        locationName = locationName, countryIso2 = countryIso2,
+        latitude = latitude, longitude = longitude,
+        startYear = startYear, startMonth = startMonth, startDay = startDay,
+        endYear = endYear, endMonth = endMonth, endDay = endDay,
+        datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
+        source = source, itineraryGroupId = itineraryGroupId,
+        isVisible = isVisible, displayTitle = displayTitle,
+        createdAt = createdAt, updatedAt = updatedAt,
+    )
+
+fun BackupTripStopV4.toEntity(): TripStopEntity =
+    TripStopEntity(
+        id = id, tripId = tripId,
+        parentStopId = parentStopId, sideTripLabel = sideTripLabel,
+        locationName = locationName, countryIso2 = countryIso2,
+        latitude = latitude, longitude = longitude,
+        startYear = startYear, startMonth = startMonth, startDay = startDay,
+        endYear = endYear, endMonth = endMonth, endDay = endDay,
+        datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
+        source = source, itineraryGroupId = itineraryGroupId,
+        isVisible = isVisible, displayTitle = displayTitle,
+        createdAt = createdAt, updatedAt = updatedAt,
+    )
+
 fun FlightEntity.toBackupV2(): BackupFlightV2 =
     BackupFlightV2(
         id = id, originAirportId = originAirportId, destinationAirportId = destinationAirportId,
@@ -253,39 +289,9 @@ fun BackupItineraryGroupV2.toEntity(): ItineraryGroupEntity =
         sortOrder = sortOrder, createdAt = createdAt, updatedAt = updatedAt,
     )
 
-fun ExcursionEntity.toBackupV2(): BackupExcursionV2 =
-    BackupExcursionV2(
-        id = id, tripId = tripId, anchorTripStopId = anchorTripStopId,
-        title = title, notes = notes, sortOrder = sortOrder,
-        createdAt = createdAt, updatedAt = updatedAt,
-    )
 
-fun BackupExcursionV2.toEntity(): ExcursionEntity =
-    ExcursionEntity(
-        id = id, tripId = tripId, anchorTripStopId = anchorTripStopId,
-        title = title, notes = notes, sortOrder = sortOrder,
-        createdAt = createdAt, updatedAt = updatedAt,
-    )
 
-fun ExcursionStopEntity.toBackupV2(): BackupExcursionStopV2 =
-    BackupExcursionStopV2(
-        id = id, excursionId = excursionId, locationName = locationName, countryIso2 = countryIso2,
-        latitude = latitude, longitude = longitude,
-        startYear = startYear, startMonth = startMonth, startDay = startDay,
-        endYear = endYear, endMonth = endMonth, endDay = endDay,
-        datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
-        createdAt = createdAt, updatedAt = updatedAt,
-    )
 
-fun BackupExcursionStopV2.toEntity(): ExcursionStopEntity =
-    ExcursionStopEntity(
-        id = id, excursionId = excursionId, locationName = locationName, countryIso2 = countryIso2,
-        latitude = latitude, longitude = longitude,
-        startYear = startYear, startMonth = startMonth, startDay = startDay,
-        endYear = endYear, endMonth = endMonth, endDay = endDay,
-        datePrecision = datePrecision, notes = notes, sortOrder = sortOrder,
-        createdAt = createdAt, updatedAt = updatedAt,
-    )
 
 fun StopPhotoEntity.toBackupV3(): StopPhotoBackup =
     StopPhotoBackup(

@@ -1,7 +1,5 @@
 package com.atlas.data.backup
 
-import com.atlas.data.local.entity.ExcursionEntity
-import com.atlas.data.local.entity.ExcursionStopEntity
 import com.atlas.data.local.entity.FlightEntity
 import com.atlas.data.local.entity.ItineraryEntity
 import com.atlas.data.local.entity.ItineraryGroupEntity
@@ -30,7 +28,6 @@ class BackupMappersTest {
             createdAt = "2026-05-30T00:00:00Z",
             updatedAt = "2026-05-30T01:00:00Z",
             coverPhotoFilename = "11111111-1111-1111-1111-111111111111.jpg",
-            isQuickTrip = true,
         )
 
         assertEquals(entity, entity.toBackupV3().toEntity())
@@ -118,26 +115,18 @@ class BackupMappersTest {
     }
 
     @Test
-    fun excursionRoundTripPreservesAllFields() {
-        val entity = ExcursionEntity(
-            id = "excursion-1", tripId = "trip-1", anchorTripStopId = "stop-1",
-            title = "Kamakura", notes = "Buda gegant", sortOrder = 2,
-            createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z",
-        )
-        assertEquals(entity, entity.toBackupV2().toEntity())
-    }
-
-    @Test
-    fun excursionStopRoundTripPreservesAllFields() {
-        val entity = ExcursionStopEntity(
-            id = "es-1", excursionId = "excursion-1", locationName = "Gran Buda de Kamakura",
+    fun nestedTripStopRoundTripPreservesParentAndLabel() {
+        val entity = TripStopEntity(
+            id = "es-1", tripId = "trip-1",
+            parentStopId = "stop-1", sideTripLabel = "Kamakura",
+            locationName = "Gran Buda de Kamakura",
             countryIso2 = "JP", latitude = 35.3167, longitude = 139.5497,
             startYear = 2026, startMonth = 6, startDay = 2,
             endYear = null, endMonth = null, endDay = null,
             datePrecision = "DAY", notes = null, sortOrder = 0,
             createdAt = "2026-05-30T00:00:00Z", updatedAt = "2026-05-30T00:00:00Z",
         )
-        assertEquals(entity, entity.toBackupV2().toEntity())
+        assertEquals(entity, entity.toBackupV4().toEntity())
     }
 
     @Test

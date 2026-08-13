@@ -27,6 +27,7 @@ import androidx.room.PrimaryKey
         Index(value = ["country_iso2"]),
         Index(value = ["trip_id", "sort_order"]),
         Index(value = ["itinerary_group_id"]),
+        Index(value = ["parent_stop_id"]),
     ],
 )
 data class TripStopEntity(
@@ -35,6 +36,12 @@ data class TripStopEntity(
     val id: String,
     @ColumnInfo(name = "trip_id")
     val tripId: String,
+    // No foreign key by design: `stop_photos` references stops the same way, and it keeps
+    // backup imports independent of row order. Cascade is enforced in the repository.
+    @ColumnInfo(name = "parent_stop_id")
+    val parentStopId: String? = null,
+    @ColumnInfo(name = "side_trip_label")
+    val sideTripLabel: String? = null,
     @ColumnInfo(name = "location_name")
     val locationName: String,
     @ColumnInfo(name = "country_iso2")

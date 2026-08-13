@@ -26,7 +26,6 @@ fun DashboardRoute(
             tripRepository = app.container.tripRepository,
             flightRepository = app.container.flightRepository,
             itineraryRepository = app.container.itineraryRepository,
-            excursionRepository = app.container.excursionRepository,
             countryStatsScopePreferencesRepository = app.container.countryStatsScopePreferencesRepository,
             airportRepository = app.container.airportRepository,
             countryStateDerivationService = app.container.countryStateDerivationService,

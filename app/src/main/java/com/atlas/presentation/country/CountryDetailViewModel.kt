@@ -14,7 +14,6 @@ import com.atlas.domain.util.CountryCurrencyCodeMap
 import com.atlas.domain.model.CountryLandscapePhotos
 import com.atlas.domain.model.CountryStatFact
 import com.atlas.domain.model.CurrencyRate
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.Flight
 import com.atlas.domain.model.Itinerary
 import com.atlas.domain.model.ItineraryGroup
@@ -29,7 +28,6 @@ import com.atlas.domain.repository.CountryMemoriesPreferencesRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
 import com.atlas.domain.repository.CurrencyRateRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.StopPhotoRepository
@@ -77,7 +75,6 @@ class CountryDetailViewModel(
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
     airportRepository: AirportRepository,
-    excursionRepository: ExcursionRepository,
     countryStatRepository: CountryStatRepository,
     private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
     currencyRateRepository: CurrencyRateRepository,
@@ -93,16 +90,13 @@ class CountryDetailViewModel(
 
     private val tripsFlow = tripRepository.observeTrips()
     private val tripStopsFlow = tripRepository.observeTripStops()
-    private val excursionsFlow = excursionRepository.observeExcursions()
-
     private val baseTrackingData = combine(
         countryRepository.observeUserState(iso2),
         countryRepository.observeCountryLogs(iso2),
         tripsFlow,
         tripStopsFlow,
-        excursionsFlow,
-    ) { userState, logs, trips, tripStops, excursions ->
-        BaseTrackingData(userState, logs, trips, tripStops, excursions)
+    ) { userState, logs, trips, tripStops ->
+        BaseTrackingData(userState, logs, trips, tripStops)
     }
 
     private val flightTrackingData = combine(
@@ -132,7 +126,6 @@ class CountryDetailViewModel(
             tripStops = base.tripStops.filter { it.countryIso2 == iso2 },
             flights = flightData.flights,
             itineraryGroups = flightData.itineraryGroups,
-            excursions = base.excursions,
             airportCountryIso2ById = flightData.airportCountryIso2ById,
         )
     }
@@ -150,8 +143,7 @@ class CountryDetailViewModel(
     private val countryTripSummaries = combine(
         tripsFlow,
         tripStopsFlow,
-        excursionsFlow,
-    ) { trips, tripStops, excursions ->
+    ) { trips, tripStops ->
         val tripsById = trips.associateBy { it.id }
         val tripSummaries = tripStops
             .filter { it.countryIso2 == iso2 }
@@ -165,24 +157,7 @@ class CountryDetailViewModel(
                     allStops = allStops,
                 )
             }
-        val excursionSummaries = excursions.flatMap { excursion ->
-            val trip = tripsById[excursion.tripId] ?: return@flatMap emptyList()
-            excursion.stops
-                .filter { it.countryIso2 == iso2 }
-                .map { stop ->
-                    CountryTripSummaryUiState(
-                        tripId = trip.id,
-                        title = excursion.title,
-                        status = trip.status,
-                        dateRangeText = stop.dateRange?.let { FlexibleDateFormatter().format(it) },
-                        sortKey = stop.dateRange?.start?.toSortKey(),
-                        routeText = excursion.stops.sortedBy { it.sortOrder }.joinToString(" → ") { it.locationName },
-                        stopCount = 1,
-                        label = "Excursio",
-                    )
-                }
-        }
-        tripSummaries + excursionSummaries
+        tripSummaries
     }
 
     private val countryAirTravelSummaries = flightTrackingData.map { flightData ->
@@ -264,37 +239,16 @@ class CountryDetailViewModel(
         }
     }
 
-    private val countryExcursionStopPhotos = excursionsFlow.flatMapLatest { excursions ->
-        val stopIds = excursions
-            .flatMap { it.stops }
-            .filter { it.countryIso2.equals(iso2, ignoreCase = true) }
-            .map { it.id }
-        if (stopIds.isEmpty()) {
-            flowOf<Map<String, List<StopPhoto>>>(emptyMap())
-        } else {
-            stopPhotoRepository.observeByStopIds(stopIds, StopType.EXCURSION_STOP)
-                .map { photos -> photos.groupBy { it.stopId } }
-        }
-    }
-
-    private val countryPhotoData = combine(
-        countryTripStopPhotos,
-        countryExcursionStopPhotos,
-    ) { tripStopPhotos, excursionStopPhotos ->
-        CountryPhotoData(tripStopPhotos, excursionStopPhotos)
-    }
 
     private val countryMemories = combine(
         baseTrackingData,
-        countryPhotoData,
-    ) { base, photos ->
+        countryTripStopPhotos,
+    ) { base, stopPhotos ->
         buildCountryMemoriesUiState(
             countryIso2 = iso2,
             trips = base.trips,
             tripStops = base.tripStops,
-            excursions = base.excursions,
-            tripStopPhotoMap = photos.tripStopPhotos,
-            excursionStopPhotoMap = photos.excursionStopPhotos,
+            stopPhotoMap = stopPhotos,
         )
     }
 
@@ -555,7 +509,6 @@ class CountryDetailViewModel(
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
         private val airportRepository: AirportRepository,
-        private val excursionRepository: ExcursionRepository,
         private val countryStatRepository: CountryStatRepository,
         private val countryLandscapePhotoRepository: CountryLandscapePhotoRepository,
         private val currencyRateRepository: CurrencyRateRepository,
@@ -578,7 +531,6 @@ class CountryDetailViewModel(
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
                 airportRepository = airportRepository,
-                excursionRepository = excursionRepository,
                 countryStatRepository = countryStatRepository,
                 countryLandscapePhotoRepository = countryLandscapePhotoRepository,
                 currencyRateRepository = currencyRateRepository,
@@ -594,7 +546,6 @@ private data class BaseTrackingData(
     val logs: List<CountryLog>,
     val trips: List<Trip>,
     val tripStops: List<TripStop>,
-    val excursions: List<Excursion>,
 )
 
 private data class FlightTrackingData(
@@ -603,11 +554,6 @@ private data class FlightTrackingData(
     val itineraryGroups: List<ItineraryGroup>,
     val airports: List<Airport>,
     val airportCountryIso2ById: Map<String, String>,
-)
-
-private data class CountryPhotoData(
-    val tripStopPhotos: Map<String, List<StopPhoto>>,
-    val excursionStopPhotos: Map<String, List<StopPhoto>>,
 )
 
 private data class CountryContentData(

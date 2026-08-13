@@ -33,7 +33,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.atlas.domain.model.Excursion
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.model.TripStopSource
 import com.atlas.ui.components.map.AtlasMapView
@@ -85,7 +84,6 @@ import org.maplibre.geojson.Point
 @Composable
 fun TripMapPreview(
     stops: List<TripStop>,
-    excursions: List<Excursion> = emptyList(),
     modifier: Modifier = Modifier,
     mapHeight: Dp = 210.dp,
     gesturesEnabled: Boolean = true,
@@ -102,9 +100,8 @@ fun TripMapPreview(
         stops.filter { it.source != TripStopSource.ITINERARY_GROUP }
     }
     val coordinateStops = visibleStops.filter { it.latitude != null && it.longitude != null }
-    val mappableExcursionStops = excursions.sumOf { e -> e.stops.count { it.latitude != null && it.longitude != null } }
-    val mappableCount = coordinateStops.size + mappableExcursionStops
-    val missingCoordinateCount = visibleStops.size + excursions.sumOf { it.stops.size } - mappableCount
+    val mappableCount = coordinateStops.size
+    val missingCoordinateCount = visibleStops.size - mappableCount
 
     val mapRef = remember { mutableStateOf<Pair<MapLibreMap, Style>?>(null) }
 
@@ -184,10 +181,10 @@ fun TripMapPreview(
         }
     }
 
-    LaunchedEffect(mapRef.value, coordinateStops, excursions) {
+    LaunchedEffect(mapRef.value, coordinateStops) {
         val (map, style) = mapRef.value ?: return@LaunchedEffect
         clearTripLayers(style)
-        addTripContent(context, map, style, coordinateStops, excursions)
+        addTripContent(context, map, style, coordinateStops)
     }
 }
 
@@ -214,13 +211,16 @@ private fun addTripContent(
     map: MapLibreMap,
     style: Style,
     coordinateStops: List<TripStop>,
-    excursions: List<Excursion>,
 ) {
     map.clear()
     style.addTripDotImages()
 
+    // The main route follows top-level stops only; nested places branch off separately.
+    val mainRouteStops = coordinateStops.filter { it.parentStopId == null }
+    val nestedStops = coordinateStops.filter { it.parentStopId != null }
+
     // Main route line
-    val mainCoords = coordinateStops.map { Point.fromLngLat(it.longitude!!, it.latitude!!) }
+    val mainCoords = mainRouteStops.map { Point.fromLngLat(it.longitude!!, it.latitude!!) }
     if (mainCoords.size >= 2) {
         style.addSource(GeoJsonSource("main-route",
             Feature.fromGeometry(LineString.fromLngLats(mainCoords))))
@@ -229,13 +229,11 @@ private fun addTripContent(
         })
     }
 
-    // Excursion route lines
-    val excursionLines = excursions.mapNotNull { e ->
-        val anchor = e.anchorTripStopId
-            ?.let { anchorId -> coordinateStops.firstOrNull { it.id == anchorId } }
-        val anchorPoint = anchor?.let { Point.fromLngLat(it.longitude!!, it.latitude!!) }
-        val stopCoords = e.stops
-            .filter { it.latitude != null && it.longitude != null }
+    // Side-trip lines: out from the parent stop, through its nested places, and back.
+    val excursionLines = nestedStops.groupBy { it.parentStopId }.mapNotNull { (parentId, children) ->
+        val anchorPoint = coordinateStops.firstOrNull { it.id == parentId }
+            ?.let { Point.fromLngLat(it.longitude!!, it.latitude!!) }
+        val stopCoords = children
             .sortedBy { it.sortOrder }
             .map { Point.fromLngLat(it.longitude!!, it.latitude!!) }
         val coords = if (anchorPoint != null && stopCoords.isNotEmpty()) {
@@ -253,7 +251,7 @@ private fun addTripContent(
     }
 
     // Main stops: larger ringed markers with centered route numbers and readable labels.
-    val mainStops = coordinateStops.filter { it.source != TripStopSource.ITINERARY_GROUP }
+    val mainStops = mainRouteStops.filter { it.source != TripStopSource.ITINERARY_GROUP }
     val mainFeatures = mainStops.mapIndexed { index, stop ->
         Feature.fromGeometry(Point.fromLngLat(stop.longitude!!, stop.latitude!!))
             .also {
@@ -390,15 +388,12 @@ private fun addTripContent(
     }
 
     // Excursion stops: purple markers with labels, so side routes are visible on the same map.
-    val excursionStopFeatures = excursions.flatMap { e ->
-        e.stops.filter { it.latitude != null && it.longitude != null }
-               .map { stop ->
-                   Feature.fromGeometry(Point.fromLngLat(stop.longitude!!, stop.latitude!!))
-                       .also {
-                           it.addStringProperty("n", "E")
-                           it.addStringProperty("label", stop.locationName.mapLabel())
-                       }
-               }
+    val excursionStopFeatures = nestedStops.map { stop ->
+        Feature.fromGeometry(Point.fromLngLat(stop.longitude!!, stop.latitude!!))
+            .also {
+                it.addStringProperty("n", "S")
+                it.addStringProperty("label", stop.mapLabel())
+            }
     }
     if (excursionStopFeatures.isNotEmpty()) {
         style.addSource(GeoJsonSource("excursion-stops", FeatureCollection.fromFeatures(excursionStopFeatures)))
@@ -459,15 +454,11 @@ private fun addTripContent(
         })
     }
 
-    addStopAnnotations(context, map, coordinateStops, excursions)
+    addStopAnnotations(context, map, mainRouteStops, nestedStops)
 
     // Fit camera
     val allCoords = mutableListOf<LatLng>()
     coordinateStops.forEach { allCoords.add(LatLng(it.latitude!!, it.longitude!!)) }
-    excursions.forEach { e ->
-        e.stops.filter { it.latitude != null && it.longitude != null }
-               .forEach { allCoords.add(LatLng(it.latitude!!, it.longitude!!)) }
-    }
     when {
         allCoords.isEmpty() ->
             map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(20.0, 0.0), 1.5))
@@ -484,7 +475,7 @@ private fun addStopAnnotations(
     context: android.content.Context,
     map: MapLibreMap,
     coordinateStops: List<TripStop>,
-    excursions: List<Excursion>,
+    nestedStops: List<TripStop>,
 ) {
     val iconFactory = IconFactory.getInstance(context)
     val mainIcon = iconFactory.fromBitmap(createDotBitmap(fill = 0xFF1D4ED8.toInt()))
@@ -502,17 +493,13 @@ private fun addStopAnnotations(
                 .icon(icon),
         )
     }
-    excursions.forEach { excursion ->
-        excursion.stops
-            .filter { it.latitude != null && it.longitude != null }
-            .forEach { stop ->
-                map.addMarker(
-                    MarkerOptions()
-                        .position(LatLng(stop.latitude!!, stop.longitude!!))
-                        .title("Excursio: ${stop.locationName.mapLabel()}")
-                        .icon(excursionIcon),
-                )
-            }
+    nestedStops.forEach { stop ->
+        map.addMarker(
+            MarkerOptions()
+                .position(LatLng(stop.latitude!!, stop.longitude!!))
+                .title("Sortida: ${stop.mapLabel()}")
+                .icon(excursionIcon),
+        )
     }
 }
 

@@ -7,7 +7,6 @@ import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.StopType
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.StopPhotoRepository
 import com.atlas.domain.repository.TripRepository
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.stateIn
 class TripStoryViewModel(
     tripRepository: TripRepository,
     countryRepository: CountryRepository,
-    excursionRepository: ExcursionRepository,
     itineraryRepository: ItineraryRepository,
     stopPhotoRepository: StopPhotoRepository,
     airportRepository: AirportRepository,
@@ -33,15 +31,13 @@ class TripStoryViewModel(
     private val tripFlow = tripRepository.observeTrip(tripId)
     private val stopsFlow = tripRepository.observeTripStops(tripId)
     private val countriesFlow = countryRepository.observeTrackableCountries()
-    private val excursionsFlow = excursionRepository.observeExcursions(tripId)
     private val airportsFlow = airportRepository.observeAirports()
     private val contentFlow = combine(
         tripFlow,
         stopsFlow,
         countriesFlow,
-        excursionsFlow,
-    ) { trip, stops, countries, excursions ->
-        TripStoryContentData(trip, stops, countries, excursions)
+    ) { trip, stops, countries ->
+        TripStoryContentData(trip, stops, countries)
     }
 
     private val tripStopPhotosFlow = stopsFlow.flatMapLatest { stops ->
@@ -51,12 +47,6 @@ class TripStoryViewModel(
             .map { photos -> photos.groupBy(StopPhoto::stopId) }
     }
 
-    private val excursionStopPhotosFlow = excursionsFlow.flatMapLatest { excursions ->
-        val ids = excursions.flatMap { it.stops }.map { it.id }
-        if (ids.isEmpty()) flowOf(emptyMap())
-        else stopPhotoRepository.observeByStopIds(ids, StopType.EXCURSION_STOP)
-            .map { photos -> photos.groupBy(StopPhoto::stopId) }
-    }
 
     private val itineraryFlow = combine(
         itineraryRepository.observeItineraries(),
@@ -65,17 +55,10 @@ class TripStoryViewModel(
         TripStoryItineraryData(itineraries, itineraryGroups)
     }
 
-    private val photosFlow = combine(
-        tripStopPhotosFlow,
-        excursionStopPhotosFlow,
-    ) { tripStopPhotos, excursionStopPhotos ->
-        TripStoryPhotosData(tripStopPhotos, excursionStopPhotos)
-    }
-
     val uiState: StateFlow<TripStoryUiState> = combine(
         contentFlow,
         itineraryFlow,
-        photosFlow,
+        tripStopPhotosFlow,
         airportsFlow,
     ) { content, itineraries, photos, airports ->
         val linkedItinerary = content.trip?.let { currentTrip ->
@@ -85,11 +68,9 @@ class TripStoryViewModel(
             trip = content.trip,
             stops = content.stops,
             countries = content.countries,
-            excursions = content.excursions,
             itinerary = linkedItinerary,
             itineraryGroups = itineraries.itineraryGroups,
-            tripStopPhotoMap = photos.tripStopPhotos,
-            excursionStopPhotoMap = photos.excursionStopPhotos,
+            stopPhotoMap = photos,
             airports = airports,
         )
     }
@@ -102,7 +83,6 @@ class TripStoryViewModel(
     class Factory(
         private val tripRepository: TripRepository,
         private val countryRepository: CountryRepository,
-        private val excursionRepository: ExcursionRepository,
         private val itineraryRepository: ItineraryRepository,
         private val stopPhotoRepository: StopPhotoRepository,
         private val airportRepository: AirportRepository,
@@ -113,7 +93,6 @@ class TripStoryViewModel(
             TripStoryViewModel(
                 tripRepository = tripRepository,
                 countryRepository = countryRepository,
-                excursionRepository = excursionRepository,
                 itineraryRepository = itineraryRepository,
                 stopPhotoRepository = stopPhotoRepository,
                 airportRepository = airportRepository,
@@ -126,7 +105,6 @@ private data class TripStoryContentData(
     val trip: com.atlas.domain.model.Trip?,
     val stops: List<com.atlas.domain.model.TripStop>,
     val countries: List<com.atlas.domain.model.Country>,
-    val excursions: List<com.atlas.domain.model.Excursion>,
 )
 
 private data class TripStoryItineraryData(
@@ -134,7 +112,3 @@ private data class TripStoryItineraryData(
     val itineraryGroups: List<com.atlas.domain.model.ItineraryGroup>,
 )
 
-private data class TripStoryPhotosData(
-    val tripStopPhotos: Map<String, List<StopPhoto>>,
-    val excursionStopPhotos: Map<String, List<StopPhoto>>,
-)

@@ -9,7 +9,6 @@ import com.atlas.domain.model.CountryTrackingState
 import com.atlas.domain.repository.AirportRepository
 import com.atlas.domain.repository.CountryRepository
 import com.atlas.domain.repository.CountryStatRepository
-import com.atlas.domain.repository.ExcursionRepository
 import com.atlas.domain.repository.FlightRepository
 import com.atlas.domain.repository.ItineraryRepository
 import com.atlas.domain.repository.TripRepository
@@ -27,7 +26,6 @@ class CountryListViewModel(
     tripRepository: TripRepository,
     flightRepository: FlightRepository,
     itineraryRepository: ItineraryRepository,
-    excursionRepository: ExcursionRepository,
     airportRepository: AirportRepository,
     countryStatRepository: CountryStatRepository,
     countryStateDerivationService: CountryStateDerivationService,
@@ -70,14 +68,11 @@ class CountryListViewModel(
         Triple(flights, itineraryGroups, airports)
     }
 
-    private val excursionData = excursionRepository.observeExcursions()
-
     private val countryRows = combine(
         countryData,
         tripData,
         flightData,
-        excursionData,
-    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports), excursions ->
+    ) { (countries, userStates, logs), (trips, tripStops), (flights, itineraryGroups, airports) ->
         val userStatesByIso2 = userStates.associateBy { it.countryIso2 }
         val logsByIso2 = logs.groupBy { it.countryIso2 }
         val stopsByIso2 = tripStops.groupBy { it.countryIso2 }
@@ -94,7 +89,6 @@ class CountryListViewModel(
                     tripStops = stopsByIso2[country.iso2].orEmpty(),
                     flights = flights,
                     itineraryGroups = itineraryGroups,
-                    excursions = excursions,
                     airportCountryIso2ById = airportCountryIso2ById,
                 ),
             )
@@ -160,7 +154,6 @@ class CountryListViewModel(
         private val tripRepository: TripRepository,
         private val flightRepository: FlightRepository,
         private val itineraryRepository: ItineraryRepository,
-        private val excursionRepository: ExcursionRepository,
         private val airportRepository: AirportRepository,
         private val countryStatRepository: CountryStatRepository,
         private val countryStateDerivationService: CountryStateDerivationService,
@@ -172,7 +165,6 @@ class CountryListViewModel(
                 tripRepository = tripRepository,
                 flightRepository = flightRepository,
                 itineraryRepository = itineraryRepository,
-                excursionRepository = excursionRepository,
                 airportRepository = airportRepository,
                 countryStatRepository = countryStatRepository,
                 countryStateDerivationService = countryStateDerivationService,

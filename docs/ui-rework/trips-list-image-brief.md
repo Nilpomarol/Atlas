@@ -2,6 +2,9 @@
 
 Purpose: source material for generating reference imagery for the Phase 5 Trips list.
 
+Status: **implemented** on 2026-08-13 in `com.atlas.ui.rework.screens.trips`. Decisions
+taken during review are marked **Decision** below.
+
 Per `docs/Atlas_UI_Rework_Implementation_Plan.md` §5, generated imagery establishes
 **composition and visual intent**, not literal text, geography, measurements, or
 business truth. Every field below is real, drawn from `TripListItemUiState`.
@@ -60,6 +63,12 @@ separate from navigation.
 There is **one** card. Its parts fall away as the trip carries less data. Do not draw
 these as four different components.
 
+**Decision — the cover photo decides the card size.** A trip with a cover gets the tall
+card; without one it gets the compact row, regardless of how many places it holds. The
+photo is what makes a trip read as a memory page, and without it the tall layout is
+mostly empty. Trade-off accepted: a photo-less trip with a long route shows its route
+condensed rather than in full.
+
 ### Level A — full card (cover photo present)
 
 Photo band across the top of the card, roughly 40% of card height, with:
@@ -78,13 +87,14 @@ Below the image, on paper:
 - **footer row**: country flag emoji on the left, and on the right a quiet uppercase
   metric — `2 PARADES · 3 SORTIDES`.
 
-### Level B — full card, no cover photo
+### Level B — full card, cover file missing
 
-Identical, but the photo band is a **deterministic gradient** derived from the trip,
-in deep editorial tones (teal-green, ochre-brown, slate-blue, plum). Never a grey box,
-never a broken-image icon. Title and date still sit over it.
+Only reached when a trip references a cover photo that has since gone missing from
+disk. The photo band becomes a **deterministic gradient** derived from the trip id, in
+deep editorial tones (teal-green, ochre-brown, slate-blue, plum). Never a grey box,
+never a broken-image icon.
 
-### Level C — single-place trip
+### Level C — compact trip (no cover)
 
 Compact single row, no image: flag emoji, serif title, monospace
 `LISBOA · MAR 2026`, and a small status dot on the right. Roughly one third the
@@ -109,11 +119,12 @@ Everything the card can show, and nothing it cannot:
 | Date | `1–14 JUN 2026`, `SET 2025`, `2024` | Flexible precision: day, month, or year only |
 | Main route | `Tokyo → Osaka` | First and last stop, or full chain when short |
 | Side trips | `Kamakura · Enoshima` | Places visited *from* a main stop |
-| Main stop count | `2 PARADES` | |
+| Main stop count | `2 PARADES` | Top-level stops only |
 | Side trip count | `3 SORTIDES` | Omit the segment entirely when zero |
-| Countries | `3 PAÏSOS` or flags | Distinct countries across all stops |
-| Flags | 🇯🇵 / 🇨🇭🇦🇹🇮🇹 | Emoji flags, up to three then overflow |
-| Cover photo | landscape photo | Optional |
+| Countries | `JAPÓ` or `3 PAÏSOS` | One country reads by name; several read as a count |
+| Flags | 🇯🇵 / 🇨🇭🇦🇹🇮🇹 | Emoji flags, up to three |
+| Cover photo | landscape photo | Optional; decides card size |
+| Day count | `14 DIES` | Only at day precision; omitted otherwise |
 
 Notes exist on a trip but do **not** appear in the list.
 
@@ -133,6 +144,14 @@ Visible text is Catalan. Use exactly these words:
 - `Excursió` / `excursions`
 - `Itinerari` / `grup`
 - `Viatge ràpid` vs `viatge normal` — there is one trip type only
+
+**Never show a trip distance.** Atlas stores `distanceKm` on flights only. There is no
+road distance for a trip, and summing great-circle hops between stops would understate
+ground travel badly enough to be wrong rather than approximate.
+
+**Bottom navigation is fixed** at `Inici · Països · Viatges · Vols · Progrés`, per the
+implementation plan §5 and the accepted Home milestone. Concepts showing other
+destinations (`Mapa`, `Diari`, `Més`) are not a licence to change it.
 
 ---
 

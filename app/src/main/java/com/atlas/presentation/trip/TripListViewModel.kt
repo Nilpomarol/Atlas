@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 class TripListViewModel(
     tripRepository: TripRepository,
@@ -408,7 +409,12 @@ data class TripListUiState(
     val countries: List<Country> = emptyList(),
     val draft: TripEditorDraftUiState = TripEditorDraftUiState(),
     val quickDraft: QuickTripDraftUiState = QuickTripDraftUiState(),
-)
+) {
+    val tripCount: Int = tripItems.size
+
+    /** Distinct countries touched by any stop, nested ones included. */
+    val countryCount: Int = tripItems.flatMap { it.countryIso2s }.distinct().size
+}
 
 data class TripListItemUiState(
     val trip: Trip,
@@ -422,9 +428,28 @@ data class TripListItemUiState(
     val mapPoints: List<TripStopMapPoint> = emptyList(),
     val coverPhotoFilename: String? = null,
     val datePillText: String? = null,
+    /** Main-route place names in order. */
+    val routeNames: List<String> = emptyList(),
+    /** Names of places visited from a main-route stop, in order. */
+    val sideTripNames: List<String> = emptyList(),
+    val countryIso2s: List<String> = emptyList(),
+    val countryFlags: List<String> = emptyList(),
+    val primaryCountryName: String? = null,
+    val primaryFlag: String? = null,
+    /** Null unless the trip has day-precision dates at both ends. */
+    val dayCount: Int? = null,
 ) {
+    val mainStopCount: Int = routeNames.size
+    val sideTripCount: Int = sideTripNames.size
+
     /** A trip with a single place renders compactly; derived, never stored. */
     val isSinglePlace: Boolean = stopCount == 1
+
+    /**
+     * The cover photo is what earns a trip the tall card — without one the large
+     * layout is mostly empty. Derived from content, never a stored display flag.
+     */
+    val isCompact: Boolean = coverPhotoFilename == null
 }
 
 data class QuickTripDraftUiState(
@@ -457,16 +482,19 @@ private fun Trip.toListItem(
 ): TripListItemUiState {
     val orderedStops = stops.sortedBy { it.sortOrder }
     val singleStop = orderedStops.singleOrNull()
-    val countryText = orderedStops
-        .map { stop -> countryNamesByIso2[stop.countryIso2] ?: stop.countryIso2 }
-        .distinct()
+    // The main route is top-level stops only; nested places are shown beneath it.
+    val mainStops = orderedStops.filter { it.parentStopId == null }
+    val nestedStops = orderedStops.filter { it.parentStopId != null }
+    val countryIso2s = orderedStops.map { it.countryIso2 }.filter { it.isNotBlank() }.distinct()
+    val countryText = countryIso2s
+        .map { iso2 -> countryNamesByIso2[iso2] ?: iso2 }
         .joinToString(", ")
         .ifBlank { null }
     return TripListItemUiState(
         trip = this,
         stopCount = orderedStops.size,
-        firstStopName = orderedStops.firstOrNull()?.locationName,
-        lastStopName = orderedStops.lastOrNull()?.locationName,
+        firstStopName = mainStops.firstOrNull()?.locationName,
+        lastStopName = mainStops.lastOrNull()?.locationName,
         singleStopCountryIso2 = singleStop?.countryIso2,
         singleStopCountryName = singleStop?.countryIso2?.let { countryNamesByIso2[it] },
         singleStopFlag = singleStop?.countryIso2?.let { countryFlagsByIso2[it] }?.takeIf { it.isNotBlank() },
@@ -480,8 +508,32 @@ private fun Trip.toListItem(
             },
         coverPhotoFilename = coverPhotoFilename,
         datePillText = formatter.formatTripPill(dateRange),
+        routeNames = mainStops.map { it.displayName() },
+        sideTripNames = nestedStops.map { it.displayName() },
+        countryIso2s = countryIso2s,
+        countryFlags = countryIso2s.mapNotNull { countryFlagsByIso2[it]?.takeIf(String::isNotBlank) },
+        primaryCountryName = countryIso2s.firstOrNull()?.let { countryNamesByIso2[it] },
+        primaryFlag = countryIso2s.firstOrNull()
+            ?.let { countryFlagsByIso2[it] }
+            ?.takeIf { it.isNotBlank() },
+        dayCount = dateRange?.dayCountOrNull(),
     )
 }
+
+private fun TripStop.displayName(): String =
+    displayTitle?.takeIf { it.isNotBlank() } ?: locationName
+
+/** Only meaningful at day precision; coarser dates deliberately report nothing. */
+private fun FlexibleDateRange.dayCountOrNull(): Int? {
+    if (precision != DatePrecision.DAY) return null
+    val start = start?.toLocalDateOrNull() ?: return null
+    val end = end?.toLocalDateOrNull() ?: return null
+    return (ChronoUnit.DAYS.between(start, end).toInt() + 1).takeIf { it > 0 }
+}
+
+private fun FlexibleDate.toLocalDateOrNull(): LocalDate? = runCatching {
+    LocalDate.of(year, month ?: return null, day ?: return null)
+}.getOrNull()
 
 private fun List<TripListItemUiState>.sortedByTripDate(): List<TripListItemUiState> =
     sortedWith(

@@ -22,6 +22,7 @@ import com.atlas.ui.rework.foundation.AtlasReworkTheme
 import com.atlas.ui.rework.screens.countries.ReworkCountriesRoute
 import com.atlas.ui.rework.screens.countries.ReworkCountryDetailRoute
 import com.atlas.ui.rework.screens.home.ReworkHomeScreen
+import com.atlas.ui.rework.screens.trips.ReworkTripsRoute
 
 @Composable
 fun AtlasReworkNavHost(
@@ -66,6 +67,12 @@ fun AtlasReworkNavHost(
                 onBack = { navController.popBackStack() },
             )
         }
+        composable(ReworkDestination.Trips.route) {
+            ReworkTripsRoute(
+                container = container,
+                onTripOpened = { tripId -> navController.navigate(ReworkDestination.tripDetailRoute(tripId)) },
+            )
+        }
         composable(
             route = ReworkDestination.TripDetail.route,
             arguments = listOf(navArgument("tripId") { type = NavType.StringType }),
@@ -80,6 +87,7 @@ fun AtlasReworkNavHost(
                     ReworkDestination.Home,
                     ReworkDestination.Countries,
                     ReworkDestination.CountryDetail,
+                    ReworkDestination.Trips,
                     ReworkDestination.TripDetail,
                 )
             }

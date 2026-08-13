@@ -119,7 +119,12 @@ class TripDetailViewModel(
         val titles = itineraries.associate { itinerary ->
             itinerary.id to itineraryCodeLabel(groupsByItinerary[itinerary.id].orEmpty(), airports)
         }
-        ItineraryData(itineraries, titles)
+        ItineraryData(
+            itineraries = itineraries,
+            titles = titles,
+            groups = groups,
+            airportsById = airports.associateBy { it.id },
+        )
     }
 
     val uiState: StateFlow<TripDetailUiState> = combine(
@@ -145,6 +150,11 @@ class TripDetailViewModel(
             photoGallery = buildTripPhotoGalleryUiState(
                 stops = content.stops,
                 stopPhotoMap = photos,
+            ),
+            timeline = buildTripTimeline(
+                stops = content.stops,
+                groups = itineraryData.groups,
+                airportsById = itineraryData.airportsById,
             ),
         )
     }
@@ -644,6 +654,7 @@ data class TripDetailUiState(
     val generatedStopsVisibleOnMap: Boolean = true,
     val tripStopPhotoMap: Map<String, List<StopPhoto>> = emptyMap(),
     val photoGallery: TripPhotoGalleryUiState = TripPhotoGalleryUiState(),
+    val timeline: List<TripTimelineEntry> = emptyList(),
 )
 
 private data class TripContentData(
@@ -656,6 +667,8 @@ private data class TripContentData(
 private data class ItineraryData(
     val itineraries: List<Itinerary>,
     val titles: Map<String, String>,
+    val groups: List<com.atlas.domain.model.ItineraryGroup> = emptyList(),
+    val airportsById: Map<String, com.atlas.domain.model.Airport> = emptyMap(),
 )
 
 private data class TripDraftData(

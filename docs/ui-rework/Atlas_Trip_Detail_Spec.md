@@ -1,6 +1,6 @@
 # Trip Detail — rework specification
 
-Status: **Proposed — awaiting approval**
+Status: **Approved. Read surface implemented 2026-08-13; editing and map still to land.**
 Created: 2026-08-13
 Phase: UI rework Phase 5, second vertical slice
 
@@ -82,7 +82,7 @@ full-screen viewer.
 
 Absent entirely when the trip has no photos.
 
-### 3.4 Where — map
+### 3.4 Where — map — NOT YET IMPLEMENTED
 
 The trip route on the shared rework map surface, main route as a line and nested places
 branching from their parent, matching how `TripMapPreview` already draws them.
@@ -104,7 +104,7 @@ Trip notes, shown as written, when present.
 Entry point to the existing read-only story slideshow, when the trip has enough content
 to make one. It already exists at `trips/{tripId}/story` and is reused, not rebuilt.
 
-## 4. Editing — and the gap this closes
+## 4. Editing — NOT YET IMPLEMENTED — and the gap this closes
 
 Legacy trip detail's side-trip editing was removed when excursions collapsed. **This
 screen restores it.** Until it ships, nested places cannot be created anywhere.
@@ -173,6 +173,23 @@ Presentation work this slice needs:
 - flight legs projected for display (endpoints, label, date) without exposing groups.
 
 No schema change. No backup change.
+
+## 7.1 Implementation status
+
+Landed 2026-08-13:
+
+- hero, in both the cover and no-cover forms;
+- the route timeline, with chronological interleaving of flight legs, side trips
+  nested under their parent, and legs drawn as derived rather than editable rows;
+- photo strip, context band, notes, story entry;
+- missing-trip state; navigation from the Trips list.
+
+Still to land, in this order:
+
+1. **Editing** (§4) — the stop editor, both add actions, reorder, delete. Until this
+   ships, nested places cannot be created anywhere in the app.
+2. **Map** (§3.4).
+3. **Trip creation**, which is its own slice (§8).
 
 ## 8. Out of scope
 

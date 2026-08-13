@@ -899,7 +899,7 @@ abstract class AtlasDatabase : RoomDatabase() {
                     SET `notes` = TRIM(
                         COALESCE(`notes` || char(10) || char(10), '') || (
                             SELECT group_concat(
-                                `e`.`title` || COALESCE(char(10) || `e`.`notes`, ''),
+                                `e`.`title` || COALESCE(char(10) || char(10) || `e`.`notes`, ''),
                                 char(10) || char(10)
                             )
                             FROM `excursions` `e`

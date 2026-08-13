@@ -1,0 +1,6100 @@
+{
+ "countries": {
+  "AL": {
+   "name_ca": "Albània",
+   "landmarks": [
+    {
+     "name": "Butrint",
+     "type": "M"
+    },
+    {
+     "name": "Berat historic centre",
+     "type": "M"
+    },
+    {
+     "name": "Albanian Alps / Accursed Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Lake Ohrid",
+     "type": "N"
+    },
+    {
+     "name": "Blue Eye spring",
+     "type": "N"
+    }
+   ]
+  },
+  "DE": {
+   "name_ca": "Alemanya",
+   "landmarks": [
+    {
+     "name": "Brandenburg Gate",
+     "type": "M"
+    },
+    {
+     "name": "Neuschwanstein Castle",
+     "type": "M"
+    },
+    {
+     "name": "Cologne Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Black Forest",
+     "type": "N"
+    },
+    {
+     "name": "Saxon Switzerland National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "AD": {
+   "name_ca": "Andorra",
+   "landmarks": [
+    {
+     "name": "Madriu-Perafita-Claror Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Tristaina Lakes",
+     "type": "N"
+    },
+    {
+     "name": "Vall d'Incles",
+     "type": "N"
+    },
+    {
+     "name": "Casa de la Vall",
+     "type": "M"
+    },
+    {
+     "name": "Sant Joan de Caselles",
+     "type": "M"
+    }
+   ]
+  },
+  "AT": {
+   "name_ca": "Àustria",
+   "landmarks": [
+    {
+     "name": "Schönbrunn Palace",
+     "type": "M"
+    },
+    {
+     "name": "Hallstatt",
+     "type": "M/N"
+    },
+    {
+     "name": "Salzburg Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Grossglockner and the Austrian Alps",
+     "type": "N"
+    },
+    {
+     "name": "Wachau Valley",
+     "type": "N/M"
+    }
+   ]
+  },
+  "BE": {
+   "name_ca": "Bèlgica",
+   "landmarks": [
+    {
+     "name": "Grand-Place of Brussels",
+     "type": "M"
+    },
+    {
+     "name": "Historic Centre of Bruges",
+     "type": "M"
+    },
+    {
+     "name": "Atomium",
+     "type": "M"
+    },
+    {
+     "name": "Ardennes",
+     "type": "N"
+    },
+    {
+     "name": "Hallerbos forest",
+     "type": "N"
+    }
+   ]
+  },
+  "BY": {
+   "name_ca": "Bielorússia",
+   "landmarks": [
+    {
+     "name": "Mir Castle",
+     "type": "M"
+    },
+    {
+     "name": "Nesvizh Castle",
+     "type": "M"
+    },
+    {
+     "name": "Białowieża / Belovezhskaya Pushcha Forest",
+     "type": "N"
+    },
+    {
+     "name": "Brest Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Braslav Lakes",
+     "type": "N"
+    }
+   ]
+  },
+  "BA": {
+   "name_ca": "Bòsnia i Hercegovina",
+   "landmarks": [
+    {
+     "name": "Stari Most, Mostar",
+     "type": "M"
+    },
+    {
+     "name": "Baščaršija, Sarajevo",
+     "type": "M"
+    },
+    {
+     "name": "Kravica Waterfalls",
+     "type": "N"
+    },
+    {
+     "name": "Una National Park",
+     "type": "N"
+    },
+    {
+     "name": "Sutjeska National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "BG": {
+   "name_ca": "Bulgària",
+   "landmarks": [
+    {
+     "name": "Rila Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Old Nessebar",
+     "type": "M"
+    },
+    {
+     "name": "Seven Rila Lakes",
+     "type": "N"
+    },
+    {
+     "name": "Belogradchik Rocks",
+     "type": "N"
+    },
+    {
+     "name": "Alexander Nevsky Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "HR": {
+   "name_ca": "Croàcia",
+   "landmarks": [
+    {
+     "name": "Dubrovnik Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Plitvice Lakes",
+     "type": "N"
+    },
+    {
+     "name": "Diocletian's Palace",
+     "type": "M"
+    },
+    {
+     "name": "Krka National Park",
+     "type": "N"
+    },
+    {
+     "name": "Paklenica National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "DK": {
+   "name_ca": "Dinamarca",
+   "landmarks": [
+    {
+     "name": "Nyhavn",
+     "type": "M"
+    },
+    {
+     "name": "Kronborg Castle",
+     "type": "M"
+    },
+    {
+     "name": "Møns Klint",
+     "type": "N"
+    },
+    {
+     "name": "Wadden Sea",
+     "type": "N"
+    },
+    {
+     "name": "The Little Mermaid",
+     "type": "M"
+    }
+   ]
+  },
+  "SK": {
+   "name_ca": "Eslovàquia",
+   "landmarks": [
+    {
+     "name": "Spiš Castle",
+     "type": "M"
+    },
+    {
+     "name": "High Tatras",
+     "type": "N"
+    },
+    {
+     "name": "Slovak Paradise National Park",
+     "type": "N"
+    },
+    {
+     "name": "Banská Štiavnica",
+     "type": "M"
+    },
+    {
+     "name": "Bojnice Castle",
+     "type": "M"
+    }
+   ]
+  },
+  "SI": {
+   "name_ca": "Eslovènia",
+   "landmarks": [
+    {
+     "name": "Lake Bled",
+     "type": "N/M"
+    },
+    {
+     "name": "Triglav National Park",
+     "type": "N"
+    },
+    {
+     "name": "Škocjan Caves",
+     "type": "N"
+    },
+    {
+     "name": "Postojna Cave",
+     "type": "N"
+    },
+    {
+     "name": "Ljubljana Castle",
+     "type": "M"
+    }
+   ]
+  },
+  "ES": {
+   "name_ca": "Espanya",
+   "landmarks": [
+    {
+     "name": "Sagrada Família",
+     "type": "M"
+    },
+    {
+     "name": "Alhambra",
+     "type": "M"
+    },
+    {
+     "name": "Picos de Europa",
+     "type": "N"
+    },
+    {
+     "name": "Teide National Park",
+     "type": "N"
+    },
+    {
+     "name": "Santiago de Compostela Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "EE": {
+   "name_ca": "Estònia",
+   "landmarks": [
+    {
+     "name": "Tallinn Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Lahemaa National Park",
+     "type": "N"
+    },
+    {
+     "name": "Kaali meteorite crater",
+     "type": "N"
+    },
+    {
+     "name": "Narva Castle",
+     "type": "M"
+    },
+    {
+     "name": "Panga Cliff",
+     "type": "N"
+    }
+   ]
+  },
+  "FI": {
+   "name_ca": "Finlàndia",
+   "landmarks": [
+    {
+     "name": "Suomenlinna",
+     "type": "M"
+    },
+    {
+     "name": "Helsinki Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Finnish Lakeland",
+     "type": "N"
+    },
+    {
+     "name": "Koli National Park",
+     "type": "N"
+    },
+    {
+     "name": "Urho Kekkonen National Park / Lapland",
+     "type": "N"
+    }
+   ]
+  },
+  "FR": {
+   "name_ca": "França",
+   "landmarks": [
+    {
+     "name": "Eiffel Tower",
+     "type": "M"
+    },
+    {
+     "name": "Mont-Saint-Michel",
+     "type": "M"
+    },
+    {
+     "name": "Palace of Versailles",
+     "type": "M"
+    },
+    {
+     "name": "Mont Blanc and the French Alps",
+     "type": "N"
+    },
+    {
+     "name": "Étretat Cliffs",
+     "type": "N"
+    }
+   ]
+  },
+  "GI": {
+   "name_ca": "Gibraltar",
+   "landmarks": [
+    {
+     "name": "Rock of Gibraltar",
+     "type": "N"
+    },
+    {
+     "name": "St Michael's Cave",
+     "type": "N"
+    },
+    {
+     "name": "Moorish Castle",
+     "type": "M"
+    },
+    {
+     "name": "Europa Point Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Great Siege Tunnels",
+     "type": "M"
+    }
+   ]
+  },
+  "GR": {
+   "name_ca": "Grècia",
+   "landmarks": [
+    {
+     "name": "Acropolis of Athens",
+     "type": "M"
+    },
+    {
+     "name": "Meteora",
+     "type": "N/M"
+    },
+    {
+     "name": "Santorini caldera",
+     "type": "N/M"
+    },
+    {
+     "name": "Delphi",
+     "type": "M"
+    },
+    {
+     "name": "Samaria Gorge",
+     "type": "N"
+    }
+   ]
+  },
+  "GG": {
+   "name_ca": "Guernsey",
+   "landmarks": [
+    {
+     "name": "Castle Cornet",
+     "type": "M"
+    },
+    {
+     "name": "The Little Chapel",
+     "type": "M"
+    },
+    {
+     "name": "South Coast Cliffs",
+     "type": "N"
+    },
+    {
+     "name": "Lihou Island",
+     "type": "N"
+    },
+    {
+     "name": "Fort Grey",
+     "type": "M"
+    }
+   ]
+  },
+  "HU": {
+   "name_ca": "Hongria",
+   "landmarks": [
+    {
+     "name": "Hungarian Parliament Building",
+     "type": "M"
+    },
+    {
+     "name": "Buda Castle",
+     "type": "M"
+    },
+    {
+     "name": "Széchenyi Thermal Bath",
+     "type": "M"
+    },
+    {
+     "name": "Lake Balaton",
+     "type": "N"
+    },
+    {
+     "name": "Hortobágy National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "IM": {
+   "name_ca": "Illa de Man",
+   "landmarks": [
+    {
+     "name": "Great Laxey Wheel",
+     "type": "M"
+    },
+    {
+     "name": "Peel Castle",
+     "type": "M"
+    },
+    {
+     "name": "Snaefell",
+     "type": "N"
+    },
+    {
+     "name": "Calf of Man",
+     "type": "N"
+    },
+    {
+     "name": "Tynwald Hill",
+     "type": "M"
+    }
+   ]
+  },
+  "FO": {
+   "name_ca": "Illes Fèroe",
+   "landmarks": [
+    {
+     "name": "Múlafossur Waterfall",
+     "type": "N"
+    },
+    {
+     "name": "Sørvágsvatn / Leitisvatn",
+     "type": "N"
+    },
+    {
+     "name": "Kallur Lighthouse",
+     "type": "M/N"
+    },
+    {
+     "name": "Saksun",
+     "type": "M/N"
+    },
+    {
+     "name": "Tjørnuvík",
+     "type": "N/M"
+    }
+   ]
+  },
+  "AX": {
+   "name_ca": "Illes Åland",
+   "landmarks": [
+    {
+     "name": "Kastelholm Castle",
+     "type": "M"
+    },
+    {
+     "name": "Bomarsund Fortress ruins",
+     "type": "M"
+    },
+    {
+     "name": "Mariehamn Maritime Quarter",
+     "type": "M"
+    },
+    {
+     "name": "Kobba Klintar",
+     "type": "N/M"
+    },
+    {
+     "name": "Åland Archipelago",
+     "type": "N"
+    }
+   ]
+  },
+  "IE": {
+   "name_ca": "Irlanda",
+   "landmarks": [
+    {
+     "name": "Cliffs of Moher",
+     "type": "N"
+    },
+    {
+     "name": "Skellig Michael",
+     "type": "N/M"
+    },
+    {
+     "name": "Rock of Cashel",
+     "type": "M"
+    },
+    {
+     "name": "Killarney National Park",
+     "type": "N"
+    },
+    {
+     "name": "Newgrange",
+     "type": "M"
+    }
+   ]
+  },
+  "IS": {
+   "name_ca": "Islàndia",
+   "landmarks": [
+    {
+     "name": "Gullfoss",
+     "type": "N"
+    },
+    {
+     "name": "Geysir geothermal area",
+     "type": "N"
+    },
+    {
+     "name": "Jökulsárlón glacier lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Hallgrímskirkja",
+     "type": "M"
+    },
+    {
+     "name": "Reynisfjara",
+     "type": "N"
+    }
+   ]
+  },
+  "IT": {
+   "name_ca": "Itàlia",
+   "landmarks": [
+    {
+     "name": "Colosseum",
+     "type": "M"
+    },
+    {
+     "name": "Venice and its lagoon",
+     "type": "M/N"
+    },
+    {
+     "name": "Florence Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Dolomites",
+     "type": "N"
+    },
+    {
+     "name": "Amalfi Coast",
+     "type": "N/M"
+    }
+   ]
+  },
+  "JE": {
+   "name_ca": "Jersey",
+   "landmarks": [
+    {
+     "name": "Mont Orgueil Castle",
+     "type": "M"
+    },
+    {
+     "name": "Elizabeth Castle",
+     "type": "M"
+    },
+    {
+     "name": "La Corbière Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Plémont Bay and cliffs",
+     "type": "N"
+    },
+    {
+     "name": "Jersey War Tunnels",
+     "type": "M"
+    }
+   ]
+  },
+  "XK": {
+   "name_ca": "Kosovo",
+   "landmarks": [
+    {
+     "name": "Visoki Dečani Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Prizren Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Rugova Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Gadime / Marble Cave",
+     "type": "N"
+    },
+    {
+     "name": "Gazimestan Monument",
+     "type": "M"
+    }
+   ]
+  },
+  "LV": {
+   "name_ca": "Letònia",
+   "landmarks": [
+    {
+     "name": "Riga Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Rundāle Palace",
+     "type": "M"
+    },
+    {
+     "name": "Gauja National Park",
+     "type": "N"
+    },
+    {
+     "name": "Cape Kolka",
+     "type": "N"
+    },
+    {
+     "name": "Cēsis Castle",
+     "type": "M"
+    }
+   ]
+  },
+  "LI": {
+   "name_ca": "Liechtenstein",
+   "landmarks": [
+    {
+     "name": "Vaduz Castle",
+     "type": "M"
+    },
+    {
+     "name": "Gutenberg Castle",
+     "type": "M"
+    },
+    {
+     "name": "Malbun Alps",
+     "type": "N"
+    },
+    {
+     "name": "Three Sisters massif",
+     "type": "N"
+    },
+    {
+     "name": "Vaduz Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "LT": {
+   "name_ca": "Lituània",
+   "landmarks": [
+    {
+     "name": "Vilnius Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Curonian Spit",
+     "type": "N"
+    },
+    {
+     "name": "Trakai Island Castle",
+     "type": "M"
+    },
+    {
+     "name": "Hill of Crosses",
+     "type": "M"
+    },
+    {
+     "name": "Aukštaitija National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "LU": {
+   "name_ca": "Luxemburg",
+   "landmarks": [
+    {
+     "name": "Old Quarters and Fortifications of Luxembourg City",
+     "type": "M"
+    },
+    {
+     "name": "Vianden Castle",
+     "type": "M"
+    },
+    {
+     "name": "Mullerthal / Little Switzerland",
+     "type": "N"
+    },
+    {
+     "name": "Moselle Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Bock Casemates",
+     "type": "M"
+    }
+   ]
+  },
+  "MK": {
+   "name_ca": "Macedònia del Nord",
+   "landmarks": [
+    {
+     "name": "Lake Ohrid",
+     "type": "N"
+    },
+    {
+     "name": "Matka Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Old Bazaar of Skopje",
+     "type": "M"
+    },
+    {
+     "name": "Church of St John at Kaneo",
+     "type": "M"
+    },
+    {
+     "name": "Kokino megalithic observatory",
+     "type": "M/N"
+    }
+   ]
+  },
+  "MT": {
+   "name_ca": "Malta",
+   "landmarks": [
+    {
+     "name": "Valletta",
+     "type": "M"
+    },
+    {
+     "name": "Mdina",
+     "type": "M"
+    },
+    {
+     "name": "Ħal Saflieni Hypogeum",
+     "type": "M"
+    },
+    {
+     "name": "Blue Grotto",
+     "type": "N"
+    },
+    {
+     "name": "Dingli Cliffs",
+     "type": "N"
+    }
+   ]
+  },
+  "MD": {
+   "name_ca": "Moldàvia",
+   "landmarks": [
+    {
+     "name": "Orheiul Vechi",
+     "type": "N/M"
+    },
+    {
+     "name": "Cricova wine cellars",
+     "type": "M"
+    },
+    {
+     "name": "Soroca Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Saharna Monastery and waterfalls",
+     "type": "N/M"
+    },
+    {
+     "name": "Țipova Monastery and Dniester cliffs",
+     "type": "N/M"
+    }
+   ]
+  },
+  "MC": {
+   "name_ca": "Mònaco",
+   "landmarks": [
+    {
+     "name": "Prince's Palace",
+     "type": "M"
+    },
+    {
+     "name": "Monte Carlo Casino",
+     "type": "M"
+    },
+    {
+     "name": "Oceanographic Museum",
+     "type": "M"
+    },
+    {
+     "name": "Rock of Monaco",
+     "type": "N/M"
+    },
+    {
+     "name": "Saint Nicholas Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "ME": {
+   "name_ca": "Montenegro",
+   "landmarks": [
+    {
+     "name": "Bay of Kotor",
+     "type": "N/M"
+    },
+    {
+     "name": "Durmitor National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ostrog Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Sveti Stefan",
+     "type": "M"
+    },
+    {
+     "name": "Tara River Canyon",
+     "type": "N"
+    }
+   ]
+  },
+  "NO": {
+   "name_ca": "Noruega",
+   "landmarks": [
+    {
+     "name": "Geirangerfjord",
+     "type": "N"
+    },
+    {
+     "name": "Lofoten Islands",
+     "type": "N"
+    },
+    {
+     "name": "Preikestolen",
+     "type": "N"
+    },
+    {
+     "name": "Bryggen, Bergen",
+     "type": "M"
+    },
+    {
+     "name": "Nidaros Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "NL": {
+   "name_ca": "Països Baixos",
+   "landmarks": [
+    {
+     "name": "Kinderdijk windmills",
+     "type": "M"
+    },
+    {
+     "name": "Amsterdam Canal Ring",
+     "type": "M"
+    },
+    {
+     "name": "Rijksmuseum",
+     "type": "M"
+    },
+    {
+     "name": "Hoge Veluwe National Park",
+     "type": "N"
+    },
+    {
+     "name": "Wadden Islands",
+     "type": "N"
+    }
+   ]
+  },
+  "PL": {
+   "name_ca": "Polònia",
+   "landmarks": [
+    {
+     "name": "Wawel Castle",
+     "type": "M"
+    },
+    {
+     "name": "Kraków Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Malbork Castle",
+     "type": "M"
+    },
+    {
+     "name": "Tatra Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Białowieża Forest",
+     "type": "N"
+    }
+   ]
+  },
+  "PT": {
+   "name_ca": "Portugal",
+   "landmarks": [
+    {
+     "name": "Belém Tower",
+     "type": "M"
+    },
+    {
+     "name": "Pena Palace",
+     "type": "M"
+    },
+    {
+     "name": "Douro Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Benagil Cave",
+     "type": "N"
+    },
+    {
+     "name": "Pico do Arieiro, Madeira",
+     "type": "N"
+    }
+   ]
+  },
+  "GB": {
+   "name_ca": "Regne Unit",
+   "landmarks": [
+    {
+     "name": "Palace of Westminster and Big Ben",
+     "type": "M"
+    },
+    {
+     "name": "Tower of London",
+     "type": "M"
+    },
+    {
+     "name": "Stonehenge",
+     "type": "M"
+    },
+    {
+     "name": "Lake District",
+     "type": "N"
+    },
+    {
+     "name": "Scottish Highlands",
+     "type": "N"
+    }
+   ]
+  },
+  "RO": {
+   "name_ca": "Romania",
+   "landmarks": [
+    {
+     "name": "Bran Castle",
+     "type": "M"
+    },
+    {
+     "name": "Peleș Castle",
+     "type": "M"
+    },
+    {
+     "name": "Danube Delta",
+     "type": "N"
+    },
+    {
+     "name": "Carpathian Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Sighișoara Historic Centre",
+     "type": "M"
+    }
+   ]
+  },
+  "RU": {
+   "name_ca": "Rússia",
+   "landmarks": [
+    {
+     "name": "Moscow Kremlin and Red Square",
+     "type": "M"
+    },
+    {
+     "name": "Saint Basil's Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Hermitage / Winter Palace",
+     "type": "M"
+    },
+    {
+     "name": "Lake Baikal",
+     "type": "N"
+    },
+    {
+     "name": "Volcanoes of Kamchatka",
+     "type": "N"
+    }
+   ]
+  },
+  "SM": {
+   "name_ca": "San Marino",
+   "landmarks": [
+    {
+     "name": "Guaita Tower",
+     "type": "M"
+    },
+    {
+     "name": "Cesta Tower",
+     "type": "M"
+    },
+    {
+     "name": "Basilica of San Marino",
+     "type": "M"
+    },
+    {
+     "name": "Piazza della Libertà",
+     "type": "M"
+    },
+    {
+     "name": "Mount Titano",
+     "type": "N"
+    }
+   ]
+  },
+  "RS": {
+   "name_ca": "Sèrbia",
+   "landmarks": [
+    {
+     "name": "Belgrade Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Studenica Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Đavolja Varoš / Devil's Town",
+     "type": "N"
+    },
+    {
+     "name": "Đerdap Gorge",
+     "type": "N"
+    },
+    {
+     "name": "Petrovaradin Fortress",
+     "type": "M"
+    }
+   ]
+  },
+  "SE": {
+   "name_ca": "Suècia",
+   "landmarks": [
+    {
+     "name": "Gamla Stan, Stockholm",
+     "type": "M"
+    },
+    {
+     "name": "Drottningholm Palace",
+     "type": "M"
+    },
+    {
+     "name": "Abisko National Park",
+     "type": "N"
+    },
+    {
+     "name": "Stockholm Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Visby",
+     "type": "M"
+    }
+   ]
+  },
+  "CH": {
+   "name_ca": "Suïssa",
+   "landmarks": [
+    {
+     "name": "Matterhorn",
+     "type": "N"
+    },
+    {
+     "name": "Jungfrau-Aletsch region",
+     "type": "N"
+    },
+    {
+     "name": "Rhine Falls",
+     "type": "N"
+    },
+    {
+     "name": "Chillon Castle",
+     "type": "M"
+    },
+    {
+     "name": "Bern Old Town",
+     "type": "M"
+    }
+   ]
+  },
+  "SJ": {
+   "name_ca": "Svalbard i Jan Mayen",
+   "landmarks": [
+    {
+     "name": "Svalbard Global Seed Vault",
+     "type": "M"
+    },
+    {
+     "name": "Longyearbyen",
+     "type": "M"
+    },
+    {
+     "name": "Magdalenefjorden",
+     "type": "N"
+    },
+    {
+     "name": "Beerenberg volcano, Jan Mayen",
+     "type": "N"
+    },
+    {
+     "name": "Nordaustlandet ice cap",
+     "type": "N"
+    }
+   ]
+  },
+  "CZ": {
+   "name_ca": "Txèquia",
+   "landmarks": [
+    {
+     "name": "Prague Castle",
+     "type": "M"
+    },
+    {
+     "name": "Charles Bridge",
+     "type": "M"
+    },
+    {
+     "name": "Český Krumlov",
+     "type": "M"
+    },
+    {
+     "name": "Bohemian Switzerland National Park",
+     "type": "N"
+    },
+    {
+     "name": "Moravian Karst",
+     "type": "N"
+    }
+   ]
+  },
+  "UA": {
+   "name_ca": "Ucraïna",
+   "landmarks": [
+    {
+     "name": "Saint Sophia Cathedral, Kyiv",
+     "type": "M"
+    },
+    {
+     "name": "Kyiv-Pechersk Lavra",
+     "type": "M"
+    },
+    {
+     "name": "Lviv Historic Centre",
+     "type": "M"
+    },
+    {
+     "name": "Ukrainian Carpathians",
+     "type": "N"
+    },
+    {
+     "name": "Dniester Canyon",
+     "type": "N"
+    }
+   ]
+  },
+  "VA": {
+   "name_ca": "Vaticà",
+   "landmarks": [
+    {
+     "name": "St Peter's Basilica",
+     "type": "M"
+    },
+    {
+     "name": "Sistine Chapel",
+     "type": "M"
+    },
+    {
+     "name": "Vatican Museums",
+     "type": "M"
+    },
+    {
+     "name": "St Peter's Square",
+     "type": "M"
+    },
+    {
+     "name": "Vatican Gardens",
+     "type": "M/N"
+    }
+   ]
+  },
+  "CY": {
+   "name_ca": "Xipre",
+   "landmarks": [
+    {
+     "name": "Petra tou Romiou",
+     "type": "N"
+    },
+    {
+     "name": "Paphos Archaeological Park",
+     "type": "M"
+    },
+    {
+     "name": "Kykkos Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Troodos Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Cape Greco",
+     "type": "N"
+    }
+   ]
+  },
+  "DZ": {
+   "name_ca": "Algèria",
+   "landmarks": [
+    {
+     "name": "Tassili n'Ajjer",
+     "type": "N/M"
+    },
+    {
+     "name": "Casbah of Algiers",
+     "type": "M"
+    },
+    {
+     "name": "Timgad",
+     "type": "M"
+    },
+    {
+     "name": "M'Zab Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Djémila",
+     "type": "M"
+    }
+   ]
+  },
+  "AO": {
+   "name_ca": "Angola",
+   "landmarks": [
+    {
+     "name": "Kalandula Falls",
+     "type": "N"
+    },
+    {
+     "name": "Tundavala Gap",
+     "type": "N"
+    },
+    {
+     "name": "Miradouro da Lua",
+     "type": "N"
+    },
+    {
+     "name": "Fortaleza de São Miguel",
+     "type": "M"
+    },
+    {
+     "name": "Quiçama National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "BJ": {
+   "name_ca": "Benín",
+   "landmarks": [
+    {
+     "name": "Royal Palaces of Abomey",
+     "type": "M"
+    },
+    {
+     "name": "Ganvié",
+     "type": "M/N"
+    },
+    {
+     "name": "Pendjari National Park",
+     "type": "N"
+    },
+    {
+     "name": "Door of No Return, Ouidah",
+     "type": "M"
+    },
+    {
+     "name": "Sacred Forest of Kpassè",
+     "type": "N/M"
+    }
+   ]
+  },
+  "BW": {
+   "name_ca": "Botswana",
+   "landmarks": [
+    {
+     "name": "Okavango Delta",
+     "type": "N"
+    },
+    {
+     "name": "Chobe National Park",
+     "type": "N"
+    },
+    {
+     "name": "Makgadikgadi Pans",
+     "type": "N"
+    },
+    {
+     "name": "Tsodilo Hills",
+     "type": "N/M"
+    },
+    {
+     "name": "Moremi Game Reserve",
+     "type": "N"
+    }
+   ]
+  },
+  "BF": {
+   "name_ca": "Burkina Faso",
+   "landmarks": [
+    {
+     "name": "Ruins of Loropéni",
+     "type": "M"
+    },
+    {
+     "name": "Grand Mosque of Bobo-Dioulasso",
+     "type": "M"
+    },
+    {
+     "name": "Sindou Peaks",
+     "type": "N"
+    },
+    {
+     "name": "Nazinga Game Ranch",
+     "type": "N"
+    },
+    {
+     "name": "Bangr-Weoogo Urban Park",
+     "type": "N"
+    }
+   ]
+  },
+  "BI": {
+   "name_ca": "Burundi",
+   "landmarks": [
+    {
+     "name": "Lake Tanganyika",
+     "type": "N"
+    },
+    {
+     "name": "Kibira National Park",
+     "type": "N"
+    },
+    {
+     "name": "Rusizi National Park",
+     "type": "N"
+    },
+    {
+     "name": "Gishora Drum Sanctuary",
+     "type": "M"
+    },
+    {
+     "name": "Karera Waterfalls",
+     "type": "N"
+    }
+   ]
+  },
+  "CM": {
+   "name_ca": "Camerun",
+   "landmarks": [
+    {
+     "name": "Mount Cameroon",
+     "type": "N"
+    },
+    {
+     "name": "Waza National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ekom-Nkam Falls",
+     "type": "N"
+    },
+    {
+     "name": "Royal Palace of Foumban",
+     "type": "M"
+    },
+    {
+     "name": "Dja Faunal Reserve",
+     "type": "N"
+    }
+   ]
+  },
+  "CV": {
+   "name_ca": "Cap Verd",
+   "landmarks": [
+    {
+     "name": "Pico do Fogo",
+     "type": "N"
+    },
+    {
+     "name": "Cidade Velha",
+     "type": "M"
+    },
+    {
+     "name": "Santo Antão valleys",
+     "type": "N"
+    },
+    {
+     "name": "Santa Maria Beach",
+     "type": "N"
+    },
+    {
+     "name": "Pedra de Lume salt crater",
+     "type": "N/M"
+    }
+   ]
+  },
+  "KM": {
+   "name_ca": "Comores",
+   "landmarks": [
+    {
+     "name": "Mount Karthala",
+     "type": "N"
+    },
+    {
+     "name": "Lac Salé",
+     "type": "N"
+    },
+    {
+     "name": "Old Friday Mosque, Moroni",
+     "type": "M"
+    },
+    {
+     "name": "Mohéli Marine Park",
+     "type": "N"
+    },
+    {
+     "name": "Chomoni Beach",
+     "type": "N"
+    }
+   ]
+  },
+  "CG": {
+   "name_ca": "Congo",
+   "landmarks": [
+    {
+     "name": "Odzala-Kokoua National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lesio-Louna Reserve",
+     "type": "N"
+    },
+    {
+     "name": "Diosso Gorge",
+     "type": "N"
+    },
+    {
+     "name": "Basilique Sainte-Anne, Brazzaville",
+     "type": "M"
+    },
+    {
+     "name": "Pierre Savorgnan de Brazza Memorial",
+     "type": "M"
+    }
+   ]
+  },
+  "CI": {
+   "name_ca": "Costa d'Ivori",
+   "landmarks": [
+    {
+     "name": "Basilica of Our Lady of Peace, Yamoussoukro",
+     "type": "M"
+    },
+    {
+     "name": "Grand-Bassam Historic Town",
+     "type": "M"
+    },
+    {
+     "name": "Taï National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mount Nimba",
+     "type": "N"
+    },
+    {
+     "name": "Banco National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "DJ": {
+   "name_ca": "Djibouti",
+   "landmarks": [
+    {
+     "name": "Lake Assal",
+     "type": "N"
+    },
+    {
+     "name": "Lake Abbe",
+     "type": "N"
+    },
+    {
+     "name": "Gulf of Tadjoura",
+     "type": "N"
+    },
+    {
+     "name": "Day Forest National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mahmoud Harbi Square / historic Djibouti City",
+     "type": "M"
+    }
+   ]
+  },
+  "EG": {
+   "name_ca": "Egipte",
+   "landmarks": [
+    {
+     "name": "Pyramids of Giza",
+     "type": "M"
+    },
+    {
+     "name": "Karnak and Luxor temples",
+     "type": "M"
+    },
+    {
+     "name": "Abu Simbel",
+     "type": "M"
+    },
+    {
+     "name": "White Desert",
+     "type": "N"
+    },
+    {
+     "name": "Nile Valley",
+     "type": "N/M"
+    }
+   ]
+  },
+  "ER": {
+   "name_ca": "Eritrea",
+   "landmarks": [
+    {
+     "name": "Asmara modernist architecture",
+     "type": "M"
+    },
+    {
+     "name": "Dahlak Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Massawa Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Debre Bizen Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Semienawi Bahri highlands",
+     "type": "N"
+    }
+   ]
+  },
+  "SZ": {
+   "name_ca": "Eswatini",
+   "landmarks": [
+    {
+     "name": "Mlilwane Wildlife Sanctuary",
+     "type": "N"
+    },
+    {
+     "name": "Sibebe Rock",
+     "type": "N"
+    },
+    {
+     "name": "Mantenga Cultural Village",
+     "type": "M"
+    },
+    {
+     "name": "Malolotja Nature Reserve",
+     "type": "N"
+    },
+    {
+     "name": "Ngwenya Mine",
+     "type": "N/M"
+    }
+   ]
+  },
+  "ET": {
+   "name_ca": "Etiòpia",
+   "landmarks": [
+    {
+     "name": "Rock-Hewn Churches of Lalibela",
+     "type": "M"
+    },
+    {
+     "name": "Simien Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Danakil Depression",
+     "type": "N"
+    },
+    {
+     "name": "Aksum obelisks",
+     "type": "M"
+    },
+    {
+     "name": "Blue Nile Falls",
+     "type": "N"
+    }
+   ]
+  },
+  "GA": {
+   "name_ca": "Gabon",
+   "landmarks": [
+    {
+     "name": "Loango National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ivindo National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lopé National Park",
+     "type": "N"
+    },
+    {
+     "name": "St Michael's Church, Nkembo",
+     "type": "M"
+    },
+    {
+     "name": "Pongara National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "GM": {
+   "name_ca": "Gàmbia",
+   "landmarks": [
+    {
+     "name": "Kunta Kinteh Island",
+     "type": "M"
+    },
+    {
+     "name": "Abuko Nature Reserve",
+     "type": "N"
+    },
+    {
+     "name": "River Gambia",
+     "type": "N"
+    },
+    {
+     "name": "Wassu Stone Circles",
+     "type": "M"
+    },
+    {
+     "name": "Bijilo Forest Park",
+     "type": "N"
+    }
+   ]
+  },
+  "GH": {
+   "name_ca": "Ghana",
+   "landmarks": [
+    {
+     "name": "Cape Coast Castle",
+     "type": "M"
+    },
+    {
+     "name": "Elmina Castle",
+     "type": "M"
+    },
+    {
+     "name": "Kakum National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mole National Park",
+     "type": "N"
+    },
+    {
+     "name": "Wli Waterfalls",
+     "type": "N"
+    }
+   ]
+  },
+  "GN": {
+   "name_ca": "Guinea",
+   "landmarks": [
+    {
+     "name": "Fouta Djallon",
+     "type": "N"
+    },
+    {
+     "name": "Mount Nimba",
+     "type": "N"
+    },
+    {
+     "name": "Îles de Los",
+     "type": "N"
+    },
+    {
+     "name": "Grand Mosque of Conakry",
+     "type": "M"
+    },
+    {
+     "name": "Kambadaga Falls",
+     "type": "N"
+    }
+   ]
+  },
+  "GW": {
+   "name_ca": "Guinea Bissau",
+   "landmarks": [
+    {
+     "name": "Bijagós Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Orango National Park",
+     "type": "N"
+    },
+    {
+     "name": "Cacheu Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Bolama colonial ruins",
+     "type": "M"
+    },
+    {
+     "name": "Cantanhez Forest National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "GQ": {
+   "name_ca": "Guinea Equatorial",
+   "landmarks": [
+    {
+     "name": "Pico Basilé",
+     "type": "N"
+    },
+    {
+     "name": "Arena Blanca",
+     "type": "N"
+    },
+    {
+     "name": "Monte Alén National Park",
+     "type": "N"
+    },
+    {
+     "name": "Malabo Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Bata Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "KE": {
+   "name_ca": "Kenya",
+   "landmarks": [
+    {
+     "name": "Maasai Mara",
+     "type": "N"
+    },
+    {
+     "name": "Mount Kenya",
+     "type": "N"
+    },
+    {
+     "name": "Amboseli National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lamu Old Town",
+     "type": "M"
+    },
+    {
+     "name": "Fort Jesus",
+     "type": "M"
+    }
+   ]
+  },
+  "LS": {
+   "name_ca": "Lesotho",
+   "landmarks": [
+    {
+     "name": "Maletsunyane Falls",
+     "type": "N"
+    },
+    {
+     "name": "Thaba-Bosiu",
+     "type": "N/M"
+    },
+    {
+     "name": "Sani Pass",
+     "type": "N"
+    },
+    {
+     "name": "Katse Dam",
+     "type": "M"
+    },
+    {
+     "name": "Sehlabathebe National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "LR": {
+   "name_ca": "Libèria",
+   "landmarks": [
+    {
+     "name": "Sapo National Park",
+     "type": "N"
+    },
+    {
+     "name": "Kpatawee Waterfalls",
+     "type": "N"
+    },
+    {
+     "name": "Providence Island",
+     "type": "M"
+    },
+    {
+     "name": "Ducor Hotel ruins",
+     "type": "M"
+    },
+    {
+     "name": "Cape Mesurado",
+     "type": "N"
+    }
+   ]
+  },
+  "LY": {
+   "name_ca": "Líbia",
+   "landmarks": [
+    {
+     "name": "Leptis Magna",
+     "type": "M"
+    },
+    {
+     "name": "Sabratha",
+     "type": "M"
+    },
+    {
+     "name": "Cyrene",
+     "type": "M"
+    },
+    {
+     "name": "Acacus Mountains",
+     "type": "N/M"
+    },
+    {
+     "name": "Ubari Lakes",
+     "type": "N"
+    }
+   ]
+  },
+  "MG": {
+   "name_ca": "Madagascar",
+   "landmarks": [
+    {
+     "name": "Avenue of the Baobabs",
+     "type": "N"
+    },
+    {
+     "name": "Tsingy de Bemaraha",
+     "type": "N"
+    },
+    {
+     "name": "Isalo National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ranomafana National Park",
+     "type": "N"
+    },
+    {
+     "name": "Royal Hill of Ambohimanga",
+     "type": "M"
+    }
+   ]
+  },
+  "MW": {
+   "name_ca": "Malawi",
+   "landmarks": [
+    {
+     "name": "Lake Malawi",
+     "type": "N"
+    },
+    {
+     "name": "Mount Mulanje",
+     "type": "N"
+    },
+    {
+     "name": "Liwonde National Park",
+     "type": "N"
+    },
+    {
+     "name": "Chongoni Rock-Art Area",
+     "type": "N/M"
+    },
+    {
+     "name": "Zomba Plateau",
+     "type": "N"
+    }
+   ]
+  },
+  "ML": {
+   "name_ca": "Mali",
+   "landmarks": [
+    {
+     "name": "Great Mosque of Djenné",
+     "type": "M"
+    },
+    {
+     "name": "Timbuktu mosques and manuscripts quarter",
+     "type": "M"
+    },
+    {
+     "name": "Bandiagara Escarpment",
+     "type": "N/M"
+    },
+    {
+     "name": "Tomb of Askia",
+     "type": "M"
+    },
+    {
+     "name": "Niger River",
+     "type": "N"
+    }
+   ]
+  },
+  "MA": {
+   "name_ca": "Marroc",
+   "landmarks": [
+    {
+     "name": "Hassan II Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Aït Benhaddou",
+     "type": "M"
+    },
+    {
+     "name": "Chefchaouen Medina",
+     "type": "M"
+    },
+    {
+     "name": "Erg Chebbi dunes",
+     "type": "N"
+    },
+    {
+     "name": "Atlas Mountains",
+     "type": "N"
+    }
+   ]
+  },
+  "MU": {
+   "name_ca": "Maurici",
+   "landmarks": [
+    {
+     "name": "Le Morne Brabant",
+     "type": "N/M"
+    },
+    {
+     "name": "Black River Gorges National Park",
+     "type": "N"
+    },
+    {
+     "name": "Seven Coloured Earth",
+     "type": "N"
+    },
+    {
+     "name": "Aapravasi Ghat",
+     "type": "M"
+    },
+    {
+     "name": "Pamplemousses Botanical Garden",
+     "type": "N/M"
+    }
+   ]
+  },
+  "MR": {
+   "name_ca": "Mauritània",
+   "landmarks": [
+    {
+     "name": "Banc d'Arguin National Park",
+     "type": "N"
+    },
+    {
+     "name": "Richat Structure",
+     "type": "N"
+    },
+    {
+     "name": "Chinguetti",
+     "type": "M"
+    },
+    {
+     "name": "Ouadane",
+     "type": "M"
+    },
+    {
+     "name": "Terjit Oasis",
+     "type": "N"
+    }
+   ]
+  },
+  "YT": {
+   "name_ca": "Mayotte",
+   "landmarks": [
+    {
+     "name": "Mount Choungui",
+     "type": "N"
+    },
+    {
+     "name": "Mayotte Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Saziley National Park",
+     "type": "N"
+    },
+    {
+     "name": "Dziani Dzaha crater lake",
+     "type": "N"
+    },
+    {
+     "name": "Dzaoudzi historic quarter",
+     "type": "M"
+    }
+   ]
+  },
+  "MZ": {
+   "name_ca": "Moçambic",
+   "landmarks": [
+    {
+     "name": "Bazaruto Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Gorongosa National Park",
+     "type": "N"
+    },
+    {
+     "name": "Island of Mozambique",
+     "type": "M"
+    },
+    {
+     "name": "Quirimbas Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Maputo Railway Station",
+     "type": "M"
+    }
+   ]
+  },
+  "NA": {
+   "name_ca": "Namíbia",
+   "landmarks": [
+    {
+     "name": "Sossusvlei",
+     "type": "N"
+    },
+    {
+     "name": "Fish River Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Etosha National Park",
+     "type": "N"
+    },
+    {
+     "name": "Skeleton Coast",
+     "type": "N"
+    },
+    {
+     "name": "Twyfelfontein rock engravings",
+     "type": "N/M"
+    }
+   ]
+  },
+  "NE": {
+   "name_ca": "Níger",
+   "landmarks": [
+    {
+     "name": "Aïr and Ténéré Natural Reserves",
+     "type": "N"
+    },
+    {
+     "name": "Agadez Grand Mosque",
+     "type": "M"
+    },
+    {
+     "name": "W National Park",
+     "type": "N"
+    },
+    {
+     "name": "Termit Massif",
+     "type": "N"
+    },
+    {
+     "name": "Sultan's Palace, Agadez",
+     "type": "M"
+    }
+   ]
+  },
+  "NG": {
+   "name_ca": "Nigèria",
+   "landmarks": [
+    {
+     "name": "Zuma Rock",
+     "type": "N"
+    },
+    {
+     "name": "Olumo Rock",
+     "type": "N/M"
+    },
+    {
+     "name": "Osun-Osogbo Sacred Grove",
+     "type": "N/M"
+    },
+    {
+     "name": "Sukur Cultural Landscape",
+     "type": "N/M"
+    },
+    {
+     "name": "Kano City Walls and Emir's Palace",
+     "type": "M"
+    }
+   ]
+  },
+  "CF": {
+   "name_ca": "República Centreafricana",
+   "landmarks": [
+    {
+     "name": "Dzanga-Sangha Protected Areas",
+     "type": "N"
+    },
+    {
+     "name": "Manovo-Gounda St Floris National Park",
+     "type": "N"
+    },
+    {
+     "name": "Boali Waterfalls",
+     "type": "N"
+    },
+    {
+     "name": "Notre-Dame Cathedral, Bangui",
+     "type": "M"
+    },
+    {
+     "name": "Chinko Nature Reserve",
+     "type": "N"
+    }
+   ]
+  },
+  "CD": {
+   "name_ca": "República Democràtica del Congo",
+   "landmarks": [
+    {
+     "name": "Virunga National Park",
+     "type": "N"
+    },
+    {
+     "name": "Kahuzi-Biega National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mount Nyiragongo",
+     "type": "N"
+    },
+    {
+     "name": "Congo River",
+     "type": "N"
+    },
+    {
+     "name": "Palais du Peuple, Kinshasa",
+     "type": "M"
+    }
+   ]
+  },
+  "RE": {
+   "name_ca": "Reunió",
+   "landmarks": [
+    {
+     "name": "Piton de la Fournaise",
+     "type": "N"
+    },
+    {
+     "name": "Pitons, Cirques and Remparts",
+     "type": "N"
+    },
+    {
+     "name": "Le Maïdo",
+     "type": "N"
+    },
+    {
+     "name": "Saint-Denis Creole historic centre",
+     "type": "M"
+    },
+    {
+     "name": "Notre-Dame-des-Laves",
+     "type": "M"
+    }
+   ]
+  },
+  "RW": {
+   "name_ca": "Ruanda",
+   "landmarks": [
+    {
+     "name": "Volcanoes National Park",
+     "type": "N"
+    },
+    {
+     "name": "Nyungwe Forest",
+     "type": "N"
+    },
+    {
+     "name": "Lake Kivu",
+     "type": "N"
+    },
+    {
+     "name": "Kigali Genocide Memorial",
+     "type": "M"
+    },
+    {
+     "name": "King's Palace, Nyanza",
+     "type": "M"
+    }
+   ]
+  },
+  "EH": {
+   "name_ca": "Sàhara Occidental",
+   "landmarks": [
+    {
+     "name": "Dakhla Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "White Dune of Dakhla",
+     "type": "N"
+    },
+    {
+     "name": "Boujdour Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Smara historic mosque and zaouia",
+     "type": "M"
+    },
+    {
+     "name": "Atlantic Sahara cliffs and desert",
+     "type": "N"
+    }
+   ]
+  },
+  "SH": {
+   "name_ca": "Santa Helena…",
+   "landmarks": [
+    {
+     "name": "Jacob's Ladder, Saint Helena",
+     "type": "M"
+    },
+    {
+     "name": "Diana's Peak, Saint Helena",
+     "type": "N"
+    },
+    {
+     "name": "Green Mountain, Ascension",
+     "type": "N"
+    },
+    {
+     "name": "Queen Mary's Peak, Tristan da Cunha",
+     "type": "N"
+    },
+    {
+     "name": "Longwood House, Saint Helena",
+     "type": "M"
+    }
+   ]
+  },
+  "ST": {
+   "name_ca": "São Tomé i Príncep",
+   "landmarks": [
+    {
+     "name": "Pico Cão Grande",
+     "type": "N"
+    },
+    {
+     "name": "Obô Natural Park",
+     "type": "N"
+    },
+    {
+     "name": "Roça Agostinho Neto",
+     "type": "M"
+    },
+    {
+     "name": "São Sebastião Fort",
+     "type": "M"
+    },
+    {
+     "name": "Praia Banana",
+     "type": "N"
+    }
+   ]
+  },
+  "SN": {
+   "name_ca": "Senegal",
+   "landmarks": [
+    {
+     "name": "Gorée Island",
+     "type": "M"
+    },
+    {
+     "name": "African Renaissance Monument",
+     "type": "M"
+    },
+    {
+     "name": "Djoudj National Bird Sanctuary",
+     "type": "N"
+    },
+    {
+     "name": "Saloum Delta",
+     "type": "N"
+    },
+    {
+     "name": "Lake Retba / Lac Rose",
+     "type": "N"
+    }
+   ]
+  },
+  "SC": {
+   "name_ca": "Seychelles",
+   "landmarks": [
+    {
+     "name": "Anse Source d'Argent",
+     "type": "N"
+    },
+    {
+     "name": "Vallée de Mai",
+     "type": "N"
+    },
+    {
+     "name": "Aldabra Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Morne Seychellois National Park",
+     "type": "N"
+    },
+    {
+     "name": "Victoria Clocktower",
+     "type": "M"
+    }
+   ]
+  },
+  "SL": {
+   "name_ca": "Sierra Leone",
+   "landmarks": [
+    {
+     "name": "Tacugama Chimpanzee Sanctuary",
+     "type": "N"
+    },
+    {
+     "name": "Tiwai Island Wildlife Sanctuary",
+     "type": "N"
+    },
+    {
+     "name": "Bunce Island",
+     "type": "M"
+    },
+    {
+     "name": "River No. 2 Beach",
+     "type": "N"
+    },
+    {
+     "name": "King's Yard Gate, Freetown",
+     "type": "M"
+    }
+   ]
+  },
+  "SO": {
+   "name_ca": "Somàlia",
+   "landmarks": [
+    {
+     "name": "Laas Geel cave paintings",
+     "type": "M"
+    },
+    {
+     "name": "Liido Beach",
+     "type": "N"
+    },
+    {
+     "name": "Cal Madow Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Zeila ruins",
+     "type": "M"
+    },
+    {
+     "name": "Mogadishu Cathedral ruins",
+     "type": "M"
+    }
+   ]
+  },
+  "ZA": {
+   "name_ca": "Sud-àfrica",
+   "landmarks": [
+    {
+     "name": "Table Mountain",
+     "type": "N"
+    },
+    {
+     "name": "Kruger National Park",
+     "type": "N"
+    },
+    {
+     "name": "Robben Island",
+     "type": "M"
+    },
+    {
+     "name": "Drakensberg",
+     "type": "N"
+    },
+    {
+     "name": "Cape of Good Hope",
+     "type": "N"
+    }
+   ]
+  },
+  "SD": {
+   "name_ca": "Sudan",
+   "landmarks": [
+    {
+     "name": "Pyramids of Meroë",
+     "type": "M"
+    },
+    {
+     "name": "Jebel Barkal",
+     "type": "N/M"
+    },
+    {
+     "name": "Sanganeb Marine National Park",
+     "type": "N"
+    },
+    {
+     "name": "Suakin ruins",
+     "type": "M"
+    },
+    {
+     "name": "Blue and White Nile confluence",
+     "type": "N"
+    }
+   ]
+  },
+  "SS": {
+   "name_ca": "Sudan del Sud",
+   "landmarks": [
+    {
+     "name": "The Sudd wetlands",
+     "type": "N"
+    },
+    {
+     "name": "Boma National Park",
+     "type": "N"
+    },
+    {
+     "name": "Bandingilo National Park",
+     "type": "N"
+    },
+    {
+     "name": "Imatong Mountains",
+     "type": "N"
+    },
+    {
+     "name": "John Garang Mausoleum",
+     "type": "M"
+    }
+   ]
+  },
+  "TZ": {
+   "name_ca": "Tanzània",
+   "landmarks": [
+    {
+     "name": "Serengeti National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mount Kilimanjaro",
+     "type": "N"
+    },
+    {
+     "name": "Ngorongoro Crater",
+     "type": "N"
+    },
+    {
+     "name": "Stone Town, Zanzibar",
+     "type": "M"
+    },
+    {
+     "name": "Nyerere National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "IO": {
+   "name_ca": "Territori Britànic de l'Oceà Índic",
+   "landmarks": [
+    {
+     "name": "Great Chagos Bank",
+     "type": "N"
+    },
+    {
+     "name": "Diego Garcia lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Peros Banhos Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Salomon Islands Atoll",
+     "type": "N"
+    },
+    {
+     "name": "East Point Plantation ruins, Diego Garcia",
+     "type": "M"
+    }
+   ]
+  },
+  "TG": {
+   "name_ca": "Togo",
+   "landmarks": [
+    {
+     "name": "Koutammakou",
+     "type": "N/M"
+    },
+    {
+     "name": "Kéran National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lake Togo",
+     "type": "N"
+    },
+    {
+     "name": "Lomé Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Fazao-Malfakassa National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "TN": {
+   "name_ca": "Tunísia",
+   "landmarks": [
+    {
+     "name": "Amphitheatre of El Jem",
+     "type": "M"
+    },
+    {
+     "name": "Carthage",
+     "type": "M"
+    },
+    {
+     "name": "Sidi Bou Said",
+     "type": "M"
+    },
+    {
+     "name": "Chott el Jerid",
+     "type": "N"
+    },
+    {
+     "name": "Dougga",
+     "type": "M"
+    }
+   ]
+  },
+  "TD": {
+   "name_ca": "Txad",
+   "landmarks": [
+    {
+     "name": "Ennedi Massif",
+     "type": "N/M"
+    },
+    {
+     "name": "Zakouma National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lakes of Ounianga",
+     "type": "N"
+    },
+    {
+     "name": "Tibesti Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Grand Mosque of N'Djamena",
+     "type": "M"
+    }
+   ]
+  },
+  "UG": {
+   "name_ca": "Uganda",
+   "landmarks": [
+    {
+     "name": "Bwindi Impenetrable National Park",
+     "type": "N"
+    },
+    {
+     "name": "Murchison Falls",
+     "type": "N"
+    },
+    {
+     "name": "Rwenzori Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Source of the Nile at Jinja",
+     "type": "N"
+    },
+    {
+     "name": "Kasubi Tombs",
+     "type": "M"
+    }
+   ]
+  },
+  "ZM": {
+   "name_ca": "Zàmbia",
+   "landmarks": [
+    {
+     "name": "Victoria Falls",
+     "type": "N"
+    },
+    {
+     "name": "South Luangwa National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lower Zambezi National Park",
+     "type": "N"
+    },
+    {
+     "name": "Kafue National Park",
+     "type": "N"
+    },
+    {
+     "name": "Shiwa Ng'andu estate",
+     "type": "M"
+    }
+   ]
+  },
+  "ZW": {
+   "name_ca": "Zimbàbue",
+   "landmarks": [
+    {
+     "name": "Victoria Falls",
+     "type": "N"
+    },
+    {
+     "name": "Great Zimbabwe",
+     "type": "M"
+    },
+    {
+     "name": "Hwange National Park",
+     "type": "N"
+    },
+    {
+     "name": "Matobo Hills",
+     "type": "N/M"
+    },
+    {
+     "name": "Mana Pools National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "AF": {
+   "name_ca": "Afganistan",
+   "landmarks": [
+    {
+     "name": "Band-e Amir National Park",
+     "type": "N"
+    },
+    {
+     "name": "Bamiyan Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Minaret of Jam",
+     "type": "M"
+    },
+    {
+     "name": "Herat Citadel",
+     "type": "M"
+    },
+    {
+     "name": "Wakhan Corridor",
+     "type": "N"
+    }
+   ]
+  },
+  "SA": {
+   "name_ca": "Aràbia Saudita",
+   "landmarks": [
+    {
+     "name": "Hegra / Mada'in Salih",
+     "type": "M"
+    },
+    {
+     "name": "Masjid al-Haram and the Kaaba",
+     "type": "M"
+    },
+    {
+     "name": "Edge of the World",
+     "type": "N"
+    },
+    {
+     "name": "Farasan Islands",
+     "type": "N"
+    },
+    {
+     "name": "At-Turaif, Diriyah",
+     "type": "M"
+    }
+   ]
+  },
+  "AM": {
+   "name_ca": "Armènia",
+   "landmarks": [
+    {
+     "name": "Geghard Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Khor Virap",
+     "type": "M"
+    },
+    {
+     "name": "Lake Sevan",
+     "type": "N"
+    },
+    {
+     "name": "Tatev Monastery",
+     "type": "M"
+    },
+    {
+     "name": "Mount Aragats",
+     "type": "N"
+    }
+   ]
+  },
+  "AZ": {
+   "name_ca": "Azerbaidjan",
+   "landmarks": [
+    {
+     "name": "Icherisheher, Baku",
+     "type": "M"
+    },
+    {
+     "name": "Gobustan rock art and mud landscape",
+     "type": "N/M"
+    },
+    {
+     "name": "Mud volcanoes",
+     "type": "N"
+    },
+    {
+     "name": "Sheki Khan's Palace",
+     "type": "M"
+    },
+    {
+     "name": "Flame Towers",
+     "type": "M"
+    }
+   ]
+  },
+  "BH": {
+   "name_ca": "Bahrain",
+   "landmarks": [
+    {
+     "name": "Bahrain Fort",
+     "type": "M"
+    },
+    {
+     "name": "Al Fateh Grand Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Tree of Life",
+     "type": "N/M"
+    },
+    {
+     "name": "Pearling Path",
+     "type": "M"
+    },
+    {
+     "name": "Bab Al Bahrain",
+     "type": "M"
+    }
+   ]
+  },
+  "BD": {
+   "name_ca": "Bangla Desh",
+   "landmarks": [
+    {
+     "name": "Sundarbans",
+     "type": "N"
+    },
+    {
+     "name": "Sixty Dome Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Lalbagh Fort",
+     "type": "M"
+    },
+    {
+     "name": "Cox's Bazar",
+     "type": "N"
+    },
+    {
+     "name": "Ahsan Manzil",
+     "type": "M"
+    }
+   ]
+  },
+  "BT": {
+   "name_ca": "Bhutan",
+   "landmarks": [
+    {
+     "name": "Paro Taktsang / Tiger's Nest",
+     "type": "M"
+    },
+    {
+     "name": "Punakha Dzong",
+     "type": "M"
+    },
+    {
+     "name": "Dochula Pass and chortens",
+     "type": "N/M"
+    },
+    {
+     "name": "Jomolhari and the Himalayas",
+     "type": "N"
+    },
+    {
+     "name": "Phobjikha Valley",
+     "type": "N"
+    }
+   ]
+  },
+  "BN": {
+   "name_ca": "Brunei",
+   "landmarks": [
+    {
+     "name": "Sultan Omar Ali Saifuddien Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Kampong Ayer",
+     "type": "M"
+    },
+    {
+     "name": "Ulu Temburong National Park",
+     "type": "N"
+    },
+    {
+     "name": "Jame' Asr Hassanil Bolkiah Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Tasek Merimbun",
+     "type": "N"
+    }
+   ]
+  },
+  "KH": {
+   "name_ca": "Cambodja",
+   "landmarks": [
+    {
+     "name": "Angkor Wat",
+     "type": "M"
+    },
+    {
+     "name": "Bayon Temple",
+     "type": "M"
+    },
+    {
+     "name": "Tonlé Sap",
+     "type": "N/M"
+    },
+    {
+     "name": "Phnom Kulen National Park",
+     "type": "N"
+    },
+    {
+     "name": "Royal Palace, Phnom Penh",
+     "type": "M"
+    }
+   ]
+  },
+  "KP": {
+   "name_ca": "Corea del Nord",
+   "landmarks": [
+    {
+     "name": "Mount Paektu",
+     "type": "N"
+    },
+    {
+     "name": "Kumsusan Palace of the Sun",
+     "type": "M"
+    },
+    {
+     "name": "Juche Tower",
+     "type": "M"
+    },
+    {
+     "name": "Panmunjom / DMZ",
+     "type": "M"
+    },
+    {
+     "name": "Mount Myohyang",
+     "type": "N"
+    }
+   ]
+  },
+  "KR": {
+   "name_ca": "Corea del Sud",
+   "landmarks": [
+    {
+     "name": "Gyeongbokgung Palace",
+     "type": "M"
+    },
+    {
+     "name": "Seoraksan National Park",
+     "type": "N"
+    },
+    {
+     "name": "Hallasan, Jeju",
+     "type": "N"
+    },
+    {
+     "name": "Bulguksa Temple",
+     "type": "M"
+    },
+    {
+     "name": "N Seoul Tower",
+     "type": "M"
+    }
+   ]
+  },
+  "AE": {
+   "name_ca": "Emirats Àrabs Units",
+   "landmarks": [
+    {
+     "name": "Burj Khalifa",
+     "type": "M"
+    },
+    {
+     "name": "Sheikh Zayed Grand Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Palm Jumeirah",
+     "type": "M"
+    },
+    {
+     "name": "Liwa Desert",
+     "type": "N"
+    },
+    {
+     "name": "Hajar Mountains",
+     "type": "N"
+    }
+   ]
+  },
+  "PH": {
+   "name_ca": "Filipines",
+   "landmarks": [
+    {
+     "name": "Banaue Rice Terraces",
+     "type": "N/M"
+    },
+    {
+     "name": "Chocolate Hills",
+     "type": "N"
+    },
+    {
+     "name": "El Nido, Palawan",
+     "type": "N"
+    },
+    {
+     "name": "Mayon Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Intramuros, Manila",
+     "type": "M"
+    }
+   ]
+  },
+  "GE": {
+   "name_ca": "Geòrgia",
+   "landmarks": [
+    {
+     "name": "Gergeti Trinity Church",
+     "type": "M"
+    },
+    {
+     "name": "Mount Kazbek / Kazbegi",
+     "type": "N"
+    },
+    {
+     "name": "Upper Svaneti",
+     "type": "N/M"
+    },
+    {
+     "name": "Narikala Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Vardzia",
+     "type": "M"
+    }
+   ]
+  },
+  "HK": {
+   "name_ca": "Hong Kong",
+   "landmarks": [
+    {
+     "name": "Victoria Peak",
+     "type": "N/M"
+    },
+    {
+     "name": "Victoria Harbour",
+     "type": "N/M"
+    },
+    {
+     "name": "Tian Tan Buddha",
+     "type": "M"
+    },
+    {
+     "name": "Hong Kong skyline",
+     "type": "M"
+    },
+    {
+     "name": "Hong Kong UNESCO Global Geopark / Sai Kung",
+     "type": "N"
+    }
+   ]
+  },
+  "YE": {
+   "name_ca": "Iemen",
+   "landmarks": [
+    {
+     "name": "Old City of Sana'a",
+     "type": "M"
+    },
+    {
+     "name": "Socotra Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Shibam",
+     "type": "M"
+    },
+    {
+     "name": "Dar al-Hajar",
+     "type": "M"
+    },
+    {
+     "name": "Haraz Mountains",
+     "type": "N/M"
+    }
+   ]
+  },
+  "IN": {
+   "name_ca": "Índia",
+   "landmarks": [
+    {
+     "name": "Taj Mahal",
+     "type": "M"
+    },
+    {
+     "name": "Varanasi Ghats",
+     "type": "M"
+    },
+    {
+     "name": "Golden Temple",
+     "type": "M"
+    },
+    {
+     "name": "Ladakh and the Himalayas",
+     "type": "N"
+    },
+    {
+     "name": "Sundarbans",
+     "type": "N"
+    }
+   ]
+  },
+  "ID": {
+   "name_ca": "Indonèsia",
+   "landmarks": [
+    {
+     "name": "Borobudur",
+     "type": "M"
+    },
+    {
+     "name": "Komodo National Park",
+     "type": "N"
+    },
+    {
+     "name": "Mount Bromo",
+     "type": "N"
+    },
+    {
+     "name": "Bali rice terraces",
+     "type": "N/M"
+    },
+    {
+     "name": "Prambanan",
+     "type": "M"
+    }
+   ]
+  },
+  "IR": {
+   "name_ca": "Iran",
+   "landmarks": [
+    {
+     "name": "Persepolis",
+     "type": "M"
+    },
+    {
+     "name": "Naqsh-e Jahan Square",
+     "type": "M"
+    },
+    {
+     "name": "Nasir al-Mulk Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Mount Damavand",
+     "type": "N"
+    },
+    {
+     "name": "Lut Desert",
+     "type": "N"
+    }
+   ]
+  },
+  "IQ": {
+   "name_ca": "Iraq",
+   "landmarks": [
+    {
+     "name": "Ziggurat of Ur",
+     "type": "M"
+    },
+    {
+     "name": "Babylon",
+     "type": "M"
+    },
+    {
+     "name": "Erbil Citadel",
+     "type": "M"
+    },
+    {
+     "name": "Mesopotamian Marshes",
+     "type": "N/M"
+    },
+    {
+     "name": "Great Mosque of Samarra",
+     "type": "M"
+    }
+   ]
+  },
+  "IL": {
+   "name_ca": "Israel",
+   "landmarks": [
+    {
+     "name": "Western Wall",
+     "type": "M"
+    },
+    {
+     "name": "Masada",
+     "type": "N/M"
+    },
+    {
+     "name": "Old City of Jerusalem",
+     "type": "M"
+    },
+    {
+     "name": "Dead Sea",
+     "type": "N"
+    },
+    {
+     "name": "Bahá'í Gardens, Haifa",
+     "type": "M"
+    }
+   ]
+  },
+  "JP": {
+   "name_ca": "Japó",
+   "landmarks": [
+    {
+     "name": "Mount Fuji",
+     "type": "N"
+    },
+    {
+     "name": "Fushimi Inari Taisha",
+     "type": "M"
+    },
+    {
+     "name": "Himeji Castle",
+     "type": "M"
+    },
+    {
+     "name": "Itsukushima Shrine",
+     "type": "M"
+    },
+    {
+     "name": "Arashiyama bamboo grove",
+     "type": "N/M"
+    }
+   ]
+  },
+  "JO": {
+   "name_ca": "Jordània",
+   "landmarks": [
+    {
+     "name": "Petra",
+     "type": "M"
+    },
+    {
+     "name": "Wadi Rum",
+     "type": "N"
+    },
+    {
+     "name": "Dead Sea",
+     "type": "N"
+    },
+    {
+     "name": "Jerash",
+     "type": "M"
+    },
+    {
+     "name": "Amman Citadel",
+     "type": "M"
+    }
+   ]
+  },
+  "KZ": {
+   "name_ca": "Kazakhstan",
+   "landmarks": [
+    {
+     "name": "Charyn Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Baiterek Tower",
+     "type": "M"
+    },
+    {
+     "name": "Mausoleum of Khoja Ahmed Yasawi",
+     "type": "M"
+    },
+    {
+     "name": "Kolsai Lakes",
+     "type": "N"
+    },
+    {
+     "name": "Medeu and the Trans-Ili Alatau",
+     "type": "N/M"
+    }
+   ]
+  },
+  "KG": {
+   "name_ca": "Kirguizstan",
+   "landmarks": [
+    {
+     "name": "Issyk-Kul",
+     "type": "N"
+    },
+    {
+     "name": "Ala-Archa National Park",
+     "type": "N"
+    },
+    {
+     "name": "Burana Tower",
+     "type": "M"
+    },
+    {
+     "name": "Song-Kul",
+     "type": "N"
+    },
+    {
+     "name": "Tash Rabat",
+     "type": "M"
+    }
+   ]
+  },
+  "KW": {
+   "name_ca": "Kuwait",
+   "landmarks": [
+    {
+     "name": "Kuwait Towers",
+     "type": "M"
+    },
+    {
+     "name": "Grand Mosque of Kuwait",
+     "type": "M"
+    },
+    {
+     "name": "Al Shaheed Park",
+     "type": "M/N"
+    },
+    {
+     "name": "Failaka Island archaeological sites",
+     "type": "N/M"
+    },
+    {
+     "name": "Liberation Tower",
+     "type": "M"
+    }
+   ]
+  },
+  "LA": {
+   "name_ca": "Laos",
+   "landmarks": [
+    {
+     "name": "Luang Prabang",
+     "type": "M"
+    },
+    {
+     "name": "Kuang Si Falls",
+     "type": "N"
+    },
+    {
+     "name": "Plain of Jars",
+     "type": "M"
+    },
+    {
+     "name": "Pha That Luang",
+     "type": "M"
+    },
+    {
+     "name": "Vang Vieng karst landscape",
+     "type": "N"
+    }
+   ]
+  },
+  "LB": {
+   "name_ca": "Líban",
+   "landmarks": [
+    {
+     "name": "Baalbek",
+     "type": "M"
+    },
+    {
+     "name": "Jeita Grotto",
+     "type": "N"
+    },
+    {
+     "name": "Byblos",
+     "type": "M"
+    },
+    {
+     "name": "Cedars of God",
+     "type": "N"
+    },
+    {
+     "name": "Raouché / Pigeon Rocks",
+     "type": "N"
+    }
+   ]
+  },
+  "MO": {
+   "name_ca": "Macau",
+   "landmarks": [
+    {
+     "name": "Ruins of St Paul's",
+     "type": "M"
+    },
+    {
+     "name": "Senado Square",
+     "type": "M"
+    },
+    {
+     "name": "A-Ma Temple",
+     "type": "M"
+    },
+    {
+     "name": "Macau Tower",
+     "type": "M"
+    },
+    {
+     "name": "Cotai skyline",
+     "type": "M"
+    }
+   ]
+  },
+  "MY": {
+   "name_ca": "Malàisia",
+   "landmarks": [
+    {
+     "name": "Petronas Twin Towers",
+     "type": "M"
+    },
+    {
+     "name": "Batu Caves",
+     "type": "N/M"
+    },
+    {
+     "name": "George Town, Penang",
+     "type": "M"
+    },
+    {
+     "name": "Mount Kinabalu",
+     "type": "N"
+    },
+    {
+     "name": "Taman Negara",
+     "type": "N"
+    }
+   ]
+  },
+  "MV": {
+   "name_ca": "Maldives",
+   "landmarks": [
+    {
+     "name": "Baa Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Ari Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Malé Friday Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Vaadhoo bioluminescent beach",
+     "type": "N"
+    },
+    {
+     "name": "Addu Atoll",
+     "type": "N/M"
+    }
+   ]
+  },
+  "MN": {
+   "name_ca": "Mongòlia",
+   "landmarks": [
+    {
+     "name": "Genghis Khan Equestrian Statue",
+     "type": "M"
+    },
+    {
+     "name": "Gobi Desert",
+     "type": "N"
+    },
+    {
+     "name": "Orkhon Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Lake Khövsgöl",
+     "type": "N"
+    },
+    {
+     "name": "Erdene Zuu Monastery",
+     "type": "M"
+    }
+   ]
+  },
+  "MM": {
+   "name_ca": "Myanmar",
+   "landmarks": [
+    {
+     "name": "Bagan",
+     "type": "M"
+    },
+    {
+     "name": "Shwedagon Pagoda",
+     "type": "M"
+    },
+    {
+     "name": "Inle Lake",
+     "type": "N/M"
+    },
+    {
+     "name": "Golden Rock / Kyaiktiyo",
+     "type": "N/M"
+    },
+    {
+     "name": "Mount Popa",
+     "type": "N/M"
+    }
+   ]
+  },
+  "NP": {
+   "name_ca": "Nepal",
+   "landmarks": [
+    {
+     "name": "Mount Everest",
+     "type": "N"
+    },
+    {
+     "name": "Annapurna massif",
+     "type": "N"
+    },
+    {
+     "name": "Kathmandu Durbar Square",
+     "type": "M"
+    },
+    {
+     "name": "Boudhanath Stupa",
+     "type": "M"
+    },
+    {
+     "name": "Chitwan National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "OM": {
+   "name_ca": "Oman",
+   "landmarks": [
+    {
+     "name": "Sultan Qaboos Grand Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Wadi Shab",
+     "type": "N"
+    },
+    {
+     "name": "Sharqiya / Wahiba Sands",
+     "type": "N"
+    },
+    {
+     "name": "Nizwa Fort",
+     "type": "M"
+    },
+    {
+     "name": "Jebel Akhdar",
+     "type": "N"
+    }
+   ]
+  },
+  "PK": {
+   "name_ca": "Pakistan",
+   "landmarks": [
+    {
+     "name": "Badshahi Mosque",
+     "type": "M"
+    },
+    {
+     "name": "Lahore Fort",
+     "type": "M"
+    },
+    {
+     "name": "Hunza Valley",
+     "type": "N"
+    },
+    {
+     "name": "K2 and the Karakoram",
+     "type": "N"
+    },
+    {
+     "name": "Mohenjo-daro",
+     "type": "M"
+    }
+   ]
+  },
+  "PS": {
+   "name_ca": "Palestina",
+   "landmarks": [
+    {
+     "name": "Church of the Nativity, Bethlehem",
+     "type": "M"
+    },
+    {
+     "name": "Al-Aqsa Mosque / Haram al-Sharif",
+     "type": "M"
+    },
+    {
+     "name": "Tell es-Sultan, Jericho",
+     "type": "M"
+    },
+    {
+     "name": "Wadi Qelt",
+     "type": "N"
+    },
+    {
+     "name": "Battir terraces",
+     "type": "N/M"
+    }
+   ]
+  },
+  "QA": {
+   "name_ca": "Qatar",
+   "landmarks": [
+    {
+     "name": "Museum of Islamic Art",
+     "type": "M"
+    },
+    {
+     "name": "Souq Waqif",
+     "type": "M"
+    },
+    {
+     "name": "Khor Al Adaid / Inland Sea",
+     "type": "N"
+    },
+    {
+     "name": "National Museum of Qatar",
+     "type": "M"
+    },
+    {
+     "name": "Al Zubarah Fort and archaeological site",
+     "type": "M"
+    }
+   ]
+  },
+  "SG": {
+   "name_ca": "Singapur",
+   "landmarks": [
+    {
+     "name": "Marina Bay Sands",
+     "type": "M"
+    },
+    {
+     "name": "Gardens by the Bay",
+     "type": "M/N"
+    },
+    {
+     "name": "Merlion",
+     "type": "M"
+    },
+    {
+     "name": "Singapore Botanic Gardens",
+     "type": "N/M"
+    },
+    {
+     "name": "MacRitchie Reservoir nature area",
+     "type": "N"
+    }
+   ]
+  },
+  "SY": {
+   "name_ca": "Síria",
+   "landmarks": [
+    {
+     "name": "Palmyra",
+     "type": "M"
+    },
+    {
+     "name": "Aleppo Citadel",
+     "type": "M"
+    },
+    {
+     "name": "Umayyad Mosque, Damascus",
+     "type": "M"
+    },
+    {
+     "name": "Krak des Chevaliers",
+     "type": "M"
+    },
+    {
+     "name": "Euphrates Valley",
+     "type": "N/M"
+    }
+   ]
+  },
+  "LK": {
+   "name_ca": "Sri Lanka",
+   "landmarks": [
+    {
+     "name": "Sigiriya",
+     "type": "N/M"
+    },
+    {
+     "name": "Temple of the Tooth",
+     "type": "M"
+    },
+    {
+     "name": "Yala National Park",
+     "type": "N"
+    },
+    {
+     "name": "Adam's Peak / Sri Pada",
+     "type": "N/M"
+    },
+    {
+     "name": "Galle Fort",
+     "type": "M"
+    }
+   ]
+  },
+  "TJ": {
+   "name_ca": "Tadjikistan",
+   "landmarks": [
+    {
+     "name": "Pamir Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Iskanderkul",
+     "type": "N"
+    },
+    {
+     "name": "Fann Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Hisor Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Seven Lakes / Haft Kul",
+     "type": "N"
+    }
+   ]
+  },
+  "TH": {
+   "name_ca": "Tailàndia",
+   "landmarks": [
+    {
+     "name": "Grand Palace, Bangkok",
+     "type": "M"
+    },
+    {
+     "name": "Wat Arun",
+     "type": "M"
+    },
+    {
+     "name": "Phi Phi Islands",
+     "type": "N"
+    },
+    {
+     "name": "Doi Inthanon National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ayutthaya Historical Park",
+     "type": "M"
+    }
+   ]
+  },
+  "TW": {
+   "name_ca": "Taiwan",
+   "landmarks": [
+    {
+     "name": "Taipei 101",
+     "type": "M"
+    },
+    {
+     "name": "Taroko Gorge",
+     "type": "N"
+    },
+    {
+     "name": "Sun Moon Lake",
+     "type": "N"
+    },
+    {
+     "name": "Alishan",
+     "type": "N"
+    },
+    {
+     "name": "Chiang Kai-shek Memorial Hall",
+     "type": "M"
+    }
+   ]
+  },
+  "TL": {
+   "name_ca": "Timor Oriental",
+   "landmarks": [
+    {
+     "name": "Cristo Rei of Dili",
+     "type": "M"
+    },
+    {
+     "name": "Atauro Island",
+     "type": "N"
+    },
+    {
+     "name": "Mount Ramelau",
+     "type": "N"
+    },
+    {
+     "name": "Jaco Island",
+     "type": "N"
+    },
+    {
+     "name": "Motael Church",
+     "type": "M"
+    }
+   ]
+  },
+  "TM": {
+   "name_ca": "Turkmenistan",
+   "landmarks": [
+    {
+     "name": "Darvaza Gas Crater",
+     "type": "N/M"
+    },
+    {
+     "name": "Ancient Merv",
+     "type": "M"
+    },
+    {
+     "name": "Ashgabat monumental centre",
+     "type": "M"
+    },
+    {
+     "name": "Yangykala Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Kunya-Urgench",
+     "type": "M"
+    }
+   ]
+  },
+  "TR": {
+   "name_ca": "Turquia",
+   "landmarks": [
+    {
+     "name": "Hagia Sophia",
+     "type": "M"
+    },
+    {
+     "name": "Cappadocia",
+     "type": "N/M"
+    },
+    {
+     "name": "Ephesus",
+     "type": "M"
+    },
+    {
+     "name": "Pamukkale",
+     "type": "N/M"
+    },
+    {
+     "name": "Mount Ararat",
+     "type": "N"
+    }
+   ]
+  },
+  "UZ": {
+   "name_ca": "Uzbekistan",
+   "landmarks": [
+    {
+     "name": "Registan, Samarkand",
+     "type": "M"
+    },
+    {
+     "name": "Shah-i-Zinda",
+     "type": "M"
+    },
+    {
+     "name": "Historic Centre of Bukhara",
+     "type": "M"
+    },
+    {
+     "name": "Itchan Kala, Khiva",
+     "type": "M"
+    },
+    {
+     "name": "Chimgan Mountains",
+     "type": "N"
+    }
+   ]
+  },
+  "VN": {
+   "name_ca": "Vietnam",
+   "landmarks": [
+    {
+     "name": "Ha Long Bay",
+     "type": "N"
+    },
+    {
+     "name": "Hoi An Ancient Town",
+     "type": "M"
+    },
+    {
+     "name": "Imperial City of Huế",
+     "type": "M"
+    },
+    {
+     "name": "Trang An Landscape Complex",
+     "type": "N/M"
+    },
+    {
+     "name": "Sơn Đoòng Cave",
+     "type": "N"
+    }
+   ]
+  },
+  "CN": {
+   "name_ca": "Xina",
+   "landmarks": [
+    {
+     "name": "Great Wall of China",
+     "type": "M"
+    },
+    {
+     "name": "Forbidden City",
+     "type": "M"
+    },
+    {
+     "name": "Terracotta Army",
+     "type": "M"
+    },
+    {
+     "name": "Zhangjiajie",
+     "type": "N"
+    },
+    {
+     "name": "Li River karst landscape",
+     "type": "N"
+    }
+   ]
+  },
+  "AU": {
+   "name_ca": "Austràlia",
+   "landmarks": [
+    {
+     "name": "Sydney Opera House",
+     "type": "M"
+    },
+    {
+     "name": "Great Barrier Reef",
+     "type": "N"
+    },
+    {
+     "name": "Uluru",
+     "type": "N/M"
+    },
+    {
+     "name": "Twelve Apostles",
+     "type": "N"
+    },
+    {
+     "name": "Kakadu National Park",
+     "type": "N/M"
+    }
+   ]
+  },
+  "FJ": {
+   "name_ca": "Fiji",
+   "landmarks": [
+    {
+     "name": "Yasawa Islands",
+     "type": "N"
+    },
+    {
+     "name": "Mamanuca Islands",
+     "type": "N"
+    },
+    {
+     "name": "Sigatoka Sand Dunes",
+     "type": "N"
+    },
+    {
+     "name": "Sri Siva Subramaniya Temple",
+     "type": "M"
+    },
+    {
+     "name": "Levuka Historical Port Town",
+     "type": "M"
+    }
+   ]
+  },
+  "GU": {
+   "name_ca": "Guam",
+   "landmarks": [
+    {
+     "name": "Two Lovers Point",
+     "type": "N"
+    },
+    {
+     "name": "Tumon Bay",
+     "type": "N"
+    },
+    {
+     "name": "Fort Nuestra Señora de la Soledad",
+     "type": "M"
+    },
+    {
+     "name": "War in the Pacific National Historical Park",
+     "type": "N/M"
+    },
+    {
+     "name": "Dulce Nombre de Maria Cathedral-Basilica",
+     "type": "M"
+    }
+   ]
+  },
+  "CX": {
+   "name_ca": "Illa de Nadal",
+   "landmarks": [
+    {
+     "name": "Christmas Island National Park",
+     "type": "N"
+    },
+    {
+     "name": "Flying Fish Cove",
+     "type": "N/M"
+    },
+    {
+     "name": "The Dales",
+     "type": "N"
+    },
+    {
+     "name": "The Blowholes",
+     "type": "N"
+    },
+    {
+     "name": "Tai Jin House",
+     "type": "M"
+    }
+   ]
+  },
+  "NF": {
+   "name_ca": "Illa Norfolk",
+   "landmarks": [
+    {
+     "name": "Kingston and Arthur's Vale Historic Area",
+     "type": "M"
+    },
+    {
+     "name": "Emily Bay",
+     "type": "N"
+    },
+    {
+     "name": "Mount Pitt",
+     "type": "N"
+    },
+    {
+     "name": "Norfolk Island National Park",
+     "type": "N"
+    },
+    {
+     "name": "St Barnabas Chapel",
+     "type": "M"
+    }
+   ]
+  },
+  "CC": {
+   "name_ca": "Illes Cocos",
+   "landmarks": [
+    {
+     "name": "Direction Island",
+     "type": "N"
+    },
+    {
+     "name": "Pulu Keeling National Park",
+     "type": "N"
+    },
+    {
+     "name": "Home Island / Kampong",
+     "type": "M"
+    },
+    {
+     "name": "Cocos lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Oceania House",
+     "type": "M"
+    }
+   ]
+  },
+  "CK": {
+   "name_ca": "Illes Cook",
+   "landmarks": [
+    {
+     "name": "Aitutaki Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "One Foot Island",
+     "type": "N"
+    },
+    {
+     "name": "Te Rua Manga / The Needle",
+     "type": "N"
+    },
+    {
+     "name": "Rarotonga interior",
+     "type": "N"
+    },
+    {
+     "name": "Cook Islands Christian Church, Avarua",
+     "type": "M"
+    }
+   ]
+  },
+  "MP": {
+   "name_ca": "Illes Mariannes del Nord",
+   "landmarks": [
+    {
+     "name": "The Grotto, Saipan",
+     "type": "N"
+    },
+    {
+     "name": "Managaha Island",
+     "type": "N"
+    },
+    {
+     "name": "Suicide Cliff",
+     "type": "N/M"
+    },
+    {
+     "name": "Banzai Cliff",
+     "type": "N/M"
+    },
+    {
+     "name": "House of Taga, Tinian",
+     "type": "M"
+    }
+   ]
+  },
+  "MH": {
+   "name_ca": "Illes Marshall",
+   "landmarks": [
+    {
+     "name": "Bikini Atoll",
+     "type": "N/M"
+    },
+    {
+     "name": "Majuro Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Arno Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Alele Museum",
+     "type": "M"
+    },
+    {
+     "name": "Kwajalein Atoll",
+     "type": "N/M"
+    }
+   ]
+  },
+  "PN": {
+   "name_ca": "Illes Pitcairn",
+   "landmarks": [
+    {
+     "name": "Bounty Bay",
+     "type": "N/M"
+    },
+    {
+     "name": "Adamstown",
+     "type": "M"
+    },
+    {
+     "name": "Christian's Cave",
+     "type": "N"
+    },
+    {
+     "name": "Henderson Island",
+     "type": "N"
+    },
+    {
+     "name": "St Paul's Pool",
+     "type": "N"
+    }
+   ]
+  },
+  "SB": {
+   "name_ca": "Illes Salomó",
+   "landmarks": [
+    {
+     "name": "Marovo Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Bonegi shipwrecks",
+     "type": "N/M"
+    },
+    {
+     "name": "Tenaru Falls",
+     "type": "N"
+    },
+    {
+     "name": "Guadalcanal WWII sites",
+     "type": "M"
+    },
+    {
+     "name": "Skull Island",
+     "type": "M"
+    }
+   ]
+  },
+  "KI": {
+   "name_ca": "Kiribati",
+   "landmarks": [
+    {
+     "name": "Kiritimati / Christmas Island",
+     "type": "N"
+    },
+    {
+     "name": "Phoenix Islands Protected Area",
+     "type": "N"
+    },
+    {
+     "name": "Betio WWII relics, Tarawa",
+     "type": "M"
+    },
+    {
+     "name": "Butaritari Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Maneaba ni Maungatabu / Parliament House, Ambo",
+     "type": "M"
+    }
+   ]
+  },
+  "FM": {
+   "name_ca": "Micronèsia",
+   "landmarks": [
+    {
+     "name": "Nan Madol",
+     "type": "M"
+    },
+    {
+     "name": "Chuuk Lagoon shipwrecks",
+     "type": "N/M"
+    },
+    {
+     "name": "Sokehs Rock",
+     "type": "N"
+    },
+    {
+     "name": "Kepirohi Waterfall",
+     "type": "N"
+    },
+    {
+     "name": "Yap stone money sites",
+     "type": "M"
+    }
+   ]
+  },
+  "NR": {
+   "name_ca": "Nauru",
+   "landmarks": [
+    {
+     "name": "Command Ridge and WWII remains",
+     "type": "N/M"
+    },
+    {
+     "name": "Buada Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Anibare Bay",
+     "type": "N"
+    },
+    {
+     "name": "Moqua Caves and Moqua Well",
+     "type": "N"
+    },
+    {
+     "name": "Parliament House",
+     "type": "M"
+    }
+   ]
+  },
+  "NU": {
+   "name_ca": "Niue",
+   "landmarks": [
+    {
+     "name": "Limu Pools",
+     "type": "N"
+    },
+    {
+     "name": "Matapa Chasm",
+     "type": "N"
+    },
+    {
+     "name": "Talava Arches",
+     "type": "N"
+    },
+    {
+     "name": "Avaiki Cave",
+     "type": "N"
+    },
+    {
+     "name": "Ekalesia Church, Alofi",
+     "type": "M"
+    }
+   ]
+  },
+  "NC": {
+   "name_ca": "Nova Caledònia",
+   "landmarks": [
+    {
+     "name": "Heart of Voh",
+     "type": "N"
+    },
+    {
+     "name": "Isle of Pines",
+     "type": "N"
+    },
+    {
+     "name": "Blue River Provincial Park",
+     "type": "N"
+    },
+    {
+     "name": "Tjibaou Cultural Centre",
+     "type": "M"
+    },
+    {
+     "name": "Fort Téremba",
+     "type": "M"
+    }
+   ]
+  },
+  "NZ": {
+   "name_ca": "Nova Zelanda",
+   "landmarks": [
+    {
+     "name": "Milford Sound / Piopiotahi",
+     "type": "N"
+    },
+    {
+     "name": "Aoraki / Mount Cook",
+     "type": "N"
+    },
+    {
+     "name": "Hobbiton Movie Set",
+     "type": "M"
+    },
+    {
+     "name": "Tongariro National Park",
+     "type": "N"
+    },
+    {
+     "name": "Waitomo Glowworm Caves",
+     "type": "N"
+    }
+   ]
+  },
+  "PW": {
+   "name_ca": "Palau",
+   "landmarks": [
+    {
+     "name": "Rock Islands Southern Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Jellyfish Lake",
+     "type": "N"
+    },
+    {
+     "name": "Milky Way Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Belau National Museum",
+     "type": "M"
+    },
+    {
+     "name": "Badrulchau stone monoliths",
+     "type": "M"
+    }
+   ]
+  },
+  "PG": {
+   "name_ca": "Papua Nova Guinea",
+   "landmarks": [
+    {
+     "name": "Kokoda Track",
+     "type": "N/M"
+    },
+    {
+     "name": "Mount Wilhelm",
+     "type": "N"
+    },
+    {
+     "name": "Sepik River",
+     "type": "N/M"
+    },
+    {
+     "name": "Rabaul volcanoes",
+     "type": "N"
+    },
+    {
+     "name": "Kuk Early Agricultural Site",
+     "type": "M"
+    }
+   ]
+  },
+  "PF": {
+   "name_ca": "Polinèsia Francesa",
+   "landmarks": [
+    {
+     "name": "Bora Bora lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Moorea",
+     "type": "N"
+    },
+    {
+     "name": "Teahupo'o",
+     "type": "N"
+    },
+    {
+     "name": "Taputapuātea marae",
+     "type": "M"
+    },
+    {
+     "name": "Notre-Dame Cathedral, Papeete",
+     "type": "M"
+    }
+   ]
+  },
+  "WS": {
+   "name_ca": "Samoa",
+   "landmarks": [
+    {
+     "name": "To Sua Ocean Trench",
+     "type": "N"
+    },
+    {
+     "name": "Lalomanu Beach",
+     "type": "N"
+    },
+    {
+     "name": "Robert Louis Stevenson Museum",
+     "type": "M"
+    },
+    {
+     "name": "Papase'ea Sliding Rocks",
+     "type": "N"
+    },
+    {
+     "name": "Immaculate Conception Cathedral, Apia",
+     "type": "M"
+    }
+   ]
+  },
+  "AS": {
+   "name_ca": "Samoa Americana",
+   "landmarks": [
+    {
+     "name": "National Park of American Samoa",
+     "type": "N"
+    },
+    {
+     "name": "Ofu Beach",
+     "type": "N"
+    },
+    {
+     "name": "Mount Alava",
+     "type": "N"
+    },
+    {
+     "name": "Pola Island",
+     "type": "N"
+    },
+    {
+     "name": "Blunts Point Battery",
+     "type": "M"
+    }
+   ]
+  },
+  "TK": {
+   "name_ca": "Tokelau",
+   "landmarks": [
+    {
+     "name": "Atafu Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Nukunonu Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Fakaofo Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Sacred Heart / Nukunonu Church",
+     "type": "M"
+    }
+   ]
+  },
+  "TO": {
+   "name_ca": "Tonga",
+   "landmarks": [
+    {
+     "name": "Ha'amonga 'a Maui Trilithon",
+     "type": "M"
+    },
+    {
+     "name": "Mapu'a 'a Vaea Blowholes",
+     "type": "N"
+    },
+    {
+     "name": "Royal Palace of Tonga",
+     "type": "M"
+    },
+    {
+     "name": "Anahulu Cave",
+     "type": "N"
+    },
+    {
+     "name": "'Eua National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "TV": {
+   "name_ca": "Tuvalu",
+   "landmarks": [
+    {
+     "name": "Funafuti Conservation Area",
+     "type": "N"
+    },
+    {
+     "name": "Funafuti Lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Nanumea Atoll",
+     "type": "N"
+    },
+    {
+     "name": "Funafuti WWII sites",
+     "type": "M"
+    },
+    {
+     "name": "Parliament of Tuvalu, Vaiaku",
+     "type": "M"
+    }
+   ]
+  },
+  "VU": {
+   "name_ca": "Vanuatu",
+   "landmarks": [
+    {
+     "name": "Mount Yasur",
+     "type": "N"
+    },
+    {
+     "name": "Champagne Beach",
+     "type": "N"
+    },
+    {
+     "name": "Mele Cascades",
+     "type": "N"
+    },
+    {
+     "name": "Chief Roi Mata's Domain",
+     "type": "M"
+    },
+    {
+     "name": "SS President Coolidge wreck",
+     "type": "M/N"
+    }
+   ]
+  },
+  "WF": {
+   "name_ca": "Wallis i Futuna",
+   "landmarks": [
+    {
+     "name": "Lake Lalolalo",
+     "type": "N"
+    },
+    {
+     "name": "Talietumu / Kolo Nui",
+     "type": "M"
+    },
+    {
+     "name": "Basilica of St Peter Chanel",
+     "type": "M"
+    },
+    {
+     "name": "Mount Puke",
+     "type": "N"
+    },
+    {
+     "name": "Mata-Utu Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "AI": {
+   "name_ca": "Anguilla",
+   "landmarks": [
+    {
+     "name": "Shoal Bay East",
+     "type": "N"
+    },
+    {
+     "name": "Rendezvous Bay",
+     "type": "N"
+    },
+    {
+     "name": "Little Bay",
+     "type": "N"
+    },
+    {
+     "name": "Wallblake House",
+     "type": "M"
+    },
+    {
+     "name": "Sandy Ground salt pond",
+     "type": "N"
+    }
+   ]
+  },
+  "AG": {
+   "name_ca": "Antiga i Barbuda",
+   "landmarks": [
+    {
+     "name": "Nelson's Dockyard",
+     "type": "M"
+    },
+    {
+     "name": "Shirley Heights",
+     "type": "N/M"
+    },
+    {
+     "name": "Devil's Bridge",
+     "type": "N"
+    },
+    {
+     "name": "Half Moon Bay",
+     "type": "N"
+    },
+    {
+     "name": "St John's Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "AR": {
+   "name_ca": "Argentina",
+   "landmarks": [
+    {
+     "name": "Iguazú Falls",
+     "type": "N"
+    },
+    {
+     "name": "Perito Moreno Glacier",
+     "type": "N"
+    },
+    {
+     "name": "Mount Fitz Roy",
+     "type": "N"
+    },
+    {
+     "name": "Obelisk of Buenos Aires",
+     "type": "M"
+    },
+    {
+     "name": "Quebrada de Humahuaca",
+     "type": "N/M"
+    }
+   ]
+  },
+  "AW": {
+   "name_ca": "Aruba",
+   "landmarks": [
+    {
+     "name": "Eagle Beach",
+     "type": "N"
+    },
+    {
+     "name": "Arikok National Park",
+     "type": "N"
+    },
+    {
+     "name": "Conchi Natural Pool",
+     "type": "N"
+    },
+    {
+     "name": "California Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Alto Vista Chapel",
+     "type": "M"
+    }
+   ]
+  },
+  "BS": {
+   "name_ca": "Bahames",
+   "landmarks": [
+    {
+     "name": "Exuma Cays",
+     "type": "N"
+    },
+    {
+     "name": "Dean's Blue Hole",
+     "type": "N"
+    },
+    {
+     "name": "Pink Sands Beach",
+     "type": "N"
+    },
+    {
+     "name": "Queen's Staircase",
+     "type": "M"
+    },
+    {
+     "name": "Fort Fincastle",
+     "type": "M"
+    }
+   ]
+  },
+  "BB": {
+   "name_ca": "Barbados",
+   "landmarks": [
+    {
+     "name": "Harrison's Cave",
+     "type": "N"
+    },
+    {
+     "name": "Bathsheba and the Soup Bowl",
+     "type": "N"
+    },
+    {
+     "name": "St Nicholas Abbey",
+     "type": "M"
+    },
+    {
+     "name": "Historic Bridgetown and its Garrison",
+     "type": "M"
+    },
+    {
+     "name": "Animal Flower Cave",
+     "type": "N"
+    }
+   ]
+  },
+  "BZ": {
+   "name_ca": "Belize",
+   "landmarks": [
+    {
+     "name": "Great Blue Hole",
+     "type": "N"
+    },
+    {
+     "name": "Belize Barrier Reef",
+     "type": "N"
+    },
+    {
+     "name": "Caracol",
+     "type": "M"
+    },
+    {
+     "name": "Xunantunich",
+     "type": "M"
+    },
+    {
+     "name": "Cockscomb Basin Wildlife Sanctuary",
+     "type": "N"
+    }
+   ]
+  },
+  "BM": {
+   "name_ca": "Bermudes",
+   "landmarks": [
+    {
+     "name": "Horseshoe Bay Beach",
+     "type": "N"
+    },
+    {
+     "name": "Crystal Caves",
+     "type": "N"
+    },
+    {
+     "name": "Historic Town of St George",
+     "type": "M"
+    },
+    {
+     "name": "Gibbs Hill Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Royal Naval Dockyard",
+     "type": "M"
+    }
+   ]
+  },
+  "BO": {
+   "name_ca": "Bolívia",
+   "landmarks": [
+    {
+     "name": "Salar de Uyuni",
+     "type": "N"
+    },
+    {
+     "name": "Tiwanaku",
+     "type": "M"
+    },
+    {
+     "name": "Lake Titicaca",
+     "type": "N/M"
+    },
+    {
+     "name": "Laguna Colorada",
+     "type": "N"
+    },
+    {
+     "name": "Historic City of Sucre",
+     "type": "M"
+    }
+   ]
+  },
+  "BR": {
+   "name_ca": "Brasil",
+   "landmarks": [
+    {
+     "name": "Christ the Redeemer",
+     "type": "M"
+    },
+    {
+     "name": "Iguaçu Falls",
+     "type": "N"
+    },
+    {
+     "name": "Sugarloaf Mountain",
+     "type": "N"
+    },
+    {
+     "name": "Amazon rainforest",
+     "type": "N"
+    },
+    {
+     "name": "Lençóis Maranhenses",
+     "type": "N"
+    }
+   ]
+  },
+  "CA": {
+   "name_ca": "Canadà",
+   "landmarks": [
+    {
+     "name": "Niagara Falls",
+     "type": "N"
+    },
+    {
+     "name": "Banff National Park",
+     "type": "N"
+    },
+    {
+     "name": "CN Tower",
+     "type": "M"
+    },
+    {
+     "name": "Old Québec",
+     "type": "M"
+    },
+    {
+     "name": "Bay of Fundy",
+     "type": "N"
+    }
+   ]
+  },
+  "CO": {
+   "name_ca": "Colòmbia",
+   "landmarks": [
+    {
+     "name": "Cartagena walled city",
+     "type": "M"
+    },
+    {
+     "name": "Cocora Valley",
+     "type": "N"
+    },
+    {
+     "name": "Tayrona National Park",
+     "type": "N"
+    },
+    {
+     "name": "Ciudad Perdida / Lost City",
+     "type": "M"
+    },
+    {
+     "name": "Caño Cristales",
+     "type": "N"
+    }
+   ]
+  },
+  "CR": {
+   "name_ca": "Costa Rica",
+   "landmarks": [
+    {
+     "name": "Arenal Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Monteverde Cloud Forest",
+     "type": "N"
+    },
+    {
+     "name": "Manuel Antonio National Park",
+     "type": "N"
+    },
+    {
+     "name": "Poás Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Guayabo National Monument",
+     "type": "M"
+    }
+   ]
+  },
+  "CU": {
+   "name_ca": "Cuba",
+   "landmarks": [
+    {
+     "name": "Old Havana",
+     "type": "M"
+    },
+    {
+     "name": "Viñales Valley",
+     "type": "N/M"
+    },
+    {
+     "name": "Trinidad",
+     "type": "M"
+    },
+    {
+     "name": "El Capitolio, Havana",
+     "type": "M"
+    },
+    {
+     "name": "Varadero Beach",
+     "type": "N"
+    }
+   ]
+  },
+  "CW": {
+   "name_ca": "Curaçao",
+   "landmarks": [
+    {
+     "name": "Punda and Handelskade, Willemstad",
+     "type": "M"
+    },
+    {
+     "name": "Queen Emma Bridge",
+     "type": "M"
+    },
+    {
+     "name": "Christoffel National Park",
+     "type": "N"
+    },
+    {
+     "name": "Shete Boka National Park",
+     "type": "N"
+    },
+    {
+     "name": "Grote Knip / Playa Kenepa",
+     "type": "N"
+    }
+   ]
+  },
+  "DM": {
+   "name_ca": "Dominica",
+   "landmarks": [
+    {
+     "name": "Boiling Lake",
+     "type": "N"
+    },
+    {
+     "name": "Trafalgar Falls",
+     "type": "N"
+    },
+    {
+     "name": "Morne Trois Pitons National Park",
+     "type": "N"
+    },
+    {
+     "name": "Emerald Pool",
+     "type": "N"
+    },
+    {
+     "name": "Fort Shirley",
+     "type": "M"
+    }
+   ]
+  },
+  "SV": {
+   "name_ca": "El Salvador",
+   "landmarks": [
+    {
+     "name": "Santa Ana Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Joya de Cerén",
+     "type": "M"
+    },
+    {
+     "name": "Ruta de las Flores",
+     "type": "N/M"
+    },
+    {
+     "name": "Lake Coatepeque",
+     "type": "N"
+    },
+    {
+     "name": "Metropolitan Cathedral of San Salvador",
+     "type": "M"
+    }
+   ]
+  },
+  "EC": {
+   "name_ca": "Equador",
+   "landmarks": [
+    {
+     "name": "Galápagos Islands",
+     "type": "N"
+    },
+    {
+     "name": "Cotopaxi",
+     "type": "N"
+    },
+    {
+     "name": "Quilotoa crater lake",
+     "type": "N"
+    },
+    {
+     "name": "Historic Centre of Quito",
+     "type": "M"
+    },
+    {
+     "name": "Ingapirca",
+     "type": "M"
+    }
+   ]
+  },
+  "US": {
+   "name_ca": "Estats Units d'Amèrica",
+   "landmarks": [
+    {
+     "name": "Statue of Liberty",
+     "type": "M"
+    },
+    {
+     "name": "Grand Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Golden Gate Bridge",
+     "type": "M"
+    },
+    {
+     "name": "Yellowstone National Park",
+     "type": "N"
+    },
+    {
+     "name": "Monument Valley",
+     "type": "N"
+    }
+   ]
+  },
+  "GD": {
+   "name_ca": "Granada",
+   "landmarks": [
+    {
+     "name": "Grand Anse Beach",
+     "type": "N"
+    },
+    {
+     "name": "Underwater Sculpture Park",
+     "type": "M/N"
+    },
+    {
+     "name": "Annandale Falls",
+     "type": "N"
+    },
+    {
+     "name": "Fort George",
+     "type": "M"
+    },
+    {
+     "name": "Grand Etang National Park",
+     "type": "N"
+    }
+   ]
+  },
+  "GL": {
+   "name_ca": "Groenlàndia",
+   "landmarks": [
+    {
+     "name": "Ilulissat Icefjord",
+     "type": "N"
+    },
+    {
+     "name": "Nuuk Colonial Harbour",
+     "type": "M"
+    },
+    {
+     "name": "Scoresby Sund",
+     "type": "N"
+    },
+    {
+     "name": "Disko Bay",
+     "type": "N"
+    },
+    {
+     "name": "Hvalsey Church ruins",
+     "type": "M"
+    }
+   ]
+  },
+  "GP": {
+   "name_ca": "Guadalupe",
+   "landmarks": [
+    {
+     "name": "La Soufrière",
+     "type": "N"
+    },
+    {
+     "name": "Carbet Falls",
+     "type": "N"
+    },
+    {
+     "name": "Pointe des Châteaux",
+     "type": "N"
+    },
+    {
+     "name": "Guadeloupe National Park",
+     "type": "N"
+    },
+    {
+     "name": "Fort Delgrès",
+     "type": "M"
+    }
+   ]
+  },
+  "GF": {
+   "name_ca": "Guaiana Francesa",
+   "landmarks": [
+    {
+     "name": "Guiana Space Centre",
+     "type": "M"
+    },
+    {
+     "name": "Îles du Salut / Devil's Island",
+     "type": "M/N"
+    },
+    {
+     "name": "Kaw-Roura Marshes",
+     "type": "N"
+    },
+    {
+     "name": "Guiana Amazonian Park",
+     "type": "N"
+    },
+    {
+     "name": "Fort Cépérou",
+     "type": "M"
+    }
+   ]
+  },
+  "GT": {
+   "name_ca": "Guatemala",
+   "landmarks": [
+    {
+     "name": "Tikal",
+     "type": "M"
+    },
+    {
+     "name": "Lake Atitlán",
+     "type": "N"
+    },
+    {
+     "name": "Antigua Guatemala",
+     "type": "M"
+    },
+    {
+     "name": "Semuc Champey",
+     "type": "N"
+    },
+    {
+     "name": "Acatenango Volcano",
+     "type": "N"
+    }
+   ]
+  },
+  "GY": {
+   "name_ca": "Guyana",
+   "landmarks": [
+    {
+     "name": "Kaieteur Falls",
+     "type": "N"
+    },
+    {
+     "name": "Mount Roraima",
+     "type": "N"
+    },
+    {
+     "name": "Iwokrama Forest",
+     "type": "N"
+    },
+    {
+     "name": "St George's Cathedral, Georgetown",
+     "type": "M"
+    },
+    {
+     "name": "Shell Beach",
+     "type": "N"
+    }
+   ]
+  },
+  "HT": {
+   "name_ca": "Haití",
+   "landmarks": [
+    {
+     "name": "Citadelle Laferrière",
+     "type": "M"
+    },
+    {
+     "name": "Sans-Souci Palace",
+     "type": "M"
+    },
+    {
+     "name": "Bassin Bleu",
+     "type": "N"
+    },
+    {
+     "name": "Labadee coast",
+     "type": "N"
+    },
+    {
+     "name": "Jacmel historic centre",
+     "type": "M"
+    }
+   ]
+  },
+  "HN": {
+   "name_ca": "Hondures",
+   "landmarks": [
+    {
+     "name": "Copán Ruins",
+     "type": "M"
+    },
+    {
+     "name": "Roatán and the Bay Islands",
+     "type": "N"
+    },
+    {
+     "name": "Pico Bonito National Park",
+     "type": "N"
+    },
+    {
+     "name": "Lake Yojoa",
+     "type": "N"
+    },
+    {
+     "name": "Comayagua Cathedral",
+     "type": "M"
+    }
+   ]
+  },
+  "KY": {
+   "name_ca": "Illes Caiman",
+   "landmarks": [
+    {
+     "name": "Seven Mile Beach",
+     "type": "N"
+    },
+    {
+     "name": "Stingray City",
+     "type": "N"
+    },
+    {
+     "name": "Cayman Crystal Caves",
+     "type": "N"
+    },
+    {
+     "name": "Pedro St James",
+     "type": "M"
+    },
+    {
+     "name": "Queen Elizabeth II Botanic Park",
+     "type": "N/M"
+    }
+   ]
+  },
+  "FK": {
+   "name_ca": "Illes Malvines",
+   "landmarks": [
+    {
+     "name": "Volunteer Point",
+     "type": "N"
+    },
+    {
+     "name": "Christ Church Cathedral, Stanley",
+     "type": "M"
+    },
+    {
+     "name": "Gypsy Cove",
+     "type": "N"
+    },
+    {
+     "name": "Cape Pembroke Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Mount Tumbledown",
+     "type": "N/M"
+    }
+   ]
+  },
+  "TC": {
+   "name_ca": "Illes Turks i Caicos",
+   "landmarks": [
+    {
+     "name": "Grace Bay Beach",
+     "type": "N"
+    },
+    {
+     "name": "Chalk Sound",
+     "type": "N"
+    },
+    {
+     "name": "Conch Bar Caves",
+     "type": "N"
+    },
+    {
+     "name": "Grand Turk Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Cheshire Hall Plantation ruins",
+     "type": "M"
+    }
+   ]
+  },
+  "VG": {
+   "name_ca": "Illes Verges Britàniques",
+   "landmarks": [
+    {
+     "name": "The Baths, Virgin Gorda",
+     "type": "N"
+    },
+    {
+     "name": "Sage Mountain National Park",
+     "type": "N"
+    },
+    {
+     "name": "Norman Island",
+     "type": "N"
+    },
+    {
+     "name": "Copper Mine ruins",
+     "type": "M"
+    },
+    {
+     "name": "Callwood Rum Distillery",
+     "type": "M"
+    }
+   ]
+  },
+  "VI": {
+   "name_ca": "Illes Verges dels Estats Units",
+   "landmarks": [
+    {
+     "name": "Trunk Bay",
+     "type": "N"
+    },
+    {
+     "name": "Virgin Islands National Park",
+     "type": "N"
+    },
+    {
+     "name": "Buck Island Reef",
+     "type": "N"
+    },
+    {
+     "name": "Blackbeard's Castle",
+     "type": "M"
+    },
+    {
+     "name": "Fort Christiansvaern",
+     "type": "M"
+    }
+   ]
+  },
+  "JM": {
+   "name_ca": "Jamaica",
+   "landmarks": [
+    {
+     "name": "Dunn's River Falls",
+     "type": "N"
+    },
+    {
+     "name": "Blue Mountains",
+     "type": "N"
+    },
+    {
+     "name": "Seven Mile Beach, Negril",
+     "type": "N"
+    },
+    {
+     "name": "Bob Marley Museum",
+     "type": "M"
+    },
+    {
+     "name": "Rose Hall Great House",
+     "type": "M"
+    }
+   ]
+  },
+  "MQ": {
+   "name_ca": "Martinica",
+   "landmarks": [
+    {
+     "name": "Mount Pelée",
+     "type": "N"
+    },
+    {
+     "name": "Jardin de Balata",
+     "type": "N/M"
+    },
+    {
+     "name": "Les Salines Beach",
+     "type": "N"
+    },
+    {
+     "name": "Saint-Louis Cathedral, Fort-de-France",
+     "type": "M"
+    },
+    {
+     "name": "Habitation Clément",
+     "type": "M"
+    }
+   ]
+  },
+  "MX": {
+   "name_ca": "Mèxic",
+   "landmarks": [
+    {
+     "name": "Chichén Itzá",
+     "type": "M"
+    },
+    {
+     "name": "Teotihuacan",
+     "type": "M"
+    },
+    {
+     "name": "Copper Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Hierve el Agua",
+     "type": "N"
+    },
+    {
+     "name": "Palacio de Bellas Artes",
+     "type": "M"
+    }
+   ]
+  },
+  "MS": {
+   "name_ca": "Montserrat",
+   "landmarks": [
+    {
+     "name": "Soufrière Hills Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Buried city of Plymouth",
+     "type": "N/M"
+    },
+    {
+     "name": "Centre Hills",
+     "type": "N"
+    },
+    {
+     "name": "Rendezvous Bay",
+     "type": "N"
+    },
+    {
+     "name": "Montserrat Volcano Observatory",
+     "type": "M"
+    }
+   ]
+  },
+  "NI": {
+   "name_ca": "Nicaragua",
+   "landmarks": [
+    {
+     "name": "Masaya Volcano",
+     "type": "N"
+    },
+    {
+     "name": "Ometepe Island",
+     "type": "N"
+    },
+    {
+     "name": "Granada Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "León Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Somoto Canyon",
+     "type": "N"
+    }
+   ]
+  },
+  "BQ": {
+   "name_ca": "Països Baixos Caribenys",
+   "landmarks": [
+    {
+     "name": "Washington-Slagbaai National Park, Bonaire",
+     "type": "N"
+    },
+    {
+     "name": "Mount Scenery, Saba",
+     "type": "N"
+    },
+    {
+     "name": "The Quill, Sint Eustatius",
+     "type": "N"
+    },
+    {
+     "name": "Bonaire salt pans",
+     "type": "N/M"
+    },
+    {
+     "name": "Fort Oranje, Sint Eustatius",
+     "type": "M"
+    }
+   ]
+  },
+  "PA": {
+   "name_ca": "Panamà",
+   "landmarks": [
+    {
+     "name": "Panama Canal",
+     "type": "M"
+    },
+    {
+     "name": "Casco Viejo",
+     "type": "M"
+    },
+    {
+     "name": "Guna Yala / San Blas Islands",
+     "type": "N/M"
+    },
+    {
+     "name": "Coiba National Park",
+     "type": "N"
+    },
+    {
+     "name": "Volcán Barú",
+     "type": "N"
+    }
+   ]
+  },
+  "PY": {
+   "name_ca": "Paraguai",
+   "landmarks": [
+    {
+     "name": "Itaipu Dam",
+     "type": "M"
+    },
+    {
+     "name": "Jesuit Missions of Trinidad and Jesús",
+     "type": "M"
+    },
+    {
+     "name": "Ybycuí National Park",
+     "type": "N"
+    },
+    {
+     "name": "Saltos del Monday",
+     "type": "N"
+    },
+    {
+     "name": "Gran Chaco",
+     "type": "N"
+    }
+   ]
+  },
+  "PE": {
+   "name_ca": "Perú",
+   "landmarks": [
+    {
+     "name": "Machu Picchu",
+     "type": "M"
+    },
+    {
+     "name": "Nazca Lines",
+     "type": "M"
+    },
+    {
+     "name": "Colca Canyon",
+     "type": "N"
+    },
+    {
+     "name": "Lake Titicaca",
+     "type": "N/M"
+    },
+    {
+     "name": "Vinicunca / Rainbow Mountain",
+     "type": "N"
+    }
+   ]
+  },
+  "PR": {
+   "name_ca": "Puerto Rico",
+   "landmarks": [
+    {
+     "name": "Old San Juan",
+     "type": "M"
+    },
+    {
+     "name": "El Yunque National Forest",
+     "type": "N"
+    },
+    {
+     "name": "Castillo San Felipe del Morro",
+     "type": "M"
+    },
+    {
+     "name": "Mosquito Bay, Vieques",
+     "type": "N"
+    },
+    {
+     "name": "Cueva Ventana",
+     "type": "N"
+    }
+   ]
+  },
+  "DO": {
+   "name_ca": "República Dominicana",
+   "landmarks": [
+    {
+     "name": "Colonial Zone of Santo Domingo",
+     "type": "M"
+    },
+    {
+     "name": "Los Haitises National Park",
+     "type": "N"
+    },
+    {
+     "name": "Pico Duarte",
+     "type": "N"
+    },
+    {
+     "name": "Bahía de las Águilas",
+     "type": "N"
+    },
+    {
+     "name": "Alcázar de Colón",
+     "type": "M"
+    }
+   ]
+  },
+  "BL": {
+   "name_ca": "Saint Barthélemy",
+   "landmarks": [
+    {
+     "name": "Gustavia harbour",
+     "type": "M/N"
+    },
+    {
+     "name": "Colombier Beach",
+     "type": "N"
+    },
+    {
+     "name": "Fort Karl",
+     "type": "M/N"
+    },
+    {
+     "name": "Shell Beach",
+     "type": "N"
+    },
+    {
+     "name": "Anglican Church of Gustavia",
+     "type": "M"
+    }
+   ]
+  },
+  "KN": {
+   "name_ca": "Saint Kitts i Nevis",
+   "landmarks": [
+    {
+     "name": "Brimstone Hill Fortress",
+     "type": "M"
+    },
+    {
+     "name": "Mount Liamuiga",
+     "type": "N"
+    },
+    {
+     "name": "Nevis Peak",
+     "type": "N"
+    },
+    {
+     "name": "The Circus, Basseterre",
+     "type": "M"
+    },
+    {
+     "name": "Pinney's Beach",
+     "type": "N"
+    }
+   ]
+  },
+  "MF": {
+   "name_ca": "Saint Martin",
+   "landmarks": [
+    {
+     "name": "Pic Paradis",
+     "type": "N"
+    },
+    {
+     "name": "Orient Bay",
+     "type": "N"
+    },
+    {
+     "name": "Fort Louis",
+     "type": "M"
+    },
+    {
+     "name": "Loterie Farm nature reserve",
+     "type": "N"
+    },
+    {
+     "name": "Marigot waterfront and market",
+     "type": "M"
+    }
+   ]
+  },
+  "PM": {
+   "name_ca": "Saint-Pierre i Miquelon",
+   "landmarks": [
+    {
+     "name": "Île aux Marins",
+     "type": "M"
+    },
+    {
+     "name": "Pointe aux Canons Lighthouse",
+     "type": "M"
+    },
+    {
+     "name": "Grand Barachois lagoon",
+     "type": "N"
+    },
+    {
+     "name": "Cap Miquelon",
+     "type": "N"
+    },
+    {
+     "name": "Saint-Pierre harbour and cathedral quarter",
+     "type": "M"
+    }
+   ]
+  },
+  "VC": {
+   "name_ca": "Sant Vicent i les Grenadines",
+   "landmarks": [
+    {
+     "name": "La Soufrière volcano",
+     "type": "N"
+    },
+    {
+     "name": "Tobago Cays",
+     "type": "N"
+    },
+    {
+     "name": "Fort Charlotte",
+     "type": "M"
+    },
+    {
+     "name": "Dark View Falls",
+     "type": "N"
+    },
+    {
+     "name": "Admiralty Bay, Bequia",
+     "type": "N/M"
+    }
+   ]
+  },
+  "LC": {
+   "name_ca": "Santa Llúcia",
+   "landmarks": [
+    {
+     "name": "The Pitons",
+     "type": "N"
+    },
+    {
+     "name": "Sulphur Springs",
+     "type": "N"
+    },
+    {
+     "name": "Pigeon Island National Landmark",
+     "type": "N/M"
+    },
+    {
+     "name": "Marigot Bay",
+     "type": "N"
+    },
+    {
+     "name": "Cathedral Basilica of the Immaculate Conception",
+     "type": "M"
+    }
+   ]
+  },
+  "SX": {
+   "name_ca": "Sint Maarten",
+   "landmarks": [
+    {
+     "name": "Maho Beach",
+     "type": "N"
+    },
+    {
+     "name": "Great Bay",
+     "type": "N"
+    },
+    {
+     "name": "Fort Amsterdam",
+     "type": "M"
+    },
+    {
+     "name": "Philipsburg Courthouse and Front Street",
+     "type": "M"
+    },
+    {
+     "name": "Sint Maarten Museum",
+     "type": "M"
+    }
+   ]
+  },
+  "SR": {
+   "name_ca": "Surinam",
+   "landmarks": [
+    {
+     "name": "Central Suriname Nature Reserve",
+     "type": "N"
+    },
+    {
+     "name": "Brownsberg Nature Park",
+     "type": "N"
+    },
+    {
+     "name": "Fort Zeelandia",
+     "type": "M"
+    },
+    {
+     "name": "Saint Peter and Paul Cathedral",
+     "type": "M"
+    },
+    {
+     "name": "Galibi Nature Reserve",
+     "type": "N"
+    }
+   ]
+  },
+  "TT": {
+   "name_ca": "Trinidad i Tobago",
+   "landmarks": [
+    {
+     "name": "Pitch Lake",
+     "type": "N"
+    },
+    {
+     "name": "Maracas Bay",
+     "type": "N"
+    },
+    {
+     "name": "Caroni Bird Sanctuary",
+     "type": "N"
+    },
+    {
+     "name": "Temple in the Sea",
+     "type": "M"
+    },
+    {
+     "name": "Fort George",
+     "type": "M"
+    }
+   ]
+  },
+  "UY": {
+   "name_ca": "Uruguai",
+   "landmarks": [
+    {
+     "name": "Colonia del Sacramento",
+     "type": "M"
+    },
+    {
+     "name": "Palacio Salvo",
+     "type": "M"
+    },
+    {
+     "name": "La Mano, Punta del Este",
+     "type": "M"
+    },
+    {
+     "name": "Cabo Polonio",
+     "type": "N"
+    },
+    {
+     "name": "Quebrada de los Cuervos",
+     "type": "N"
+    }
+   ]
+  },
+  "VE": {
+   "name_ca": "Veneçuela",
+   "landmarks": [
+    {
+     "name": "Angel Falls",
+     "type": "N"
+    },
+    {
+     "name": "Mount Roraima",
+     "type": "N"
+    },
+    {
+     "name": "Los Roques Archipelago",
+     "type": "N"
+    },
+    {
+     "name": "Mérida cable car",
+     "type": "M"
+    },
+    {
+     "name": "Coro historic centre",
+     "type": "M"
+    }
+   ]
+  },
+  "CL": {
+   "name_ca": "Xile",
+   "landmarks": [
+    {
+     "name": "Torres del Paine",
+     "type": "N"
+    },
+    {
+     "name": "Atacama Desert",
+     "type": "N"
+    },
+    {
+     "name": "Rapa Nui moai",
+     "type": "M"
+    },
+    {
+     "name": "Valparaíso historic quarter",
+     "type": "M"
+    },
+    {
+     "name": "Marble Caves",
+     "type": "N"
+    }
+   ]
+  }
+ }
+}

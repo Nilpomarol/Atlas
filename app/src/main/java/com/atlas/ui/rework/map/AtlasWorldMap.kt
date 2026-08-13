@@ -3,10 +3,24 @@ package com.atlas.ui.rework.map
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,7 +30,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -31,6 +48,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.atlas.ui.rework.foundation.AtlasReworkTheme
@@ -45,6 +64,7 @@ import kotlin.math.PI
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -58,6 +78,8 @@ data class AtlasWorldMapCountries(
 )
 
 private const val CountriesAsset = "geo/ne_110m_admin_0_countries.geojson"
+// Higher-resolution borders for the detail locator map (smoother coastlines when framed).
+private const val DetailCountriesAsset = "geo/ne_50m_admin_0_countries.geojson"
 private const val NorthernLatitude = 83.0
 private const val SouthernLatitude = -60.0
 private const val MinimumCameraScale = 1f
@@ -66,6 +88,10 @@ private const val MaximumCameraScale = 8f
 /** Geometry is static bundled reference data; retain it across destination changes. */
 @Volatile
 private var cachedWorldGeometry: WorldGeometry? = null
+
+/** Separate cache for the higher-resolution detail-locator geometry. */
+@Volatile
+private var cachedDetailGeometry: WorldGeometry? = null
 
 private val northernMercatorY = projectLatitude(NorthernLatitude)
 private val southernMercatorY = projectLatitude(SouthernLatitude)
@@ -401,4 +427,210 @@ private fun createSeaGrain(): List<GrainMark> {
             light = random.nextBoolean(),
         )
     }
+}
+
+/**
+ * A static, non-interactive locator map framed on a single country, with its capital
+ * pinned and labelled. Reuses the shared world geometry parse/cache and projection.
+ * The focus country is filled in its relationship colour; neighbours provide context.
+ */
+@Composable
+fun CountryLocatorMap(
+    iso2: String,
+    countries: AtlasWorldMapCountries,
+    capitalLatitude: Double?,
+    capitalLongitude: Double?,
+    capitalName: String?,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    val colors = AtlasReworkTheme.colors
+    val borderWidthPx = with(density) { 0.6.dp.toPx() }
+    val framePaddingPx = with(density) { 34.dp.toPx() }
+
+    var sourceGeometry by remember { mutableStateOf(cachedDetailGeometry) }
+    var viewportSize by remember { mutableStateOf(IntSize.Zero) }
+
+    LaunchedEffect(Unit) {
+        if (sourceGeometry == null) {
+            sourceGeometry = withContext(Dispatchers.IO) {
+                cachedDetailGeometry ?: context.assets.open(DetailCountriesAsset).bufferedReader().use { reader ->
+                    parseWorldGeometry(FeatureCollection.fromJson(reader.readText())).also { cachedDetailGeometry = it }
+                }
+            }
+        }
+    }
+
+    val geometry = remember(sourceGeometry, viewportSize) {
+        sourceGeometry?.takeIf { viewportSize.width > 0 && viewportSize.height > 0 }?.toViewportGeometry(
+            viewportWidth = viewportSize.width.toFloat(),
+            landTop = 0f,
+            sideMargin = 0f,
+        )
+    }
+
+    val focus = remember(geometry, iso2, capitalLatitude, capitalLongitude, viewportSize, framePaddingPx) {
+        val mapGeometry = geometry ?: return@remember null
+        val worldWidth = viewportSize.width.toFloat()
+        val capitalBase = if (capitalLatitude != null && capitalLongitude != null) {
+            Offset(
+                x = ((capitalLongitude + 180.0) / 360.0).toFloat() * worldWidth,
+                y = (projectLatitude(capitalLatitude).toFloat() - northernMercatorY.toFloat()) * worldWidth,
+            )
+        } else {
+            null
+        }
+        val country = mapGeometry.countries.firstOrNull { it.iso2 == iso2 }
+        // Small territories are absent from the low-res world geometry; fall back to a
+        // regional window centred on the capital so the pin and neighbours still show.
+        val bounds = when {
+            country != null -> country.focusBounds(capitalBase)
+            capitalBase != null -> {
+                val half = worldWidth * 0.05f
+                Rect(capitalBase.x - half, capitalBase.y - half, capitalBase.x + half, capitalBase.y + half)
+            }
+            else -> return@remember null
+        }
+        computeLocatorFocus(bounds, capitalBase, viewportSize, framePaddingPx)
+    }
+
+    Box(
+        modifier
+            .background(colors.mapWater)
+            .onSizeChanged { viewportSize = it },
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            drawRect(colors.mapWater)
+            val mapGeometry = geometry ?: return@Canvas
+            val locator = focus ?: return@Canvas
+            translate(left = locator.offset.x, top = locator.offset.y) {
+                scale(scale = locator.scale, pivot = Offset.Zero) {
+                    mapGeometry.countries.forEach { country ->
+                        val isFocus = country.iso2 == iso2
+                        drawPath(
+                            path = country.path,
+                            color = if (isFocus) {
+                                countryColor(country.iso2, countries, colors.mapLand, colors.living, colors.lived, colors.visited, colors.planned, colors.wished)
+                            } else {
+                                colors.mapLand.copy(alpha = 0.55f)
+                            },
+                        )
+                    }
+                    mapGeometry.countries.forEach { country ->
+                        drawPath(
+                            path = country.path,
+                            color = colors.mapBorder.copy(alpha = 0.7f),
+                            style = Stroke(width = borderWidthPx / locator.scale),
+                        )
+                    }
+                    mapGeometry.countries.firstOrNull { it.iso2 == iso2 }?.let { country ->
+                        drawPath(
+                            path = country.path,
+                            color = colors.accent,
+                            style = Stroke(width = 2.2f * borderWidthPx / locator.scale),
+                        )
+                    }
+                }
+            }
+        }
+
+        val capitalScreen = focus?.capitalScreen
+        if (capitalScreen != null) {
+            CapitalMarker(
+                screen = capitalScreen,
+                name = capitalName,
+                colors = colors,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BoxScope.CapitalMarker(
+    screen: Offset,
+    name: String?,
+    colors: com.atlas.ui.rework.foundation.ReworkColors,
+) {
+    val density = LocalDensity.current
+    val dotSize = 12.dp
+    val halfDotPx = with(density) { (dotSize / 2).toPx() }
+    Row(
+        modifier = Modifier
+            .offset { IntOffset((screen.x - halfDotPx).roundToInt(), (screen.y - halfDotPx).roundToInt()) },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(dotSize)
+                .shadow(3.dp, CircleShape)
+                .clip(CircleShape)
+                .background(Color.White)
+                .padding(2.5.dp)
+                .clip(CircleShape)
+                .background(colors.accent),
+        )
+        if (!name.isNullOrBlank()) {
+            Spacer(Modifier.width(6.dp))
+            Surface(
+                shape = RoundedCornerShape(7.dp),
+                color = colors.surfaceStrong,
+                contentColor = colors.ink,
+                border = BorderStroke(1.dp, colors.border),
+                shadowElevation = 3.dp,
+            ) {
+                Text(
+                    text = name,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                    style = AtlasReworkTheme.typography.label.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.ink,
+                )
+            }
+        }
+    }
+}
+
+private data class LocatorFocus(val scale: Float, val offset: Offset, val capitalScreen: Offset?)
+
+/** Bounds of the polygon containing [capitalBase] (the mainland), else the full country bounds. */
+private fun ViewportCountry.focusBounds(capitalBase: Offset?): Rect {
+    if (capitalBase != null) {
+        val polygon = polygons.firstOrNull { polygon ->
+            val outerRing = polygon.firstOrNull() ?: return@firstOrNull false
+            pointInRing(capitalBase, outerRing)
+        }
+        if (polygon != null) {
+            val points = polygon.flatten()
+            if (points.isNotEmpty()) {
+                return Rect(
+                    left = points.minOf { it.x },
+                    top = points.minOf { it.y },
+                    right = points.maxOf { it.x },
+                    bottom = points.maxOf { it.y },
+                )
+            }
+        }
+    }
+    return bounds
+}
+
+private fun computeLocatorFocus(
+    bounds: Rect,
+    capitalBase: Offset?,
+    viewportSize: IntSize,
+    padding: Float,
+): LocatorFocus {
+    val availableWidth = (viewportSize.width - padding * 2f).coerceAtLeast(1f)
+    val availableHeight = (viewportSize.height - padding * 2f).coerceAtLeast(1f)
+    val boundsWidth = bounds.width.coerceAtLeast(0.001f)
+    val boundsHeight = bounds.height.coerceAtLeast(0.001f)
+    // Cap the zoom so tiny countries keep surrounding context instead of filling the panel.
+    val scale = min(availableWidth / boundsWidth, availableHeight / boundsHeight).coerceIn(1f, 48f)
+    val center = bounds.center
+    val offset = Offset(
+        x = viewportSize.width / 2f - center.x * scale,
+        y = viewportSize.height / 2f - center.y * scale,
+    )
+    val capitalScreen = capitalBase?.let { Offset(it.x * scale + offset.x, it.y * scale + offset.y) }
+    return LocatorFocus(scale = scale, offset = offset, capitalScreen = capitalScreen)
 }

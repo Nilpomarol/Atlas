@@ -40,7 +40,6 @@ fun ReworkCountryDetailRoute(
     container: AtlasAppContainer,
     iso2: String,
     onBack: () -> Unit,
-    onCaptureRequested: (String) -> Unit,
 ) {
     val viewModel: CountryDetailViewModel = viewModel(
         key = "rework-country-$iso2",
@@ -70,6 +69,5 @@ fun ReworkCountryDetailRoute(
     ReworkCountryDetailScreen(
         state = state,
         onBack = onBack,
-        onCaptureRequested = { onCaptureRequested(iso2) },
     )
 }

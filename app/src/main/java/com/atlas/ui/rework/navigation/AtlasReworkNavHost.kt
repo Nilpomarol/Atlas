@@ -33,7 +33,6 @@ fun AtlasReworkNavHost(
     onCountrySelectionCleared: () -> Unit,
     captureExpanded: Boolean,
     onCaptureRequested: () -> Unit,
-    onCaptureForCountry: (String) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -65,7 +64,6 @@ fun AtlasReworkNavHost(
                 container = container,
                 iso2 = entry.arguments?.getString("iso2").orEmpty(),
                 onBack = { navController.popBackStack() },
-                onCaptureRequested = onCaptureForCountry,
             )
         }
         composable(

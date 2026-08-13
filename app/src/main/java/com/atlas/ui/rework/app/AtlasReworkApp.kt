@@ -35,7 +35,12 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
             ?: ReworkDestination.Home
         var captureExpanded by remember { mutableStateOf(false) }
         var selectedCountryIso2 by remember { mutableStateOf<String?>(null) }
-        var captureCountryIso2 by remember { mutableStateOf<String?>(null) }
+        // On the country detail screen, capture is pre-scoped to that country (via the FAB).
+        val detailCountryIso2 = if (selectedDestination == ReworkDestination.CountryDetail) {
+            entry?.arguments?.getString("iso2")
+        } else {
+            null
+        }
 
         val dashboardViewModel: DashboardViewModel = viewModel(
             factory = DashboardViewModel.Factory(
@@ -61,14 +66,7 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
                 onCountrySelected = { selectedCountryIso2 = it },
                 onCountrySelectionCleared = { selectedCountryIso2 = null },
                 captureExpanded = captureExpanded,
-                onCaptureRequested = {
-                    captureCountryIso2 = null
-                    captureExpanded = !captureExpanded
-                },
-                onCaptureForCountry = { iso2 ->
-                    captureCountryIso2 = iso2
-                    captureExpanded = true
-                },
+                onCaptureRequested = { captureExpanded = !captureExpanded },
             )
 
             ReworkNavigationBar(
@@ -96,11 +94,8 @@ fun AtlasReworkApp(container: AtlasAppContainer) {
 
             if (captureExpanded) {
                 ReworkCaptureOverlay(
-                    context = CaptureContext(countryIso2 = captureCountryIso2 ?: selectedCountryIso2),
-                    onDismiss = {
-                        captureExpanded = false
-                        captureCountryIso2 = null
-                    },
+                    context = CaptureContext(countryIso2 = detailCountryIso2 ?: selectedCountryIso2),
+                    onDismiss = { captureExpanded = false },
                 )
             }
         }

@@ -45,8 +45,25 @@ fun ReworkTripDetailRoute(
     ReworkTripDetailScreen(
         state = state,
         onBack = onBack,
-        // Stop editing arrives with the next slice; the row is already the tap target.
-        onStopOpened = {},
+        onStopOpened = { stopId ->
+            state.stops.firstOrNull { it.id == stopId }?.let(viewModel::onEditStop)
+        },
+        onAddStop = viewModel::onAddStopClick,
+        onAddSideTrip = viewModel::onAddSideTripClick,
+        onDeleteStop = viewModel::onDeleteStop,
         onStoryOpened = { onStoryOpened(tripId) },
+    )
+
+    ReworkStopEditorSheet(
+        draft = state.stopDraft,
+        countries = state.countries,
+        onDismiss = viewModel::onDismissStopDraft,
+        onLocationNameChanged = viewModel::onStopLocationNameChanged,
+        onCountryChanged = viewModel::onStopCountryChanged,
+        onSideTripLabelChanged = viewModel::onSideTripLabelChanged,
+        onDatePrecisionChanged = viewModel::onStopDatePrecisionChanged,
+        onDateFieldChanged = viewModel::onStopDateFieldChanged,
+        onNotesChanged = viewModel::onStopNotesChanged,
+        onSave = viewModel::onSaveStopDraft,
     )
 }

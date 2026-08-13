@@ -1,5 +1,6 @@
 package com.atlas.ui.rework.screens.trips
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -22,13 +23,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Flight
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,12 +47,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.atlas.domain.model.StopPhoto
 import com.atlas.domain.model.TravelStatus
 import com.atlas.domain.model.TripStop
 import com.atlas.presentation.trip.TripDetailUiState
 import com.atlas.presentation.trip.TripTimelineEntry
+import com.atlas.ui.rework.components.ReworkDropdownDivider
+import com.atlas.ui.rework.components.ReworkDropdownItem
+import com.atlas.ui.rework.components.ReworkDropdownMenu
 import com.atlas.ui.rework.components.ReworkFloatingCard
 import com.atlas.ui.rework.foundation.AtlasReworkTheme
 import java.io.File
@@ -56,6 +66,9 @@ fun ReworkTripDetailScreen(
     state: TripDetailUiState,
     onBack: () -> Unit,
     onStopOpened: (String) -> Unit,
+    onAddStop: () -> Unit,
+    onAddSideTrip: (String) -> Unit,
+    onDeleteStop: (TripStop) -> Unit,
     onStoryOpened: () -> Unit,
 ) {
     val colors = AtlasReworkTheme.colors
@@ -87,17 +100,25 @@ fun ReworkTripDetailScreen(
     ) {
         TripHero(state = state, onBack = onBack)
 
+        SectionLabel("LA RUTA")
         if (state.timeline.isNotEmpty()) {
-            SectionLabel("LA RUTA")
-            RouteCard(timeline = state.timeline, onStopOpened = onStopOpened)
+            RouteCard(
+                timeline = state.timeline,
+                onStopOpened = onStopOpened,
+                onAddSideTrip = onAddSideTrip,
+                onDeleteStop = onDeleteStop,
+                onAddStop = onAddStop,
+            )
         } else {
-            SectionLabel("LA RUTA")
             ReworkFloatingCard(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                Text(
-                    "Encara no hi ha cap parada. Afegeix el primer lloc del viatge.",
-                    style = AtlasReworkTheme.typography.body,
-                    color = colors.inkMuted,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
+                    Text(
+                        "Encara no hi ha cap parada. Afegeix el primer lloc del viatge.",
+                        style = AtlasReworkTheme.typography.body,
+                        color = colors.inkMuted,
+                    )
+                    AddAction("Afegeix una parada", onAddStop)
+                }
             }
         }
 
@@ -214,6 +235,9 @@ private fun TripHero(state: TripDetailUiState, onBack: () -> Unit) {
 private fun RouteCard(
     timeline: List<TripTimelineEntry>,
     onStopOpened: (String) -> Unit,
+    onAddSideTrip: (String) -> Unit,
+    onDeleteStop: (TripStop) -> Unit,
+    onAddStop: () -> Unit,
 ) {
     ReworkFloatingCard(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -223,10 +247,42 @@ private fun RouteCard(
             timeline.forEachIndexed { index, entry ->
                 val isLast = index == timeline.lastIndex
                 when (entry) {
-                    is TripTimelineEntry.Place -> PlaceRow(entry, isLast, onStopOpened)
+                    is TripTimelineEntry.Place -> PlaceRow(
+                        entry = entry,
+                        isLast = isLast,
+                        onStopOpened = onStopOpened,
+                        onAddSideTrip = onAddSideTrip,
+                        onDeleteStop = onDeleteStop,
+                    )
                     is TripTimelineEntry.Leg -> LegRow(entry, isLast)
                 }
             }
+            Spacer(Modifier.height(12.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(AtlasReworkTheme.colors.border))
+            Spacer(Modifier.height(11.dp))
+            AddAction("Afegeix una parada", onAddStop)
+        }
+    }
+}
+
+@Composable
+private fun AddAction(label: String, onClick: () -> Unit) {
+    val colors = AtlasReworkTheme.colors
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(10.dp),
+        color = colors.surface,
+        border = BorderStroke(1.dp, colors.border),
+        onClick = onClick,
+    ) {
+        Row(
+            Modifier.padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Add, contentDescription = null, tint = colors.accent, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(7.dp))
+            Text(label, style = AtlasReworkTheme.typography.label, color = colors.ink)
         }
     }
 }
@@ -236,8 +292,22 @@ private fun PlaceRow(
     entry: TripTimelineEntry.Place,
     isLast: Boolean,
     onStopOpened: (String) -> Unit,
+    onAddSideTrip: (String) -> Unit,
+    onDeleteStop: (TripStop) -> Unit,
 ) {
     val colors = AtlasReworkTheme.colors
+    var menuExpanded by remember { mutableStateOf(false) }
+    var pendingDelete by remember { mutableStateOf(false) }
+
+    if (pendingDelete) {
+        DeleteStopDialog(
+            stop = entry.stop,
+            sideTripCount = entry.sideTrips.size,
+            onDismiss = { pendingDelete = false },
+            onConfirm = { pendingDelete = false; onDeleteStop(entry.stop) },
+        )
+    }
+
     Row(Modifier.fillMaxWidth().clickable { onStopOpened(entry.stop.id) }) {
         Rail(isLast = isLast) {
             Box(
@@ -270,6 +340,32 @@ private fun PlaceRow(
                         maxLines = 1,
                     )
                 }
+                Box {
+                    Icon(
+                        Icons.Rounded.MoreVert,
+                        contentDescription = "Accions de la parada",
+                        tint = colors.inkMuted,
+                        modifier = Modifier
+                            .padding(start = 4.dp)
+                            .size(19.dp)
+                            .clickable { menuExpanded = true },
+                    )
+                    ReworkDropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        ReworkDropdownItem(
+                            label = "Edita la parada",
+                            onClick = { menuExpanded = false; onStopOpened(entry.stop.id) },
+                        )
+                        ReworkDropdownItem(
+                            label = SIDE_TRIP_ACTION,
+                            onClick = { menuExpanded = false; onAddSideTrip(entry.stop.id) },
+                        )
+                        ReworkDropdownDivider()
+                        ReworkDropdownItem(
+                            label = "Elimina la parada",
+                            onClick = { menuExpanded = false; pendingDelete = true },
+                        )
+                    }
+                }
             }
             if (entry.sideTrips.isNotEmpty()) {
                 Spacer(Modifier.height(5.dp))
@@ -287,6 +383,68 @@ private fun PlaceRow(
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
+            }
+        }
+    }
+}
+
+/** The cascade is real: deleting a stop removes its nested places and their photos. */
+@Composable
+private fun DeleteStopDialog(
+    stop: TripStop,
+    sideTripCount: Int,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    val colors = AtlasReworkTheme.colors
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(16.dp), color = colors.surfaceStrong) {
+            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Vols eliminar " + stop.displayName() + "?",
+                    style = AtlasReworkTheme.typography.title,
+                    color = colors.ink,
+                )
+                Text(
+                    if (sideTripCount > 0) {
+                        "Tambe s'eliminaran " + sideTripCount + " " +
+                            (if (sideTripCount == 1) "sortida" else "sortides") +
+                            " i les seves fotos. Aquesta accio no es pot desfer."
+                    } else {
+                        "Tambe s'eliminaran les seves fotos. Aquesta accio no es pot desfer."
+                    },
+                    style = AtlasReworkTheme.typography.body,
+                    color = colors.inkMuted,
+                )
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(11.dp),
+                        color = colors.surface,
+                        border = BorderStroke(1.dp, colors.border),
+                        onClick = onDismiss,
+                    ) {
+                        Text(
+                            CANCEL_LABEL,
+                            Modifier.padding(vertical = 11.dp),
+                            style = AtlasReworkTheme.typography.label,
+                            color = colors.ink,
+                        )
+                    }
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(11.dp),
+                        color = colors.living,
+                        onClick = onConfirm,
+                    ) {
+                        Text(
+                            "Elimina",
+                            Modifier.padding(vertical = 11.dp),
+                            style = AtlasReworkTheme.typography.label,
+                            color = Color.White,
+                        )
+                    }
                 }
             }
         }
@@ -508,3 +666,6 @@ private fun TripDetailUiState.metricsText(): String {
         if (sideTrips > 0) add("$sideTrips ${if (sideTrips == 1) "SORTIDA" else "SORTIDES"}")
     }.joinToString(" · ")
 }
+
+private const val SIDE_TRIP_ACTION = "Afegeix una sortida des d'aquí"
+private const val CANCEL_LABEL = "Cancel·la"

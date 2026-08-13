@@ -41,6 +41,8 @@ interface TripRepository {
 
     suspend fun createTripStop(
         tripId: String,
+        parentStopId: String? = null,
+        sideTripLabel: String? = null,
         locationName: String,
         countryIso2: String,
         latitude: Double?,

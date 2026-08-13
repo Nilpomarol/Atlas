@@ -61,6 +61,29 @@ class BackupLinkRepairTest {
         validator.validate(backup = broken.withRepairedTripLinks(), validCountryIso2 = emptySet())
     }
 
+    @Test
+    fun `keeps only the first itinerary linked to a trip`() {
+        val backup = backup(
+            trips = listOf(trip("trip-1")),
+            itineraries = listOf(itinerary("i-1", "trip-1"), itinerary("i-2", "trip-1")),
+        )
+
+        val repaired = backup.withRepairedTripLinks()
+
+        assertEquals("trip-1", repaired.data.itineraries.first { it.id == "i-1" }.tripId)
+        assertNull(repaired.data.itineraries.first { it.id == "i-2" }.tripId)
+    }
+
+    @Test
+    fun `leaves distinct trip links alone`() {
+        val backup = backup(
+            trips = listOf(trip("trip-1"), trip("trip-2")),
+            itineraries = listOf(itinerary("i-1", "trip-1"), itinerary("i-2", "trip-2")),
+        )
+
+        assertSame(backup, backup.withRepairedTripLinks())
+    }
+
     private fun backup(
         trips: List<BackupTripV3>,
         itineraries: List<BackupItineraryV2>,

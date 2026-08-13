@@ -9,6 +9,7 @@ import com.atlas.domain.model.Flight
 import com.atlas.domain.model.FlexibleDate
 import com.atlas.domain.model.FlexibleDateRange
 import com.atlas.domain.model.TravelStatus
+import com.atlas.domain.model.displayStatus
 import com.atlas.domain.model.Trip
 import com.atlas.domain.model.TripStop
 import com.atlas.domain.util.utcAwareDepartureSortKey
@@ -152,7 +153,7 @@ class DashboardViewModel(
             val lastFlight = sortedFlights.lastOrNull() ?: return@mapNotNull null
             val origin = airportsById[firstFlight.originAirportId]?.shortLabel() ?: firstFlight.originAirportId.uppercase()
             val destination = airportsById[lastFlight.destinationAirportId]?.shortLabel() ?: lastFlight.destinationAirportId.uppercase()
-            val groupStatus = group.flights.map { it.status }.deriveGroupStatus()
+            val groupStatus = group.displayStatus()
             val flightCount = group.flights.size
             DashboardFlightUiState(
                 flight = firstFlight,
@@ -473,12 +474,6 @@ private fun FlexibleDate.toMonthYearText(): String =
 
 private fun Airport.shortLabel(): String = iata ?: icao ?: city
 
-private fun List<TravelStatus>.deriveGroupStatus(): TravelStatus = when {
-    contains(TravelStatus.IN_PROGRESS) -> TravelStatus.IN_PROGRESS
-    contains(TravelStatus.COMPLETED) -> TravelStatus.COMPLETED
-    contains(TravelStatus.PLANNED) -> TravelStatus.PLANNED
-    else -> TravelStatus.UNKNOWN
-}
 
 private val dashboardFlightDateFormatter = FlexibleDateFormatter()
 private fun String.toFlightDateText(): String? = dashboardFlightDateFormatter.formatIsoDate(this)

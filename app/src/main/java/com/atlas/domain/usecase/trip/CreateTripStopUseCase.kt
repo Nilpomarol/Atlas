@@ -8,6 +8,9 @@ class CreateTripStopUseCase(
 ) {
     suspend operator fun invoke(
         tripId: String,
+        /** Set to nest this place under an existing stop; null puts it on the main route. */
+        parentStopId: String? = null,
+        sideTripLabel: String? = null,
         locationName: String,
         countryIso2: String,
         latitude: Double?,
@@ -17,6 +20,8 @@ class CreateTripStopUseCase(
     ) {
         tripRepository.createTripStop(
             tripId = tripId,
+            parentStopId = parentStopId,
+            sideTripLabel = sideTripLabel?.trim()?.ifBlank { null },
             locationName = locationName.trim(),
             countryIso2 = countryIso2,
             latitude = latitude,

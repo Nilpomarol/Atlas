@@ -1,6 +1,6 @@
 # Trip Detail — rework specification
 
-Status: **Approved. Read surface implemented 2026-08-13; editing and map still to land.**
+Status: **Approved. Read surface and stop editing implemented 2026-08-13; map and reorder still to land.**
 Created: 2026-08-13
 Phase: UI rework Phase 5, second vertical slice
 
@@ -104,7 +104,7 @@ Trip notes, shown as written, when present.
 Entry point to the existing read-only story slideshow, when the trip has enough content
 to make one. It already exists at `trips/{tripId}/story` and is reused, not rebuilt.
 
-## 4. Editing — NOT YET IMPLEMENTED — and the gap this closes
+## 4. Editing — and the gap this closes
 
 Legacy trip detail's side-trip editing was removed when excursions collapsed. **This
 screen restores it.** Until it ships, nested places cannot be created anywhere.
@@ -184,12 +184,18 @@ Landed 2026-08-13:
 - photo strip, context band, notes, story entry;
 - missing-trip state; navigation from the Trips list.
 
+Stop editing landed the same day: the editor sheet, both add actions, edit, and delete
+with an explicit cascade warning. **The nested-place gap is closed** — a side trip can
+be created again, from the stop it hangs off.
+
 Still to land, in this order:
 
-1. **Editing** (§4) — the stop editor, both add actions, reorder, delete. Until this
-   ships, nested places cannot be created anywhere in the app.
-2. **Map** (§3.4).
-3. **Trip creation**, which is its own slice (§8).
+1. **Reorder** main stops (§4). Drag handles are not wired; ordering can only be
+   changed by editing dates.
+2. **Trip-level editing** (§4) — title, dates, status, notes, cover. The ViewModel
+   already exposes these; no rework UI calls them yet.
+3. **Map** (§3.4).
+4. **Trip creation**, which is its own slice (§8).
 
 ## 8. Out of scope
 

@@ -7,6 +7,10 @@ import com.atlas.presentation.date.FlexibleDateRangeDraftUiState
 data class TripStopDraftUiState(
     val stopId: String? = null,
     val isOpen: Boolean = false,
+    /** Non-null while adding or editing a place visited from another stop. */
+    val parentStopId: String? = null,
+    val parentStopName: String? = null,
+    val sideTripLabel: String = "",
     val locationName: String = "",
     val countryIso2: String = "",
     val latitude: String = "",
@@ -25,9 +29,12 @@ data class TripStopDraftUiState(
     val isEditing: Boolean = stopId != null
 
     companion object {
-        fun fromStop(stop: TripStop): TripStopDraftUiState = TripStopDraftUiState(
+        fun fromStop(stop: TripStop, parentStopName: String? = null): TripStopDraftUiState = TripStopDraftUiState(
             stopId = stop.id,
             isOpen = true,
+            parentStopId = stop.parentStopId,
+            parentStopName = parentStopName,
+            sideTripLabel = stop.sideTripLabel.orEmpty(),
             locationName = stop.locationName,
             countryIso2 = stop.countryIso2,
             latitude = stop.latitude?.toString().orEmpty(),

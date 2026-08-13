@@ -193,6 +193,8 @@ class TripRepositoryImpl(
 
     override suspend fun createTripStop(
         tripId: String,
+        parentStopId: String?,
+        sideTripLabel: String?,
         locationName: String,
         countryIso2: String,
         latitude: Double?,
@@ -205,6 +207,8 @@ class TripRepositoryImpl(
             TripStopEntity(
                 id = UUID.randomUUID().toString(),
                 tripId = tripId,
+                parentStopId = parentStopId,
+                sideTripLabel = sideTripLabel,
                 locationName = locationName,
                 countryIso2 = countryIso2,
                 latitude = latitude,

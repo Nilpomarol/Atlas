@@ -185,6 +185,27 @@ class TripDetailViewModel(
         }
     }
 
+    /**
+     * Adds a place visited *from* [parentStopId]. The user picks a place, never a record
+     * type — nesting comes from where the action was taken.
+     */
+    fun onAddSideTripClick(parentStopId: String) {
+        val parent = uiState.value.stops.firstOrNull { it.id == parentStopId } ?: return
+        stopDraft.update {
+            TripStopDraftUiState(
+                isOpen = true,
+                parentStopId = parent.id,
+                parentStopName = parent.displayTitle?.takeIf(String::isNotBlank) ?: parent.locationName,
+                countryIso2 = parent.countryIso2,
+                dateRange = FlexibleDateRangeDraftUiState.fromDateRange(parent.dateRange),
+            )
+        }
+    }
+
+    fun onSideTripLabelChanged(label: String) {
+        stopDraft.update { it.copy(sideTripLabel = label, validationError = null) }
+    }
+
     fun onDismissStopDraft() {
         stopLocationSearchJob?.cancel()
         stopDraft.update { TripStopDraftUiState() }
@@ -294,7 +315,10 @@ class TripDetailViewModel(
     }
 
     fun onEditStop(stop: TripStop) {
-        stopDraft.update { TripStopDraftUiState.fromStop(stop) }
+        val parentName = stop.parentStopId
+            ?.let { parentId -> uiState.value.stops.firstOrNull { it.id == parentId } }
+            ?.let { it.displayTitle?.takeIf(String::isNotBlank) ?: it.locationName }
+        stopDraft.update { TripStopDraftUiState.fromStop(stop, parentStopName = parentName) }
     }
 
     fun onStopLocationNameChanged(locationName: String) {
@@ -466,6 +490,8 @@ class TripDetailViewModel(
             if (draft.stopId == null) {
                 createTripStopUseCase(
                     tripId = trip.id,
+                    parentStopId = draft.parentStopId,
+                    sideTripLabel = draft.sideTripLabel,
                     locationName = locationName,
                     countryIso2 = draft.countryIso2,
                     latitude = latitude,
@@ -474,8 +500,12 @@ class TripDetailViewModel(
                     notes = draft.notes,
                 )
             } else {
+                // Rebuild from the stored stop rather than a bare TripStop: the draft does
+                // not carry source, itineraryGroupId, isVisible or displayTitle, and losing
+                // parentStopId here would silently un-nest the place being edited.
+                val existing = uiState.value.stops.firstOrNull { it.id == draft.stopId }
                 updateTripStopUseCase(
-                    TripStop(
+                    (existing ?: TripStop(
                         id = draft.stopId,
                         tripId = trip.id,
                         locationName = locationName,
@@ -485,6 +515,15 @@ class TripDetailViewModel(
                         dateRange = dateRange,
                         notes = draft.notes,
                         sortOrder = draft.sortOrder,
+                    )).copy(
+                        locationName = locationName,
+                        countryIso2 = draft.countryIso2,
+                        latitude = latitude,
+                        longitude = longitude,
+                        dateRange = dateRange,
+                        notes = draft.notes,
+                        sortOrder = draft.sortOrder,
+                        sideTripLabel = draft.sideTripLabel.trim().ifBlank { null },
                     ),
                 )
             }

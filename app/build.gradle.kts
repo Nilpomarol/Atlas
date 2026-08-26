@@ -21,9 +21,12 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
+            // Distinct launcher label so the debug build is obvious next to the release.
+            manifestPlaceholders["appLabel"] = "Atlas Debug"
         }
         release {
             isMinifyEnabled = false
+            manifestPlaceholders["appLabel"] = "Atlas"
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

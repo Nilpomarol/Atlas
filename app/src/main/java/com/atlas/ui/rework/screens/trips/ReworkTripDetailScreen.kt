@@ -408,11 +408,11 @@ private fun DeleteStopDialog(
                 )
                 Text(
                     if (sideTripCount > 0) {
-                        "Tambe s'eliminaran " + sideTripCount + " " +
+                        "També s'eliminaran " + sideTripCount + " " +
                             (if (sideTripCount == 1) "sortida" else "sortides") +
-                            " i les seves fotos. Aquesta accio no es pot desfer."
+                            " i les seves fotos. Aquesta acció no es pot desfer."
                     } else {
-                        "Tambe s'eliminaran les seves fotos. Aquesta accio no es pot desfer."
+                        "També s'eliminaran les seves fotos. Aquesta acció no es pot desfer."
                     },
                     style = AtlasReworkTheme.typography.body,
                     color = colors.inkMuted,

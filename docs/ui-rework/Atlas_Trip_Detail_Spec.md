@@ -188,14 +188,26 @@ Stop editing landed the same day: the editor sheet, both add actions, edit, and 
 with an explicit cascade warning. **The nested-place gap is closed** — a side trip can
 be created again, from the stop it hangs off.
 
+The editor sheet was rebuilt on a shared form kit (`ReworkFormKit`) on 2026-08-13:
+
+- the place is now chosen by **gazetteer search**, which fills name, country and
+  coordinates together — so a stop finally carries the coordinates §3.4's map needs,
+  and the old 60-country cap that made most countries unpickable is gone;
+- manual entry stays available as a disclosure for places search cannot find, with a
+  filterable country picker;
+- the flexible date range moved to a shared, restyled control.
+
+The kit (`ReworkField`, `ReworkTextInput`, `ReworkFlexibleDateRange`, `ReworkSheetActions`)
+exists so the trip editor reuses the same fields rather than a second copy.
+
 Still to land, in this order:
 
 1. **Reorder** main stops (§4). Drag handles are not wired; ordering can only be
    changed by editing dates.
 2. **Trip-level editing** (§4) — title, dates, status, notes, cover. The ViewModel
    already exposes these; no rework UI calls them yet.
-3. **Map** (§3.4).
-4. **Trip creation**, which is its own slice (§8).
+3. **Map** (§3.4). Stops now carry coordinates, so this is unblocked.
+4. **Trip creation**, which is its own slice (§8). It should reuse `ReworkFormKit`.
 
 ## 8. Out of scope
 
